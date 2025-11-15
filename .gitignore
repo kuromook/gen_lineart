@@ -1,6 +1,7 @@
 __pycache__/
 venv/
 checkpoints/
+checkpoints_gan/
 dataset/
 dataset256/
 dataset_raw
