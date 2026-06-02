@@ -1,10 +1,14 @@
 __pycache__/
-venv/
-checkpoints/
 .ipynb_checkpoints/
+venv/
+
+checkpoints/
 checkpoints_gan/
+
 dataset/
 dataset256/
 dataset_raw
 img/
+dataset_480/
 
+debug_output/
