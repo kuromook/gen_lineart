@@ -1,124 +1,142 @@
 import os
-from PIL import Image
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torchvision import transforms
-import torch.optim as optim
+from PIL import Image, ImageOps
 
 from unetgenerator import UNetGenerator
+from losses import edge_loss
 
-def sobel_edges(x):
-    sobel_x = torch.tensor([[-1,0,1],[-2,0,2],[-1,0,1]],
-                           dtype=torch.float32, device=x.device).view(1,1,3,3)
-    sobel_y = torch.tensor([[-1,-2,-1],[0,0,0],[1,2,1]],
-                           dtype=torch.float32, device=x.device).view(1,1,3,3)
+ROUGH_DIR           = "dataset_480/train/rough"
+LINE_DIR            = "dataset_480/train/line"
+FILE_LIST           = "dataset_480/valid_train.txt"
+CHECKPOINT_DIR      = "checkpoints"
+IMAGE_SIZE          = 480
+BATCH_SIZE          = 2
+NUM_EPOCHS          = 200
+LR                  = 0.0001
+POS_WEIGHT          = 5.0
+EDGE_WEIGHT         = 1.0
+AUTOCONTRAST_ROUGH  = True   # Trueにするとroughのコントラストを自動正規化
 
-    g_x = F.conv2d(x, sobel_x, padding=1)
-    g_y = F.conv2d(x, sobel_y, padding=1)
 
-    return torch.sqrt(g_x**2 + g_y**2 + 1e-6)
-    
-def edge_loss(pred, target):
-    return F.l1_loss(sobel_edges(pred), sobel_edges(target))
-
-# Dataset
 class SketchDataset(torch.utils.data.Dataset):
-    def __init__(self, rough_dir, line_dir, transform=None):
-        self.rough_files = sorted(os.listdir(rough_dir))
-        self.line_files = sorted(os.listdir(line_dir))
-        self.rough_dir = rough_dir
-        self.line_dir = line_dir
-        self.transform = transform
+    def __init__(self, rough_dir, line_dir, file_list=None, transform=None,
+                 autocontrast_rough=False):
+        if file_list:
+            with open(file_list) as f:
+                files = [l.strip() for l in f if l.strip()]
+        else:
+            files = sorted(os.listdir(rough_dir))
+        self.files              = files
+        self.rough_dir          = rough_dir
+        self.line_dir           = line_dir
+        self.transform          = transform
+        self.autocontrast_rough = autocontrast_rough
 
     def __len__(self):
-        return len(self.rough_files)
+        return len(self.files)
 
     def __getitem__(self, idx):
-        rough = Image.open(os.path.join(self.rough_dir, self.rough_files[idx])).convert("L")
-        line  = Image.open(os.path.join(self.line_dir,  self.line_files[idx])).convert("L")
-
+        rough = Image.open(os.path.join(self.rough_dir, self.files[idx])).convert("L")
+        line  = Image.open(os.path.join(self.line_dir,  self.files[idx])).convert("L")
+        if self.autocontrast_rough:
+            rough = ImageOps.autocontrast(rough, cutoff=0)
         if self.transform:
             rough = self.transform(rough)
             line  = self.transform(line)
-
         return rough, line
 
 
-# ---------------------------------------------------------------------------
-# II. データローディングと設定
-# ---------------------------------------------------------------------------
-# Dataset クラスはそのまま使用 (paired_transform 引数は不要)
+def train(file_list=FILE_LIST, checkpoint_dir=CHECKPOINT_DIR,
+          autocontrast_rough=AUTOCONTRAST_ROUGH, resume_path=None):
+    transform = transforms.Compose([
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.ToTensor(),
+    ])
 
-# Transform の修正: Resize を 256x256 に変更
-transform = transforms.Compose([
-    transforms.Resize((256, 256)), # ★ 128x128 から 256x256 に変更 ★
-    transforms.ToTensor(),
-])
+    dataset = SketchDataset(ROUGH_DIR, LINE_DIR, file_list=file_list, transform=transform,
+                            autocontrast_rough=autocontrast_rough)
+    loader  = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True,
+                         num_workers=4, pin_memory=True)
 
-dataset = SketchDataset("dataset/train/rough", "dataset/train/line", transform)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model  = UNetGenerator(in_channels=1, out_channels=1).to(device)
 
-# DataLoader: 解像度アップに伴い、VRAM節約のためバッチサイズを 2 に下げることを推奨
-loader = DataLoader(dataset, batch_size=2, shuffle=True) 
+    if resume_path and os.path.exists(resume_path):
+        model.load_state_dict(torch.load(resume_path, map_location=device))
+        start_epoch = int(os.path.splitext(os.path.basename(resume_path))[0].replace("epoch", ""))
+        print(f"Resume from {resume_path} (epoch {start_epoch})")
+    else:
+        start_epoch = 0
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+    pos_weight = torch.tensor(POS_WEIGHT, dtype=torch.float).to(device)
+    criterion  = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    optimizer  = torch.optim.Adam(model.parameters(), lr=LR)
+    scheduler  = torch.optim.lr_scheduler.CosineAnnealingLR(
+                     optimizer, T_max=NUM_EPOCHS - start_epoch, eta_min=1e-6)
 
-model = UNetGenerator(in_channels=1, out_channels=1).to(device)
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    print(f"file_list: {file_list}")
+    print(f"checkpoint_dir: {checkpoint_dir}")
+    print(f"autocontrast_rough: {autocontrast_rough}")
+    print(f"データ数: {len(dataset)}, バッチ数: {len(loader)}")
+    print(f"デバイス: {device}, 解像度: {IMAGE_SIZE}px")
+    print(f"epoch {start_epoch+1} 〜 {NUM_EPOCHS}\n")
+
+    best_loss = float("inf")
+
+    for epoch in range(start_epoch, NUM_EPOCHS):
+        model.train()
+        total_loss = 0.0
+
+        for rough, line in loader:
+            rough, line = rough.to(device), line.to(device)
+            line = 1.0 - line
+
+            optimizer.zero_grad()
+            pred     = model(rough)
+            pred_sig = torch.sigmoid(pred)
+
+            loss_bce  = criterion(pred, line)
+            loss_l1   = F.l1_loss(pred_sig, line)
+            loss_main = 0.8 * loss_bce + 0.2 * loss_l1
+            loss      = loss_main + EDGE_WEIGHT * edge_loss(pred_sig, line)
+
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        scheduler.step()
+        avg_loss = total_loss / len(loader)
+        print(f"Epoch {epoch+1:3d}/{NUM_EPOCHS}: loss={avg_loss:.4f}  lr={scheduler.get_last_lr()[0]:.2e}",
+              flush=True)
+
+        if avg_loss < best_loss:
+            best_loss = avg_loss
+            torch.save(model.state_dict(), f"{checkpoint_dir}/best.pth")
+            print(f"  → best saved (loss={best_loss:.4f})", flush=True)
+
+        if (epoch + 1) % 10 == 0:
+            torch.save(model.state_dict(), f"{checkpoint_dir}/epoch{epoch+1:03d}.pth")
+
+    print(f"\n完了。{checkpoint_dir}/best.pth を使用してください。")
 
 
-pos_weight_value = 3.0 
-pos_weight_tensor = torch.tensor(pos_weight_value, dtype=torch.float).to(device)
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file-list",        default=FILE_LIST)
+    parser.add_argument("--checkpoint-dir",   default=CHECKPOINT_DIR)
+    parser.add_argument("--resume",           default=None)
+    parser.add_argument("--autocontrast",     action="store_true", default=AUTOCONTRAST_ROUGH)
+    parser.add_argument("--no-autocontrast",  dest="autocontrast", action="store_false")
+    args = parser.parse_args()
 
-# 2. criterion に Tensor 型の pos_weight を渡す
-criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor)
-# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-# オプティマイザ: 学習率を 0.0001 に下げる (暴走防止)
-optimizer = optim.Adam(model.parameters(), lr=0.0001) 
-
-os.makedirs("checkpoints", exist_ok=True)
-
-
-# ---------------------------------------------------------------------------
-# III. トレーニングループ
-# ---------------------------------------------------------------------------
-for epoch in range(50):
-    total_loss = 0.0
-    num_batches = 0
-    model.train() 
-    
-    for rough, line in loader:
-        rough, line = rough.to(device), line.to(device)
-
-        line = 1.0 - line
-        
-        optimizer.zero_grad()
-        pred = model(rough)
-    
-        # 1. メイン損失 (BCE with pos_weight)
-        loss_main_bce = criterion(pred, line)
-    
-        # 2. L1損失 (Sigmoid後の出力とターゲットの絶対誤差)
-        # L1損失を導入することで、ピクセル値がターゲットに近づくように強制する。
-        loss_main_l1 = F.l1_loss(torch.sigmoid(pred), line) 
-    
-        # 3. メイン損失の組み合わせとエッジ損失
-        # BCEとL1をミックス (例: 80% BCE, 20% L1)
-        loss_main = 0.8 * loss_main_bce + 0.2 * loss_main_l1 
-    
-        loss_edge = edge_loss(torch.sigmoid(pred), line) 
-
-        # 総損失 (L1損失が太さを抑制する助けになるため、エッジ重みは 1.0 で維持してもよい)
-        loss = loss_main + 1.0 * loss_edge
-
-        loss.backward()
-        optimizer.step()
-        
-        # ログ改善
-        total_loss += loss.item()
-        num_batches += 1
-
-    avg_loss = total_loss / num_batches
-    print(f"Epoch {epoch+1}: avg_loss={avg_loss:.4f}")
-
-    torch.save(model.state_dict(), f"checkpoints/unet_1ch_epoch{epoch+1}.pth")
+    train(file_list=args.file_list,
+          checkpoint_dir=args.checkpoint_dir,
+          autocontrast_rough=args.autocontrast,
+          resume_path=args.resume)

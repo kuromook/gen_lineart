@@ -1,33 +1,42 @@
-import torch
-from torchvision import transforms
-from PIL import Image
-import torchvision.transforms.functional as TF
+import argparse
 import os
+import torch
+import torchvision.transforms.functional as TF
+from PIL import Image, ImageOps
 
 from unetgenerator import UNetGenerator
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+IMAGE_SIZE = 480
 
-model = UNetGenerator(in_channels=1, out_channels=1).to(device)
-# チェックポイントのロード...
-model.load_state_dict(torch.load("checkpoints/unet_1ch_epoch50.pth", map_location=device))
-model.eval()
 
-img = Image.open("test/rough/sample.jpg").convert("L")
+def run_inference(checkpoint, input_path, output_path, autocontrast=False):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# ★★★ リサイズ解像度を 256x256 に変更 ★★★
-img = TF.resize(img, (256, 256)) 
-# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    model = UNetGenerator(in_channels=1, out_channels=1).to(device)
+    model.load_state_dict(torch.load(checkpoint, map_location=device))
+    model.eval()
 
-img = TF.to_tensor(img).unsqueeze(0).to(device)
+    img = Image.open(input_path).convert("L")
+    if autocontrast:
+        img = ImageOps.autocontrast(img, cutoff=0)
+    img_tensor = TF.to_tensor(TF.resize(img, (IMAGE_SIZE, IMAGE_SIZE))).unsqueeze(0).to(device)
 
-with torch.no_grad():
-    out = torch.sigmoid(model(img))  # 0〜1
+    with torch.no_grad():
+        out = torch.sigmoid(model(img_tensor))
 
-out = 1.0 - out 
+    out = (1.0 - out).clamp(0, 1)
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    TF.to_pil_image(out[0].cpu()).save(output_path)
+    print(f"saved: {output_path}")
 
-out = out.clamp(0,1)
-out_img = TF.to_pil_image(out[0].cpu())
-out_img.save("results/plan2.png")
 
-print("done")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint",   default="checkpoints/best.pth")
+    parser.add_argument("--input",        default="test/rough/sample.jpg")
+    parser.add_argument("--output",       default="results/output.png")
+    parser.add_argument("--autocontrast", action="store_true",
+                        help="roughのコントラストを自動正規化してから推論")
+    args = parser.parse_args()
+
+    run_inference(args.checkpoint, args.input, args.output, args.autocontrast)
