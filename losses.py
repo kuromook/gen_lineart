@@ -17,3 +17,27 @@ def canny_edges(x, low_th=50, high_th=150):
 
 def edge_loss(pred, target):
     return F.l1_loss(canny_edges(pred), canny_edges(target))
+
+
+def tolerant_f1_loss(pred, target, tolerance_px=2):
+    """Differentiable soft F1 that allows small local line displacement."""
+    kernel_size = tolerance_px * 2 + 1
+    target_near = F.max_pool2d(target, kernel_size, stride=1, padding=tolerance_px)
+    pred_near = F.max_pool2d(pred, kernel_size, stride=1, padding=tolerance_px)
+
+    precision = (pred * target_near).sum(dim=(1, 2, 3)) / (
+        pred.sum(dim=(1, 2, 3)) + 1e-6
+    )
+    recall = (target * pred_near).sum(dim=(1, 2, 3)) / (
+        target.sum(dim=(1, 2, 3)) + 1e-6
+    )
+    f1 = 2.0 * precision * recall / (precision + recall + 1e-6)
+    return 1.0 - f1.mean()
+
+
+def ink_loss(pred, target):
+    """Penalize excess or missing total ink independently of line position."""
+    return F.l1_loss(
+        pred.mean(dim=(1, 2, 3)),
+        target.mean(dim=(1, 2, 3)),
+    )
