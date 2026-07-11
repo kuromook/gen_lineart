@@ -10,8 +10,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from dataset_gate import DEFAULT_LABELS
-from route_dataset_source import load_gate, load_images
+from lineart.dataset_gate import DEFAULT_LABELS
+from lineart.route_dataset_source import load_gate, load_images
 from train_dataset_gate_cnn import labels_for_mode, target_label_from_name
 
 

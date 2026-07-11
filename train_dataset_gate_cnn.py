@@ -7,13 +7,13 @@ import random
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image, ImageOps
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
-from dataset_gate import DEFAULT_LABELS, label_from_name
+from lineart.dataset_gate import DEFAULT_LABELS, label_from_name
+from lineart.gate_cnn import GateCNN
 
 
 DEFAULT_ROUGH_DIRS = ["dataset/pairs_480/train/rough", "dataset/pairs_480/test/rough"]
@@ -42,31 +42,6 @@ class RoughDataset(Dataset):
         if self.autocontrast:
             image = ImageOps.autocontrast(image, cutoff=0)
         return self.transform(image), self.label_to_index[label]
-
-
-class GateCNN(nn.Module):
-    def __init__(self, num_classes):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(1, 24, 5, stride=2, padding=2),
-            nn.BatchNorm2d(24),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(24, 48, 3, stride=2, padding=1),
-            nn.BatchNorm2d(48),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(48, 96, 3, stride=2, padding=1),
-            nn.BatchNorm2d(96),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(96, 128, 3, stride=2, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-        )
-        self.head = nn.Linear(128, num_classes)
-
-    def forward(self, x):
-        x = self.net(x)
-        x = F.adaptive_avg_pool2d(x, 1).flatten(1)
-        return self.head(x)
 
 
 def target_label_from_name(name, target_mode):

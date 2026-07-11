@@ -12,8 +12,8 @@ import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 
 from inference_routed import DEFAULT_REGISTRY, IMAGE_SIZE, load_registry, resolve_expert
-from route_dataset_source import DEFAULT_FAMILY_GATE, DEFAULT_KURIP_AKO5_GATE, route_decision
-from unetgenerator import UNetGenerator
+from lineart.route_dataset_source import DEFAULT_FAMILY_GATE, DEFAULT_KURIP_AKO5_GATE, route_decision
+from lineart.unetgenerator import UNetGenerator
 
 
 def read_inputs(args):

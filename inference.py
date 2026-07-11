@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 
-from unetgenerator import UNetGenerator
+from lineart.unetgenerator import UNetGenerator
 
 IMAGE_SIZE = 480
 

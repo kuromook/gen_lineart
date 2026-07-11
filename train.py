@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from PIL import Image, ImageOps
 
-from unetgenerator import UNetGenerator
-from losses import edge_loss, ink_loss, tolerant_f1_loss
+from lineart.unetgenerator import UNetGenerator
+from lineart.losses import edge_loss, ink_loss, tolerant_f1_loss
 
 ROUGH_DIR           = "dataset/pairs_480/train/rough"
 LINE_DIR            = "dataset/pairs_480/train/line"

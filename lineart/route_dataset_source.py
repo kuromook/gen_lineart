@@ -7,8 +7,8 @@ import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 
-from train_dataset_gate_cnn import GateCNN
-from dataset_gate import label_from_name
+from lineart.dataset_gate import label_from_name
+from lineart.gate_cnn import GateCNN
 
 
 DEFAULT_FAMILY_GATE = "checkpoints/dataset_gate/gate_family_cnn.pth"

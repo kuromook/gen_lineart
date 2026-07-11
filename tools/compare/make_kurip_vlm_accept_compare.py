@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from unetgenerator import UNetGenerator
+from lineart.unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480

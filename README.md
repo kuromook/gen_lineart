@@ -10,7 +10,7 @@
 ## 概要
 
 UNet ベースのモデルでラフ画像を線画に変換します。  
-Canny エッジ損失（`losses.py`）と BCE+L1 損失を組み合わせ、細かい線質を保った出力を目指します。
+Canny エッジ損失（`lineart/losses.py`）と BCE+L1 損失を組み合わせ、細かい線質を保った出力を目指します。
 
 **採用モデル:** データ品質フィルタリング（autocontrast後 std>=15）で厳選した 660 枚で学習した `checkpoints/std15/best.pth`（loss=0.1705）
 
@@ -101,8 +101,8 @@ python inference.py \
 
 | ファイル | 役割 |
 |---|---|
-| `unetgenerator.py` | UNetGenerator（ResBlock, DilatedConvBlock）|
-| `losses.py` | Canny ベースの edge_loss |
+| `lineart/unetgenerator.py` | UNetGenerator（ResBlock, DilatedConvBlock）|
+| `lineart/losses.py` | Canny ベースの edge_loss |
 | `train.py` | 学習スクリプト |
 | `inference.py` | 推論スクリプト |
 | `tools/evaluation/data_check.py` | データ品質確認ツール |
