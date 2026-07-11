@@ -12,9 +12,6 @@ img/
 
 debug_output/
 /MEMORY.md
-debug.py
-debug_model.py
-interference480.py
 
 *.log
 *.pid
