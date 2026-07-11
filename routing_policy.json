@@ -14,8 +14,8 @@
     "lineart": "shape1"
   },
   "image_gate_fallback": {
-    "family_gate": "checkpoints_dataset_gate/gate_family_cnn.pth",
-    "source_gate_for_aligned_scan": "checkpoints_dataset_gate/gate_kurip_ako5_cnn.pth",
+    "family_gate": "checkpoints/dataset_gate/gate_family_cnn.pth",
+    "source_gate_for_aligned_scan": "checkpoints/dataset_gate/gate_kurip_ako5_cnn.pth",
     "recommended_crop_count": 9,
     "recommended_tile_vote_count": "8-16",
     "family_threshold": 0.8,
@@ -23,8 +23,8 @@
     "low_confidence_route": "shape1"
   },
   "current_expert_routes": {
-    "shape1": "checkpoints_shape1/best.pth",
-    "kurip_clean540": "checkpoints_kurip_clean540/best.pth"
+    "shape1": "checkpoints/shape1/best.pth",
+    "kurip_clean540": "checkpoints/kurip_clean540/best.pth"
   },
   "notes": [
     "kurip_clean540_noac did not outperform kurip_clean540.",

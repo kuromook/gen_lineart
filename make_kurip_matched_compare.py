@@ -11,8 +11,8 @@ from unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480
-MATCHED_CKPT = "checkpoints_kurip_matched_strict_x4_noac/best.pth"
-SHAPE1_CKPT = "checkpoints_shape1/best.pth"
+MATCHED_CKPT = "checkpoints/kurip_matched_strict_x4_noac/best.pth"
+SHAPE1_CKPT = "checkpoints/shape1/best.pth"
 MATCHED_CSV = "results/kurip_matched_tiles_strict_all_noac.csv"
 FIXED_COMPARE_PATH = "results/compare_kurip_matched_strict_x4_noac_vs_shape1.png"
 MATCHED_COMPARE_PATH = "results/compare_kurip_matched_strict_x4_noac_train_vs_shape1.png"

@@ -10,9 +10,9 @@ std 10 / 12 / 15 の3条件でスクラッチから学習 → 推論を順番に
 
 | 条件 | ファイルリスト | 枚数 | チェックポイント | ログ |
 |---|---|---|---|---|
-| std>=10 | valid_train_std10.txt | 2,703 | checkpoints_std10/ | train_std10.log |
-| std>=12 | valid_train_std12.txt | 1,537 | checkpoints_std12/ | train_std12.log |
-| std>=15 | valid_train_std15.txt |   660 | checkpoints_std15/ | train_std15.log |
+| std>=10 | valid_train_std10.txt | 2,703 | checkpoints/std10/ | train_std10.log |
+| std>=12 | valid_train_std12.txt | 1,537 | checkpoints/std12/ | train_std12.log |
+| std>=15 | valid_train_std15.txt |   660 | checkpoints/std15/ | train_std15.log |
 
 推論結果: `results/std10/` / `results/std12/` / `results/std15/`  
 進捗確認: `tail -5 train_std10.log`
@@ -48,9 +48,9 @@ std 10 / 12 / 15 の3条件でスクラッチから学習 → 推論を順番に
 
 | ラウンド | epoch | チェックポイント | loss | 備考 |
 |---|---|---|---|---|
-| 第1 | 1〜100 | checkpoints/epoch100.pth | - | 初期学習 |
-| 第2 | 101〜200 | checkpoints/best.pth | 0.1562 | pos_weight:5, EDGE_WEIGHT:1.0, CosineAnnealing |
-| std実験 | 1〜200×3 | checkpoints_std*/best.pth | 実行中 | autocontrast, スクラッチから |
+| 第1 | 1〜100 | checkpoints/base/epoch100.pth | - | 初期学習 |
+| 第2 | 101〜200 | checkpoints/base/best.pth | 0.1562 | pos_weight:5, EDGE_WEIGHT:1.0, CosineAnnealing |
+| std実験 | 1〜200×3 | checkpoints/std*/best.pth | 実行中 | autocontrast, スクラッチから |
 
 ---
 

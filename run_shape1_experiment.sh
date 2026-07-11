@@ -3,14 +3,14 @@ set -e
 cd "$(dirname "$0")"
 
 PY=./venv/bin/python
-CKPT=checkpoints_shape1
+CKPT=checkpoints/shape1
 RESULTS=results/shape1
 SAMPLES="lineart_004_002 lineart_004_004 lineart_004_006 lineart_004_008 lineart_004_010 housei_002_19_12 housei_002_07_12 housei_002_06_15"
 
 $PY train.py \
     --file-list dataset_480/valid_train_warm_regions.txt \
     --checkpoint-dir "$CKPT" \
-    --resume checkpoints_warm_regions/best.pth \
+    --resume checkpoints/warm_regions/best.pth \
     --lr 1e-5 \
     --epochs 20 \
     --pos-weight 2.0 \

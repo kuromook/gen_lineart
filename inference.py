@@ -32,7 +32,7 @@ def run_inference(checkpoint, input_path, output_path, autocontrast=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint",   default="checkpoints/best.pth")
+    parser.add_argument("--checkpoint",   default="checkpoints/base/best.pth")
     parser.add_argument("--input",        default="test/rough/sample.jpg")
     parser.add_argument("--output",       default="results/output.png")
     parser.add_argument("--autocontrast", action="store_true",

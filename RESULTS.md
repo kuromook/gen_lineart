@@ -29,7 +29,7 @@ Current recommended outputs:
 Deprecated or non-recommended experiment outputs should remain available for
 audit, but should not be used by routing:
 
-- `results/kurip/` and `checkpoints_kurip/`: dirty kurip fine-tune; noisy.
+- `results/kurip/` and `checkpoints/kurip/`: dirty kurip fine-tune; noisy.
 - `results/kurip_clean540_noac/`: did not beat `kurip_clean540`.
 - `results/kurip_balanced_dense/`: did not beat `kurip_clean540`.
 

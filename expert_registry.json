@@ -8,7 +8,7 @@
   "experts": [
     {
       "name": "shape1",
-      "checkpoint": "checkpoints_shape1/best.pth",
+      "checkpoint": "checkpoints/shape1/best.pth",
       "dataset_source": ["unknown", "housei", "lineart"],
       "content": ["general"],
       "status": "active_default",
@@ -17,7 +17,7 @@
     },
     {
       "name": "kurip_dirty_ep20",
-      "checkpoint": "checkpoints_kurip/best.pth",
+      "checkpoint": "checkpoints/kurip/best.pth",
       "dataset_source": ["kurip"],
       "content": ["general"],
       "status": "deprecated",
@@ -26,7 +26,7 @@
     },
     {
       "name": "kurip_clean540",
-      "checkpoint": "checkpoints_kurip_clean540/best.pth",
+      "checkpoint": "checkpoints/kurip_clean540/best.pth",
       "dataset_source": ["kurip"],
       "content": ["general"],
       "status": "active_specialist",
@@ -35,7 +35,7 @@
     },
     {
       "name": "kurip_clean540_noac",
-      "checkpoint": "checkpoints_kurip_clean540_noac/best.pth",
+      "checkpoint": "checkpoints/kurip_clean540_noac/best.pth",
       "dataset_source": ["kurip"],
       "content": ["general"],
       "status": "not_recommended",

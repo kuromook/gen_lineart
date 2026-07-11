@@ -12,7 +12,7 @@ from PIL import Image, ImageOps, ImageDraw, ImageFont
 from unetgenerator import UNetGenerator
 
 IMAGE_SIZE = 480
-CKPT = "checkpoints_ako5/best.pth"
+CKPT = "checkpoints/ako5/best.pth"
 OUT_DIR = "results/ako5"
 STD15_DIR = "results/std15"
 COMPARE_PATH = "results/compare_ako5_vs_std15.png"

@@ -12,8 +12,8 @@ from unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480
-VLM_CKPT = "checkpoints_kurip_vlm_accept_top500_noac/best.pth"
-SHAPE1_CKPT = "checkpoints_shape1/best.pth"
+VLM_CKPT = "checkpoints/kurip_vlm_accept_top500_noac/best.pth"
+SHAPE1_CKPT = "checkpoints/shape1/best.pth"
 VLM_CSV = "results/kurip_vlm_candidates_top500_review_qwen3vl.csv"
 FIXED_SAMPLES = [
     "housei_002_06_15",

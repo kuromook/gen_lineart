@@ -11,8 +11,8 @@ from train_dataset_gate_cnn import GateCNN
 from dataset_gate import label_from_name
 
 
-DEFAULT_FAMILY_GATE = "checkpoints_dataset_gate/gate_family_cnn.pth"
-DEFAULT_KURIP_AKO5_GATE = "checkpoints_dataset_gate/gate_kurip_ako5_cnn.pth"
+DEFAULT_FAMILY_GATE = "checkpoints/dataset_gate/gate_family_cnn.pth"
+DEFAULT_KURIP_AKO5_GATE = "checkpoints/dataset_gate/gate_kurip_ako5_cnn.pth"
 
 
 def load_gate(path, device):

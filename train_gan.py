@@ -169,7 +169,7 @@ class SketchDataset(Dataset):
 ROUGH_DIR   = "dataset_480/train/rough"
 LINE_DIR    = "dataset_480/train/line"
 FILE_LIST   = "dataset_480/valid_train.txt"
-CKPT_DIR    = "checkpoints_gan2"
+CKPT_DIR    = "checkpoints/gan2"
 START_EPOCH = 0
 NUM_EPOCHS  = 150
 SAVE_EVERY  = 10

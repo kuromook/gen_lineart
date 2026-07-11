@@ -59,8 +59,8 @@ dry-runでは緩め条件で以下を確認した。
 
 - service: `lineart-kurip-ft.service`
 - log: `train_kurip.log`
-- checkpoint dir: `checkpoints_kurip`
-- resume: `checkpoints_shape1/best.pth`
+- checkpoint dir: `checkpoints/kurip`
+- resume: `checkpoints/shape1/best.pth`
 - file list: `dataset_480/valid_train_warm_regions_kurip.txt`
 - epochs: 20
 - batch size: 2
@@ -82,8 +82,8 @@ systemd-run --user --unit=lineart-kurip-ft --collect \
   --property=StandardError=append:/home/sh1/deepl/lineart/train_kurip.log \
   /home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/train.py \
   --file-list dataset_480/valid_train_warm_regions_kurip.txt \
-  --checkpoint-dir checkpoints_kurip \
-  --resume checkpoints_shape1/best.pth \
+  --checkpoint-dir checkpoints/kurip \
+  --resume checkpoints/shape1/best.pth \
   --epochs 20 \
   --lr 1e-5 \
   --pos-weight 2.0 \
@@ -105,13 +105,13 @@ systemd-run --user --unit=lineart-kurip-ft --collect \
 ```bash
 systemctl --user status lineart-kurip-ft.service
 tail -f train_kurip.log
-ls -lh checkpoints_kurip/
+ls -lh checkpoints/kurip/
 ```
 
 #### 次の作業
 
 1. 朝に `lineart-kurip-ft.service` と `train_kurip.log` を確認する
-2. 完了していれば `checkpoints_kurip/best.pth` を採用候補として固定サンプル推論する
+2. 完了していれば `checkpoints/kurip/best.pth` を採用候補として固定サンプル推論する
 3. `shape1` と `kurip fine-tune` の比較画像を作る
 4. 既存固定8サンプルに加えて、kurip由来サンプルでも目視比較する
 5. 線の太り、余分な線、roughにない清書追加線の扱い、kuripへの過適合を確認する
@@ -141,10 +141,10 @@ ls -lh checkpoints_kurip/
 
 学習結果:
 
-- `checkpoints_kurip_matched_strict_x4_noac/best.pth`
+- `checkpoints/kurip_matched_strict_x4_noac/best.pth`
   - warm 1078 + strict 115 x4
   - fixed8では黒太りが強く、採用候補から外す
-- `checkpoints_kurip_vlm_accept_top500_noac/best.pth`
+- `checkpoints/kurip_vlm_accept_top500_noac/best.pth`
   - warm 1078 + VLM accept 369
   - fixed8定量: F1 0.8710, ink_ratio 2.244
   - epoch010: F1 0.8602, ink_ratio 1.958

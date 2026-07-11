@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 PY=./venv/bin/python
 
-RESUME="checkpoints_std15/best.pth"
+RESUME="checkpoints/std15/best.pth"
 LR=3e-5
 EPOCHS=50
 INFER_SAMPLES="lineart_004_002 lineart_004_004 lineart_004_006 lineart_004_008 lineart_004_010 housei_002_19_12 housei_002_07_12 housei_002_06_15"

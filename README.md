@@ -12,7 +12,7 @@
 UNet ベースのモデルでラフ画像を線画に変換します。  
 Canny エッジ損失（`losses.py`）と BCE+L1 損失を組み合わせ、細かい線質を保った出力を目指します。
 
-**採用モデル:** データ品質フィルタリング（autocontrast後 std>=15）で厳選した 660 枚で学習した `checkpoints_std15/best.pth`（loss=0.1705）
+**採用モデル:** データ品質フィルタリング（autocontrast後 std>=15）で厳選した 660 枚で学習した `checkpoints/std15/best.pth`（loss=0.1705）
 
 ---
 
@@ -52,7 +52,7 @@ housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の st
 ```bash
 python train.py \
   --file-list dataset_480/valid_train_std15.txt \
-  --checkpoint-dir checkpoints_std15 \
+  --checkpoint-dir checkpoints/std15 \
   --autocontrast
 ```
 
@@ -61,7 +61,7 @@ python train.py \
 | オプション | デフォルト | 説明 |
 |---|---|---|
 | `--file-list` | `dataset_480/valid_train.txt` | 学習ファイルリスト |
-| `--checkpoint-dir` | `checkpoints` | チェックポイント保存先 |
+| `--checkpoint-dir` | `checkpoints/base` | チェックポイント保存先 |
 | `--resume` | なし | 途中再開するチェックポイントパス |
 | `--autocontrast` / `--no-autocontrast` | True | rough に autocontrast を適用 |
 
@@ -73,7 +73,7 @@ python train.py \
 
 ```bash
 python inference.py \
-  --checkpoint checkpoints_std15/best.pth \
+  --checkpoint checkpoints/std15/best.pth \
   --input path/to/rough.jpg \
   --output results/output.png \
   --autocontrast

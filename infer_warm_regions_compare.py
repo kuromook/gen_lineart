@@ -10,7 +10,7 @@ from unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480
-CHECKPOINT = "checkpoints_warm_regions/best.pth"
+CHECKPOINT = "checkpoints/warm_regions/best.pth"
 OUTPUT_DIR = "results/warm_regions"
 COMPARE_PATH = "results/compare_warm_regions.png"
 SAMPLES = [

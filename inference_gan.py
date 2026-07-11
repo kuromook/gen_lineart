@@ -96,7 +96,7 @@ def run_inference(checkpoint, input_path, output_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="checkpoints_gan/model_epoch_130.pth")
+    parser.add_argument("--checkpoint", default="checkpoints/gan/model_epoch_130.pth")
     parser.add_argument("--input",      required=True)
     parser.add_argument("--output",     default="results/gan_output.png")
     args = parser.parse_args()

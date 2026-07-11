@@ -3,9 +3,8 @@ __pycache__/
 venv/
 .claude/
 
-checkpoints/
-checkpoints_gan/
-checkpoints_*/
+checkpoints/*
+!checkpoints/README.md
 
 dataset/
 dataset256/

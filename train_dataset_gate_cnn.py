@@ -17,7 +17,7 @@ from dataset_gate import DEFAULT_LABELS, label_from_name
 
 
 DEFAULT_ROUGH_DIRS = ["dataset_480/train/rough", "dataset_480/test/rough"]
-DEFAULT_CHECKPOINT = "checkpoints_dataset_gate/gate_cnn.pth"
+DEFAULT_CHECKPOINT = "checkpoints/dataset_gate/gate_cnn.pth"
 DEFAULT_REPORT = "results/dataset_gate_cnn_report.json"
 IMAGE_SIZE = 128
 

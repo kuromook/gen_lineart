@@ -183,12 +183,12 @@ for epoch in range(num_epochs):
     
     if avg_loss < best_loss:
         best_loss = avg_loss
-        torch.save(model.state_dict(), "checkpoints/unet_sharp_best.pth")
+        torch.save(model.state_dict(), "checkpoints/base/unet_sharp_best.pth")
         print(f"  → ベストモデル保存 (loss: {best_loss:.4f})")
     
     if (epoch + 1) % 20 == 0:
-        torch.save(model.state_dict(), f"checkpoints/unet_sharp_epoch{epoch+1}.pth")
+        torch.save(model.state_dict(), f"checkpoints/base/unet_sharp_epoch{epoch+1}.pth")
     
     scheduler.step()
 
-print("\n学習完了！checkpoints/unet_sharp_best.pth を使用してください")
+print("\n学習完了！checkpoints/base/unet_sharp_best.pth を使用してください")

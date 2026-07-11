@@ -12,7 +12,7 @@ from losses import edge_loss, ink_loss, tolerant_f1_loss
 ROUGH_DIR           = "dataset_480/train/rough"
 LINE_DIR            = "dataset_480/train/line"
 FILE_LIST           = "dataset_480/valid_train.txt"
-CHECKPOINT_DIR      = "checkpoints"
+CHECKPOINT_DIR      = "checkpoints/base"
 IMAGE_SIZE          = 480
 BATCH_SIZE          = 2
 NUM_EPOCHS          = 200

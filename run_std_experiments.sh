@@ -11,7 +11,7 @@ for STD in 10 12 15; do
     echo " STD >= ${STD}  開始: $(date)"
     echo "======================================"
 
-    CKPT_DIR="checkpoints_std${STD}"
+    CKPT_DIR="checkpoints/std${STD}"
     LOG="train_std${STD}.log"
     RESULT_DIR="results/std${STD}"
 
