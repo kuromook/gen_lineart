@@ -1,9 +1,11 @@
 __pycache__/
 .ipynb_checkpoints/
 venv/
+.claude/
 
 checkpoints/
 checkpoints_gan/
+checkpoints_*/
 
 dataset/
 dataset256/
@@ -12,3 +14,16 @@ img/
 dataset_480/
 
 debug_output/
+MEMORY.md
+debug.py
+debug_model.py
+interference480.py
+
+*.log
+*.pid
+
+# Generated experiment outputs. Existing tracked result snapshots remain
+# tracked; add new representative artifacts explicitly with `git add -f`.
+results/**
+!results/
+!results/README.md

@@ -1,0 +1,31 @@
+{
+  "summary": {
+    "tile_count": 96,
+    "same_f1_median": 0.22671017221763753,
+    "same_f1_p90": 0.39392228334242385,
+    "same_good_ratio": 0.15625,
+    "shift_f1_median": 0.30488154232732084,
+    "shift_f1_p90": 0.4659617127777518,
+    "shift_good_ratio": 0.375,
+    "median_shift_gain": 0.07817137010968331,
+    "recommendation": "needs_region_matching"
+  },
+  "args": {
+    "zip_path": "/home/sh1/dataset_kurip_v4.zip",
+    "zip_root": "dataset_kurip_v4",
+    "pages": 12,
+    "tile": 480,
+    "stride": 960,
+    "max_tiles_per_page": 8,
+    "min_rough_std": 10.0,
+    "ink_min": 0.01,
+    "ink_max": 0.16,
+    "min_edge_pixels": 250,
+    "max_shift": 96,
+    "shift_step": 16,
+    "csv_out": "results/kurip_alignment_diagnosis.csv",
+    "json_out": "results/kurip_alignment_diagnosis.json",
+    "qc_out": "results/kurip_alignment_diagnosis_qc.png",
+    "qc_count": 24
+  }
+}

@@ -51,6 +51,7 @@ class SketchDataset(torch.utils.data.Dataset):
 
 
 def train(file_list=FILE_LIST, checkpoint_dir=CHECKPOINT_DIR,
+          rough_dir=ROUGH_DIR, line_dir=LINE_DIR,
           autocontrast_rough=AUTOCONTRAST_ROUGH, resume_path=None,
           num_epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, start_epoch_override=None,
           lr=LR, pos_weight_value=POS_WEIGHT, edge_weight=EDGE_WEIGHT,
@@ -60,7 +61,7 @@ def train(file_list=FILE_LIST, checkpoint_dir=CHECKPOINT_DIR,
         transforms.ToTensor(),
     ])
 
-    dataset = SketchDataset(ROUGH_DIR, LINE_DIR, file_list=file_list, transform=transform,
+    dataset = SketchDataset(rough_dir, line_dir, file_list=file_list, transform=transform,
                             autocontrast_rough=autocontrast_rough)
     loader  = DataLoader(dataset, batch_size=batch_size, shuffle=True,
                          num_workers=4, pin_memory=True)
@@ -89,6 +90,8 @@ def train(file_list=FILE_LIST, checkpoint_dir=CHECKPOINT_DIR,
 
     print(f"file_list: {file_list}")
     print(f"checkpoint_dir: {checkpoint_dir}")
+    print(f"rough_dir: {rough_dir}")
+    print(f"line_dir: {line_dir}")
     print(f"autocontrast_rough: {autocontrast_rough}")
     print(f"lr: {lr}")
     print(f"pos_weight: {pos_weight_value}")
@@ -148,6 +151,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file-list",        default=FILE_LIST)
     parser.add_argument("--checkpoint-dir",   default=CHECKPOINT_DIR)
+    parser.add_argument("--rough-dir",        default=ROUGH_DIR)
+    parser.add_argument("--line-dir",         default=LINE_DIR)
     parser.add_argument("--resume",           default=None)
     parser.add_argument("--autocontrast",     action="store_true", default=AUTOCONTRAST_ROUGH)
     parser.add_argument("--no-autocontrast",  dest="autocontrast", action="store_false")
@@ -163,6 +168,8 @@ if __name__ == "__main__":
 
     train(file_list=args.file_list,
           checkpoint_dir=args.checkpoint_dir,
+          rough_dir=args.rough_dir,
+          line_dir=args.line_dir,
           autocontrast_rough=args.autocontrast,
           resume_path=args.resume,
           num_epochs=args.epochs,

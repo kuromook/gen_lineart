@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "default_route": "shape1",
+  "principles": [
+    "Use explicit metadata or filename prefix before image-gate predictions.",
+    "Use image-gate routing only as a fallback for inputs without source metadata.",
+    "Route to a specialized expert only when confidence clears the configured threshold.",
+    "Fallback to shape1 for unknown, mixed, or low-confidence inputs."
+  ],
+  "filename_prefix_routes": {
+    "kurip": "kurip_clean540",
+    "ako5": "ako5",
+    "housei": "shape1",
+    "lineart": "shape1"
+  },
+  "image_gate_fallback": {
+    "family_gate": "checkpoints_dataset_gate/gate_family_cnn.pth",
+    "source_gate_for_aligned_scan": "checkpoints_dataset_gate/gate_kurip_ako5_cnn.pth",
+    "recommended_crop_count": 9,
+    "recommended_tile_vote_count": "8-16",
+    "family_threshold": 0.8,
+    "source_threshold": 0.8,
+    "low_confidence_route": "shape1"
+  },
+  "current_expert_routes": {
+    "shape1": "checkpoints_shape1/best.pth",
+    "kurip_clean540": "checkpoints_kurip_clean540/best.pth"
+  },
+  "notes": [
+    "kurip_clean540_noac did not outperform kurip_clean540.",
+    "kurip_dirty_ep20 adapts to kurip but introduces visible screentone/noise artifacts.",
+    "Single-tile image-gate predictions are not reliable enough for automatic expert routing."
+  ]
+}

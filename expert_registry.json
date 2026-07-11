@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "routing_axes": {
+    "dataset_source": ["ako5", "housei", "kurip", "lineart", "unknown"],
+    "content": ["general", "character_bust", "character_fullbody", "natural_scenery", "manmade_object"]
+  },
+  "default_expert": "shape1",
+  "experts": [
+    {
+      "name": "shape1",
+      "checkpoint": "checkpoints_shape1/best.pth",
+      "dataset_source": ["unknown", "housei", "lineart"],
+      "content": ["general"],
+      "status": "active_default",
+      "recommended": true,
+      "notes": "Current adopted practical baseline."
+    },
+    {
+      "name": "kurip_dirty_ep20",
+      "checkpoint": "checkpoints_kurip/best.pth",
+      "dataset_source": ["kurip"],
+      "content": ["general"],
+      "status": "deprecated",
+      "recommended": false,
+      "notes": "Adapts to kurip but introduces visible screentone/noise artifacts."
+    },
+    {
+      "name": "kurip_clean540",
+      "checkpoint": "checkpoints_kurip_clean540/best.pth",
+      "dataset_source": ["kurip"],
+      "content": ["general"],
+      "status": "active_specialist",
+      "recommended": true,
+      "notes": "Cleaned target, lower kurip ratio; safer on fixed samples but weaker kurip adaptation."
+    },
+    {
+      "name": "kurip_clean540_noac",
+      "checkpoint": "checkpoints_kurip_clean540_noac/best.pth",
+      "dataset_source": ["kurip"],
+      "content": ["general"],
+      "status": "not_recommended",
+      "recommended": false,
+      "notes": "Cleaned target, lower kurip ratio, no rough autocontrast; did not outperform kurip_clean540."
+    }
+  ],
+  "routing_policy": {
+    "prefer_metadata": true,
+    "fallback_expert": "shape1",
+    "current_routes": {
+      "unknown": "shape1",
+      "housei": "shape1",
+      "lineart": "shape1",
+      "kurip": "kurip_clean540"
+    },
+    "minimum_gate_confidence": {
+      "family": 0.8,
+      "source": 0.8
+    }
+  }
+}
