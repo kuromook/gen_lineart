@@ -2,8 +2,8 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-RAW_DIR = "dataset_raw"
-OUT_DIR = "dataset256"
+RAW_DIR = "dataset/raw"
+OUT_DIR = "dataset/pairs_256"
 SIZE = (256, 256)
 
 def resize_and_save(in_path, out_path):

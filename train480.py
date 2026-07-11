@@ -96,7 +96,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-dataset = SketchDataset("dataset_480/train/rough", "dataset_480/train/line", transform)
+dataset = SketchDataset("dataset/pairs_480/train/rough", "dataset/pairs_480/train/line", transform)
 loader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=4, pin_memory=True)  # batch=4に減らす
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

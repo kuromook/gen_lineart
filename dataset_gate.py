@@ -18,7 +18,7 @@ from PIL import Image, ImageOps
 
 IMAGE_SIZE = 480
 FEATURE_SIZE = 160
-DEFAULT_ROUGH_DIR = "dataset_480/train/rough"
+DEFAULT_ROUGH_DIR = "dataset/pairs_480/train/rough"
 DEFAULT_MODEL_OUT = "results/dataset_gate_centroids.json"
 DEFAULT_REPORT_OUT = "results/dataset_gate_report.json"
 DEFAULT_LABELS = ("ako5", "housei", "kurip", "lineart")

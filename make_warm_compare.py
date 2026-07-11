@@ -24,12 +24,12 @@ SAMPLES = [
 
 def rough_path(name):
     sub = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{sub}/rough/{name}.jpg"
+    return f"dataset/pairs_480/{sub}/rough/{name}.jpg"
 
 
 def line_path(name):
     sub = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{sub}/line/{name}.jpg"
+    return f"dataset/pairs_480/{sub}/line/{name}.jpg"
 
 
 def load_resized(path, gray=True):

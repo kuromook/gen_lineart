@@ -40,11 +40,11 @@ def load_image(path, autocontrast=False):
 
 def fixed_dataset_path(name, kind):
     split = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{split}/{kind}/{name}.jpg"
+    return f"dataset/pairs_480/{split}/{kind}/{name}.jpg"
 
 
 def train_dataset_path(name, kind):
-    return f"dataset_480/train/{kind}/{name}.jpg"
+    return f"dataset/pairs_480/train/{kind}/{name}.jpg"
 
 
 def draw_montage(samples, image_paths, output_path):

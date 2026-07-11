@@ -21,8 +21,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 MATCHES = "results/kurip_matched_tiles_strict_all_noac.csv"
-ROUGH_DIR = "dataset_480/train/rough"
-LINE_DIR = "dataset_480/train/line_kurip_matched_clean_t192_cc8"
+ROUGH_DIR = "dataset/pairs_480/train/rough"
+LINE_DIR = "dataset/pairs_480/train/line_kurip_matched_clean_t192_cc8"
 OUT = "results/kurip_vlm_review_qwen3vl.csv"
 QC_DIR = "results/kurip_vlm_review_panels"
 MODEL = "qwen3-vl:4b-instruct-q8_0"

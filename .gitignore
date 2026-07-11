@@ -6,11 +6,9 @@ venv/
 checkpoints/*
 !checkpoints/README.md
 
-dataset/
-dataset256/
-dataset_raw
+dataset/*
+!dataset/README.md
 img/
-dataset_480/
 
 debug_output/
 MEMORY.md

@@ -21,7 +21,7 @@ SAMPLES = [
 
 
 def dataset_path(name, kind):
-    return f"dataset_480/train/{kind}/{name}.jpg"
+    return f"dataset/pairs_480/train/{kind}/{name}.jpg"
 
 
 def load_image(path, autocontrast=False):

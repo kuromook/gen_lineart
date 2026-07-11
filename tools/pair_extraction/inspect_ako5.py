@@ -5,8 +5,8 @@ import random
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-ROUGH_DIR = "dataset_480/train/rough"
-LINE_DIR = "dataset_480/train/line"
+ROUGH_DIR = "dataset/pairs_480/train/rough"
+LINE_DIR = "dataset/pairs_480/train/line"
 OUT = "results/inspect_ako5_pairs.png"
 
 rough_paths = sorted(glob.glob(os.path.join(ROUGH_DIR, "ako5_*.jpg")))

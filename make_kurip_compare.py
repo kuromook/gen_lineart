@@ -22,7 +22,7 @@ SAMPLES = [
 
 def dataset_path(name, kind):
     split = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{split}/{kind}/{name}.jpg"
+    return f"dataset/pairs_480/{split}/{kind}/{name}.jpg"
 
 
 def load_image(path, autocontrast=False):

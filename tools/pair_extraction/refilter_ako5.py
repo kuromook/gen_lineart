@@ -10,10 +10,10 @@ import random
 import numpy as np
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 
-ROUGH_DIR = "dataset_480/train/rough"
-LINE_DIR = "dataset_480/train/line"
+ROUGH_DIR = "dataset/pairs_480/train/rough"
+LINE_DIR = "dataset/pairs_480/train/line"
 OUT_MONTAGE = "results/refilter_ako5_pass.png"
-OUT_LIST = "dataset_480/valid_train_ako5_clean.txt"
+OUT_LIST = "dataset/pairs_480/valid_train_ako5_clean.txt"
 
 rough_paths = sorted(glob.glob(os.path.join(ROUGH_DIR, "ako5_*.jpg")))
 print(f"ako5 tiles: {len(rough_paths)}")

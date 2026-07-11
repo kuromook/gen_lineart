@@ -32,7 +32,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-dataset = SketchDataset("dataset/train/rough", "dataset/train/line", transform)
+dataset = SketchDataset("dataset/pairs/train/rough", "dataset/pairs/train/line", transform)
 
 # 1枚目のデータを取得
 rough, line = dataset[0]

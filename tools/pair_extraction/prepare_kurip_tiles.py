@@ -16,9 +16,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 ZIP_PATH = os.path.expanduser("~/dataset_kurip_v4.zip")
 ZIP_ROOT = "dataset_kurip_v4"
-ROUGH_OUT = "dataset_480/train/rough"
-LINE_OUT = "dataset_480/train/line"
-LIST_OUT = "dataset_480/valid_train_kurip.txt"
+ROUGH_OUT = "dataset/pairs_480/train/rough"
+LINE_OUT = "dataset/pairs_480/train/line"
+LIST_OUT = "dataset/pairs_480/valid_train_kurip.txt"
 CSV_OUT = "results/kurip_tiles.csv"
 QC_OUT = "results/kurip_tiles_qc.png"
 QC_TAIL_OUT = "results/kurip_tiles_qc_tail.png"

@@ -9,13 +9,13 @@ import glob
 import numpy as np
 from PIL import Image, ImageOps
 
-ROUGH_DIR = "dataset_480/train/rough"
-LINE_DIR = "dataset_480/train/line"
-STD15_LIST = "dataset_480/valid_train_std15.txt"
-OUT1 = "dataset_480/valid_train_warm_plan1.txt"
-OUT2 = "dataset_480/valid_train_warm_plan2.txt"
-REGION_LIST = "dataset_480/valid_train_ako5_regions.txt"
-REGION_OUT = "dataset_480/valid_train_warm_regions.txt"
+ROUGH_DIR = "dataset/pairs_480/train/rough"
+LINE_DIR = "dataset/pairs_480/train/line"
+STD15_LIST = "dataset/pairs_480/valid_train_std15.txt"
+OUT1 = "dataset/pairs_480/valid_train_warm_plan1.txt"
+OUT2 = "dataset/pairs_480/valid_train_warm_plan2.txt"
+REGION_LIST = "dataset/pairs_480/valid_train_ako5_regions.txt"
+REGION_OUT = "dataset/pairs_480/valid_train_warm_regions.txt"
 ROUGH_STD = 15
 
 # std15リストから非ako5(=元のクリーン660)を抽出

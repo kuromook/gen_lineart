@@ -28,7 +28,7 @@ OUTPUT_CSV = "results/fixed_output_metrics.csv"
 
 def dataset_path(name):
     split = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{split}/line/{name}.jpg"
+    return f"dataset/pairs_480/{split}/line/{name}.jpg"
 
 
 def load_ink(path):

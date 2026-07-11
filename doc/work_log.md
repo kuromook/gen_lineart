@@ -20,12 +20,12 @@
 
 kurip専用の480pxタイル抽出スクリプトを追加した。
 
-- 追加: `prepare_kurip_tiles.py`
+- 追加: `tools/pair_extraction/prepare_kurip_tiles.py`
 - 同一ページ・同一座標から480pxタイルを抽出
 - rough側は `ImageOps.autocontrast(cutoff=0)` を適用
 - edge F1、chamfer、線密度、方向entropy、rough stdで候補を評価
 - QC画像とCSVを生成
-- `--save` 指定時のみ `dataset_480/train/{rough,line}` に保存
+- `--save` 指定時のみ `dataset/pairs_480/train/{rough,line}` に保存
 
 dry-runでは緩め条件で以下を確認した。
 
@@ -39,7 +39,7 @@ dry-runでは緩め条件で以下を確認した。
 最終保存ではページ偏りを抑えるため `--max-per-page 60` を採用した。
 
 - saved tiles: 2,280
-- list: `dataset_480/valid_train_kurip.txt`
+- list: `dataset/pairs_480/valid_train_kurip.txt`
 - csv: `results/kurip_tiles.csv`
 - QC:
   - `results/kurip_tiles_qc.png`
@@ -48,9 +48,9 @@ dry-runでは緩め条件で以下を確認した。
 
 既存の実用データリストと結合した。
 
-- base: `dataset_480/valid_train_warm_regions.txt` = 1,078 pairs
-- kurip: `dataset_480/valid_train_kurip.txt` = 2,280 pairs
-- combined: `dataset_480/valid_train_warm_regions_kurip.txt` = 3,358 pairs
+- base: `dataset/pairs_480/valid_train_warm_regions.txt` = 1,078 pairs
+- kurip: `dataset/pairs_480/valid_train_kurip.txt` = 2,280 pairs
+- combined: `dataset/pairs_480/valid_train_warm_regions_kurip.txt` = 3,358 pairs
 - missing rough/line files: 0
 
 #### 学習
@@ -61,7 +61,7 @@ dry-runでは緩め条件で以下を確認した。
 - log: `train_kurip.log`
 - checkpoint dir: `checkpoints/kurip`
 - resume: `checkpoints/shape1/best.pth`
-- file list: `dataset_480/valid_train_warm_regions_kurip.txt`
+- file list: `dataset/pairs_480/valid_train_warm_regions_kurip.txt`
 - epochs: 20
 - batch size: 2
 - batches/epoch: 1,679
@@ -81,7 +81,7 @@ systemd-run --user --unit=lineart-kurip-ft --collect \
   --property=StandardOutput=append:/home/sh1/deepl/lineart/train_kurip.log \
   --property=StandardError=append:/home/sh1/deepl/lineart/train_kurip.log \
   /home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/train.py \
-  --file-list dataset_480/valid_train_warm_regions_kurip.txt \
+  --file-list dataset/pairs_480/valid_train_warm_regions_kurip.txt \
   --checkpoint-dir checkpoints/kurip \
   --resume checkpoints/shape1/best.pth \
   --epochs 20 \
@@ -124,10 +124,10 @@ ls -lh checkpoints/kurip/
 
 追加した主なスクリプト:
 
-- `diagnose_pair_alignment.py`: 新規データセットの同一座標前提が有効かを先に診断する
-- `match_kurip_regions.py`: line 480px tileを基準にrough側の近傍translationを探索する
-- `extract_kurip_matched_tiles.py`: マッチCSVからrough/lineタイルを保存する
-- `vlm_review_kurip_matches.py`: Qwen3VL/Ollamaで候補ペアを二次判定する
+- `tools/pair_extraction/diagnose_pair_alignment.py`: 新規データセットの同一座標前提が有効かを先に診断する
+- `tools/pair_extraction/match_kurip_regions.py`: line 480px tileを基準にrough側の近傍translationを探索する
+- `tools/pair_extraction/extract_kurip_matched_tiles.py`: マッチCSVからrough/lineタイルを保存する
+- `tools/pair_extraction/vlm_review_kurip_matches.py`: Qwen3VL/Ollamaで候補ペアを二次判定する
 - `make_kurip_matched_compare.py`: matched strict版の比較画像生成
 - `make_kurip_vlm_accept_compare.py`: VLM accept版の比較画像生成
 
@@ -152,7 +152,7 @@ ls -lh checkpoints/kurip/
 
 現時点の結論:
 
-- 新規データセットは、同一座標抽出の前に必ず `diagnose_pair_alignment.py` を通す
+- 新規データセットは、同一座標抽出の前に必ず `tools/pair_extraction/diagnose_pair_alignment.py` を通す
 - kuripは同一座標ではなく、line tile固定でrough側を探索する
 - VLMは候補ペアの意味的なrejectに有効
 - 次の学習案は、VLM accept 369件を使いつつ kurip比率を15%前後に下げ、

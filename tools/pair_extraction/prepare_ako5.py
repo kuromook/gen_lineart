@@ -3,7 +3,7 @@ ako5データセットの前処理スクリプト
 - dataset_ako5.zip を展開
 - 各ページ(4961×7016)を480×480タイルに分割
 - roughタイルにautocontrastを適用してstd>=15のものを選別
-- dataset_480/train/{rough,line}/ に保存
+- dataset/pairs_480/train/{rough,line}/ に保存
 - valid_train_std15.txt に追記
 """
 import io
@@ -14,9 +14,9 @@ import numpy as np
 from PIL import Image, ImageOps
 
 ZIP_PATH     = os.path.expanduser("~/dataset_ako5.zip")
-ROUGH_DIR    = "dataset_480/train/rough"
-LINE_DIR     = "dataset_480/train/line"
-VALID_TXT    = "dataset_480/valid_train_std15.txt"
+ROUGH_DIR    = "dataset/pairs_480/train/rough"
+LINE_DIR     = "dataset/pairs_480/train/line"
+VALID_TXT    = "dataset/pairs_480/valid_train_std15.txt"
 TILE_SIZE    = 480
 STD_THRESH   = 15
 

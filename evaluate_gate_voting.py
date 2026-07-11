@@ -12,7 +12,7 @@ from route_dataset_source import load_gate, load_images
 from train_dataset_gate_cnn import labels_for_mode, target_label_from_name
 
 
-DEFAULT_ROUGH_DIRS = ["dataset_480/train/rough", "dataset_480/test/rough"]
+DEFAULT_ROUGH_DIRS = ["dataset/pairs_480/train/rough", "dataset/pairs_480/test/rough"]
 
 
 def collect_rows(rough_dirs, target_mode, labels, max_per_label):

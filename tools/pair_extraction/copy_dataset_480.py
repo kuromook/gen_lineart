@@ -2,8 +2,8 @@ import os
 import shutil
 
 # ディレクトリ構成
-source_base = "dataset_raw"
-dest_base = "dataset_480"
+source_base = "dataset/raw"
+dest_base = "dataset/pairs_480"
 
 # コピー元とコピー先のペア
 folders = [
@@ -48,9 +48,9 @@ for source_folder, dest_folder in folders:
 
 print("=== 完了 ===")
 print("\nディレクトリ構成:")
-print("  dataset/         ← 256x256（既存・保持）")
-print("  dataset_480/     ← 480x480（新規作成）")
-print("  dataset_raw/     ← 元データ（保持）")
+print("  dataset/raw/        ← 元データ（保持）")
+print("  dataset/pairs/      ← 旧256x256ペア（保持）")
+print("  dataset/pairs_480/  ← 480x480ペア（新規作成）")
 
 print("\n学習コードの変更:")
-print('  dataset = SketchDataset("dataset_480/train/rough", "dataset_480/train/line", transform)')
+print('  dataset = SketchDataset("dataset/pairs_480/train/rough", "dataset/pairs_480/train/line", transform)')

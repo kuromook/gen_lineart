@@ -50,11 +50,11 @@ def load_image(path):
 
 def fixed_dataset_path(name, kind):
     split = "train" if name.startswith("housei") else "test"
-    return f"dataset_480/{split}/{kind}/{name}.jpg"
+    return f"dataset/pairs_480/{split}/{kind}/{name}.jpg"
 
 
 def vlm_line_path(name):
-    return f"dataset_480/train/line_kurip_vlm_candidates_top500_clean_t192_cc8/{name}.jpg"
+    return f"dataset/pairs_480/train/line_kurip_vlm_candidates_top500_clean_t192_cc8/{name}.jpg"
 
 
 def draw_montage(samples, image_paths, output_path, model_label):
@@ -112,7 +112,7 @@ def main():
 
     train_samples = vlm_samples()
     for name in train_samples:
-        rough = f"dataset_480/train/rough/{name}.jpg"
+        rough = f"dataset/pairs_480/train/rough/{name}.jpg"
         infer(shape1, rough, f"results/shape1_kurip_vlm_accept_samples/{name}_out.png", device)
         infer(vlm, rough, f"results/{args.tag}_samples/{name}_out.png", device)
 
@@ -130,7 +130,7 @@ def main():
     draw_montage(
         train_samples,
         lambda name: [
-            f"dataset_480/train/rough/{name}.jpg",
+            f"dataset/pairs_480/train/rough/{name}.jpg",
             f"results/shape1_kurip_vlm_accept_samples/{name}_out.png",
             f"results/{args.tag}_samples/{name}_out.png",
             vlm_line_path(name),

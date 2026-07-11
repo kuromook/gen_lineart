@@ -16,7 +16,7 @@ for STD in 10 12 15; do
     RESULT_DIR="results/std${STD}"
 
     python train.py \
-        --file-list "dataset_480/valid_train_std${STD}.txt" \
+        --file-list "dataset/pairs_480/valid_train_std${STD}.txt" \
         --checkpoint-dir "${CKPT_DIR}" \
         --autocontrast \
         2>&1 | tee "${LOG}"
@@ -27,9 +27,9 @@ for STD in 10 12 15; do
         EXT="jpg"
         # rough の場所を特定
         if [[ $NAME == housei* ]]; then
-            INPUT="dataset_480/train/rough/${NAME}.${EXT}"
+            INPUT="dataset/pairs_480/train/rough/${NAME}.${EXT}"
         else
-            INPUT="dataset_480/test/rough/${NAME}.${EXT}"
+            INPUT="dataset/pairs_480/test/rough/${NAME}.${EXT}"
         fi
         python inference.py \
             --checkpoint "${CKPT_DIR}/best.pth" \

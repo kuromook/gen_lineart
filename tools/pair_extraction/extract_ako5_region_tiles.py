@@ -23,9 +23,9 @@ CSV_OUT = "results/ako5_region_tiles.csv"
 QC_OUT = "results/ako5_region_tiles_qc.png"
 QC_TAIL_OUT = "results/ako5_region_tiles_qc_tail.png"
 QC_SAMPLE_OUT = "results/ako5_region_tiles_qc_sample.png"
-ROUGH_OUT = "dataset_480/train/rough"
-LINE_OUT = "dataset_480/train/line"
-LIST_OUT = "dataset_480/valid_train_ako5_regions.txt"
+ROUGH_OUT = "dataset/pairs_480/train/rough"
+LINE_OUT = "dataset/pairs_480/train/line"
+LIST_OUT = "dataset/pairs_480/valid_train_ako5_regions.txt"
 TILE = 480
 
 

@@ -8,8 +8,8 @@
   （描き直し/空白/ベタは残差大 or インク率帯外で自動棄却）
 
 出力:
-- 採用タイルの aligned-rough と line を dataset_480/train/{rough_aligned,line_aligned}/ に ako5a_ 接頭辞で保存
-- リスト dataset_480/valid_train_ako5_aligned.txt
+- 採用タイルの aligned-rough と line を dataset/pairs_480/train/{rough_aligned,line_aligned}/ に ako5a_ 接頭辞で保存
+- リスト dataset/pairs_480/valid_train_ako5_aligned.txt
 - 歩留まり統計 と QCモンタージュ results/ako5_aligned_qc.png
 """
 import argparse
@@ -24,9 +24,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from scipy import ndimage
 
 ZIP_PATH = os.path.expanduser("~/dataset_ako5.zip")
-ROUGH_OUT = "dataset_480/train/rough_aligned"
-LINE_OUT = "dataset_480/train/line_aligned"
-LIST_OUT = "dataset_480/valid_train_ako5_aligned.txt"
+ROUGH_OUT = "dataset/pairs_480/train/rough_aligned"
+LINE_OUT = "dataset/pairs_480/train/line_aligned"
+LIST_OUT = "dataset/pairs_480/valid_train_ako5_aligned.txt"
 QC_OUT = "results/ako5_aligned_qc.png"
 
 TS = 480

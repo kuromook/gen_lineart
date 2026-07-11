@@ -31,14 +31,18 @@ pip install torch torchvision pillow opencv-python
 ## データセット構成
 
 ```
-dataset_480/
-  train/
-    rough/   # ラフ画像（入力）
-    line/    # 線画画像（正解）
-  test/
-    rough/
-    line/
-  valid_train_std15.txt  # 品質フィルタ済みファイルリスト（660枚）
+dataset/
+  raw/        # 元データ
+  pairs/      # 旧 256x256 ペア
+  pairs_256/  # 256x256 生成ペア
+  pairs_480/  # 480x480 ペア（現在の主学習データ）
+    train/
+      rough/  # ラフ画像（入力）
+      line/   # 線画画像（正解）
+    test/
+      rough/
+      line/
+    valid_train_std15.txt  # 品質フィルタ済みファイルリスト（660枚）
 ```
 
 **品質フィルタリングの知見:**  
@@ -51,7 +55,7 @@ housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の st
 
 ```bash
 python train.py \
-  --file-list dataset_480/valid_train_std15.txt \
+  --file-list dataset/pairs_480/valid_train_std15.txt \
   --checkpoint-dir checkpoints/std15 \
   --autocontrast
 ```
@@ -60,7 +64,7 @@ python train.py \
 
 | オプション | デフォルト | 説明 |
 |---|---|---|
-| `--file-list` | `dataset_480/valid_train.txt` | 学習ファイルリスト |
+| `--file-list` | `dataset/pairs_480/valid_train.txt` | 学習ファイルリスト |
 | `--checkpoint-dir` | `checkpoints/base` | チェックポイント保存先 |
 | `--resume` | なし | 途中再開するチェックポイントパス |
 | `--autocontrast` / `--no-autocontrast` | True | rough に autocontrast を適用 |

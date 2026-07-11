@@ -166,9 +166,9 @@ class SketchDataset(Dataset):
 
 # ─── 学習設定 ──────────────────────────────────────────────────────────────────
 
-ROUGH_DIR   = "dataset_480/train/rough"
-LINE_DIR    = "dataset_480/train/line"
-FILE_LIST   = "dataset_480/valid_train.txt"
+ROUGH_DIR   = "dataset/pairs_480/train/rough"
+LINE_DIR    = "dataset/pairs_480/train/line"
+FILE_LIST   = "dataset/pairs_480/valid_train.txt"
 CKPT_DIR    = "checkpoints/gan2"
 START_EPOCH = 0
 NUM_EPOCHS  = 150

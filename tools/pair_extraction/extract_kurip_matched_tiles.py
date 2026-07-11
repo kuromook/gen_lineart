@@ -20,9 +20,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 ZIP_PATH = os.path.expanduser("~/dataset_kurip_v4.zip")
 ZIP_ROOT = "dataset_kurip_v4"
 MATCHES = "results/kurip_region_matches_strict.csv"
-ROUGH_OUT = "dataset_480/train/rough"
-LINE_OUT = "dataset_480/train/line_kurip_matched_clean_t192_cc8"
-LIST_OUT = "dataset_480/valid_train_kurip_matched_strict.txt"
+ROUGH_OUT = "dataset/pairs_480/train/rough"
+LINE_OUT = "dataset/pairs_480/train/line_kurip_matched_clean_t192_cc8"
+LIST_OUT = "dataset/pairs_480/valid_train_kurip_matched_strict.txt"
 CSV_OUT = "results/kurip_matched_tiles.csv"
 QC_OUT = "results/kurip_matched_tiles_qc.png"
 TILE = 480

@@ -27,14 +27,14 @@ run_one () {
     echo "--- ${PLAN} 推論開始: $(date) ---"
     mkdir -p "$RESDIR"
     for NAME in $INFER_SAMPLES; do
-        if [[ $NAME == housei* ]]; then INPUT="dataset_480/train/rough/${NAME}.jpg"
-        else INPUT="dataset_480/test/rough/${NAME}.jpg"; fi
+        if [[ $NAME == housei* ]]; then INPUT="dataset/pairs_480/train/rough/${NAME}.jpg"
+        else INPUT="dataset/pairs_480/test/rough/${NAME}.jpg"; fi
         $PY inference.py --checkpoint "${CKPT}/best.pth" \
             --input "$INPUT" --output "${RESDIR}/${NAME}_out.png" --autocontrast
     done
     echo "====== ${PLAN} 完了: $(date) ======"
 }
 
-run_one warm1 dataset_480/valid_train_warm_plan1.txt
-run_one warm2 dataset_480/valid_train_warm_plan2.txt
+run_one warm1 dataset/pairs_480/valid_train_warm_plan1.txt
+run_one warm2 dataset/pairs_480/valid_train_warm_plan2.txt
 echo "全warm-start実験完了: $(date)"

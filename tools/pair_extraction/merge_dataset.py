@@ -2,7 +2,7 @@ import os
 import shutil
 
 SRC_BASE = "/home/sh1/deepl/split"
-DST_BASE = "dataset_480"
+DST_BASE = "dataset/pairs_480"
 
 pairs = [
     ("train/rough", "train/rough"),
