@@ -11,7 +11,7 @@ dataset/*
 img/
 
 debug_output/
-MEMORY.md
+/MEMORY.md
 debug.py
 debug_model.py
 interference480.py
