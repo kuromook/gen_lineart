@@ -16,7 +16,7 @@ for STD in 10 12 15; do
     LOG="logs/train_std${STD}.log"
     RESULT_DIR="results/std${STD}"
 
-    python train.py \
+    python scripts/train.py \
         --file-list "dataset/pairs_480/valid_train_std${STD}.txt" \
         --checkpoint-dir "${CKPT_DIR}" \
         --autocontrast \
@@ -32,7 +32,7 @@ for STD in 10 12 15; do
         else
             INPUT="dataset/pairs_480/test/rough/${NAME}.${EXT}"
         fi
-        python inference.py \
+        python scripts/inference.py \
             --checkpoint "${CKPT_DIR}/best.pth" \
             --input "${INPUT}" \
             --output "${RESULT_DIR}/${NAME}_out.png" \

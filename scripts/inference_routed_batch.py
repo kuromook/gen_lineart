@@ -4,16 +4,19 @@ import argparse
 import csv
 import json
 import os
+import sys
 from pathlib import Path
 from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 
-from inference_routed import DEFAULT_REGISTRY, IMAGE_SIZE, load_registry, resolve_expert
 from lineart.route_dataset_source import DEFAULT_FAMILY_GATE, DEFAULT_KURIP_AKO5_GATE, route_decision
 from lineart.unetgenerator import UNetGenerator
+from scripts.inference_routed import DEFAULT_REGISTRY, IMAGE_SIZE, load_registry, resolve_expert
 
 
 def read_inputs(args):

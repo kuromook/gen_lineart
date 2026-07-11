@@ -80,7 +80,7 @@ systemd-run --user --unit=lineart-kurip-ft --collect \
   --property=WorkingDirectory=/home/sh1/deepl/lineart \
   --property=StandardOutput=append:/home/sh1/deepl/lineart/train_kurip.log \
   --property=StandardError=append:/home/sh1/deepl/lineart/train_kurip.log \
-  /home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/train.py \
+  /home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/scripts/train.py \
   --file-list dataset/pairs_480/valid_train_warm_regions_kurip.txt \
   --checkpoint-dir checkpoints/kurip \
   --resume checkpoints/shape1/best.pth \

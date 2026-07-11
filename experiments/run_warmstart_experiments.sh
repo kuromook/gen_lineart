@@ -17,7 +17,7 @@ run_one () {
     local LOG="logs/train_${PLAN}.log"
     local RESDIR="results/${PLAN}"
     echo "====== ${PLAN} 学習開始: $(date) ======"
-    $PY train.py \
+    $PY scripts/train.py \
         --file-list "$LIST" \
         --checkpoint-dir "$CKPT" \
         --resume "$RESUME" \
@@ -30,7 +30,7 @@ run_one () {
     for NAME in $INFER_SAMPLES; do
         if [[ $NAME == housei* ]]; then INPUT="dataset/pairs_480/train/rough/${NAME}.jpg"
         else INPUT="dataset/pairs_480/test/rough/${NAME}.jpg"; fi
-        $PY inference.py --checkpoint "${CKPT}/best.pth" \
+        $PY scripts/inference.py --checkpoint "${CKPT}/best.pth" \
             --input "$INPUT" --output "${RESDIR}/${NAME}_out.png" --autocontrast
     done
     echo "====== ${PLAN} 完了: $(date) ======"

@@ -54,7 +54,7 @@ housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の st
 ## 学習
 
 ```bash
-python train.py \
+python scripts/train.py \
   --file-list dataset/pairs_480/valid_train_std15.txt \
   --checkpoint-dir checkpoints/std15 \
   --autocontrast
@@ -76,7 +76,7 @@ python train.py \
 ## 推論
 
 ```bash
-python inference.py \
+python scripts/inference.py \
   --checkpoint checkpoints/std15/best.pth \
   --input path/to/rough.jpg \
   --output results/output.png \
@@ -103,7 +103,7 @@ python inference.py \
 |---|---|
 | `lineart/unetgenerator.py` | UNetGenerator（ResBlock, DilatedConvBlock）|
 | `lineart/losses.py` | Canny ベースの edge_loss |
-| `train.py` | 学習スクリプト |
-| `inference.py` | 推論スクリプト |
+| `scripts/train.py` | 学習スクリプト |
+| `scripts/inference.py` | 推論スクリプト |
 | `tools/evaluation/data_check.py` | データ品質確認ツール |
 | `experiments/run_std_experiments.sh` | std 条件一括実験スクリプト |

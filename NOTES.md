@@ -35,11 +35,11 @@ std 10 / 12 / 15 の3条件でスクラッチから学習 → 推論を順番に
 
 ## スクリプト変更履歴
 
-### train.py
+### scripts/train.py
 - `AUTOCONTRAST_ROUGH = True` フラグ追加
 - CLI引数化: `--file-list` / `--checkpoint-dir` / `--resume` / `--autocontrast`
 
-### inference.py
+### scripts/inference.py
 - `--autocontrast` フラグ追加
 
 ---

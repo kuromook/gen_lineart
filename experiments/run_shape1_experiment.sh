@@ -7,7 +7,7 @@ CKPT=checkpoints/shape1
 RESULTS=results/shape1
 SAMPLES="lineart_004_002 lineart_004_004 lineart_004_006 lineart_004_008 lineart_004_010 housei_002_19_12 housei_002_07_12 housei_002_06_15"
 
-$PY train.py \
+$PY scripts/train.py \
     --file-list dataset/pairs_480/valid_train_warm_regions.txt \
     --checkpoint-dir "$CKPT" \
     --resume checkpoints/warm_regions/best.pth \
@@ -26,7 +26,7 @@ for NAME in $SAMPLES; do
     else
         INPUT="dataset/pairs_480/test/rough/${NAME}.jpg"
     fi
-    $PY inference.py \
+    $PY scripts/inference.py \
         --checkpoint "$CKPT/best.pth" \
         --input "$INPUT" \
         --output "$RESULTS/${NAME}_out.png" \
