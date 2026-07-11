@@ -1,10 +1,14 @@
 """Run fixed-sample warm_regions inference and build a baseline comparison."""
 
 import os
+import sys
+from pathlib import Path
 
 import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from unetgenerator import UNetGenerator
 

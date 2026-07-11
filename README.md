@@ -47,7 +47,7 @@ dataset/
 
 **品質フィルタリングの知見:**  
 housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の std>=15 が実用ラインと判明。  
-`data_check.py` で各ファイルの std を確認できます。
+`tools/evaluation/data_check.py` で各ファイルの std を確認できます。
 
 ---
 
@@ -105,5 +105,5 @@ python inference.py \
 | `losses.py` | Canny ベースの edge_loss |
 | `train.py` | 学習スクリプト |
 | `inference.py` | 推論スクリプト |
-| `data_check.py` | データ品質確認ツール |
-| `run_std_experiments.sh` | std 条件一括実験スクリプト |
+| `tools/evaluation/data_check.py` | データ品質確認ツール |
+| `experiments/run_std_experiments.sh` | std 条件一括実験スクリプト |

@@ -128,8 +128,8 @@ ls -lh checkpoints/kurip/
 - `tools/pair_extraction/match_kurip_regions.py`: line 480px tileを基準にrough側の近傍translationを探索する
 - `tools/pair_extraction/extract_kurip_matched_tiles.py`: マッチCSVからrough/lineタイルを保存する
 - `tools/pair_extraction/vlm_review_kurip_matches.py`: Qwen3VL/Ollamaで候補ペアを二次判定する
-- `make_kurip_matched_compare.py`: matched strict版の比較画像生成
-- `make_kurip_vlm_accept_compare.py`: VLM accept版の比較画像生成
+- `tools/compare/make_kurip_matched_compare.py`: matched strict版の比較画像生成
+- `tools/compare/make_kurip_vlm_accept_compare.py`: VLM accept版の比較画像生成
 
 診断結果:
 

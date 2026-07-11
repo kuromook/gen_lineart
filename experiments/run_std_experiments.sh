@@ -2,7 +2,8 @@
 # std 10 / 12 / 15 の3条件で順番に学習・推論を実行する
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
+mkdir -p logs
 
 INFER_SAMPLES="lineart_004_002 lineart_004_004 lineart_004_006 lineart_004_008 lineart_004_010 housei_002_19_12 housei_002_07_12 housei_002_06_15"
 
@@ -12,7 +13,7 @@ for STD in 10 12 15; do
     echo "======================================"
 
     CKPT_DIR="checkpoints/std${STD}"
-    LOG="train_std${STD}.log"
+    LOG="logs/train_std${STD}.log"
     RESULT_DIR="results/std${STD}"
 
     python train.py \

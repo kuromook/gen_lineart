@@ -3,7 +3,7 @@
 ## 現在実行中（2026-05-31 開始）
 
 ```
-nohup ./run_std_experiments.sh &  # PID 101554
+nohup ./experiments/run_std_experiments.sh &  # PID 101554
 ```
 
 std 10 / 12 / 15 の3条件でスクラッチから学習 → 推論を順番に実行。
@@ -15,7 +15,7 @@ std 10 / 12 / 15 の3条件でスクラッチから学習 → 推論を順番に
 | std>=15 | valid_train_std15.txt |   660 | checkpoints/std15/ | train_std15.log |
 
 推論結果: `results/std10/` / `results/std12/` / `results/std15/`  
-進捗確認: `tail -5 train_std10.log`
+進捗確認: `tail -5 logs/train_std10.log`
 
 ---
 

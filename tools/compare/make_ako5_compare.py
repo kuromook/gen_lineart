@@ -5,9 +5,14 @@
 出力: results/ako5/<name>_out.png（個別） と results/compare_ako5_vs_std15.png（比較）
 """
 import os
+import sys
+from pathlib import Path
+
 import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps, ImageDraw, ImageFont
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from unetgenerator import UNetGenerator
 

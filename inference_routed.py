@@ -18,7 +18,7 @@ from unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480
-DEFAULT_REGISTRY = "expert_registry.json"
+DEFAULT_REGISTRY = "config/expert_registry.json"
 
 
 def load_registry(path):

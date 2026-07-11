@@ -4,7 +4,7 @@
 those paths blindly; many comparison and evaluation scripts reference them
 directly.
 
-Use `results_manifest.json` as the current index. It categorizes files into:
+Use `config/results_manifest.json` as the current index. It categorizes files into:
 
 - `comparisons`: top-level `compare_*.png` montages.
 - `inference_outputs`: model output folders such as `shape1/`, `kurip_clean540/`, `routed/`.
@@ -35,7 +35,7 @@ audit, but should not be used by routing:
 
 Safe cleanup policy:
 
-1. Update `results_manifest.json` before moving files.
+1. Update `config/results_manifest.json` before moving files.
 2. Search code references with `rg "results/" --glob '!results/**'`.
 3. Move only unreferenced one-off files into `results/archive/`.
 4. Keep stable script-facing paths intact unless the scripts are updated in the same change.

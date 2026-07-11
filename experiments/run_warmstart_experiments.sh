@@ -2,7 +2,8 @@
 # plan1 / plan2 を std15 からの真warm-start(低LR)で学習→推論する。
 # plan1: std15(660) + ako5 ink[2%,25%] = 3158枚 / plan2: + ako5 ink[2%,15%] = 2824枚
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
+mkdir -p logs
 PY=./venv/bin/python
 
 RESUME="checkpoints/std15/best.pth"
@@ -12,8 +13,8 @@ INFER_SAMPLES="lineart_004_002 lineart_004_004 lineart_004_006 lineart_004_008 l
 
 run_one () {
     local PLAN=$1 LIST=$2
-    local CKPT="checkpoints_${PLAN}"
-    local LOG="train_${PLAN}.log"
+    local CKPT="checkpoints/${PLAN}"
+    local LOG="logs/train_${PLAN}.log"
     local RESDIR="results/${PLAN}"
     echo "====== ${PLAN} 学習開始: $(date) ======"
     $PY train.py \

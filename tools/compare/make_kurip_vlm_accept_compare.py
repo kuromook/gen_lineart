@@ -1,21 +1,24 @@
-"""Run and montage the matched-kurip no-autocontrast fine-tune."""
+"""Run and montage the Qwen3VL-filtered kurip fine-tune."""
 
+import argparse
 import csv
 import os
+import sys
+from pathlib import Path
 
 import torch
 import torchvision.transforms.functional as TF
 from PIL import Image, ImageDraw, ImageFont
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from unetgenerator import UNetGenerator
 
 
 IMAGE_SIZE = 480
-MATCHED_CKPT = "checkpoints/kurip_matched_strict_x4_noac/best.pth"
+VLM_CKPT = "checkpoints/kurip_vlm_accept_top500_noac/best.pth"
 SHAPE1_CKPT = "checkpoints/shape1/best.pth"
-MATCHED_CSV = "results/kurip_matched_tiles_strict_all_noac.csv"
-FIXED_COMPARE_PATH = "results/compare_kurip_matched_strict_x4_noac_vs_shape1.png"
-MATCHED_COMPARE_PATH = "results/compare_kurip_matched_strict_x4_noac_train_vs_shape1.png"
+VLM_CSV = "results/kurip_vlm_candidates_top500_review_qwen3vl.csv"
 FIXED_SAMPLES = [
     "housei_002_06_15",
     "housei_002_07_12",
@@ -54,12 +57,12 @@ def fixed_dataset_path(name, kind):
     return f"dataset/pairs_480/{split}/{kind}/{name}.jpg"
 
 
-def matched_line_path(name):
-    return f"dataset/pairs_480/train/line_kurip_matched_clean_t192_cc8/{name}.jpg"
+def vlm_line_path(name):
+    return f"dataset/pairs_480/train/line_kurip_vlm_candidates_top500_clean_t192_cc8/{name}.jpg"
 
 
-def draw_montage(samples, image_paths, output_path):
-    columns = ["rough", "shape1", "matched_x4_noac", "line (GT)"]
+def draw_montage(samples, image_paths, output_path, model_label):
+    columns = ["rough", "shape1", model_label, "line (GT)"]
     header_h = 28
     label_h = 22
     canvas = Image.new(
@@ -89,47 +92,55 @@ def draw_montage(samples, image_paths, output_path):
     print(f"saved: {output_path}")
 
 
-def matched_samples(count=8):
-    with open(MATCHED_CSV, newline="") as file:
-        rows = list(csv.DictReader(file))
+def vlm_samples(count=8):
+    with open(VLM_CSV, newline="") as file:
+        rows = [row for row in csv.DictReader(file) if row["vlm_decision"] == "accept"]
     return [row["name"].replace(".jpg", "") for row in rows[:count]]
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint", default=VLM_CKPT)
+    parser.add_argument("--tag", default="kurip_vlm_accept_top500_noac")
+    parser.add_argument("--label", default="vlm_accept_noac")
+    args = parser.parse_args()
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     shape1 = load_model(SHAPE1_CKPT, device)
-    matched = load_model(MATCHED_CKPT, device)
+    vlm = load_model(args.checkpoint, device)
 
     for name in FIXED_SAMPLES:
         rough = fixed_dataset_path(name, "rough")
         infer(shape1, rough, f"results/shape1_noac/{name}_out.png", device)
-        infer(matched, rough, f"results/kurip_matched_strict_x4_noac/{name}_out.png", device)
+        infer(vlm, rough, f"results/{args.tag}/{name}_out.png", device)
 
-    train_samples = matched_samples()
+    train_samples = vlm_samples()
     for name in train_samples:
         rough = f"dataset/pairs_480/train/rough/{name}.jpg"
-        infer(shape1, rough, f"results/shape1_kurip_matched_samples/{name}_out.png", device)
-        infer(matched, rough, f"results/kurip_matched_strict_x4_noac_samples/{name}_out.png", device)
+        infer(shape1, rough, f"results/shape1_kurip_vlm_accept_samples/{name}_out.png", device)
+        infer(vlm, rough, f"results/{args.tag}_samples/{name}_out.png", device)
 
     draw_montage(
         FIXED_SAMPLES,
         lambda name: [
             fixed_dataset_path(name, "rough"),
             f"results/shape1_noac/{name}_out.png",
-            f"results/kurip_matched_strict_x4_noac/{name}_out.png",
+            f"results/{args.tag}/{name}_out.png",
             fixed_dataset_path(name, "line"),
         ],
-        FIXED_COMPARE_PATH,
+        f"results/compare_{args.tag}_vs_shape1.png",
+        args.label,
     )
     draw_montage(
         train_samples,
         lambda name: [
             f"dataset/pairs_480/train/rough/{name}.jpg",
-            f"results/shape1_kurip_matched_samples/{name}_out.png",
-            f"results/kurip_matched_strict_x4_noac_samples/{name}_out.png",
-            matched_line_path(name),
+            f"results/shape1_kurip_vlm_accept_samples/{name}_out.png",
+            f"results/{args.tag}_samples/{name}_out.png",
+            vlm_line_path(name),
         ],
-        MATCHED_COMPARE_PATH,
+        f"results/compare_{args.tag}_train_vs_shape1.png",
+        args.label,
     )
 
 
