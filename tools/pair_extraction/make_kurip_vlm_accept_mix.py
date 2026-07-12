@@ -11,6 +11,7 @@ DEFAULT_KURIP_LIST = "dataset/pairs_480/valid_train_kurip_vlm_accept_top500.txt"
 DEFAULT_BASE_LINE_DIR = "dataset/pairs_480/train/line"
 DEFAULT_KURIP_LINE_DIR = "dataset/pairs_480/train/line_kurip_vlm_candidates_top500_clean_t192_cc8"
 DEFAULT_OUTPUT_LIST = "dataset/pairs_480/valid_train_warm_regions_kurip_vlm_accept190.txt"
+DEFAULT_OUTPUT_KURIP_LIST = "dataset/pairs_480/valid_train_kurip_vlm_accept190.txt"
 DEFAULT_OUTPUT_LINE_DIR = "dataset/pairs_480/train/line_kurip_vlm_accept190_mix_clean_t192_cc8"
 
 
@@ -51,6 +52,7 @@ def build_mix(args):
         link_or_copy(src, output_line_dir / name)
 
     Path(args.output_list).write_text("\n".join(output_names) + "\n")
+    Path(args.output_kurip_list).write_text("\n".join(selected_kurip) + "\n")
 
     kurip_ratio = len(selected_kurip) / len(output_names)
     print(f"base: {len(base_names)}")
@@ -58,6 +60,7 @@ def build_mix(args):
     print(f"total: {len(output_names)}")
     print(f"kurip_ratio: {kurip_ratio:.3f}")
     print(f"output_list: {args.output_list}")
+    print(f"output_kurip_list: {args.output_kurip_list}")
     print(f"output_line_dir: {args.output_line_dir}")
 
 
@@ -68,6 +71,7 @@ def main():
     parser.add_argument("--base-line-dir", default=DEFAULT_BASE_LINE_DIR)
     parser.add_argument("--kurip-line-dir", default=DEFAULT_KURIP_LINE_DIR)
     parser.add_argument("--output-list", default=DEFAULT_OUTPUT_LIST)
+    parser.add_argument("--output-kurip-list", default=DEFAULT_OUTPUT_KURIP_LIST)
     parser.add_argument("--output-line-dir", default=DEFAULT_OUTPUT_LINE_DIR)
     parser.add_argument("--kurip-count", type=int, default=190)
     parser.add_argument("--seed", type=int, default=20260712)
