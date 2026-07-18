@@ -102,10 +102,72 @@ Key preserved rules:
 - run crop-scale diagnostics when source scale/context changes
 - audit train/eval leakage and missing files before training
 
+### Moredupes Epoch020 Result
+
+The scratch `shape1_std15_clean_split_moredupes_bce` run was stopped at
+epoch020 and evaluated on clean lineart004-only samples.
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| `shape1_clean_split_bce_lineart004` | 0.2955 | 7.174 | 1.316 | 0.2998 | 0.2974 |
+| `shape1_std15_clean_split_moredupes_bce_epoch020` | 0.1853 | 8.696 | 0.301 | 0.3857 | 0.1257 |
+
+Conclusion: scratch training on the large duplicated list is not a useful
+overnight direction. It under-produces ink and is worse than the clean baseline.
+
+Artifacts:
+
+- `results/compare_exp1_moredupes_epoch020_clean_lineart004.png`
+- `results/fixed_output_metrics_exp1_moredupes_epoch020_clean_lineart004_compare.csv`
+
+## 2026-07-19
+
+### Mild Duplicate Low-LR Fine-Tune
+
+Started one conservative overnight run:
+
+- experiment: `shape1_clean_split_bce_milddup800_ft10_lr1e5`
+- unit: `lineart-milddup800-ft.service`
+- log: `logs/train_shape1_clean_split_bce_milddup800_ft10_lr1e5.service.log`
+- resume: `checkpoints/shape1_clean_split_bce/best.pth`
+- train list: `dataset/pairs_480/valid_train_milddup800_clean.txt`
+- eval list: `dataset/pairs_480/eval_clean_lineart004_8.txt`
+- epochs: 10
+- lr: `1e-5`
+- loss weights: BCE only, `pos_weight=5.0`
+
+The train list is generated from:
+
+- seed: `dataset/pairs_480/valid_train_base_clean_unique.txt` (469 rows)
+- pool: `dataset/pairs_480/valid_train_std15_clean_split_moredupes.txt` (6,598 rows)
+- target rows: 800
+- max per canonical tile: 2
+- exact duplicates: allowed intentionally for this experiment
+
+Dry-run/build verification:
+
+- rows: 800
+- canonicals: 633
+- duplicate canonicals: 167
+
+Committed and pushed:
+
+- `2eb995c Add mild duplicate fine-tune experiment`
+
+Expected outputs when complete:
+
+- `logs/shape1_clean_split_bce_milddup800_ft10_lr1e5.done`
+- `results/fixed_output_metrics_shape1_clean_split_bce_milddup800_ft10_lr1e5_clean_lineart004.csv`
+- `results/fixed_output_metrics_shape1_clean_split_bce_milddup800_ft10_lr1e5_compare.csv`
+- `results/compare_shape1_clean_split_bce_milddup800_ft10_lr1e5_clean_lineart004.png`
+- `results/compare_shape1_clean_split_bce_milddup800_ft10_lr1e5_vs_clean_split_bce.png`
+
 ### Next Actions
 
-1. Wait for the epoch020 watcher to finish.
-2. Inspect `results/compare_exp1_moredupes_epoch020_lineart004.png`.
-3. Compare against `shape1_clean_split_bce_lineart004`.
-4. If epoch020 is still poor, pivot to data reconstruction or loss/model changes
-   instead of waiting for epoch200.
+1. Check whether `lineart-milddup800-ft.service` completed.
+2. Inspect the compare montage against `shape1_clean_split_bce_lineart004`.
+3. Prefer the milddup fine-tune only if it improves F1/chamfer without obvious
+   visual degradation or over-thick ink.
+4. If it fails, keep `shape1_clean_split_bce_lineart004` as the current clean
+   baseline and pivot to better extraction/data rules rather than larger
+   duplicated training.
