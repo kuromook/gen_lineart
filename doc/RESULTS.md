@@ -1,8 +1,8 @@
 # Results Layout
 
-`results/` still contains legacy fixed paths used by scripts. Do not move
-those paths blindly; many comparison and evaluation scripts reference them
-directly.
+`results/` contains current clean-eval artifacts, extraction QC, and archived
+historical output. Many old comparison scripts still reference legacy paths, so
+archived paths should only be restored intentionally for audit.
 
 Use `config/results_manifest.json` as the current index. It categorizes files into:
 
@@ -15,23 +15,22 @@ Use `config/results_manifest.json` as the current index. It categorizes files in
 
 Current recommended outputs:
 
-- Default model: `results/shape1/`
-- Kurip specialist: `results/kurip_clean540/`
-- Routed fixed samples: `results/routed/`
-- Routed kurip samples: `results/routed_kurip_samples/`
-- Main routing comparisons:
-  - `results/compare_routed_vs_shape1.png`
-  - `results/compare_routed_kurip_vs_shape1.png`
-- Kurip specialist comparison:
-  - `results/compare_kurip_clean540_vs_shape1.png`
-  - `results/compare_kurip_clean540_train_vs_shape1.png`
+- Current clean-eval index: `results/CURRENT.md`
+- Current clean BCE comparison:
+  - `results/compare_clean_baselines_lineart004.png`
+  - `results/fixed_output_metrics_base_clean_lineart004_compare.csv`
+- Pending epoch020 moredupes comparison:
+  - `results/compare_exp1_moredupes_epoch020_lineart004.png`
+  - `results/fixed_output_metrics_exp1_moredupes_epoch020_lineart004_compare.csv`
 
 Deprecated or non-recommended experiment outputs should remain available for
 audit, but should not be used by routing:
 
-- `results/kurip/` and `checkpoints/kurip/`: dirty kurip fine-tune; noisy.
-- `results/kurip_clean540_noac/`: did not beat `kurip_clean540`.
-- `results/kurip_balanced_dense/`: did not beat `kurip_clean540`.
+- `results/archive/leaky_pre_clean_eval/`: old leaky/pre-clean-eval model
+  outputs, comparisons, and metrics.
+- `results/archive/legacy_root_oneoffs/`: old root one-off outputs moved out of
+  the top-level results namespace.
+- `checkpoints/kurip/`: dirty kurip fine-tune checkpoint; noisy.
 
 Safe cleanup policy:
 

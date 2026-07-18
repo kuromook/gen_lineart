@@ -180,3 +180,111 @@ metadata から学習リストを作る。
 3. refined kurip 123件を `line_fragment` / `character_*` / `unknown` に分けるレビューCSVを作る
 4. metadata から mixed list と line dir を生成する list builder を作る
 5. refined kurip のカテゴリ別 montage を出して、手動ラベルの基準を固める
+
+## 進捗
+
+### 2026-07-12
+
+追加:
+
+- `tools/metadata/build_pair_metadata.py`
+- `tools/metadata/make_content_review.py`
+
+生成済み:
+
+- `dataset/pairs_480/pair_metadata.csv`
+- `dataset/pairs_480/reviews/kurip_refined_content_review.csv`
+- `results/kurip_refined_content_review.png`
+
+初期metadata件数:
+
+- total: 1,201
+- `housei`: 302
+- `lineart`: 358
+- `ako5`: 418
+- `kurip`: 123
+- `kurip` refined 123件は初期値として `line_fragment` に分類
+
+確認:
+
+- refined kurip montageでは、線断片が大半
+- 一部に顔・手・衣服など content category を付けられそうなものがある
+- 次は review CSV を手動修正し、その修正済みmetadataからカテゴリ別listを作る
+
+### 2026-07-12 scale normalization check
+
+refined kurip の線断片化は、content category の問題だけでなく、raw manuscript
+上の切り出し視野が狭すぎる問題である可能性が高い。
+
+追加:
+
+- `tools/pair_extraction/evaluate_crop_scales.py`
+
+生成済み:
+
+- `results/kurip_crop_scale_eval.csv`
+- `results/kurip_crop_scale_summary.csv`
+- `results/kurip_crop_scale_eval.png`
+
+検証条件:
+
+- anchor: `results/kurip_vlm_accept_refined_tiles.csv` の refined 123件
+- source crop: `480,720,960,1200`
+- model input: すべて `480x480` に resize
+- rough autocontrast: off
+
+結果:
+
+- `480` は線の断片が多い
+- `720` で部位の文脈が少し増える
+- `960` / `1200` では手・髪・服の輪郭など、絵の部位として見える比率が上がる
+- `1200` は文脈が最も増えるが、線が縮みすぎるリスクがある
+
+暫定判断:
+
+- 次の抽出候補は `source_crop=960 -> output=480`
+- `source_width/source_height/crop_source_size/output_size/scale_factor` を metadata
+  に持たせ、新規raw datasetでも最初に同じscale diagnosticを通す
+- MoE/content category 分類は、抽出スケール正規化後に再評価する
+
+実行:
+
+- `tools/pair_extraction/extract_scaled_refined_pairs.py` を追加
+- `source_crop=960 -> output=480` で refined kurip 123件を保存
+- `experiments/run_kurip_vlm_refined_s960_123_noac_ink2.sh` を追加
+- `base 1078 + kurip_s960 123 = 1201`, kurip ratio `10.2%`
+- service: `lineart-kurip-vlm-refined-s960-123-ft.service`
+- checkpoint: `checkpoints/kurip_vlm_refined_s960_123_noac_ink2`
+- log: `logs/train_kurip_vlm_refined_s960_123_noac_ink2.log`
+
+生成済み:
+
+- `dataset/pairs_480/valid_train_kurip_vlm_accept_refined_s960.txt`
+- `dataset/pairs_480/valid_train_warm_regions_kurip_vlm_accept_refined_s960_123.txt`
+- `dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_clean_t192_cc8/`
+- `dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_123_mix_clean_t192_cc8/`
+- `results/kurip_vlm_accept_refined_s960_tiles.csv`
+- `results/kurip_vlm_accept_refined_s960_qc.png`
+
+完了:
+
+- final loss: `0.3087`
+- checkpoint: `checkpoints/kurip_vlm_refined_s960_123_noac_ink2/best.pth`
+- compare:
+  - `results/compare_kurip_vlm_refined_s960_123_noac_ink2_vs_shape1.png`
+  - `results/compare_kurip_vlm_refined_s960_123_noac_ink2_train_vs_shape1.png`
+
+fixed8 metrics:
+
+| model | F1@2px | chamfer | ink_ratio |
+| --- | ---: | ---: | ---: |
+| `shape1_noac` | 0.8471 | 1.493 | 1.536 |
+| `kurip_vlm_refined123_noac_ink2` | 0.9353 | 0.762 | 1.225 |
+| `kurip_vlm_refined_s960_123_noac_ink2` | 0.9353 | 0.759 | 1.239 |
+
+所見:
+
+- fixed8では前回refined123とほぼ同等。chamferはわずかに改善、ink_ratioはやや増加
+- train sampleでは `source_crop=960` により絵の部位文脈は増えた
+- ただし出力はまだ荒く、GTのクリーンな線には届いていない
+- scale normalization自体は必要だが、s960だけでkuripの癖が解決するわけではない

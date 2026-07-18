@@ -1,0 +1,1135 @@
+# Work Log - lineart generator
+
+> Current-state note: this is a chronological log and contains outdated
+> pre-leakage assumptions. Read `doc/CURRENT.md` first, then use this file only
+> for detailed history.
+
+## 2026-07-11
+
+### kuripデータセット取り込み・fine-tune開始
+
+現在の目的は、新しい `~/dataset_kurip_v4.zip` の線画・下絵ペアを使って、
+既存の実用モデル `shape1` を改善すること。
+
+#### 入力データ
+
+- zip: `~/dataset_kurip_v4.zip`
+- manifest: `dataset_kurip_v4/manifest.json`
+- 内容: 38ページ分の `*_sketch.jpg` / `*_line.jpg`
+- 全ページサイズ: `4961x7016`
+- sketch/line は同一サイズで、ページ対応済み
+- housei より揺らぎは少ない想定
+
+#### 実装・生成物
+
+kurip専用の480pxタイル抽出スクリプトを追加した。
+
+- 追加: `tools/pair_extraction/prepare_kurip_tiles.py`
+- 同一ページ・同一座標から480pxタイルを抽出
+- rough側は `ImageOps.autocontrast(cutoff=0)` を適用
+- edge F1、chamfer、線密度、方向entropy、rough stdで候補を評価
+- QC画像とCSVを生成
+- `--save` 指定時のみ `dataset/pairs_480/train/{rough,line}` に保存
+
+dry-runでは緩め条件で以下を確認した。
+
+- raw candidates: 8,274
+- accepted after dedup/page cap: 3,040
+- QC:
+  - `results/kurip_tiles_lenient_qc.png`
+  - `results/kurip_tiles_lenient_qc_tail.png`
+  - `results/kurip_tiles_lenient_qc_sample.png`
+
+最終保存ではページ偏りを抑えるため `--max-per-page 60` を採用した。
+
+- saved tiles: 2,280
+- list: `dataset/pairs_480/valid_train_kurip.txt`
+- csv: `results/kurip_tiles.csv`
+- QC:
+  - `results/kurip_tiles_qc.png`
+  - `results/kurip_tiles_qc_tail.png`
+  - `results/kurip_tiles_qc_sample.png`
+
+既存の実用データリストと結合した。
+
+- base: `dataset/pairs_480/valid_train_warm_regions.txt` = 1,078 pairs
+- kurip: `dataset/pairs_480/valid_train_kurip.txt` = 2,280 pairs
+- combined: `dataset/pairs_480/valid_train_warm_regions_kurip.txt` = 3,358 pairs
+- missing rough/line files: 0
+
+#### 学習
+
+`shape1` からkurip追加データでfine-tuneを開始した。
+
+- service: `lineart-kurip-ft.service`
+- log: `train_kurip.log`
+- checkpoint dir: `checkpoints/kurip`
+- resume: `checkpoints/shape1/best.pth`
+- file list: `dataset/pairs_480/valid_train_warm_regions_kurip.txt`
+- epochs: 20
+- batch size: 2
+- batches/epoch: 1,679
+- LR: `1e-5`
+- `pos_weight`: 2.0
+- `edge_weight`: 0.0
+- `shape_weight`: 1.0
+- `ink_weight`: 1.0
+- autocontrast: enabled
+- device: CUDA / RTX 3060
+
+起動コマンド:
+
+```bash
+systemd-run --user --unit=lineart-kurip-ft --collect \
+  --property=WorkingDirectory=/home/sh1/deepl/lineart \
+  --property=StandardOutput=append:/home/sh1/deepl/lineart/train_kurip.log \
+  --property=StandardError=append:/home/sh1/deepl/lineart/train_kurip.log \
+  /home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/scripts/train.py \
+  --file-list dataset/pairs_480/valid_train_warm_regions_kurip.txt \
+  --checkpoint-dir checkpoints/kurip \
+  --resume checkpoints/shape1/best.pth \
+  --epochs 20 \
+  --lr 1e-5 \
+  --pos-weight 2.0 \
+  --edge-weight 0.0 \
+  --shape-weight 1.0 \
+  --ink-weight 1.0 \
+  --autocontrast
+```
+
+現在状態:
+
+- `systemctl --user is-active lineart-kurip-ft.service` は `active`
+- `train_kurip.log` には学習設定と `epoch 1 〜 20` まで出力済み
+- 2026-07-11 00時台時点では、まだ epoch 1 完了行は未出力
+- 概算完了時間は開始から約2〜3.5時間、朝には完了見込み
+
+確認コマンド:
+
+```bash
+systemctl --user status lineart-kurip-ft.service
+tail -f train_kurip.log
+ls -lh checkpoints/kurip/
+```
+
+#### 次の作業
+
+1. 朝に `lineart-kurip-ft.service` と `train_kurip.log` を確認する
+2. 完了していれば `checkpoints/kurip/best.pth` を採用候補として固定サンプル推論する
+3. `shape1` と `kurip fine-tune` の比較画像を作る
+4. 既存固定8サンプルに加えて、kurip由来サンプルでも目視比較する
+5. 線の太り、余分な線、roughにない清書追加線の扱い、kuripへの過適合を確認する
+
+### kuripペア不整合の確認とVLM選別
+
+同一座標抽出で作ったkuripタイルは、`compare_kurip_balanced_dense_train_vs_shape1.png`
+の確認でrough/lineの組が噛み合っていないことが判明した。汚れや網点の主因は、
+下絵と線画のペア不整合を教師に混ぜたことと判断した。
+
+追加した主なスクリプト:
+
+- `tools/pair_extraction/diagnose_pair_alignment.py`: 新規データセットの同一座標前提が有効かを先に診断する
+- `tools/pair_extraction/match_kurip_regions.py`: line 480px tileを基準にrough側の近傍translationを探索する
+- `tools/pair_extraction/extract_kurip_matched_tiles.py`: マッチCSVからrough/lineタイルを保存する
+- `tools/pair_extraction/vlm_review_kurip_matches.py`: Qwen3VL/Ollamaで候補ペアを二次判定する
+- `tools/compare/make_kurip_matched_compare.py`: matched strict版の比較画像生成
+- `tools/compare/make_kurip_vlm_accept_compare.py`: VLM accept版の比較画像生成
+
+診断結果:
+
+- `results/kurip_alignment_diagnosis.json`
+- same-coordinateは `recommendation="needs_region_matching"`
+- strict local match: 115 pairs
+- relaxed local match: 896 candidates
+- Qwen3VL review top500: accept 369 / reject 131
+
+学習結果:
+
+- `checkpoints/kurip_matched_strict_x4_noac/best.pth`
+  - warm 1078 + strict 115 x4
+  - fixed8では黒太りが強く、採用候補から外す
+- `checkpoints/kurip_vlm_accept_top500_noac/best.pth`
+  - warm 1078 + VLM accept 369
+  - fixed8定量: F1 0.8710, ink_ratio 2.244
+  - epoch010: F1 0.8602, ink_ratio 1.958
+  - VLMでペア数は増えたが、fine-tuneではまだkurip線画側に寄りすぎる
+
+現時点の結論:
+
+- 新規データセットは、同一座標抽出の前に必ず `tools/pair_extraction/diagnose_pair_alignment.py` を通す
+- kuripは同一座標ではなく、line tile固定でrough側を探索する
+- VLMは候補ペアの意味的なrejectに有効
+- 次の学習案は、VLM accept 369件を使いつつ kurip比率を15%前後に下げ、
+  `lr=5e-5`, 10epoch程度で黒太りを抑える
+
+---
+
+## root work_log.md から統合
+
+## 2026-06-11
+
+### warm_regions推論・定量評価
+
+固定8サンプルでstd15、warm2、warm_regionsを比較した。
+
+| model | F1@2px | chamfer | ink ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| std15 | 0.8848 | 1.146 | 2.188 | 0.8240 | 0.9895 |
+| warm2 | 0.8396 | 1.381 | 2.239 | 0.7598 | 0.9685 |
+| warm_regions | 0.8810 | 1.171 | 2.221 | 0.8176 | 0.9896 |
+
+- warm_regionsはstd15に近く、目視ではわずかにガタつきが減った
+- 正解線画への大きな改善はない
+- 全モデルが正解の約2.2倍のインク量
+- recall約0.99に対してprecisionが低く、主課題は欠落より太線・余分な線
+- 既存`edge_loss`はOpenCV Canny前に予測をdetachしており、学習勾配に寄与しない
+
+### ako5 pair抽出の成果
+
+warm_regionsによる線画品質の改善は限定的だったが、今回の主要成果はモデル改善量
+そのものではなく、状態の良くない原稿群から信頼できる下絵・線画pairを抽出できた
+ことにある。
+
+- ページ対応が不確実で、清書時の内容変更・削除・局所変形を含む原稿を対象にした
+- 全ページ組合せ探索と局所領域マッチングにより、対応する人物・コマ領域を特定した
+- region/tile単位の再評価と保守的な閾値により、別番号ページの誤pairを除外した
+- 最終的に高信頼な480px pairを418件抽出し、学習データとして利用できた
+
+線画改善が小さかったことはpair抽出の失敗を意味しない。低品質・不均一な生原稿から
+学習可能な対応pairを自動抽出するパイプラインを確立できたことは大きな前進であり、
+今後別原稿へ展開して高信頼データを増やすための基盤になる。
+
+### shape1 fine-tune開始
+
+太線化抑制の短期実験をGPU user systemdサービスで開始した。
+
+- resume: `checkpoints/warm_regions/best.pth`
+- data: warm_regions 1,078 pair
+- epoch: 20、LR: `1e-5`
+- `pos_weight`: 5.0から2.0へ低減
+- 非微分Canny lossを無効化
+- 2px位置ずれを許容する微分可能soft F1 lossを追加
+- 総インク量lossを追加
+- service: `lineart-shape1.service`
+- log: `train_shape1.log`
+- 完了後、固定8サンプルを`results/shape1`へ自動推論
+- 2026-06-11 19:32時点: epoch 3/20、loss=0.3095、GPUで継続中
+
+### shape1 fine-tune完了・実用モデルとして採用
+
+shape1はepoch 20まで完了し、固定8サンプルの推論と定量評価を行った。
+
+- 最終・best loss: `0.2797`
+- 採用モデル: `checkpoints/shape1/best.pth`
+- 比較画像: `results/compare_shape1.png`
+- 個別推論: `results/shape1/`
+
+| model | F1@2px | chamfer | ink ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| std15 | 0.8848 | 1.146 | 2.188 | 0.8240 | 0.9895 |
+| warm_regions | 0.8810 | 1.171 | 2.221 | 0.8176 | 0.9896 |
+| **shape1** | **0.9364** | **0.757** | **1.208** | **0.9091** | **0.9809** |
+
+shape1では線の太り・にじみ・余分な薄線が大きく減り、正解線画に近い線幅に
+なった。recallを高く維持したままprecisionとchamferが改善しており、目視でも
+再現性が大きく向上した。ラフに存在しない清書時の描き足しは対象外とし、
+現時点では実用的な範囲に入ったモデルとしてshape1を採用する。
+
+### 次テーマ: MoEに向けた原稿マイニング
+
+次のモデルテーマはMoE（Mixture of Experts）とする。ただし、現在の1,078 pairで
+3〜4 expertを学習すると、expertごとのデータ不足、過学習、expert collapseの
+リスクが高い。MoE実験より先に、pair抽出パイプラインを別原稿へ展開してデータを
+増やす。
+
+ako5の実績:
+
+- 約50ページから418 pair
+- 概算歩留まり: 約8 pair/ページ
+
+MoE用データ規模の概算:
+
+| 構成 | 最低pair目安 | 単純換算ページ | 偏りを考慮した安全側目安 |
+|---|---:|---:|---:|
+| 3 expert | 約6,000 | 約750ページ | 約900〜1,200ページ |
+| 4 expert | 約8,000 | 約1,000ページ | 約1,200〜1,600ページ |
+| 実用一般目標 | 10,000以上 | 約1,250ページ以上 | 原稿別歩留まりで再計算 |
+
+当面の方針:
+
+1. モデル開発を一時休止し、原稿のマイニングに着手する
+2. 最初に追加100〜200ページを処理し、ako5以外でも約8 pair/ページを維持
+   できるか確認する
+3. pair採用数だけでなく、誤pair率、原稿別歩留まり、入力特徴分布を記録する
+4. 数千pairまで増やした後、入力特徴に自然なexpert区分が存在するか確認する
+5. まず2 expertのpilotを行い、その後3〜4 expertを検討する
+
+このプロジェクトはしばらく休止する。再開地点は、次の原稿群100〜200ページへの
+pair抽出パイプライン適用と歩留まり検証。
+
+---
+
+### ako5局所領域タイル抽出 完了
+
+`extract_ako5_region_tiles.py` の全候補dry-runが遅かったため、以下を最適化した。
+
+- 元ページ全体のsupport mask warpを廃止
+  - 元画像四隅をタイル座標へ変換し、480px maskへ直接描画
+  - 旧方式との差はsupport比で最大0.16%
+- SciPy `distance_transform_edt` をOpenCV exact distance transformへ変更
+  - 数値差は最大`5e-7`未満、単体ベンチマークで約12.6倍高速
+- support、ink、std、edge数、entropyの安価な棄却をdistance transformより前へ移動
+- 20領域ごとの進捗表示を追加
+- 上位、下位、全順位均等sampleの3種類のQCモンタージュを追加
+
+初回dry-run:
+
+- 142領域、閾値通過2,117タイル、重複除去後1,151タイル
+- tail QCで位置ずれ、内容変更、大きい黒ベタを含む低品質タイルを確認
+
+保守的な採用閾値へ変更:
+
+- `min_tile_score >= 3.0`
+- `line_ink <= 0.15`
+
+最終結果:
+
+- 142領域、閾値通過758タイル、重複除去後418タイル
+- 34ページペア、別番号ページペア0件
+- score範囲: 3.000〜4.774、median 3.327
+- edge F1範囲: 0.586〜0.831、median 0.643
+- QCを確認し、初回warm-start用の保守的データとして採用
+
+出力:
+
+- `dataset/pairs_480/valid_train_ako5_regions.txt`（418枚）
+- `dataset/pairs_480/train/rough/ako5r_*.jpg`
+- `dataset/pairs_480/train/line/ako5r_*.jpg`
+- `results/ako5_region_tiles.csv`
+- `results/ako5_region_tiles_qc.png`
+- `results/ako5_region_tiles_qc_tail.png`
+- `results/ako5_region_tiles_qc_sample.png`
+
+### warm_regions実験 開始
+
+`build_warm_lists.py` にregion専用リスト生成を追加した。
+
+- 元の高品質base: 非ako5 std15 660枚
+- 新しいregionペア: 418枚
+- 合計: 1,078枚、重複なし、旧`ako5_*.jpg`混入なし
+- リスト: `dataset/pairs_480/valid_train_warm_regions.txt`
+
+学習条件:
+
+- resume: `checkpoints/warm_regions/epoch010.pth`
+- checkpoint dir: `checkpoints/warm_regions`
+- LR: `3e-5`
+- epoch: 11〜50
+- autocontrast有効
+- epoch 10 loss: `0.2815`
+
+通常のPTY学習をepoch 10完了後に停止し、セッション切断後も継続するよう
+`nohup`をuser systemdサービス内で起動した。
+
+現在のサービス:
+
+```bash
+systemctl --user status lineart-warm-regions.service
+tail -f train_warm_regions.log
+```
+
+停止する場合:
+
+```bash
+systemctl --user stop lineart-warm-regions.service
+```
+
+### 次回再開地点
+
+1. `systemctl --user status lineart-warm-regions.service` で学習状態を確認
+2. `tail -50 train_warm_regions.log` で最新epoch/lossを確認
+3. 完了後、`checkpoints/warm_regions/best.pth` で固定テスト画像を推論
+4. `checkpoints/std15/best.pth`、`checkpoints/warm2/best.pth` と比較
+5. regionペア追加が線画品質を改善したか目視評価する
+
+---
+
+## 2026-06-10
+
+### 現在の最優先課題: ako5原稿ペアの特定と位置合わせ
+
+モデル改善を一旦止め、ako5原稿から正しく対応する下絵・線画ページを特定して
+位置合わせすることを優先する。
+
+- manifest上のページ対応は信用せず、全下絵ページ×全線画ページから候補を検索する
+- 当面扱う変換は平行移動・等方拡大縮小・微小回転
+- 局所的・非線形な変形は、残差の悪いタイルを棄却して対応する
+- ページ候補検索後、ページ全体を位置合わせし、最後にタイル単位で品質判定する
+
+追加スクリプト: `match_ako5_pages.py`
+
+- SIFT対応点 + RANSAC similarity transformで候補を粗検索
+- SIFTで拾えない候補も、scale・微小回転のグリッド探索 + 位相相関で救済
+- 上位候補をエッジのチャンファー距離で再ランキング
+- inlier率、空間被覆率、scale、angle、1位と2位のmarginを記録
+- 歩留まり優先のため、デフォルトでは全候補をアライメント後に再評価する
+
+初期検証（先頭6下絵ページ）:
+
+- 正しい同番号ペア: 5ページでTop-2以内、4ページでTop-1
+- `page0004 -> page0004` は53位かつ内容も不一致で、誤ペアと判定可能
+- 元解像度に適用できる変換行列をJSONへ保存する
+
+### 局所領域ペア探索
+
+ページ全体の一致を要求すると、清書時に変更・削除された部分の影響が大きい。
+一方、480pxタイル単独では単純な曲線やコマ枠への偶然一致が多かったため、
+中間サイズの局所領域から対応ペアを抽出する方式へ移行した。
+
+追加スクリプト: `match_ako5_regions.py`
+
+- 全下絵ページ×全線画ページでSIFT対応点を検索
+- RANSACのinlierを順次取り除き、1ページ組から複数のsimilarity変換候補を抽出
+- 変換候補を固定サイズ局所窓で評価し、対応する人物・コマ単位の領域を候補化
+- edge F1、truncated symmetric chamfer、inlier空間被覆率、線方向entropyを記録
+- 元解像度用の変換行列と切り出し座標をCSV/JSONへ保存
+- CSVに目視判定用の`decision`、`notes`欄を用意
+
+初期検証:
+
+- 先頭15下絵×25線画の375組を探索し、上位50局所領域をQC画像で確認
+- 上位50件はすべて同番号ページ内の部分一致で、別ページへの明確な誤一致はなし
+- 人物・顔・衣服・コマ単位の対応領域が上位に抽出された
+- ページ全体では不一致部分があっても、局所窓内の対応部分は抽出可能
+
+全ページ探索（`max-dim=800`）:
+
+- 全53×53 = 2,809ページ組を探索
+- RANSAC・局所窓評価で513候補、重複除去後162候補
+- 39下絵ページ・39線画ページから局所対応領域を抽出
+- 162件中、同番号ページ内候補161件、別番号候補1件
+- 唯一の別番号候補は最下位、score=1.44
+- `score>=3.5`: 155件、別番号候補なし
+- 上位80件をQC画像で確認し、人物・コマ単位の対応が概ね成立
+
+出力:
+
+- `results/ako5_region_matches.csv`
+- `results/ako5_region_matches.json`
+- `results/ako5_region_match_qc.png`
+
+初回の自動採用候補には保守的に`score>=4.0`を使い、CSVの目視ラベルで
+precisionを確認してから閾値を下げる。局所変形の判定は引き続き保留する。
+
+### 次回再開地点: 局所領域から480px学習ペアを抽出
+
+追加スクリプト: `extract_ako5_region_tiles.py`
+
+- `results/ako5_region_matches.json` の `score>=4.0` 局所領域を入力にする
+- 元解像度の線画側領域を、重なり付き480px窓で走査する
+- `full_matrix` で下絵を線画座標へワープして学習ペア候補を生成する
+- 各タイルを edge F1、symmetric chamfer、線密度、方向entropyで再評価する
+- 重複タイルを除去し、CSVとQCモンタージュを生成する
+- デフォルトはdry-runで、`--save`を付けるまで学習データには保存しない
+
+現在の状態:
+
+- スクリプト実装と `py_compile` は完了
+- 全候補dry-runを開始したが処理が遅いため中断
+- 学習データへの書き込みは未実施
+- 遅い原因は、各480px候補ごとに元ページ全体サイズのsupport maskを
+  `warpAffine`していること
+
+次回やること:
+
+1. `warp_tile()` のsupport生成を高速化する
+   - ページ全体maskのwarpを廃止する
+   - 逆変換したタイル四隅、または小さい480px maskだけで有効領域を判定する
+2. `python extract_ako5_region_tiles.py` でdry-runを再実行する
+3. `results/ako5_region_tiles_qc.png` を目視し、タイル採用閾値を調整する
+4. QCが良好なら `--save` で高信頼ペアを保存する
+5. 保存後に新しい学習リストでwarm-start実験を行う
+
+---
+
+## 2026-07-12
+
+### MoE前段: kurip scale normalization とカテゴリ分離方針
+
+現在の目的は、kurip追加学習で見えている「線断片化」「カテゴリごとの癖」を整理し、
+次回からMoE/カテゴリ別expertの入口へ進める状態にすること。
+
+再開予定:
+
+- 次回再開: 2026-07-16(木) 夜
+- 作業ブランチ: `MoE`
+- この時点の変更は未コミット。再開時はまず `git status --short` を確認する。
+
+重要な判断:
+
+- kurip refined 123件の線断片化は、content categoryだけでなく
+  raw manuscript上の切り出し視野が狭い問題である可能性が高い。
+- 新規raw datasetでも、同一座標/局所マッチング以前に
+  `source_crop -> output_size` のscale diagnosticを必ず通す。
+- `source_crop=960 -> output=480` は、480固定より絵の部位文脈が増える。
+- ただし `s960` だけでkuripの出力荒れは解決しない。
+- 顔・首元・髪・服の接続部など意味の明確な部位は比較的うまく出る一方、
+  コマ枠・吹き出し・単純な大曲線は生成力が弱い。
+- これはMoE/カテゴリ分けの強い動機になる。
+  難しさは「線が単純か複雑か」ではなく、カテゴリごとに
+  roughからlineへの規則が違う点にある。
+
+追加・変更した主なファイル:
+
+- `doc/moe_plan.md`
+  - MoE計画、metadata進捗、scale normalization検証、s960 fine-tune結果を追記
+- `tools/metadata/build_pair_metadata.py`
+  - `dataset/pairs_480/pair_metadata.csv` を生成するmetadata builder
+- `tools/metadata/make_content_review.py`
+  - refined kuripのcontent categoryレビューCSV/montage生成
+- `tools/metadata/README.md`
+  - metadata workflowメモ
+- `tools/pair_extraction/evaluate_crop_scales.py`
+  - refined座標をanchorに `480,720,960,1200` などのsource cropを比較
+  - 出力は全て `480x480` にresizeし、CSV/summary/montageを生成
+- `tools/pair_extraction/extract_scaled_refined_pairs.py`
+  - `source_crop=960 -> output=480` の実学習ペアを保存
+- `experiments/run_kurip_vlm_refined_s960_123_noac_ink2.sh`
+  - s960 refined 123件を既存base 1078件に混ぜてfine-tune
+- `tools/compare/make_kurip_vlm_accept_compare.py`
+  - `--device` 引数と進捗出力を追加
+  - GPU推論がsandbox内で詰まる場合にCPUで比較画像を生成できるようにした
+
+生成済み成果物:
+
+- `dataset/pairs_480/pair_metadata.csv`
+- `dataset/pairs_480/reviews/kurip_refined_content_review.csv`
+- `results/kurip_refined_content_review.png`
+- `results/kurip_crop_scale_eval.csv`
+- `results/kurip_crop_scale_summary.csv`
+- `results/kurip_crop_scale_eval.png`
+- `dataset/pairs_480/valid_train_kurip_vlm_accept_refined_s960.txt`
+- `dataset/pairs_480/valid_train_warm_regions_kurip_vlm_accept_refined_s960_123.txt`
+- `dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_clean_t192_cc8/`
+- `dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_123_mix_clean_t192_cc8/`
+- `results/kurip_vlm_accept_refined_s960_tiles.csv`
+- `results/kurip_vlm_accept_refined_s960_qc.png`
+- `checkpoints/kurip_vlm_refined_s960_123_noac_ink2/best.pth`
+- `checkpoints/kurip_vlm_refined_s960_123_noac_ink2/epoch010.pth`
+- `logs/train_kurip_vlm_refined_s960_123_noac_ink2.log`
+- `results/compare_kurip_vlm_refined_s960_123_noac_ink2_vs_shape1.png`
+- `results/compare_kurip_vlm_refined_s960_123_noac_ink2_train_vs_shape1.png`
+
+scale diagnostic結果:
+
+| source crop | rows | clamped | median line entropy | median component count | 所見 |
+|-------------|------|---------|---------------------|------------------------|------|
+| 480  | 123 | 0  | 0.659 | 5  | 線断片が多い |
+| 720  | 123 | 7  | 0.713 | 8  | 部位文脈が少し増える |
+| 960  | 123 | 11 | 0.741 | 12 | 手・髪・服などが見えやすい |
+| 1200 | 123 | 11 | 0.758 | 18 | 文脈は増えるが線が縮みすぎる懸念 |
+
+s960 fine-tune条件:
+
+- service: `lineart-kurip-vlm-refined-s960-123-ft.service`
+- checkpoint: `checkpoints/kurip_vlm_refined_s960_123_noac_ink2`
+- resume: `checkpoints/shape1/best.pth`
+- file list: `dataset/pairs_480/valid_train_warm_regions_kurip_vlm_accept_refined_s960_123.txt`
+- line dir: `dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_123_mix_clean_t192_cc8`
+- data: base 1078 + kurip_s960 123 = 1201
+- kurip ratio: 10.2%
+- epochs: 10
+- lr: `5e-5`
+- `--no-autocontrast`
+- `pos_weight=2.0`, `edge_weight=0.0`, `shape_weight=1.0`, `ink_weight=2.0`
+- final loss: `0.3087`
+
+fixed8 metrics:
+
+| model | F1@2px | chamfer | ink_ratio |
+|-------|-------:|--------:|----------:|
+| `shape1_noac` | 0.8471 | 1.493 | 1.536 |
+| `kurip_vlm_refined123_noac_ink2` | 0.9353 | 0.762 | 1.225 |
+| `kurip_vlm_refined_s960_123_noac_ink2` | 0.9353 | 0.759 | 1.239 |
+
+所見:
+
+- fixed8ではs960は前回refined123とほぼ同等。
+- chamferはわずかに改善、ink_ratioはやや増加。
+- train sampleでは480固定より文脈が増え、顔・首元など意味の明確なものは比較的うまい。
+- 一方でコマ枠・吹き出し・単純な大曲線は弱く、カテゴリごとに異なるexpertが必要な可能性がある。
+
+再開時の次アクション:
+
+1. 未コミット差分を確認する。
+   - `git status --short`
+   - `git diff --stat`
+2. 必要なら今回の変更をコミットする。
+   - metadata tooling
+   - scale diagnostic / scaled extraction
+   - s960 experiment script
+   - compare scriptの`--device`追加
+   - `doc/moe_plan.md` / `doc/work_log.md`
+3. refined kurip s960 123件をカテゴリ付けする。
+   - 最初のカテゴリ候補:
+     - `character_face_neck`
+     - `character_body_cloth`
+     - `panel_frame`
+     - `speech_bubble`
+     - `background_or_prop`
+     - `line_fragment_or_uncertain`
+4. VLMまたは手動レビューで `dataset/pairs_480/reviews/kurip_refined_content_review.csv`
+   を更新する。
+5. metadataにscale情報を追加する。
+   - `source_width`
+   - `source_height`
+   - `crop_source_size`
+   - `output_size`
+   - `scale_factor`
+6. カテゴリ別list builderを作る。
+7. 小さい比較実験を走らせる。
+   - `shape1 + s960 face/neck`
+   - `shape1 + s960 panel/bubble`
+   - `shape1 + s960 all`
+8. その結果で、hard-routed specialist / dataset gate / full MoE のどこから始めるか決める。
+
+注意:
+
+- 現時点で `results/fixed_output_metrics.csv` はs960評価で更新済み。
+- `dataset/*` と `results/**` は基本的にgit管理外。必要な再現情報はscriptとdocに残す。
+- 比較推論はsandbox内GPUで詰まることがあったため、
+  `tools/compare/make_kurip_vlm_accept_compare.py --device cpu` が安全。
+
+---
+
+## 2026-07-18
+
+### マシン停止後の復旧確認: shape1 leakage と clean baseline 再学習
+
+`doc/*.md` の既存記録より新しい作業がローカルに残っていた。重要な修正点は、
+旧実用モデル `shape1` の評価が train/test leakage により過大評価されていたこと。
+そのため、MoE のベースモデルを仕切り直し、leak-free split で再学習している途中だった。
+
+#### leakage の証拠
+
+監査スクリプト:
+
+- `tools/evaluation/audit_split_leakage.py`
+
+旧リストでの確認:
+
+```bash
+./venv/bin/python tools/evaluation/audit_split_leakage.py \
+  --train-list dataset/pairs_480/valid_train_warm_regions.txt \
+  --test-list dataset/pairs_480/valid_test.txt \
+  --limit 80
+```
+
+結果:
+
+- train: `dataset/pairs_480/valid_train_warm_regions.txt` = 1,078
+- test: `dataset/pairs_480/valid_test.txt` = 1,064
+- canonical tile overlaps: 24
+- canonical page overlaps: 1 (`lineart_004`)
+- exact rough file hash overlaps: 24
+- exact line file hash overlaps: 24
+- 例: `orig_004-10.jpg == lineart_004_010.jpg`
+
+つまり、旧 `shape1` の固定評価に使っていた `lineart_004` が、train側では
+`orig_004-*` として混入していた。rough/line とも hash が一致しており、
+単なる命名近似ではなく実ファイル重複。
+
+`results/fixed_output_metrics_clean_lineart004.csv` には、同じ `lineart_004`
+評価での leaky 旧モデルと clean split モデルの比較が残っている。
+
+- `shape1_leaky_lineart004`: F1@2px は概ね 0.956-0.992
+- `shape1_clean_split_bce_lineart004`: F1@2px は概ね 0.222-0.387
+
+この差は、旧 `shape1` の高スコアが汎化性能ではなく実質 memorization を含んでいた
+ことを強く示す。
+
+#### 追加された clean split 関連コード
+
+- `tools/evaluation/audit_split_leakage.py`
+  - canonical tile/page と rough/line hash で train/test overlap を監査
+- `tools/pair_extraction/build_clean_split_lists.py`
+  - leakage を除いた train/eval list を生成
+- `tools/evaluation/build_clean_eval_set.py`
+  - test tile から page leak も避けた固定評価候補を作成
+- `tools/evaluation/evaluate_fixed_outputs.py`
+  - `--sample-list`, `--split`, `--output-csv` に対応
+- `tools/compare/make_model_eval_compare.py`
+  - 任意の sample list / split / model output で montage を作成
+
+生成済みリスト:
+
+- `dataset/pairs_480/valid_train_warm_regions_clean_split.txt` = 1,054
+- `dataset/pairs_480/valid_train_base_clean_split.txt` = 636
+- `dataset/pairs_480/eval_fixed_clean.txt` = 8
+- `dataset/pairs_480/eval_fixed_clean_balanced.txt` = 12
+- `dataset/pairs_480/eval_fixed_clean_lineart004.txt` = 8
+
+#### clean split 再学習の結果
+
+完了済み:
+
+- `experiments/run_shape1_clean_split_experiment.sh`
+  - checkpoint: `checkpoints/shape1_clean_split/best.pth`
+  - train list: `valid_train_warm_regions_clean_split.txt` = 1,054
+  - loss設定: `pos_weight=2.0`, `shape_weight=1.0`, `ink_weight=2.0`
+  - epoch200 完了
+  - `results/fixed_output_metrics_clean_split.csv`
+  - fixed clean 8平均: F1@2px 約 0.1801
+
+- `experiments/run_shape1_clean_split_bce_experiment.sh`
+  - checkpoint: `checkpoints/shape1_clean_split_bce/best.pth`
+  - train list: `valid_train_warm_regions_clean_split.txt` = 1,054
+  - loss設定: `pos_weight=5.0`, `shape_weight=0.0`, `ink_weight=0.0`
+  - epoch200 完了
+  - `results/fixed_output_metrics_clean_split_bce.csv`
+  - fixed clean 8平均: F1@2px 約 0.1457
+
+#### マシン停止地点
+
+停止途中だった可能性が高い実験:
+
+- `experiments/run_shape1_base_clean_split_bce_experiment.sh`
+- checkpoint dir: `checkpoints/shape1_base_clean_split_bce`
+- log: `logs/train_shape1_base_clean_split_bce.log`
+- train list: `dataset/pairs_480/valid_train_base_clean_split.txt` = 636
+- eval list: `dataset/pairs_480/eval_fixed_clean_lineart004.txt`
+- loss設定: `pos_weight=5.0`, `shape_weight=0.0`, `ink_weight=0.0`
+- 予定: epoch 1-200
+
+確認時点:
+
+- systemd `lineart*` unit は動作なし
+- `scripts/train.py` の実行プロセスなし
+- log は `Epoch 109/200: loss=0.1575` まで
+- `checkpoints/shape1_base_clean_split_bce/epoch100.pth` あり
+- `checkpoints/shape1_base_clean_split_bce/best.pth` あり
+- `epoch110.pth` 以降なし
+- `results/fixed_output_metrics_base_clean_lineart004.csv` は未生成
+
+したがって、マシン停止地点は `shape1_base_clean_split_bce` の epoch109 直後と見る。
+
+#### 次の再開アクション
+
+1. `shape1_base_clean_split_bce` を resume して epoch200 まで完走させる。
+   - resume候補: `checkpoints/shape1_base_clean_split_bce/best.pth`
+   - 既存 `scripts/train.py` の `--resume` は epoch番号やscheduler状態を完全復元しない可能性があるため、
+     まず仕様を確認する。
+2. 完走後、`eval_fixed_clean_lineart004.txt` で推論・評価・montage生成。
+   - `results/fixed_output_metrics_base_clean_lineart004.csv`
+   - `results/compare_shape1_base_clean_lineart004.png`
+3. MoE のベースは旧 `shape1` ではなく、clean split で作り直した checkpoint から選ぶ。
+4. 必要なら `doc/MEMORY.md` の `shape1` 採用記述を修正し、旧スコアは leaky と明記する。
+
+#### 再開実行
+
+`shape1_base_clean_split_bce` の epoch109 best を保護してから、別checkpoint dirへ
+近似resumeを開始した。
+
+保護コピー:
+
+- `checkpoints/shape1_base_clean_split_bce/best_epoch109_before_resume.pth`
+
+起動したservice:
+
+- `lineart-shape1-base-clean-split-bce-resume.service`
+
+再開条件:
+
+- resume: `checkpoints/shape1_base_clean_split_bce/best.pth`
+- checkpoint dir: `checkpoints/shape1_base_clean_split_bce_resume`
+- log: `logs/train_shape1_base_clean_split_bce_resume.log`
+- train list: `dataset/pairs_480/valid_train_base_clean_split.txt`
+- epochs: 200
+- start epoch: 109 (`epoch 110 〜 200`)
+- lr: `4.35e-5`
+- `pos_weight=5.0`, `edge_weight=0.0`, `shape_weight=0.0`, `ink_weight=0.0`
+- autocontrast: enabled
+
+確認:
+
+- service は `active (running)`
+- log に `Resume from checkpoints/shape1_base_clean_split_bce/best.pth (epoch 109)`
+  と `epoch 110 〜 200` が出力済み
+
+進捗確認:
+
+```bash
+systemctl --user status lineart-shape1-base-clean-split-bce-resume.service
+tail -f logs/train_shape1_base_clean_split_bce_resume.log
+ls -lh checkpoints/shape1_base_clean_split_bce_resume/
+```
+
+#### pair dataset integrity 監査と unique baseline へ方針変更
+
+旧 `shape1` の leakage が判明したため、生データ由来タイルと学習リストも再監査する
+ことにした。
+
+追加:
+
+- `tools/evaluation/audit_pair_dataset_integrity.py`
+  - 複数 train/eval list をまとめて監査
+  - missing rough/line
+  - list内 duplicate name / canonical tile / exact rough hash / exact line hash
+  - train/eval 間 canonical tile/page overlap
+  - train/eval 間 exact rough/line hash overlap
+  - `--line-dir-override SOURCE=DIR` で kurip s960 の専用line dirにも対応
+- `tools/pair_extraction/build_clean_unique_lists.py`
+  - clean split から exact duplicate を除去した list を生成
+  - canonical tile と rough/line hash の組をキーに重複を削る
+  - `lineart_*` と `orig_*` が同一なら `lineart_*` を優先
+- `experiments/run_shape1_base_clean_unique_bce_experiment.sh`
+  - leakageなし、train内exact duplicateなしの base-only BCE/L1 baseline
+
+focus監査:
+
+```bash
+./venv/bin/python tools/evaluation/audit_pair_dataset_integrity.py \
+  --train-lists \
+    dataset/pairs_480/valid_train_warm_regions.txt \
+    dataset/pairs_480/valid_train_warm_regions_clean_split.txt \
+    dataset/pairs_480/valid_train_base_clean_split.txt \
+    dataset/pairs_480/valid_train_ako5_regions.txt \
+    dataset/pairs_480/valid_train_kurip_vlm_accept_refined_s960.txt \
+  --eval-lists \
+    dataset/pairs_480/valid_test.txt \
+    dataset/pairs_480/eval_fixed_clean.txt \
+    dataset/pairs_480/eval_fixed_clean_balanced.txt \
+    dataset/pairs_480/eval_fixed_clean_lineart004.txt \
+  --line-dir-override \
+    kurips960=dataset/pairs_480/train/line_kurip_vlm_accept_refined_s960_clean_t192_cc8 \
+  --output-summary results/pair_dataset_integrity_summary_focus.csv \
+  --output-findings results/pair_dataset_integrity_findings_focus.csv
+```
+
+結果:
+
+- `valid_train_warm_regions.txt`
+  - test overlapあり
+  - canonical tile overlap: 39
+  - canonical page overlap: 936
+  - exact rough hash overlap: 39
+  - exact line hash overlap: 39
+- `valid_train_warm_regions_clean_split.txt`
+  - test overlapなし
+  - ただし train内 exact duplicate: 167
+- `valid_train_base_clean_split.txt`
+  - test overlapなし
+  - ただし train内 exact duplicate: 167
+- `valid_train_ako5_regions.txt`
+  - 今回の focus eval との overlapなし
+- `valid_train_kurip_vlm_accept_refined_s960.txt`
+  - 専用 line dir override 後は missingなし
+  - 今回の focus eval との overlapなし
+
+重複除去:
+
+```bash
+./venv/bin/python tools/pair_extraction/build_clean_unique_lists.py
+```
+
+生成:
+
+- `dataset/pairs_480/valid_train_warm_regions_clean_unique.txt` = 887
+- `dataset/pairs_480/valid_train_base_clean_unique.txt` = 469
+- `dataset/pairs_480/clean_unique_removed.txt` = removed 167
+
+unique focus監査:
+
+- `results/pair_dataset_integrity_summary_unique_focus.csv`
+- `results/pair_dataset_integrity_findings_unique_focus.csv`
+- findings: 0
+
+方針変更:
+
+- `shape1_base_clean_split_bce_resume` は test leakage はないが train内 exact duplicate を含むため、
+  MoE base候補としては弱い。
+- checkpointは残したまま service を停止した。
+- duplicate-free の `valid_train_base_clean_unique.txt` で、base-only BCE/L1 baseline を
+  最初から学習し直す。
+
+停止したservice:
+
+- `lineart-shape1-base-clean-split-bce-resume.service`
+
+新規起動:
+
+- service: `lineart-shape1-base-clean-unique-bce.service`
+- checkpoint: `checkpoints/shape1_base_clean_unique_bce`
+- log: `logs/train_shape1_base_clean_unique_bce.service.log`
+- train list: `dataset/pairs_480/valid_train_base_clean_unique.txt` = 469
+- eval list: `dataset/pairs_480/eval_fixed_clean_lineart004.txt`
+- epochs: 200
+- lr: `1e-4`
+- `pos_weight=5.0`, `edge_weight=0.0`, `shape_weight=0.0`, `ink_weight=0.0`
+- autocontrast: enabled
+- 起動確認: `active (running)`, CUDA, epoch 1-200
+
+進捗確認:
+
+```bash
+systemctl --user status lineart-shape1-base-clean-unique-bce.service
+tail -f logs/train_shape1_base_clean_unique_bce.service.log
+ls -lh checkpoints/shape1_base_clean_unique_bce/
+```
+
+セッション切断耐性:
+
+- `loginctl show-user "$USER" -p Linger` は `Linger=yes`
+- Codex セッションや通常ログアウトが切れても user systemd service は継続できる
+- ただし transient unit なので、マシン再起動を跨ぐ自動復帰設定ではない
+- 2026-07-18 14時台確認時点で service は `active (running)`
+- log は epoch 73 付近まで進行、`checkpoints/shape1_base_clean_unique_bce/epoch070.pth`
+  と `best.pth` が保存済み
+- この service は学習完了後に推論、CSV評価、比較montage生成まで自動で実行する
+
+#### 今後の自律ループ方針
+
+ユーザー希望:
+
+- montage の画像評価後、単なるパラメータ変更や既存listの組み替えだけでなく、
+  生データからの抽出タイル再生成による dataset 再構成まで含めて任せる。
+- ループはおおむね以下:
+  1. 学習
+  2. 推論
+  3. 定量評価
+  4. montage / QC 目視レビュー
+  5. 問題の切り分け
+  6. loss / hyperparameter 変更、list構成変更、または raw からの tile再抽出
+  7. dataset integrity 監査
+  8. 再学習
+
+運用ルール:
+
+- 旧 `shape1` の leaky score は採用基準に使わない。
+- すべての学習候補は、少なくとも以下を通す:
+  - train/eval canonical tile overlapなし
+  - train/eval exact rough/line hash overlapなし
+  - train内 exact duplicateなし
+  - missing rough/lineなし。ただし専用line dirがある場合は明示overrideする
+- raw再抽出を行う場合も、保存前に dry-run CSV と QC montage を作る。
+- dataset/list/checkpoint/results は experiment 名に条件を含めて、既存成果物を上書きしない。
+- 採用判断は単一F1ではなく、以下を併用する:
+  - clean eval F1@2px
+  - chamfer
+  - ink_ratio
+  - blank/collapse 有無
+  - 黒太り、線の途切れ、roughにない線の増加
+  - source/category別の悪化
+- 大きな方針変更、破壊的削除、既存checkpoint/listの置換は行わない。
+  新しい候補を作り、比較してから採用する。
+
+当面の優先ループ:
+
+1. `shape1_base_clean_unique_bce` 完了後、生成済み montage と metrics を確認する。
+2. 結果が悪い場合は、原因を3系統に分ける。
+   - model/loss不足
+   - dataset量不足またはsource偏り
+   - tile抽出スケール・位置合わせ・採用閾値の問題
+3. raw再抽出候補を優先度順に検討する。
+   - base `lineart/orig/housei` の重複・leakageを避けた再抽出
+   - ako5r の採用閾値再検証、必要なら再抽出
+   - kurip s960 のカテゴリ別再抽出、専用line dir前提のmetadata整備
+4. 再抽出候補ごとに `audit_pair_dataset_integrity.py` で監査し、clean/unique list を作る。
+5. 小さい比較実験を回し、良い候補だけ MoE base / specialist 候補へ昇格する。
+
+#### 自律継続用 stage1 service 設定
+
+追加:
+
+- `tools/compare/make_multi_model_eval_compare.py`
+  - rough / 複数model出力 / GT を1枚のmontageにまとめる
+- `tools/evaluation/write_experiment_handoff.py`
+  - log、metrics、audit結果、montage場所を Markdown handoff にまとめる
+- `experiments/run_moe_base_autoloop_stage1.sh`
+  - `shape1_base_clean_unique_bce` 学習完了を待つ
+  - 完了後、必要なら推論・評価・単体montageを補完
+  - focused integrity audit と global list audit snapshot を実行
+  - leaky shape1 / clean_split_bce / base_clean_unique_bce の比較montageを作る
+  - handoff Markdown を生成
+- `experiments/launch_moe_base_autoloop_stage1.sh`
+  - stage1 runner を user systemd transient service として起動
+
+起動済み:
+
+- `lineart-moe-base-autoloop-stage1.service`
+- log: `logs/moe_base_autoloop_stage1.service.log`
+- 状態: `active`
+- 現在は `lineart-shape1-base-clean-unique-bce.service` の完了待ち
+
+stage1 完了時にできる予定の主な成果物:
+
+- `results/fixed_output_metrics_base_clean_unique_lineart004.csv`
+- `results/fixed_output_metrics_base_clean_lineart004_compare.csv`
+- `results/compare_shape1_base_clean_unique_lineart004.png`
+- `results/compare_clean_baselines_lineart004.png`
+- `results/pair_dataset_integrity_summary_base_clean_unique.csv`
+- `results/pair_dataset_integrity_findings_base_clean_unique.csv`
+- `results/pair_dataset_integrity_summary_autoloop_global.csv`
+- `results/pair_dataset_integrity_findings_autoloop_global.csv`
+- `doc/autoloop_handoff_shape1_base_clean_unique_bce.md`
+- `logs/moe_base_autoloop_stage1.done`
+
+stage1 完了通知:
+
+- `experiments/send_autoloop_notification.sh` を追加
+- `experiments/run_moe_base_autoloop_stage1.sh` の終了時に以下を実行する
+  - `logs/moe_base_autoloop_stage1.done` に完了時刻、handoff、montage、metricsを記録
+  - ローカル `notify-send`
+  - ローカル `wall`
+  - terminal bell
+  - `config/autoloop_notify.env` があれば、外部通知も送る
+- user systemd 環境には `DISPLAY=:0` と `DBUS_SESSION_BUS_ADDRESS` があり、
+  `notify-send` は使える見込み
+- 通知処理追加後、`lineart-moe-base-autoloop-stage1.service` は再起動済み
+- 学習service `lineart-shape1-base-clean-unique-bce.service` は active のまま
+
+外部通知設定:
+
+- `config/autoloop_notify.env` は `.gitignore` 済み。宛先やtokenを入れてよい。
+- 例:
+
+```bash
+# mail/mailx 経由
+AUTOLOOP_NOTIFY_EMAIL_TO='you@example.com'
+
+# ntfy 等の text/plain webhook
+AUTOLOOP_NOTIFY_WEBHOOK_TEXT_URL='https://ntfy.sh/your-topic'
+
+# Slack/Discord等の JSON webhook。ただし受け側のpayload形式により調整が必要。
+AUTOLOOP_NOTIFY_WEBHOOK_JSON_URL='https://example.com/webhook'
+
+# 別ホストへSSHして通知ログを書く
+AUTOLOOP_NOTIFY_SSH_TARGET='user@other-host'
+AUTOLOOP_NOTIFY_SSH_COMMAND='cat >> ~/lineart_autoloop_notifications.log'
+```
+
+- ChatGPT の「他環境でログイン中の画面」へ直接pushする標準経路はない。
+  必要なら webhook / mail / SSH / Slack / Discord / ntfy / Pushover 等を通知先にする。
+
+ntfy 試験設定:
+
+- `config/autoloop_notify.env` を作成済み。`.gitignore` 対象。
+- topic:
+  - `lineart-autoloop-41323a81-6f46-49e8-8fe0-9c95aceb0d5b`
+- URL:
+  - `https://ntfy.sh/lineart-autoloop-41323a81-6f46-49e8-8fe0-9c95aceb0d5b`
+- テスト送信:
+
+```bash
+experiments/send_autoloop_notification.sh \
+  'Lineart ntfy test' \
+  'ntfy notification test from /home/sh1/deepl/lineart'
+```
+
+- sandbox内ではDNS不可だったが、権限付き実行で ntfy response を確認済み。
+- response:
+  - topic `lineart-autoloop-41323a81-6f46-49e8-8fe0-9c95aceb0d5b`
+  - event `message`
+  - id `8SJmzKvRxmKZ`
+
+ntfy 再テスト:
+
+- ユーザーが ntfy にサインアップ後、同topicへ再送した。
+- 通常 notifier 経由の2回目:
+  - title `Lineart ntfy test 2`
+  - id `1fCzt6gttnyI`
+- スマホ通知が出なかったため、`curl` で high priority / title付き送信を実施。
+- high priority 送信:
+
+```bash
+curl --fail --silent --show-error --max-time 20 \
+  -H 'Title: Lineart ntfy test 3' \
+  -H 'Priority: high' \
+  -H 'Tags: warning' \
+  --data-binary 'Third ntfy test with high priority headers from /home/sh1/deepl/lineart' \
+  'https://ntfy.sh/lineart-autoloop-41323a81-6f46-49e8-8fe0-9c95aceb0d5b'
+```
+
+- response:
+  - id `v1P4gFFe7Fbh`
+  - priority `4`
+  - tags `warning`
+- ユーザー確認: high priority 版ではスマホ通知が出た。
+- 今の stage1 service は sandbox外の user systemd で動くため、完了時の ntfy 送信に
+  Codex 側の追加許可は不要。
+- ただし、スマホ通知を確実に出すには notifier 側も high priority header 対応に
+  変更する余地がある。
+
+セッションを降りる前の状態:
+
+- `lineart-shape1-base-clean-unique-bce.service`: active
+- `lineart-moe-base-autoloop-stage1.service`: active
+- `Linger=yes` 確認済み
+- SSH / Codex セッションを閉じても継続可能
+- マシン再起動や電源断は跨げない
+- stage1 完了後は成果物生成、handoff作成、ntfy通知まで自動実行予定
+
+確認:
+
+```bash
+systemctl --user status lineart-shape1-base-clean-unique-bce.service
+systemctl --user status lineart-moe-base-autoloop-stage1.service
+tail -f logs/train_shape1_base_clean_unique_bce.service.log
+tail -f logs/moe_base_autoloop_stage1.service.log
+```
+
+---
+
+## 2026-06-02
+
+### std実験 完了・結論
+
+3条件（std10 / std12 / std15）の epoch200 学習・推論がすべて完了。
+
+| 条件 | 枚数 | best loss | 評価 |
+|------|------|-----------|------|
+| std>=10 | 2,703 | 0.2549 | 実用外 |
+| std>=12 | 1,537 | 0.2583 | 実用外 |
+| std>=15 | 660   | 0.1705 | **採用** |
+
+比較画像: `results/compare_std_conditions.png`
+
+**結論:** 右（std15）に行くほど品質が良く、std10/12 は実用範囲に入らない。
+データが少なくても高品質サンプルのみで学習する方が有効。
+
+### 採用モデル
+
+`checkpoints/std15/best.pth`（loss=0.1705）
+
+### 現状の課題
+
+- std15 フィルタリングで660枚しかなく、データ量が不足
+- augmentation（hflip/rotation/crop）は補助として有効だが根本解決にはならない
+- **方針: 生データ追加を優先する**
+
+### 次セッションでやること
+
+1. 生データ追加（housei系など std>=15 相当の高品質ラフ画像を収集）
+2. `data_check.py` 等で新データの std を確認してフィルタリング
+3. `valid_train_std15.txt` を更新
+4. `checkpoints/std15/best.pth` から resume して追加学習（または再学習）
+5. augmentation 追加は任意（`train.py` の `SketchDataset` に paired hflip/rotation を追加）
+
+---
+
+## 過去の経緯（参考）
+
+### GAN試行
+- GAN1（checkpoints/gan/ep130）: 動作するが線がぼやける
+- GAN2: LR_D=2e-5 + N_CRITIC=2 → epoch10からmode collapse → 廃棄
+
+### UNet第2ラウンドまでの問題
+- checkpoints/base/best.pth（loss=0.1562）: 出力がblurry、線が鮮明でない
+- L1+BCE損失の限界、データ品質のばらつきが原因と判断
+- → std閾値によるデータ品質フィルタリングを導入
+
+### データ品質の知見
+- housei系roughは全体的に薄い（autocontrast前 std 3〜6）
+- autocontrastで補正しても薄いものは薄い → std>=15 が実用ライン
+- housei_001（testセット）はラフでなく撮影指示シート等が混入 → 評価不適
+- lineart_* / orig_* のroughは品質問題なし（std>=11）
