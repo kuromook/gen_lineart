@@ -2,17 +2,14 @@
 
 ラフ画像（手書きスケッチ）から線画を生成する深層学習プロジェクト。
 
-![比較結果](results/compare_std_conditions.png)
-*左から std>=10 / std>=12 / std>=15 で学習したモデルの出力比較*
-
 ---
 
 ## 概要
 
 UNet ベースのモデルでラフ画像を線画に変換します。  
-Canny エッジ損失（`lineart/losses.py`）と BCE+L1 損失を組み合わせ、細かい線質を保った出力を目指します。
+BCE、形状系 loss、インク量 loss などを切り替えながら、ラフと線画の対応を学習します。
 
-**採用モデル:** データ品質フィルタリング（autocontrast後 std>=15）で厳選した 660 枚で学習した `checkpoints/std15/best.pth`（loss=0.1705）
+現在は過去の train/eval leakage を前提から外し、clean evaluation に基づいてベースモデルを作り直している段階です。旧 `shape1` や `std15` の高評価は採用基準として使いません。現状は `doc/CURRENT.md` を参照してください。
 
 ---
 
@@ -42,12 +39,10 @@ dataset/
     test/
       rough/
       line/
-    valid_train_std15.txt  # 品質フィルタ済みファイルリスト（660枚）
+    *.txt      # 学習・評価用ファイルリスト
 ```
 
-**品質フィルタリングの知見:**  
-housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の std>=15 が実用ラインと判明。  
-`tools/evaluation/data_check.py` で各ファイルの std を確認できます。
+生データからの抽出・保存・監査ルールは `doc/EXTRACTION_RULES.md` にまとめています。新しい raw dataset は、同一座標抽出を行う前に alignment 診断と QC を通してください。
 
 ---
 
@@ -55,8 +50,8 @@ housei 系のラフは全体的に薄く（std 3〜6）、autocontrast 後の st
 
 ```bash
 python scripts/train.py \
-  --file-list dataset/pairs_480/valid_train_std15.txt \
-  --checkpoint-dir checkpoints/std15 \
+  --file-list dataset/pairs_480/<train_list>.txt \
+  --checkpoint-dir checkpoints/<experiment_name> \
   --autocontrast
 ```
 
@@ -77,7 +72,7 @@ python scripts/train.py \
 
 ```bash
 python scripts/inference.py \
-  --checkpoint checkpoints/std15/best.pth \
+  --checkpoint checkpoints/<experiment_name>/best.pth \
   --input path/to/rough.jpg \
   --output results/output.png \
   --autocontrast
@@ -85,15 +80,23 @@ python scripts/inference.py \
 
 ---
 
-## 実験結果
+## 現在の評価状態
 
-| 条件 | 学習枚数 | best loss | 評価 |
-|---|---|---|---|
-| std>=10 | 2,703 | 0.2549 | 実用外 |
-| std>=12 | 1,537 | 0.2583 | 実用外 |
-| **std>=15** | **660** | **0.1705** | **採用** |
+旧実験結果は leakage を含む可能性があるため、トップレベルの採用判断から外しました。
 
-データ量より品質が重要。少数精鋭のフィルタリングが有効でした。
+現在の clean lineart004 比較:
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `shape1_clean_split_bce_lineart004` | 0.2955 | 7.174 | 1.316 |
+| `shape1_base_clean_unique_bce` | 0.2786 | 7.718 | 1.600 |
+
+この比較では `shape1_base_clean_unique_bce` は改善していません。次の確認対象は `shape1_std15_clean_split_moredupes_bce` の epoch020 clean eval です。
+
+最新の結果入口:
+
+- `doc/CURRENT.md`
+- `results/CURRENT.md`
 
 ---
 
@@ -102,8 +105,10 @@ python scripts/inference.py \
 | ファイル | 役割 |
 |---|---|
 | `lineart/unetgenerator.py` | UNetGenerator（ResBlock, DilatedConvBlock）|
-| `lineart/losses.py` | Canny ベースの edge_loss |
+| `lineart/losses.py` | edge / tolerant F1 / ink loss |
 | `scripts/train.py` | 学習スクリプト |
 | `scripts/inference.py` | 推論スクリプト |
-| `tools/evaluation/data_check.py` | データ品質確認ツール |
-| `experiments/run_std_experiments.sh` | std 条件一括実験スクリプト |
+| `tools/evaluation/audit_pair_dataset_integrity.py` | train/eval leakage と欠損の監査 |
+| `tools/evaluation/evaluate_fixed_outputs.py` | 固定サンプル評価 |
+| `tools/pair_extraction/` | raw pair 抽出・alignment・clean list 生成 |
+| `experiments/` | 実験ランナー |
