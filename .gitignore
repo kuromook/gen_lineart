@@ -15,9 +15,13 @@ debug_output/
 
 *.log
 *.pid
+logs/
 
 # Generated experiment outputs. Existing tracked result snapshots remain
 # tracked; add new representative artifacts explicitly with `git add -f`.
 results/**
 !results/
 !results/README.md
+
+# Local notification secrets / endpoints.
+config/autoloop_notify.env

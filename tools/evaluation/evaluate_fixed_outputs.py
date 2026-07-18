@@ -26,9 +26,20 @@ SAMPLES = [
 OUTPUT_CSV = "results/fixed_output_metrics.csv"
 
 
-def dataset_path(name):
-    split = "train" if name.startswith("housei") else "test"
-    return f"dataset/pairs_480/{split}/line/{name}.jpg"
+def read_sample_list(path):
+    with open(path) as file:
+        return [line.strip() for line in file if line.strip()]
+
+
+def normalize_name(name):
+    return name[:-4] if name.endswith(".jpg") else name
+
+
+def dataset_path(name, split):
+    base = normalize_name(name)
+    if split == "auto":
+        split = "train" if base.startswith("housei") else "test"
+    return f"dataset/pairs_480/{split}/line/{base}.jpg"
 
 
 def load_ink(path):
@@ -69,17 +80,18 @@ def metrics(pred, target):
     }
 
 
-def main(models):
+def main(models, samples, output_csv, split):
     rows = []
-    for name in SAMPLES:
-        target = load_ink(dataset_path(name))
+    for name in samples:
+        target = load_ink(dataset_path(name, split))
         for model in models:
-            pred = load_ink(f"results/{model}/{name}_out.png")
-            row = {"sample": name, "model": model, **metrics(pred, target)}
+            base = normalize_name(name)
+            pred = load_ink(f"results/{model}/{base}_out.png")
+            row = {"sample": base, "model": model, **metrics(pred, target)}
             rows.append(row)
 
     fields = list(rows[0])
-    with open(OUTPUT_CSV, "w", newline="") as file:
+    with open(output_csv, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
@@ -96,11 +108,15 @@ def main(models):
             f"  {means['ink_ratio']:9.3f}  {means['precision_2px']:.4f}"
             f"  {means['recall_2px']:.4f}"
         )
-    print(f"\nsaved: {OUTPUT_CSV}")
+    print(f"\nsaved: {output_csv}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", nargs="+", default=DEFAULT_MODELS)
+    parser.add_argument("--sample-list", default=None)
+    parser.add_argument("--output-csv", default=OUTPUT_CSV)
+    parser.add_argument("--split", choices=["auto", "train", "test"], default="auto")
     args = parser.parse_args()
-    main(args.models)
+    samples = read_sample_list(args.sample_list) if args.sample_list else SAMPLES
+    main(args.models, samples, args.output_csv, args.split)

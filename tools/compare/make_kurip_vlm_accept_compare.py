@@ -111,19 +111,25 @@ def main():
     parser.add_argument("--train-list", default=DEFAULT_TRAIN_LIST)
     parser.add_argument("--line-dir", default=DEFAULT_LINE_DIR)
     parser.add_argument("--train-sample-count", type=int, default=8)
+    parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     args = parser.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if args.device == "auto" and torch.cuda.is_available() else args.device
+    if device == "auto":
+        device = "cpu"
+    print(f"device: {device}", flush=True)
     shape1 = load_model(SHAPE1_CKPT, device)
     vlm = load_model(args.checkpoint, device)
 
-    for name in FIXED_SAMPLES:
+    for index, name in enumerate(FIXED_SAMPLES, 1):
+        print(f"fixed {index}/{len(FIXED_SAMPLES)} {name}", flush=True)
         rough = fixed_dataset_path(name, "rough")
         infer(shape1, rough, f"results/shape1_noac/{name}_out.png", device)
         infer(vlm, rough, f"results/{args.tag}/{name}_out.png", device)
 
     train_samples = vlm_samples(args.train_sample_count, args.train_list)
-    for name in train_samples:
+    for index, name in enumerate(train_samples, 1):
+        print(f"train {index}/{len(train_samples)} {name}", flush=True)
         rough = f"dataset/pairs_480/train/rough/{name}.jpg"
         infer(shape1, rough, f"results/shape1_kurip_vlm_accept_samples/{name}_out.png", device)
         infer(vlm, rough, f"results/{args.tag}_samples/{name}_out.png", device)
