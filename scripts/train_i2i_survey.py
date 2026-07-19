@@ -1,0 +1,389 @@
+import argparse
+import os
+import random
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms.functional as TF
+from PIL import Image, ImageOps
+from torch.utils.data import DataLoader, Dataset
+
+from lineart.losses import ink_loss, tolerant_f1_loss
+from lineart.model_zoo import MultiScalePatchDiscriminator, PatchDiscriminator, build_generator
+
+
+IMAGE_SIZE = 480
+
+
+def skeletonize_ink(ink):
+    mask = (ink > 0.5).astype(np.uint8) * 255
+    skel = np.zeros_like(mask)
+    element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+    while cv2.countNonZero(mask) > 0:
+        eroded = cv2.erode(mask, element)
+        opened = cv2.dilate(eroded, element)
+        skel = cv2.bitwise_or(skel, cv2.subtract(mask, opened))
+        mask = eroded
+    return (skel.astype(np.float32) / 255.0)[None, :, :]
+
+
+class SketchDataset(Dataset):
+    def __init__(
+        self,
+        rough_dir,
+        line_dir,
+        file_list,
+        autocontrast_rough=True,
+        augment=False,
+        aux_dir=None,
+        aux_dropout=0.0,
+        aux_scale_min=1.0,
+        use_skeleton=False,
+    ):
+        with open(file_list) as file:
+            self.files = [line.strip() for line in file if line.strip()]
+        self.rough_dir = rough_dir
+        self.line_dir = line_dir
+        self.autocontrast_rough = autocontrast_rough
+        self.augment = augment
+        self.aux_dir = aux_dir
+        self.aux_dropout = aux_dropout
+        self.aux_scale_min = aux_scale_min
+        self.use_skeleton = use_skeleton
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        name = self.files[idx]
+        rough = Image.open(os.path.join(self.rough_dir, name)).convert("L")
+        line = Image.open(os.path.join(self.line_dir, name)).convert("L")
+        if self.autocontrast_rough:
+            rough = ImageOps.autocontrast(rough, cutoff=0)
+        rough = TF.resize(rough, (IMAGE_SIZE, IMAGE_SIZE))
+        line = TF.resize(line, (IMAGE_SIZE, IMAGE_SIZE))
+        tensors = [TF.to_tensor(rough)]
+        if self.aux_dir:
+            aux_name = f"{Path(name).stem}_out.png"
+            aux = Image.open(os.path.join(self.aux_dir, aux_name)).convert("L")
+            aux = TF.resize(aux, (IMAGE_SIZE, IMAGE_SIZE))
+            aux_tensor = TF.to_tensor(aux)
+            if self.aux_dropout > 0.0 and random.random() < self.aux_dropout:
+                scale = random.uniform(self.aux_scale_min, 1.0)
+                aux_tensor = aux_tensor * scale + (1.0 - scale)
+            tensors.append(aux_tensor)
+        target = 1.0 - TF.to_tensor(line)
+        if self.augment and random.random() < 0.5:
+            rough = TF.hflip(rough)
+            line = TF.hflip(line)
+            tensors = [TF.hflip(tensor) for tensor in tensors]
+            target = TF.hflip(target)
+        if self.use_skeleton:
+            skeleton = torch.from_numpy(skeletonize_ink(target[0].numpy()))
+            return torch.cat(tensors, dim=0), target, skeleton
+        return torch.cat(tensors, dim=0), target
+
+
+def load_generator_weights(model, path, device, strict=True):
+    if not path:
+        return
+    checkpoint = torch.load(path, map_location=device)
+    if isinstance(checkpoint, dict) and "G_state" in checkpoint:
+        state = checkpoint["G_state"]
+    elif isinstance(checkpoint, dict) and "model_state" in checkpoint:
+        state = checkpoint["model_state"]
+    else:
+        state = checkpoint
+    missing, unexpected = model.load_state_dict(state, strict=strict)
+    if missing or unexpected:
+        print(f"resume non-strict missing={len(missing)} unexpected={len(unexpected)}")
+    print(f"resume_generator={path}")
+
+
+def save_checkpoint(path, model_name, G, D=None, epoch=0, opt_G=None, opt_D=None, in_channels=1):
+    payload = {
+        "model_name": model_name,
+        "in_channels": in_channels,
+        "epoch": epoch,
+        "model_state": G.state_dict(),
+        "G_state": G.state_dict(),
+    }
+    if D is not None:
+        payload["D_state"] = D.state_dict()
+    if opt_G is not None:
+        payload["opt_G"] = opt_G.state_dict()
+    if opt_D is not None:
+        payload["opt_D"] = opt_D.state_dict()
+    torch.save(payload, path)
+
+
+def train_reconstruction(args, device):
+    in_channels = 2 if args.aux_dir else 1
+    G = build_generator(args.model, in_channels=in_channels).to(device)
+    load_generator_weights(G, args.resume_generator, device, strict=args.strict_resume)
+    opt_G = torch.optim.AdamW(G.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    pos_weight = torch.tensor(args.pos_weight, dtype=torch.float32, device=device)
+    bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    return G, None, opt_G, None, bce
+
+
+def binary_confidence_loss(pred):
+    """Penalize uncertain mid-gray ink probabilities."""
+    return (pred * (1.0 - pred)).mean()
+
+
+def soft_width_loss(pred):
+    """Penalize broad local ink spread while preserving sparse line candidates."""
+    local = F.avg_pool2d(pred, kernel_size=7, stride=1, padding=3)
+    return (pred * local).mean()
+
+
+def structure_pyramid_loss(pred, target):
+    """Compare Sobel/DoG-like structure at two scales."""
+    losses = []
+    for scale in (1, 2):
+        if scale > 1:
+            pred_s = F.avg_pool2d(pred, kernel_size=scale, stride=scale)
+            target_s = F.avg_pool2d(target, kernel_size=scale, stride=scale)
+        else:
+            pred_s = pred
+            target_s = target
+        pred_blur = F.avg_pool2d(pred_s, kernel_size=5, stride=1, padding=2)
+        target_blur = F.avg_pool2d(target_s, kernel_size=5, stride=1, padding=2)
+        losses.append(F.l1_loss(pred_s - pred_blur, target_s - target_blur))
+        sobel_x = torch.tensor(
+            [[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]],
+            dtype=pred.dtype,
+            device=pred.device,
+        ).unsqueeze(0)
+        sobel_y = sobel_x.transpose(-1, -2)
+        pred_gx = F.conv2d(pred_s, sobel_x, padding=1)
+        pred_gy = F.conv2d(pred_s, sobel_y, padding=1)
+        target_gx = F.conv2d(target_s, sobel_x, padding=1)
+        target_gy = F.conv2d(target_s, sobel_y, padding=1)
+        losses.append(F.l1_loss(pred_gx, target_gx))
+        losses.append(F.l1_loss(pred_gy, target_gy))
+    return sum(losses) / len(losses)
+
+
+def adversarial_mse(scores, target_value):
+    if isinstance(scores, (list, tuple)):
+        return sum(F.mse_loss(score, torch.full_like(score, target_value)) for score in scores) / len(scores)
+    return F.mse_loss(scores, torch.full_like(scores, target_value))
+
+
+def feature_matching_loss(fake_features, real_features):
+    loss = 0.0
+    count = 0
+    for fake_group, real_group in zip(fake_features, real_features):
+        for fake, real in zip(fake_group, real_group):
+            loss = loss + F.l1_loss(fake, real.detach())
+            count += 1
+    return loss / max(count, 1)
+
+
+def train(args):
+    random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    dataset = SketchDataset(
+        args.rough_dir,
+        args.line_dir,
+        args.file_list,
+        autocontrast_rough=args.autocontrast,
+        augment=args.augment,
+        aux_dir=args.aux_dir,
+        aux_dropout=args.aux_dropout,
+        aux_scale_min=args.aux_scale_min,
+        use_skeleton=args.skeleton_weight > 0.0,
+    )
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.workers,
+        pin_memory=True,
+    )
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
+    G, D, opt_G, opt_D, bce = train_reconstruction(args, device)
+    if args.gan:
+        if args.multiscale_gan:
+            D = MultiScalePatchDiscriminator().to(device)
+        else:
+            D = PatchDiscriminator().to(device)
+        opt_D = torch.optim.AdamW(D.parameters(), lr=args.lr_d, betas=(0.5, 0.999))
+
+    print(f"device={device}")
+    print(f"model={args.model} gan={args.gan} multiscale_gan={args.multiscale_gan}")
+    print(f"in_channels={2 if args.aux_dir else 1} aux_dir={args.aux_dir or ''}")
+    print(f"aux_dropout={args.aux_dropout} aux_scale_min={args.aux_scale_min}")
+    print(f"file_list={args.file_list} rows={len(dataset)}")
+    print(f"checkpoint_dir={args.checkpoint_dir}")
+    print(
+        f"loss: bce={args.bce_weight} l1={args.l1_weight} "
+        f"tolerant={args.shape_weight} ink={args.ink_weight} "
+        f"binary={args.binary_weight} skeleton={args.skeleton_weight} "
+        f"width={args.width_weight} "
+        f"structure={args.structure_weight} "
+        f"fm={args.feature_match_weight} "
+        f"adv={args.adv_weight}"
+    )
+
+    best_loss = float("inf")
+    for epoch in range(1, args.epochs + 1):
+        G.train()
+        if D is not None:
+            D.train()
+        g_sum = d_sum = 0.0
+        steps = 0
+        for batch in loader:
+            if args.skeleton_weight > 0.0:
+                rough, target, skeleton = batch
+                skeleton = skeleton.to(device)
+            else:
+                rough, target = batch
+                skeleton = None
+            rough = rough.to(device)
+            target = target.to(device)
+
+            pred_logits = G(rough)
+            pred = torch.sigmoid(pred_logits)
+            loss_recon = (
+                args.bce_weight * bce(pred_logits, target)
+                + args.l1_weight * F.l1_loss(pred, target)
+                + args.shape_weight * tolerant_f1_loss(pred, target)
+                + args.ink_weight * ink_loss(pred, target)
+                + args.binary_weight * binary_confidence_loss(pred)
+                + args.width_weight * soft_width_loss(pred)
+                + args.structure_weight * structure_pyramid_loss(pred, target)
+            )
+            if skeleton is not None:
+                loss_recon = loss_recon + args.skeleton_weight * bce(pred_logits, skeleton)
+            loss_G = loss_recon
+            if D is not None:
+                if args.feature_match_weight > 0.0:
+                    fake_score, fake_features = D(rough[:, :1], pred, return_features=True)
+                    with torch.no_grad():
+                        _, real_features = D(rough[:, :1], target, return_features=True)
+                    loss_fm = feature_matching_loss(fake_features, real_features)
+                else:
+                    fake_score = D(rough[:, :1], pred)
+                    loss_fm = 0.0
+                loss_adv = adversarial_mse(fake_score, 1.0)
+                loss_G = loss_G + args.adv_weight * loss_adv
+                if args.feature_match_weight > 0.0:
+                    loss_G = loss_G + args.feature_match_weight * loss_fm
+
+            opt_G.zero_grad()
+            loss_G.backward()
+            torch.nn.utils.clip_grad_norm_(G.parameters(), 1.0)
+            opt_G.step()
+
+            if D is not None:
+                with torch.no_grad():
+                    fake = torch.sigmoid(G(rough))
+                opt_D.zero_grad()
+                real_score = D(rough[:, :1], target)
+                fake_score = D(rough[:, :1], fake.detach())
+                loss_D = 0.5 * (
+                    adversarial_mse(real_score, 0.9)
+                    + adversarial_mse(fake_score, 0.0)
+                )
+                loss_D.backward()
+                opt_D.step()
+                d_sum += loss_D.item()
+
+            g_sum += loss_G.item()
+            steps += 1
+
+        avg_g = g_sum / max(steps, 1)
+        avg_d = d_sum / max(steps, 1) if D is not None else 0.0
+        print(f"Epoch {epoch:03d}/{args.epochs}: G={avg_g:.4f} D={avg_d:.4f}", flush=True)
+        if avg_g < best_loss:
+            best_loss = avg_g
+            save_checkpoint(
+                os.path.join(args.checkpoint_dir, "best.pth"),
+                args.model,
+                G,
+                D=D,
+                epoch=epoch,
+                opt_G=opt_G,
+                opt_D=opt_D,
+                in_channels=2 if args.aux_dir else 1,
+            )
+        if epoch % args.save_every == 0:
+            save_checkpoint(
+                os.path.join(args.checkpoint_dir, f"epoch{epoch:03d}.pth"),
+                args.model,
+                G,
+                D=D,
+                epoch=epoch,
+                opt_G=opt_G,
+                opt_D=opt_D,
+                in_channels=2 if args.aux_dir else 1,
+            )
+    print(f"saved: {args.checkpoint_dir}/best.pth")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model",
+        choices=[
+            "unet",
+            "unet_skip25",
+            "unet_skip50",
+            "resnet",
+            "cleanup",
+            "maskcleanup",
+            "flowmaskcleanup",
+            "flowmaskunet",
+            "softflowmaskunet",
+        ],
+        required=True,
+    )
+    parser.add_argument("--gan", action="store_true")
+    parser.add_argument("--multiscale-gan", action="store_true")
+    parser.add_argument("--file-list", default="dataset/pairs_480/valid_train_milddup800_clean.txt")
+    parser.add_argument("--rough-dir", default="dataset/pairs_480/train/rough")
+    parser.add_argument("--line-dir", default="dataset/pairs_480/train/line")
+    parser.add_argument("--aux-dir", default=None)
+    parser.add_argument("--aux-dropout", type=float, default=0.0)
+    parser.add_argument("--aux-scale-min", type=float, default=1.0)
+    parser.add_argument("--checkpoint-dir", required=True)
+    parser.add_argument("--resume-generator", default=None)
+    parser.add_argument("--strict-resume", action="store_true")
+    parser.add_argument("--epochs", type=int, default=2)
+    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--workers", type=int, default=0)
+    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr-d", type=float, default=2e-5)
+    parser.add_argument("--pos-weight", type=float, default=3.0)
+    parser.add_argument("--bce-weight", type=float, default=0.6)
+    parser.add_argument("--l1-weight", type=float, default=0.2)
+    parser.add_argument("--shape-weight", type=float, default=0.05)
+    parser.add_argument("--ink-weight", type=float, default=0.02)
+    parser.add_argument("--binary-weight", type=float, default=0.0)
+    parser.add_argument("--skeleton-weight", type=float, default=0.0)
+    parser.add_argument("--width-weight", type=float, default=0.0)
+    parser.add_argument("--structure-weight", type=float, default=0.0)
+    parser.add_argument("--feature-match-weight", type=float, default=0.0)
+    parser.add_argument("--adv-weight", type=float, default=0.02)
+    parser.add_argument("--save-every", type=int, default=10)
+    parser.add_argument("--seed", type=int, default=1234)
+    parser.add_argument("--autocontrast", action="store_true", default=True)
+    parser.add_argument("--no-autocontrast", dest="autocontrast", action="store_false")
+    parser.add_argument("--augment", action="store_true")
+    args = parser.parse_args()
+    train(args)
+
+
+if __name__ == "__main__":
+    main()
