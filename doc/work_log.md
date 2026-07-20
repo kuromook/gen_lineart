@@ -219,6 +219,70 @@ Added survey implementation:
     - `resnet_gan`
   - builds one shared montage with clean BCE baseline and milddup800
 
+## 2026-07-20
+
+### Worktree Operation Policy
+
+Recorded the multi-worktree operating policy in `doc/worktree_policy.md`.
+
+Current branch roles:
+
+- main worktree `/home/sh1/deepl/lineart` on `MoE`: integration, shared docs,
+  and result summaries
+- `/home/sh1/deepl/lineart-halo-loss` on `halo-loss`: halo/faint-gray focused
+  loss experiments
+- `/home/sh1/deepl/lineart-router-moe` on `router-moe`: router/MoE feature
+  engineering and routed inference
+
+Schedule policy:
+
+- keep weekday daytime work to implementation, analysis, short smoke tests, and
+  documentation
+- treat router/MoE as night-batch work because it can run long
+- schedule heavy router/MoE runs primarily for Thursday, Friday, and Saturday
+  nights
+- send only the final completion notification for sleep-time chained runs
+
+### Halo Loss Result And Current Priority
+
+Completed `halo_loss_e2` from the `halo-loss` worktree.
+
+Artifacts:
+
+- `results/compare_halo_loss_e2.png`
+- `results/fixed_output_metrics_halo_loss_e2_compare.csv`
+- `results/halo_metrics_halo_loss_e2_compare.csv`
+- `logs/halo_loss_e2.done`
+
+Key results:
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `lucy_thin` | 0.4095 | 4.536 | 1.252 |
+| `agreement_halo_e2_high_agreement` | 0.4363 | 4.271 | 2.128 |
+| `halo_loss_e2_mild_halo06` | 0.3695 | 4.927 | 0.814 |
+| `halo_loss_e2_mild_halo10_faint04` | 0.3458 | 5.144 | 0.679 |
+| `halo_loss_e2_high_halo10_faint04` | 0.4258 | 4.402 | 1.657 |
+
+Interpretation:
+
+- the current halo-band penalty reduces overall ink, but it also suppresses
+  useful nearby line structure
+- full-list halo-loss variants become too pale and lose recall
+- high-agreement plus halo/faint loss is the best of the new variants, but it
+  still does not explain or solve halo cleanly
+- halo-specific metrics suggest some ink reduction is being traded for faint
+  gray residue rather than true halo removal
+
+Current priority:
+
+- do not optimize directly for "remove halo" yet
+- first identify what creates halo: atari generation, aux conditioning,
+  generator loss, target mismatch, model architecture, binarization/deblur, or
+  data alignment
+- use controlled diagnostics before deciding the next corrective loss or model
+  change
+
 Verification already run:
 
 ```bash

@@ -93,6 +93,22 @@ Use direction-specific logs while a branch is active:
 When a branch produces a meaningful result, summarize it back into
 `doc/work_log.md` on the `MoE` integration branch.
 
+## Schedule Rules
+
+This PC is used for another project from Monday through Thursday daytime.
+Plan line-art GPU-heavy jobs around that constraint.
+
+- Daytime work:
+  - keep to implementation, analysis, short smoke tests, and documentation
+  - prefer `halo-loss` and other small controlled experiments
+- Router/MoE work:
+  - treat as night-batch work because feature engineering and routed comparison
+    can run long
+  - schedule primarily for Thursday, Friday, and Saturday nights
+  - launch before sleep and inspect results the next morning
+  - send only the final completion notification unless explicitly requested
+- Avoid starting long router/MoE GPU jobs during Monday-Thursday daytime.
+
 ## Commit Rules
 
 - Commit focused branch work in its own worktree.
