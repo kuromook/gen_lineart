@@ -219,6 +219,44 @@ Added survey implementation:
     - `resnet_gan`
   - builds one shared montage with clean BCE baseline and milddup800
 
+## 2026-07-20
+
+### Router/MoE Backlog: Solid-Fill Tile Group
+
+Observation from shuffled halo diagnosis montage:
+
+- tiles with large solid-fill regions have visibly different statistics from
+  ordinary line-only tiles
+- examples include:
+  - hair blacks
+  - clothing blacks
+  - simple large filled shapes
+- these tiles should likely be separated in router/MoE rather than handled by
+  the same expert as ordinary sketch-line tiles
+
+Router/MoE task:
+
+- add black/white distribution features for large solid-fill detection
+- candidate features:
+  - ink ratio / dark pixel ratio
+  - connected-component area of dark regions
+  - largest dark component ratio
+  - low-frequency dark mass after downsampling
+  - fill compactness versus line-like thinness
+  - local variance / edge-to-ink ratio
+- create a `solid_fill` or `large_black_region` routing dimension
+- compare whether these tiles prefer:
+  - bin/ink-heavy experts
+  - cleanup experts
+  - a separate fill-preserving expert
+  - special post-processing to avoid mistaking fills for halo/noise
+
+Scheduling:
+
+- keep this as router/MoE work, not halo-loss work
+- because router/MoE feature engineering can run long, schedule substantial
+  runs for Thursday, Friday, or Saturday night batches
+
 Verification already run:
 
 ```bash
@@ -1636,3 +1674,126 @@ Expected run:
 - expected metrics: `results/fixed_output_metrics_agreement_halo_e2_compare.csv`
 - expected halo metrics: `results/halo_metrics_agreement_halo_e2_compare.csv`
 - expected done marker: `logs/agreement_halo_e2.done`
+
+### Router/MoE Restart Plan For Friday
+
+Current situation:
+
+- local model/loss/cleanup exploration has mostly reached diminishing returns
+- current single-model baseline from the main `MoE` branch is:
+  - short name: `edge-bghaze`
+  - full prefix: `2ch_haze_control_e3_edge_preserve_2ch_bghaze06_e3`
+  - recipe:
+    - raw rough as channel 1
+    - `edge_preserve` cleaned rough as channel 2
+    - U-Net, 3 epochs, no autocontrast
+    - `--background-haze-weight 0.06`
+    - `--background-haze-radius 9`
+- next theme is data expansion plus router/MoE, not further small parameter
+  sweeps in the same global model
+
+Important constraint:
+
+- this router/MoE worktree currently does not have the ignored dataset files
+  under `dataset/pairs_480`
+- use the main worktree dataset path as source when running feature extraction:
+  `/home/sh1/deepl/lineart/dataset/pairs_480`
+- do not start long feature-engineering or training runs before Friday
+
+Friday restart objective:
+
+- build a router feature table that can drive both:
+  - dataset augmentation/splitting
+  - later expert-selection policy
+- avoid training a learned router before the feature table and oracle behavior
+  are understood
+
+Initial feature groups:
+
+- source / provenance:
+  - filename prefix: `lineart`, `kurip`, `ako5`, `housei`, unknown
+  - existing `pair_metadata.csv` fields if available
+- rough/line agreement:
+  - edge precision
+  - edge recall
+  - edge F1
+  - chamfer
+  - rough edge density
+  - line edge density
+  - density ratio
+  - agreement score
+- black/solid-fill statistics:
+  - target line ink ratio
+  - rough dark pixel ratio
+  - largest dark connected-component ratio
+  - top-k dark component area ratios
+  - component compactness / fill-like score
+  - edge-to-ink ratio to separate fills from line texture
+- haze / dirty rough statistics:
+  - rough midtone ratio
+  - faint ink ratio after rough inversion
+  - background low-frequency darkness
+  - edge-preserved cleaned rough delta from raw rough
+- shape/texture:
+  - orientation histogram entropy
+  - gradient density
+  - low/mid/high frequency power ratios
+
+Planned first script:
+
+- add `tools/router/build_router_feature_table.py`
+- input:
+  - `--file-list`
+  - `--dataset-root`
+  - optional `--output-csv`
+- output:
+  - one row per tile
+  - stable numeric features suitable for sorting, clustering, and later router
+    training
+- first target file:
+  - `results/router_features_milddup800.csv`
+  - based on `valid_train_milddup800_clean.txt`
+- second target file:
+  - `results/router_features_expanded_candidates.csv`
+  - based on the union of:
+    - `valid_train_base_clean_unique.txt`
+    - `valid_train_kurip_strict_f1_cham_ink.txt`
+    - `valid_train_kurip_strict_precision.txt`
+    - `valid_train_ako5_clean.txt`
+
+Planned first analysis:
+
+- rank tiles by:
+  - high/low agreement
+  - high solid-fill score
+  - high rough haze score
+  - high line density / high ink
+- produce small review lists and montages for each bucket before training:
+  - `router_bucket_high_agreement`
+  - `router_bucket_low_agreement`
+  - `router_bucket_solid_fill`
+  - `router_bucket_hazy_rough`
+  - `router_bucket_line_dense`
+
+Expert policy hypotheses:
+
+- high agreement:
+  - deterministic / U-Net / `edge-bghaze` style experts likely sufficient
+- low agreement:
+  - atari/GAN-like experts may be needed, but watch for hallucinated haze
+- solid fill:
+  - route separately; avoid treating large black areas as halo/noise
+  - compare bin/ink-heavy experts versus cleanup experts
+- hazy rough:
+  - prefer cleaned-rough or 2ch experts
+  - likely penalize far-background haze
+- line-dense / recall-heavy:
+  - `bin20`-like or `lucy_thin`-like experts may be useful, but only under
+    routing rather than global default
+
+No-run rule for today:
+
+- do not launch long feature engineering, training, or router oracle runs today
+- next active work should start Friday by implementing or completing
+  `build_router_feature_table.py`, then generating the first two CSVs and
+  bucket montages
