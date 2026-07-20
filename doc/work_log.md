@@ -283,6 +283,592 @@ Current priority:
 - use controlled diagnostics before deciding the next corrective loss or model
   change
 
+### Atari Halo Diagnosis
+
+Added a no-training diagnostic to separate atari-origin halo from final-stage
+halo amplification.
+
+Implementation:
+
+- `tools/evaluation/build_atari_halo_diagnostic_set.py`
+  - builds a shuffled diagnostic list from `valid_train_milddup800_clean`
+  - excludes the fixed lineart004 eval list
+  - balances agreement score and rough edge density buckets
+- `tools/evaluation/evaluate_halo_outputs.py`
+  - now accepts `LABEL=DIR` model arguments while preserving old model-name
+    behavior
+- `tools/evaluation/compare_halo_amplification.py`
+  - compares atari and final halo metrics sample-by-sample
+  - writes amplification ratios and atari/final correlations
+- `experiments/run_atari_halo_diagnosis.sh`
+  - runs raw, dog, lucy_mild, and lucy_thin atari/final pairs on a shuffled
+    diagnostic set
+
+Completed:
+
+- smoke: `atari_halo_diag_smoke6`
+- main run: `atari_halo_diag_shuffle60`
+
+Artifacts:
+
+- `dataset/pairs_480/atari_halo_diag_shuffle60.txt`
+- `results/atari_halo_diag_shuffle60_samples.csv`
+- `results/halo_metrics_atari_halo_diag_shuffle60.csv`
+- `results/halo_amplification_atari_halo_diag_shuffle60.csv`
+- `results/halo_amplification_atari_halo_diag_shuffle60_summary.csv`
+- `results/compare_atari_halo_diag_shuffle60.png`
+- `logs/atari_halo_diag_shuffle60.done`
+
+Summary:
+
+| pair | samples | atari_halo_ink | final_halo_ink | amplification | corr |
+|---|---:|---:|---:|---:|---:|
+| `raw` | 60 | 0.2235 | 0.2235 | 0.948 | 0.928 |
+| `dog` | 60 | 0.0930 | 0.2221 | 2.636 | 0.485 |
+| `lucy_mild` | 60 | 0.0799 | 0.2147 | 2.906 | 0.492 |
+| `lucy_thin` | 60 | 0.0632 | 0.1702 | 3.011 | 0.530 |
+
+Interpretation:
+
+- raw atari halo strongly predicts final halo, so raw atari defects are a real
+  source
+- dog/lucy postprocessing greatly reduces halo at the atari stage, but the
+  final model regenerates halo-like ink around lines
+- this points to aux-conditioned final-stage amplification, not only atari
+  generation
+- next diagnostic should isolate aux conditioning strength and reconstruction
+  loss behavior, preferably with batched inference because one-image process
+  startup is slow
+
+### Aux Strength vs Loss Halo Diagnosis
+
+Added and ran a split diagnostic for the two likely final-stage halo causes:
+
+- aux conditioning strength: fixed `lucy_thin_aux_msgan` checkpoint, varied only
+  the aux image passed at inference
+- reconstruction/loss behavior: fixed `lucy_thin` aux, varied existing
+  checkpoints trained with different loss/model settings
+
+Implementation:
+
+- `scripts/inference_i2i_batch.py`
+  - batch inference wrapper that loads a checkpoint once per condition
+- `tools/evaluation/transform_aux_strength.py`
+  - deterministic aux variants:
+    - `weak75`
+    - `weak50`
+    - `hard20`
+    - `hard35`
+    - `softcut20`
+    - `blur`
+    - `open`
+- `experiments/run_aux_vs_loss_halo_diagnosis.sh`
+  - runs aux-strength and loss/model comparisons on
+    `dataset/pairs_480/atari_halo_diag_shuffle60.txt`
+
+Artifacts:
+
+- `results/halo_metrics_aux_loss_halo_diag_shuffle60_aux_strength.csv`
+- `results/compare_aux_loss_halo_diag_shuffle60_aux_strength.png`
+- `results/halo_metrics_aux_loss_halo_diag_shuffle60_loss_compare.csv`
+- `results/compare_aux_loss_halo_diag_shuffle60_loss_compare.png`
+- `logs/aux_loss_halo_diag_shuffle60.done`
+
+Aux-strength summary:
+
+| model | core | halo_ink | halo_faint | far_ink | far_faint |
+|---|---:|---:|---:|---:|---:|
+| `base_aux` | 0.0693 | 0.0632 | 0.2972 | 0.0206 | 0.1236 |
+| `aux_identity` | 0.1963 | 0.1702 | 0.1815 | 0.0886 | 0.0917 |
+| `aux_weak75` | 0.1667 | 0.1444 | 0.2450 | 0.0788 | 0.1085 |
+| `aux_weak50` | 0.1323 | 0.1146 | 0.3264 | 0.0652 | 0.1391 |
+| `aux_hard20` | 0.1302 | 0.1191 | 0.0000 | 0.0373 | 0.0000 |
+| `aux_hard35` | 0.0466 | 0.0481 | 0.0000 | 0.0197 | 0.0000 |
+| `aux_softcut20` | 0.0233 | 0.0212 | 0.0940 | 0.0115 | 0.0245 |
+| `aux_blur` | 0.2675 | 0.2463 | 0.4126 | 0.1510 | 0.3416 |
+| `aux_open` | 0.1042 | 0.0855 | 0.2685 | 0.0455 | 0.0978 |
+
+Loss/model summary:
+
+| model | core | halo_ink | halo_faint | far_ink | far_faint |
+|---|---:|---:|---:|---:|---:|
+| `base_aux` | 0.0693 | 0.0632 | 0.2972 | 0.0206 | 0.1236 |
+| `loss_cleanup_msgan` | 0.0543 | 0.0465 | 0.3549 | 0.0190 | 0.1543 |
+| `loss_bin12` | 0.2910 | 0.2779 | 0.5863 | 0.2238 | 0.8838 |
+| `loss_bin20` | 0.2808 | 0.2691 | 0.6269 | 0.2098 | 0.9104 |
+| `loss_struct08` | 0.0730 | 0.0637 | 0.3884 | 0.0260 | 0.1803 |
+| `loss_struct08_msgan` | 0.0550 | 0.0469 | 0.3585 | 0.0191 | 0.1556 |
+| `loss_width06` | 0.0724 | 0.0636 | 0.3884 | 0.0260 | 0.1803 |
+| `loss_halo_high` | 0.1771 | 0.1479 | 0.2386 | 0.0654 | 0.1383 |
+
+Interpretation:
+
+- aux strength is a real control point; blurring the aux strongly worsens halo
+  and far-background gray
+- continuous or hard removal of faint aux ink reduces halo metrics, but
+  `softcut20` and `hard35` also suppress core line strength, so they are
+  diagnostics rather than immediate adoption choices
+- bin12/bin20 style U-Net experts regenerate a large gray/halo field under the
+  fixed `lucy_thin` aux condition
+- cleanup+FM/structure cleanup variants keep halo ink lower, but still leave
+  faint gray residue
+- current conclusion: halo regeneration is a coupled effect of faint aux
+  conditioning and model/loss behavior; U-Net/bin experts are especially risky
+  for gray-field amplification
+
+### Split Halo Into Background Haze And Line-Near Uncertainty
+
+Updated halo evaluation so the previous single halo category is split into:
+
+- `background_haze`
+  - faint/gray ink in the far background away from GT lines
+  - treated as unwanted haze/noise
+- `line_near_uncertainty`
+  - gray or excess ink in the band near GT lines
+  - can be a line candidate, but becomes visible halo when amplified
+
+Implementation:
+
+- `tools/evaluation/evaluate_halo_outputs.py`
+  - keeps old columns for compatibility
+  - adds:
+    - `line_near_uncertainty_ink`
+    - `line_near_uncertainty_faint_ratio`
+    - `line_near_strong_ratio`
+    - `line_near_to_core`
+    - `background_haze_ink_mean`
+    - `background_haze_faint_ink_mean`
+    - `background_haze_faint_ratio`
+    - `background_haze_area_ratio`
+    - `background_ink_area_ratio`
+    - `background_haze_to_core`
+
+New evaluation artifacts:
+
+- `results/haze_uncertainty_metrics_atari_halo_diag_shuffle60.csv`
+- `results/haze_uncertainty_metrics_aux_loss_halo_diag_shuffle60_aux_strength.csv`
+- `results/haze_uncertainty_metrics_aux_loss_halo_diag_shuffle60_loss_compare.csv`
+
+Atari/final split summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `raw_atari` | 0.2235 | 0.6769 | 0.1330 | 0.6478 |
+| `lucy_thin_atari` | 0.0632 | 0.2972 | 0.0206 | 0.0837 |
+| `cleanup_msgan` | 0.2235 | 0.7166 | 0.1605 | 0.7057 |
+| `lucy_thin_final` | 0.1702 | 0.1815 | 0.0886 | 0.0722 |
+
+Aux-strength split summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `base_aux` | 0.0632 | 0.2972 | 0.0206 | 0.0837 |
+| `aux_identity` | 0.1702 | 0.1815 | 0.0886 | 0.0722 |
+| `aux_softcut20` | 0.0212 | 0.0940 | 0.0115 | 0.0197 |
+| `aux_blur` | 0.2463 | 0.4126 | 0.1510 | 0.2766 |
+
+Loss/model split summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `loss_cleanup_msgan` | 0.0465 | 0.3549 | 0.0190 | 0.1017 |
+| `loss_bin12` | 0.2779 | 0.5863 | 0.2238 | 0.6870 |
+| `loss_bin20` | 0.2691 | 0.6269 | 0.2098 | 0.7069 |
+| `loss_halo_high` | 0.1479 | 0.2386 | 0.0654 | 0.0900 |
+
+Interpretation:
+
+- `raw_atari` and `cleanup_msgan` contain both large background haze and
+  line-near uncertainty
+- `lucy_thin_atari` strongly reduces background haze, but `lucy_thin_final`
+  regenerates line-near ink around GT lines
+- `aux_blur` proves that smeared aux information creates both haze and
+  line-near uncertainty
+- `bin12/bin20` regenerate a large gray field under fixed `lucy_thin` aux,
+  so they are unsuitable as-is for halo-sensitive routing
+
+Next modeling rule:
+
+- penalize or filter `background_haze` directly
+- do not simply erase `line_near_uncertainty`; convert it toward a line core
+  or route it to a model that can decide line ownership
+
+### Rough Input Cleansing First Pass
+
+Added a first-pass rough preprocessing diagnostic before rough-to-lineart/atari
+generation.
+
+Goal:
+
+- test whether cleaning the rough input before atari generation reduces:
+  - `background_haze`
+  - `line_near_uncertainty`
+- keep this as data cleansing / rough normalization, not yet a learned model
+
+Implementation:
+
+- `tools/preprocess/clean_rough_input.py`
+  - `background`
+    - estimates low-frequency background and soft-removes faint ink
+  - `line`
+    - uses ridge/DoG-like emphasis to suppress broad repeated sketch haze and
+      keep line cores
+  - `background_line`
+    - background cleanup followed by line cleanup
+  - `line_background`
+    - line cleanup followed by background cleanup
+- `experiments/run_rough_cleanup_diagnosis.sh`
+  - cleans the shuffled 60-tile rough set
+  - materializes atari using the existing ResNet-GAN atari checkpoint
+  - evaluates split haze/uncertainty metrics
+  - builds comparison montage
+
+Artifacts:
+
+- `results/haze_uncertainty_metrics_rough_cleanup_diag_shuffle60.csv`
+- `results/compare_rough_cleanup_diag_shuffle60.png`
+- `logs/rough_cleanup_diag_shuffle60.done`
+
+Summary:
+
+| model | core | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|---:|
+| `raw_atari` | 0.2458 | 0.2235 | 0.6769 | 0.1330 | 0.6478 |
+| `rough_background` | 0.0364 | 0.0261 | 0.1069 | 0.0112 | 0.0410 |
+| `atari_background` | 0.2148 | 0.1973 | 0.7194 | 0.1242 | 0.6654 |
+| `rough_line` | 0.0715 | 0.0540 | 0.2260 | 0.0254 | 0.1004 |
+| `atari_line` | 0.2353 | 0.2153 | 0.6470 | 0.1230 | 0.6132 |
+| `rough_background_line` | 0.0478 | 0.0342 | 0.1180 | 0.0140 | 0.0444 |
+| `atari_background_line` | 0.2127 | 0.1956 | 0.7015 | 0.1201 | 0.6469 |
+| `rough_line_background` | 0.0396 | 0.0288 | 0.0847 | 0.0123 | 0.0368 |
+| `atari_line_background` | 0.2184 | 0.2009 | 0.6830 | 0.1204 | 0.6294 |
+
+Interpretation:
+
+- rough input cleansing itself works: both background haze and line-near faint
+  are reduced heavily in the cleaned rough images
+- the existing ResNet-GAN atari generator largely regenerates the gray/haze
+  field after cleaned rough input
+- this suggests the current atari generator learned a gray sketch-like output
+  distribution, not only a pass-through of input dirt
+- next useful step is not only stronger rough cleaning, but either:
+  - retrain/fine-tune the atari generator on cleaned rough inputs and cleaner
+    targets
+  - or bypass the gray atari generator with a non-learned/softcut line-confidence
+    aux for the next refiner
+
+### Rough Cleanup Sweep Before Cleaned-Rough Atari Training
+
+Expanded rough input cleansing before committing to cleaned-rough atari
+fine-tuning.
+
+Implementation:
+
+- updated `tools/preprocess/clean_rough_input.py`
+  - added `identity`
+  - added background variants:
+    - `background_mild`
+    - `background`
+    - `background_strong`
+  - added line cleanup variants:
+    - `line_mild`
+    - `line`
+    - `line_strong`
+  - added chained variants:
+    - `line_background_mild`
+    - `line_background`
+    - `line_background_strong`
+  - added:
+    - `softcut_only`
+    - `edge_preserve`
+- added `experiments/run_rough_cleanup_sweep.sh`
+  - builds a balanced shuffled sample list
+  - runs all rough cleanup variants
+  - evaluates split haze/uncertainty metrics
+  - builds montage
+
+Completed:
+
+- smoke: `rough_cleanup_sweep_smoke20b`
+- main sweep: `rough_cleanup_sweep200`
+
+Artifacts:
+
+- `dataset/pairs_480/rough_cleanup_sweep200.txt`
+- `results/rough_cleanup_sweep200_samples.csv`
+- `results/haze_uncertainty_metrics_rough_cleanup_sweep200.csv`
+- `results/compare_rough_cleanup_sweep200.png`
+- `logs/rough_cleanup_sweep200.done`
+
+Summary:
+
+| model | core | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|---:|
+| `identity` | 0.0606 | 0.0536 | 0.2554 | 0.0311 | 0.1267 |
+| `background_mild` | 0.0300 | 0.0257 | 0.1227 | 0.0127 | 0.0507 |
+| `background` | 0.0276 | 0.0235 | 0.1083 | 0.0116 | 0.0445 |
+| `background_strong` | 0.0232 | 0.0197 | 0.0892 | 0.0096 | 0.0365 |
+| `line_mild` | 0.0506 | 0.0444 | 0.1967 | 0.0228 | 0.0886 |
+| `line` | 0.0571 | 0.0506 | 0.2268 | 0.0263 | 0.1052 |
+| `line_strong` | 0.0647 | 0.0580 | 0.2575 | 0.0316 | 0.1254 |
+| `line_background_mild` | 0.0286 | 0.0251 | 0.1007 | 0.0123 | 0.0447 |
+| `line_background` | 0.0294 | 0.0259 | 0.0871 | 0.0128 | 0.0395 |
+| `line_background_strong` | 0.0292 | 0.0258 | 0.0721 | 0.0126 | 0.0330 |
+| `softcut_only` | 0.0481 | 0.0410 | 0.1456 | 0.0205 | 0.0593 |
+| `edge_preserve` | 0.0316 | 0.0272 | 0.1104 | 0.0131 | 0.0457 |
+
+Interpretation:
+
+- all background/chained variants reduce `background_haze` strongly
+- `line_background_strong` is best numerically for faint suppression, but likely
+  risks deleting useful weak rough lines
+- `line_background_mild` and `edge_preserve` are safer first candidates for
+  cleaned-rough atari fine-tuning
+- `line_background` is a reasonable more aggressive candidate if montage
+  inspection accepts the loss of faint rough context
+- avoid selecting solely by `halo_to_core`; it becomes unstable when core ink
+  is heavily reduced
+
+Next candidate set for atari fine-tune:
+
+- safe: `line_background_mild`
+- balanced: `edge_preserve`
+- aggressive: `line_background`
+
+### Cleaned-Rough Model Survey Launch
+
+Decision:
+
+- treat rough cleansing mode as a likely data-dependent choice
+- preserve the current sweep finding rather than choosing a single universal
+  cleanser too early
+- next compare cleaned rough input distributions by training both:
+  - direct `unet`
+  - direct `resnet_gan`
+
+Added:
+
+- `experiments/run_cleaned_rough_model_survey.sh`
+  - materializes train/eval cleaned rough for:
+    - `line_background_mild`
+    - `edge_preserve`
+    - `line_background`
+  - trains each mode with:
+    - `unet`
+    - `resnet_gan`
+  - uses `--no-autocontrast` so cleanup is not undone by contrast stretching
+  - evaluates fixed lineart004 metrics and split haze/uncertainty metrics
+  - builds one montage
+  - sends completion notification
+
+Launched:
+
+- unit: `lineart-cleaned-rough-model-survey-e2.service`
+- tag: `cleaned_rough_model_survey_e2`
+- epochs: 2
+
+Expected artifacts:
+
+- `logs/cleaned_rough_model_survey_e2.log`
+- `logs/cleaned_rough_model_survey_e2.systemd.log`
+- `logs/cleaned_rough_model_survey_e2.done`
+- `results/fixed_output_metrics_cleaned_rough_model_survey_e2_compare.csv`
+- `results/haze_uncertainty_metrics_cleaned_rough_model_survey_e2_compare.csv`
+- `results/compare_cleaned_rough_model_survey_e2.png`
+
+Result:
+
+- completed successfully
+- completion marker: `logs/cleaned_rough_model_survey_e2.done`
+- montage: `results/compare_cleaned_rough_model_survey_e2.png`
+- fixed metrics:
+  `results/fixed_output_metrics_cleaned_rough_model_survey_e2_compare.csv`
+- split haze/uncertainty metrics:
+  `results/haze_uncertainty_metrics_cleaned_rough_model_survey_e2_compare.csv`
+
+Fixed metrics summary:
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `raw_resnet_gan` | 0.3062 | 7.343 | 0.842 |
+| `line_background_mild_unet` | 0.3790 | 5.855 | 1.759 |
+| `line_background_mild_resnet_gan` | 0.2370 | 8.463 | 0.394 |
+| `edge_preserve_unet` | 0.3854 | 5.958 | 1.768 |
+| `edge_preserve_resnet_gan` | 0.2568 | 7.857 | 0.536 |
+| `line_background_unet` | 0.3385 | 6.931 | 1.561 |
+| `line_background_resnet_gan` | 0.2258 | 8.469 | 0.439 |
+
+Split haze/uncertainty summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `raw_resnet_gan` | 0.2956 | 0.7448 | 0.2037 | 0.6140 |
+| `line_background_mild_unet` | 0.3567 | 0.4771 | 0.2141 | 0.5541 |
+| `line_background_mild_resnet_gan` | 0.1646 | 0.8581 | 0.0741 | 0.5424 |
+| `edge_preserve_unet` | 0.3783 | 0.3989 | 0.2158 | 0.5378 |
+| `edge_preserve_resnet_gan` | 0.1743 | 0.8332 | 0.0717 | 0.4875 |
+| `line_background_unet` | 0.3549 | 0.4800 | 0.2179 | 0.5449 |
+| `line_background_resnet_gan` | 0.1664 | 0.8454 | 0.0724 | 0.4887 |
+
+Interpretation:
+
+- cleaned-rough `unet` is much better numerically than the old raw
+  `resnet_gan` baseline
+- `edge_preserve_unet` has the best F1 among this run
+- `line_background_mild_unet` is close and has slightly better chamfer
+- cleaned-rough `resnet_gan` under-produces ink and loses too much line recall
+  after only 2 epochs
+- ResNet GAN reduces background haze compared with raw resnet, but its line
+  output is too sparse; this is not yet a good atari/refiner source
+- U-Net benefits more immediately from cleaned rough input, but still carries
+  gray-field/faint residue
+
+Next direction:
+
+- keep `edge_preserve_unet` and `line_background_mild_unet` as immediate
+  cleaned-rough candidates
+- if using ResNet GAN, try warm-start/fine-tune from the existing raw
+  `resnet_gan` checkpoint instead of scratch 2-epoch training
+- evaluate whether U-Net output should become a new structured aux source for a
+  downstream cleanup/refiner
+
+### Cleaned-Rough Warm-Start Survey Launch
+
+Added:
+
+- `experiments/run_cleaned_rough_warmstart_survey.sh`
+
+Purpose:
+
+- continue U-Net and ResNet GAN in parallel
+- test whether longer U-Net training improves cleaned-rough results
+- test whether ResNet GAN can recover recall when fine-tuned from an existing
+  raw ResNet GAN checkpoint instead of scratch training
+
+Conditions:
+
+- cleanup modes:
+  - `edge_preserve`
+  - `line_background_mild`
+- U-Net:
+  - scratch
+  - 5 epochs
+- ResNet GAN:
+  - warm-start from
+    `checkpoints/model_resnet_binft_e3_resnet_gan_advsharp_binft/best.pth`
+  - 5 epochs
+  - low LR (`5e-5`, discriminator `1e-5`)
+- all cleaned-rough runs use `--no-autocontrast`
+- completion notification enabled
+
+Launched:
+
+- unit: `lineart-cleaned-rough-warmstart-e5.service`
+- tag: `cleaned_rough_warmstart_e5`
+
+Expected artifacts:
+
+- `logs/cleaned_rough_warmstart_e5.log`
+- `logs/cleaned_rough_warmstart_e5.systemd.log`
+- `logs/cleaned_rough_warmstart_e5.done`
+- `results/compare_cleaned_rough_warmstart_e5.png`
+- `results/fixed_output_metrics_cleaned_rough_warmstart_e5_compare.csv`
+- `results/haze_uncertainty_metrics_cleaned_rough_warmstart_e5_compare.csv`
+
+Result:
+
+- completed successfully
+- montage: `results/compare_cleaned_rough_warmstart_e5.png`
+- fixed metrics:
+  `results/fixed_output_metrics_cleaned_rough_warmstart_e5_compare.csv`
+- split haze/uncertainty metrics:
+  `results/haze_uncertainty_metrics_cleaned_rough_warmstart_e5_compare.csv`
+
+Fixed metrics summary:
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `raw_resnet_gan` | 0.3998 | 5.476 | 1.732 |
+| `cleaned_edge_unet_e2` | 0.3854 | 5.958 | 1.768 |
+| `cleaned_mild_unet_e2` | 0.3790 | 5.855 | 1.759 |
+| `edge_preserve_unet_e5` | 0.2500 | 8.375 | 0.551 |
+| `edge_preserve_resnet_gan_warm_e5` | 0.2806 | 7.486 | 0.464 |
+| `line_background_mild_unet_e5` | 0.2394 | 8.342 | 0.484 |
+| `line_background_mild_resnet_gan_warm_e5` | 0.2811 | 7.387 | 0.509 |
+
+Split haze/uncertainty summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `raw_resnet_gan` | 0.2894 | 0.5585 | 0.1053 | 0.3048 |
+| `cleaned_edge_unet_e2` | 0.3783 | 0.3989 | 0.2158 | 0.5378 |
+| `cleaned_mild_unet_e2` | 0.3567 | 0.4771 | 0.2141 | 0.5541 |
+| `edge_preserve_unet_e5` | 0.3056 | 0.6504 | 0.1777 | 0.6025 |
+| `edge_preserve_resnet_gan_warm_e5` | 0.2139 | 0.6998 | 0.0755 | 0.2982 |
+| `line_background_mild_unet_e5` | 0.3090 | 0.5993 | 0.1832 | 0.5895 |
+| `line_background_mild_resnet_gan_warm_e5` | 0.2204 | 0.7200 | 0.0828 | 0.3272 |
+
+Interpretation:
+
+- longer scratch U-Net training on cleaned rough degraded sharply compared with
+  the 2-epoch cleaned-rough U-Net runs
+- warm-start ResNet GAN recovered somewhat versus scratch cleaned-rough ResNet
+  GAN, but still under-produced ink and did not reach raw ResNet GAN or
+  cleaned-rough U-Net e2
+- E5 models look cleaner/whiter in places but lose too much recall
+- current best cleaned-rough signal remains the e2 U-Net family, especially
+  `edge_preserve_unet` and `line_background_mild_unet`
+- do not assume "more epochs" is better for the current cleaned-rough setup;
+  early stopping or lower LR is likely needed
+
+### Raw+Clean Mixed And 2ch U-Net Survey Launch
+
+Decision:
+
+- include raw/hazy rough data as a possible way to suppress white-collapse
+- keep cleaned rough as haze-control signal
+- test both mixed 1ch training and raw+cleaned 2ch training
+
+Added:
+
+- `tools/preprocess/build_mixed_rough_dataset.py`
+  - duplicates each training sample as raw and cleaned rough with the same line
+    target
+- `experiments/run_raw_clean_mixed_2ch_survey.sh`
+
+Conditions:
+
+- cleanup modes:
+  - `edge_preserve`
+  - `line_background_mild`
+- mixed 1ch:
+  - train list duplicated to 1,600 rows
+  - raw rough and cleaned rough both map to the same GT line
+  - inference uses cleaned rough
+- 2ch:
+  - channel 1: raw rough
+  - channel 2: cleaned rough
+  - inference uses raw + cleaned
+- U-Net only for this first pass
+- epochs: 3
+- LR: `7e-5`
+- `pos_weight=6.0`
+- `ink_weight=0.14`
+- `binary_weight=0.06`
+- no autocontrast
+
+Launched:
+
+- unit: `lineart-raw-clean-mixed-2ch-e3.service`
+- tag: `raw_clean_mixed_2ch_e3`
+
+Expected artifacts:
+
+- `results/compare_raw_clean_mixed_2ch_e3.png`
+- `results/fixed_output_metrics_raw_clean_mixed_2ch_e3_compare.csv`
+- `results/haze_uncertainty_metrics_raw_clean_mixed_2ch_e3_compare.csv`
+- `logs/raw_clean_mixed_2ch_e3.done`
+
 Verification already run:
 
 ```bash
@@ -1700,3 +2286,153 @@ Expected run:
 - expected metrics: `results/fixed_output_metrics_agreement_halo_e2_compare.csv`
 - expected halo metrics: `results/halo_metrics_agreement_halo_e2_compare.csv`
 - expected done marker: `logs/agreement_halo_e2.done`
+
+### 2ch Haze-Control Survey Launch
+
+Purpose:
+
+- follow up on `raw_clean_mixed_2ch_e3`
+- simple raw+clean 1ch mixing became too thin, but raw rough + cleaned rough aux
+  2ch U-Net kept F1/chamfer strong
+- remaining issue: 2ch restored useful ink density but also restored some
+  background haze / line-near gray
+
+Plan:
+
+- keep 2ch setup:
+  - input ch1: raw rough
+  - input ch2: cleaned rough aux
+  - target: clean line
+- test two cleaned rough modes:
+  - `edge_preserve`
+  - `line_background_mild`
+- train three variants per mode:
+  - `auxdrop50_scale35`: randomly weaken aux during training
+  - `bghaze06`: add GT-far background haze penalty
+  - `auxdrop_bghaze`: combine both controls
+- after inference, test generation-output halo suppression on haze variants:
+  - `threshold35`
+  - `unsharp_curve`
+
+Implementation:
+
+- `scripts/train_i2i_survey.py`
+  - added `--background-haze-weight`
+  - added `--background-haze-radius`
+  - loss penalizes predicted ink outside a max-pooled GT line support mask
+- `experiments/run_2ch_haze_control_survey.sh`
+  - trains/evaluates the 2ch variants
+  - builds montage, fixed metrics, and split haze/uncertainty metrics
+  - sends ntfy notification at completion
+
+Verification before launch:
+
+- `./venv/bin/python -m py_compile scripts/train_i2i_survey.py`
+- `bash -n experiments/run_2ch_haze_control_survey.sh`
+
+Expected run:
+
+- unit: `lineart-2ch-haze-control-e3.service`
+- tag: `2ch_haze_control_e3`
+- epochs: 3
+- expected montage: `results/compare_2ch_haze_control_e3.png`
+- expected metrics: `results/fixed_output_metrics_2ch_haze_control_e3_compare.csv`
+- expected haze metrics:
+  `results/haze_uncertainty_metrics_2ch_haze_control_e3_compare.csv`
+- expected done marker: `logs/2ch_haze_control_e3.done`
+
+Result:
+
+- completed successfully
+- systemd unit disappeared after completion because it was launched with
+  `--collect`
+- done marker: `logs/2ch_haze_control_e3.done`
+- original montage: `results/compare_2ch_haze_control_e3.png`
+- readable montage with short labels:
+  `results/compare_2ch_haze_control_e3_readable.png`
+- fixed metrics:
+  `results/fixed_output_metrics_2ch_haze_control_e3_compare.csv`
+- split haze/uncertainty metrics:
+  `results/haze_uncertainty_metrics_2ch_haze_control_e3_compare.csv`
+
+Short display names:
+
+- `clean-edge`: cleaned rough `edge_preserve` U-Net e2
+- `clean-mild`: cleaned rough `line_background_mild` U-Net e2
+- `prev-edge2`: previous raw rough + `edge_preserve` aux 2ch U-Net
+- `prev-mild2`: previous raw rough + `line_background_mild` aux 2ch U-Net
+- `edge-auxdrop`: `edge_preserve` 2ch + aux dropout/scale
+- `edge-bghaze`: `edge_preserve` 2ch + background haze penalty
+- `edge-both`: `edge_preserve` 2ch + aux dropout/scale + background haze penalty
+- `mild-auxdrop`: `line_background_mild` 2ch + aux dropout/scale
+- `mild-bghaze`: `line_background_mild` 2ch + background haze penalty
+- `mild-both`: `line_background_mild` 2ch + aux dropout/scale + background haze penalty
+- `*-th35`: `threshold35` generation-output postprocess
+- `*-unsharp`: `unsharp_curve` generation-output postprocess
+
+Fixed metrics summary:
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `prev-edge2` | 0.3936 | 5.708 | 1.450 |
+| `prev-mild2` | 0.3866 | 6.046 | 1.473 |
+| `edge-auxdrop` | 0.3818 | 6.089 | 1.417 |
+| `edge-bghaze` | 0.3855 | 5.871 | 1.370 |
+| `edge-both` | 0.3734 | 6.239 | 1.338 |
+| `mild-auxdrop` | 0.3832 | 6.084 | 1.447 |
+| `mild-bghaze` | 0.3606 | 6.443 | 1.112 |
+| `mild-both` | 0.3634 | 6.501 | 1.279 |
+
+Split haze/uncertainty summary:
+
+| model | line_near_ink | line_near_faint | bg_haze | bg_haze_area |
+|---|---:|---:|---:|---:|
+| `clean-edge` | 0.3783 | 0.3989 | 0.2158 | 0.5378 |
+| `clean-mild` | 0.3567 | 0.4771 | 0.2141 | 0.5541 |
+| `prev-edge2` | 0.3760 | 0.4499 | 0.2363 | 0.5539 |
+| `prev-mild2` | 0.3726 | 0.4718 | 0.2339 | 0.5607 |
+| `edge-auxdrop` | 0.3740 | 0.4652 | 0.2345 | 0.5600 |
+| `edge-bghaze` | 0.3680 | 0.4819 | 0.2250 | 0.5641 |
+| `edge-both` | 0.3647 | 0.4917 | 0.2231 | 0.5688 |
+| `mild-auxdrop` | 0.3711 | 0.4735 | 0.2314 | 0.5616 |
+| `mild-bghaze` | 0.3560 | 0.5016 | 0.2196 | 0.5687 |
+| `mild-both` | 0.3601 | 0.4942 | 0.2202 | 0.5662 |
+
+Postprocess finding:
+
+- `threshold35` removes faint haze numerically and increases F1/chamfer, but
+  pushes `ink_ratio` to about `4.5-4.7`
+- montage shows black thickening / over-binarization, so this should not be
+  treated as a production-quality fix
+- `unsharp_curve` worsens background haze and should be rejected for this
+  branch
+- generation-output cleanup remains possible, but needs conditional/background
+  targeting rather than global thresholding
+
+Current decision:
+
+- best current balance is `edge-bghaze`
+  - full checkpoint/result prefix:
+    `2ch_haze_control_e3_edge_preserve_2ch_bghaze06_e3`
+  - training recipe:
+    - raw rough as channel 1
+    - `edge_preserve` cleaned rough as channel 2
+    - U-Net, 3 epochs, no autocontrast
+    - `--background-haze-weight 0.06`
+    - `--background-haze-radius 9`
+- `edge-bghaze` slightly reduces background haze relative to previous 2ch while
+  keeping F1/chamfer degradation small
+- aux dropout/scale did not materially improve haze behavior
+- further local loss/model tweaks are likely diminishing returns
+
+Next direction:
+
+- shift focus to data and router/MoE
+- grow and characterize datasets rather than continuing narrow parameter
+  sweeps in this worktree
+- route or group by properties that now look important:
+  - rough/line agreement
+  - solid black fill / large black regions
+  - dirty or hazy rough input
+  - line-near uncertainty versus far background haze
+- use `edge-bghaze` as the current single-model baseline for comparisons

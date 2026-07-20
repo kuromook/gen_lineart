@@ -8,6 +8,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 IMAGE_SIZE = 480
+HEADER_FONT_SIZE = 60
+HEADER_MIN_FONT_SIZE = 24
+HEADER_H = 88
 
 
 def read_sample_list(path):
@@ -56,6 +59,21 @@ def make_missing_tile(label):
     return image
 
 
+def load_font(size):
+    try:
+        return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size)
+    except OSError:
+        return ImageFont.load_default()
+
+
+def fit_font(draw, text, max_width):
+    for size in range(HEADER_FONT_SIZE, HEADER_MIN_FONT_SIZE - 1, -2):
+        font = load_font(size)
+        if draw.textlength(text, font=font) <= max_width:
+            return font
+    return load_font(HEADER_MIN_FONT_SIZE)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample-list", required=True)
@@ -67,7 +85,7 @@ def main():
     names = read_sample_list(args.sample_list)
     models = [parse_model(value) for value in args.model]
     columns = ["rough", *[label for label, _ in models], "line (GT)"]
-    header_h = 32
+    header_h = HEADER_H
     label_h = 22
     canvas = Image.new(
         "RGB",
@@ -76,15 +94,16 @@ def main():
     )
     draw = ImageDraw.Draw(canvas)
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 15)
         small_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)
     except OSError:
-        font = small_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
 
     for col, title in enumerate(columns):
-        clipped = title if len(title) <= 42 else f"{title[:39]}..."
+        clipped = title if len(title) <= 34 else f"{title[:31]}..."
+        font = fit_font(draw, clipped, IMAGE_SIZE - 16)
         width = draw.textlength(clipped, font=font)
-        draw.text((col * IMAGE_SIZE + (IMAGE_SIZE - width) / 2, 8), clipped, fill=0, font=font)
+        y_text = (header_h - font.size) / 2 if hasattr(font, "size") else 8
+        draw.text((col * IMAGE_SIZE + (IMAGE_SIZE - width) / 2, y_text), clipped, fill=0, font=font)
 
     for row, name in enumerate(names):
         base = normalize_name(name)

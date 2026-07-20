@@ -173,6 +173,15 @@ def structure_pyramid_loss(pred, target):
     return sum(losses) / len(losses)
 
 
+def background_haze_loss(pred, target, radius):
+    """Penalize ink predicted away from any target line support."""
+    kernel = radius * 2 + 1
+    near_line = F.max_pool2d(target, kernel_size=kernel, stride=1, padding=radius)
+    background = (near_line <= 0.01).to(pred.dtype)
+    denom = background.sum().clamp_min(1.0)
+    return (pred * background).sum() / denom
+
+
 def adversarial_mse(scores, target_value):
     if isinstance(scores, (list, tuple)):
         return sum(F.mse_loss(score, torch.full_like(score, target_value)) for score in scores) / len(scores)
@@ -232,6 +241,7 @@ def train(args):
         f"binary={args.binary_weight} skeleton={args.skeleton_weight} "
         f"width={args.width_weight} "
         f"structure={args.structure_weight} "
+        f"bg_haze={args.background_haze_weight}@{args.background_haze_radius}px "
         f"fm={args.feature_match_weight} "
         f"adv={args.adv_weight}"
     )
@@ -263,6 +273,8 @@ def train(args):
                 + args.binary_weight * binary_confidence_loss(pred)
                 + args.width_weight * soft_width_loss(pred)
                 + args.structure_weight * structure_pyramid_loss(pred, target)
+                + args.background_haze_weight
+                * background_haze_loss(pred, target, args.background_haze_radius)
             )
             if skeleton is not None:
                 loss_recon = loss_recon + args.skeleton_weight * bce(pred_logits, skeleton)
@@ -374,6 +386,8 @@ def main():
     parser.add_argument("--skeleton-weight", type=float, default=0.0)
     parser.add_argument("--width-weight", type=float, default=0.0)
     parser.add_argument("--structure-weight", type=float, default=0.0)
+    parser.add_argument("--background-haze-weight", type=float, default=0.0)
+    parser.add_argument("--background-haze-radius", type=int, default=9)
     parser.add_argument("--feature-match-weight", type=float, default=0.0)
     parser.add_argument("--adv-weight", type=float, default=0.02)
     parser.add_argument("--save-every", type=int, default=10)
