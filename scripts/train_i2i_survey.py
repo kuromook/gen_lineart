@@ -145,6 +145,21 @@ def soft_width_loss(pred):
     return (pred * local).mean()
 
 
+def halo_band_loss(pred, target, inner=5, outer=19):
+    """Penalize ink in a ring around GT lines, excluding the line core."""
+    if inner % 2 == 0 or outer % 2 == 0:
+        raise ValueError("halo kernels must be odd")
+    core = F.max_pool2d(target, kernel_size=inner, stride=1, padding=inner // 2)
+    outer_band = F.max_pool2d(target, kernel_size=outer, stride=1, padding=outer // 2)
+    band = (outer_band - core).clamp(0.0, 1.0)
+    return (pred * band).sum() / band.sum().clamp_min(1.0)
+
+
+def faint_gray_loss(pred):
+    """Penalize uncertain faint ink that often appears as halo or stipple."""
+    return (pred * (1.0 - pred) * (1.0 - pred).clamp_min(0.0)).mean()
+
+
 def structure_pyramid_loss(pred, target):
     """Compare Sobel/DoG-like structure at two scales."""
     losses = []
@@ -231,6 +246,7 @@ def train(args):
         f"tolerant={args.shape_weight} ink={args.ink_weight} "
         f"binary={args.binary_weight} skeleton={args.skeleton_weight} "
         f"width={args.width_weight} "
+        f"halo={args.halo_weight} faint={args.faint_weight} "
         f"structure={args.structure_weight} "
         f"fm={args.feature_match_weight} "
         f"adv={args.adv_weight}"
@@ -262,6 +278,13 @@ def train(args):
                 + args.ink_weight * ink_loss(pred, target)
                 + args.binary_weight * binary_confidence_loss(pred)
                 + args.width_weight * soft_width_loss(pred)
+                + args.halo_weight * halo_band_loss(
+                    pred,
+                    target,
+                    inner=args.halo_inner_kernel,
+                    outer=args.halo_outer_kernel,
+                )
+                + args.faint_weight * faint_gray_loss(pred)
                 + args.structure_weight * structure_pyramid_loss(pred, target)
             )
             if skeleton is not None:
@@ -373,6 +396,10 @@ def main():
     parser.add_argument("--binary-weight", type=float, default=0.0)
     parser.add_argument("--skeleton-weight", type=float, default=0.0)
     parser.add_argument("--width-weight", type=float, default=0.0)
+    parser.add_argument("--halo-weight", type=float, default=0.0)
+    parser.add_argument("--halo-inner-kernel", type=int, default=5)
+    parser.add_argument("--halo-outer-kernel", type=int, default=19)
+    parser.add_argument("--faint-weight", type=float, default=0.0)
     parser.add_argument("--structure-weight", type=float, default=0.0)
     parser.add_argument("--feature-match-weight", type=float, default=0.0)
     parser.add_argument("--adv-weight", type=float, default=0.02)
