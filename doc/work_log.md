@@ -1578,3 +1578,61 @@ Next planned experiment:
   setup
 - add a halo-specific evaluation view, not only F1/chamfer/ink, because
   chamfer can improve when halo or stippled texture is counted as near-line ink
+
+### Agreement / Halo Survey Started
+
+Started the first direct halo/agreement hypothesis test.
+
+Goal:
+
+- test whether training on high rough-line agreement pairs reduces halo versus
+  low agreement pairs under otherwise comparable conditions
+
+Design:
+
+- base train pool: `dataset/pairs_480/valid_train_milddup800_clean.txt`
+- score all 800 tiles by rough/line edge agreement
+- create equal-size splits:
+  - high agreement: top 240
+  - low agreement: bottom 240
+- train both with the same setup:
+  - model: `cleanup`
+  - aux: `lucy_mild` train/eval hints
+  - loss/gan setup: same cleanup + multi-scale GAN + feature matching family
+    used in the Lucy halo experiments
+- compare against:
+  - `milddup800`
+  - `dog_aux_msgan`
+  - `lucy_mild`
+  - `lucy_thin`
+
+Implementation:
+
+- `tools/evaluation/score_pair_agreement.py`
+  - computes edge F1/chamfer/density agreement score
+  - writes high/low split lists
+- `tools/evaluation/evaluate_halo_outputs.py`
+  - measures grayscale halo-band ink around GT line art
+  - reports halo-band ink/faint ratio and far-background faint ink
+- `experiments/run_agreement_halo_survey.sh`
+  - scores splits, trains high/low candidates, builds montage and metrics
+
+Verification before launch:
+
+- `bash -n experiments/run_agreement_halo_survey.sh`
+- `py_compile` passed for new evaluation scripts
+- agreement scoring smoke test passed on clean lineart004 eval
+- halo metric smoke test passed for `lucy_mild` and `lucy_thin`
+
+Expected run:
+
+- tag: `agreement_halo_e2`
+- epochs: 2
+- split size: 240 high / 240 low
+- expected agreement scores: `results/agreement_halo_e2_agreement_scores.csv`
+- expected high list: `dataset/pairs_480/agreement_halo_e2_high240.txt`
+- expected low list: `dataset/pairs_480/agreement_halo_e2_low240.txt`
+- expected montage: `results/compare_agreement_halo_e2.png`
+- expected metrics: `results/fixed_output_metrics_agreement_halo_e2_compare.csv`
+- expected halo metrics: `results/halo_metrics_agreement_halo_e2_compare.csv`
+- expected done marker: `logs/agreement_halo_e2.done`
