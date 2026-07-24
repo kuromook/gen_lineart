@@ -1,5 +1,5 @@
 import argparse
-import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +10,11 @@ def process_image(image, mode):
     gray = np.asarray(image.convert("L"), dtype=np.float32) / 255.0
     ink = 1.0 - gray
 
-    if mode == "threshold45":
+    threshold_match = re.fullmatch(r"threshold(\d{2})", mode)
+    if threshold_match:
+        threshold = int(threshold_match.group(1)) / 100.0
+        out_ink = (ink >= threshold).astype(np.float32)
+    elif mode == "threshold45":
         out_ink = (ink >= 0.45).astype(np.float32)
     elif mode == "threshold35":
         out_ink = (ink >= 0.35).astype(np.float32)
@@ -37,8 +41,8 @@ def main():
     parser.add_argument("--output-dir", required=True)
     parser.add_argument(
         "--mode",
-        choices=["threshold45", "threshold35", "curve2", "unsharp_curve"],
         required=True,
+        help="thresholdNN, curve2, or unsharp_curve",
     )
     args = parser.parse_args()
 

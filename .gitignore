@@ -15,6 +15,7 @@ debug_output/
 
 *.log
 *.pid
+*.zip
 logs/
 
 # Generated experiment outputs. Existing tracked result snapshots remain
