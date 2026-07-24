@@ -1,4 +1,4 @@
-"""Extract 480px kurip training pairs from page-aligned sketch/line images."""
+"""Extract 480px training pairs from page-aligned sketch/line images."""
 
 import argparse
 import csv
@@ -26,18 +26,32 @@ QC_SAMPLE_OUT = "results/kurip_tiles_qc_sample.png"
 TILE = 480
 
 
-def load_manifest(zip_path):
+def read_zip_member(zf, root, name):
+    candidates = [
+        f"{root}/{name}",
+        f"{root}\\{name}",
+        name,
+    ]
+    for candidate in candidates:
+        try:
+            return zf.read(candidate)
+        except KeyError:
+            continue
+    raise KeyError(f"missing zip member for {name!r}; tried {candidates}")
+
+
+def load_manifest(zip_path, zip_root):
     with zipfile.ZipFile(zip_path) as zf:
-        return json.loads(zf.read(f"{ZIP_ROOT}/manifest.json"))
+        return json.loads(read_zip_member(zf, zip_root, "manifest.json"))
 
 
 def page_id(entry):
     return os.path.splitext(entry["file"])[0].replace("page", "")
 
 
-def load_page_pair(zf, entry):
-    rough_raw = zf.read(f"{ZIP_ROOT}/{entry['sketch']}")
-    line_raw = zf.read(f"{ZIP_ROOT}/{entry['line']}")
+def load_page_pair(zf, entry, zip_root):
+    rough_raw = read_zip_member(zf, zip_root, entry["sketch"])
+    line_raw = read_zip_member(zf, zip_root, entry["line"])
     rough = Image.open(io.BytesIO(rough_raw)).convert("L")
     line = Image.open(io.BytesIO(line_raw)).convert("L")
     if rough.size != line.size:
@@ -189,8 +203,9 @@ def evenly_spaced(rows, count):
 
 
 class PageCache:
-    def __init__(self, zip_path, manifest, max_items=4):
+    def __init__(self, zip_path, zip_root, manifest, max_items=4):
         self.zip_path = zip_path
+        self.zip_root = zip_root
         self.entries = {page_id(entry): entry for entry in manifest}
         self.max_items = max_items
         self.cache = OrderedDict()
@@ -200,7 +215,7 @@ class PageCache:
             self.cache.move_to_end(page)
             return self.cache[page]
         with zipfile.ZipFile(self.zip_path) as zf:
-            pair = load_page_pair(zf, self.entries[page])
+            pair = load_page_pair(zf, self.entries[page], self.zip_root)
         self.cache[page] = pair
         while len(self.cache) > self.max_items:
             self.cache.popitem(last=False)
@@ -261,6 +276,9 @@ def save_tiles(rows, cache, rough_out, line_out, list_out):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--zip", default=ZIP_PATH, dest="zip_path")
+    parser.add_argument("--zip-root", default=ZIP_ROOT)
+    parser.add_argument("--name-prefix", default="kurip")
+    parser.add_argument("--exclude-page", action="append", default=[])
     parser.add_argument("--tile", type=int, default=TILE)
     parser.add_argument("--stride", type=int, default=240)
     parser.add_argument("--min-tile-score", type=float, default=2.0)
@@ -288,11 +306,14 @@ def main():
     if args.tile != TILE:
         raise ValueError("Only 480px output is currently supported")
 
-    manifest = load_manifest(args.zip_path)
+    manifest = load_manifest(args.zip_path, args.zip_root)
     candidates = []
     with zipfile.ZipFile(args.zip_path) as zf:
         for index, entry in enumerate(manifest, 1):
-            rough, line = load_page_pair(zf, entry)
+            if page_id(entry) in set(args.exclude_page):
+                print(f"pages: {index}/{len(manifest)} skipped={page_id(entry)}", flush=True)
+                continue
+            rough, line = load_page_pair(zf, entry, args.zip_root)
             rows = collect_page_tiles(entry, rough, line, args)
             candidates.extend(rows)
             print(
@@ -305,7 +326,7 @@ def main():
     accepted.sort(key=lambda item: item["tile_score"], reverse=True)
     for rank, row in enumerate(accepted, 1):
         row["rank"] = rank
-        row["name"] = f'kurip_{row["page"]}_{row["x"]:04d}_{row["y"]:04d}.jpg'
+        row["name"] = f'{args.name_prefix}_{row["page"]}_{row["x"]:04d}_{row["y"]:04d}.jpg'
 
     os.makedirs(os.path.dirname(args.csv_out) or ".", exist_ok=True)
     fields = [
@@ -320,7 +341,7 @@ def main():
         for row in accepted:
             writer.writerow({**row, "decision": "", "notes": ""})
 
-    cache = PageCache(args.zip_path, manifest)
+    cache = PageCache(args.zip_path, args.zip_root, manifest)
     make_qc(accepted, args.qc_out, args.qc_count, cache)
     make_qc(accepted[-args.qc_count:], args.qc_tail_out, args.qc_count, cache)
     make_qc(evenly_spaced(accepted, args.qc_count), args.qc_sample_out, args.qc_count, cache)
