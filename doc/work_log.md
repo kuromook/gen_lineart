@@ -2436,3 +2436,1561 @@ Next direction:
   - dirty or hazy rough input
   - line-near uncertainty versus far background haze
 - use `edge-bghaze` as the current single-model baseline for comparisons
+
+### Pair Feature Scan For Router/Data Splits
+
+Added a reusable per-tile feature scanner:
+
+- `tools/evaluation/score_pair_features.py`
+  - scores rough/line agreement
+  - rough dirty/haze statistics relative to GT line support
+  - line-near uncertainty versus far-background haze
+  - target ink and large dark connected-component / black-fill indicators
+  - writes per-tile CSV, list/source summary CSV, and optional split lists
+- `experiments/run_pair_feature_scan.sh`
+  - scans current major train lists:
+    - `valid_train_base_clean_unique.txt`
+    - `valid_train_milddup800_clean.txt`
+    - `valid_train_kurip_strict_f1_cham_ink.txt`
+    - `valid_train_kurip_strict_precision.txt`
+    - `valid_train_ako5_clean.txt`
+
+Generated:
+
+- `results/pair_feature_scan_current.csv`
+- `results/pair_feature_scan_current_summary.csv`
+- `dataset/pairs_480/pair_feature_scan_current_splits/`
+
+Generated split counts:
+
+| split | unique rows |
+|---|---:|
+| `agreement_high` | 895 |
+| `agreement_mid` | 1676 |
+| `agreement_low` | 1302 |
+| `background_haze_high` | 839 |
+| `line_near_uncertainty_high` | 706 |
+| `black_fill_high` | 811 |
+| `high_agreement_low_haze` | 384 |
+| `clean_router_seed` | 734 |
+
+Initial reading:
+
+- `kurip` has the strongest rough/line agreement among the current source
+  groups.
+- `ako5` contributes many low-agreement and high-background-haze tiles.
+- `housei` is the clearest source for large black-fill / solid dark-region
+  behavior.
+- `clean_router_seed` is the first practical seed list for router/data-split
+  experiments because it keeps moderate/high agreement while avoiding the
+  highest haze and black-fill extremes.
+
+Next action:
+
+- use `clean_router_seed`, `agreement_high`, `agreement_low`,
+  `background_haze_high`, and `black_fill_high` as the first data axes for
+  router/MoE feature analysis against the current expert set.
+
+### Router Feature Probe
+
+Added feature-stratified router/oracle probe tooling:
+
+- `tools/evaluation/build_router_feature_probe_lists.py`
+  - samples small source-balanced probe lists from feature CSV groups
+  - writes per-group lists, a combined list, and group label CSV
+- `tools/evaluation/analyze_router_oracle_features.py`
+  - joins oracle choices back to feature labels
+  - summarizes expert choices and metrics by probe group and source prefix
+- `experiments/run_router_feature_probe.sh`
+  - builds probe lists
+  - materializes current expert outputs on train-split samples
+  - runs oracle selection and feature-group analysis
+
+Completed:
+
+- tag: `router_feature_probe_current`
+- count per group: 12
+- unique combined samples: 63
+- done marker: `logs/router_feature_probe_current.done`
+- probe labels:
+  `dataset/pairs_480/router_feature_probe_current_lists/router_feature_probe_current_labels.csv`
+- oracle summary:
+  `results/router_feature_probe_current_oracle_summary.json`
+- feature summary:
+  `results/router_feature_probe_current_oracle_feature_summary.csv`
+- montage:
+  `results/compare_router_feature_probe_current_oracle.png`
+
+Probe-group oracle summary:
+
+| group | oracle F1 | chamfer | ink ratio | expert counts |
+|---|---:|---:|---:|---|
+| `agreement_high` | 0.4358 | 5.429 | 0.930 | `lucy_thin` 5, `bin12` 2, `lucy_mild` 2, others 3 |
+| `agreement_low` | 0.0630 | 13.698 | 2.034 | mixed, no reliable winner |
+| `background_haze_high` | 0.2951 | 7.987 | 1.018 | `lucy_thin` 7, `lucy_mild` 3, `flowdog` 2 |
+| `line_near_uncertainty_high` | 0.3464 | 6.520 | 0.942 | `lucy_thin` 9, `flowdog` 2, `edge_bghaze` 1 |
+| `black_fill_high` | 0.5331 | 5.246 | 0.534 | `lucy_thin` 8, `lucy_mild` 4 |
+| `clean_seed` | 0.3655 | 6.300 | 2.681 | `lucy_mild` 3, `lucy_thin` 3, `bin12` 2, `bin20` 2, others 2 |
+
+Initial interpretation:
+
+- `lucy_thin` dominates many feature groups, especially line-near uncertainty
+  and black-fill-heavy probes, but it remains recall-oriented and needs visual
+  artifact scrutiny.
+- `agreement_high` is a good router-development regime because multiple experts
+  are competitive and oracle F1 is meaningfully high.
+- `agreement_low` is not solved by the current expert set. Its oracle F1 is
+  very low, so this group should drive data repair/exclusion or a separate
+  hallucination/data-alignment strategy rather than ordinary router tuning.
+- `clean_seed` is mixed: bin experts still win some samples. This is useful for
+  learning a first router because it contains nontrivial expert choice, but the
+  high mean ink ratio suggests the balanced score still permits over-inked wins.
+
+Next action:
+
+- inspect `results/compare_router_feature_probe_current_oracle.png`
+- adjust oracle score or add an ink/haze-aware penalty before training a router,
+  because current balanced scoring can still choose over-inked bin outputs
+- treat low-agreement samples as a separate data-quality problem instead of
+  forcing them into the first router training set
+
+### Agreement-Low QC And Repair Categories
+
+Followed up on the question of whether `agreement_low` is effectively a
+pair-rebuild group.
+
+Added:
+
+- `tools/evaluation/make_pair_feature_qc.py`
+  - builds rough / line / edge-overlay QC montages from feature CSV rows
+  - overlay convention:
+    - rough edges: red
+    - line edges: blue
+    - overlap: green
+- `tools/evaluation/classify_pair_feature_failures.py`
+  - writes coarse repair/QC categories from feature metrics
+  - emits one CSV and category-specific file lists
+
+Generated QC:
+
+- `results/agreement_low_qc_worst40.png`
+- `results/agreement_low_qc_ako5_worst40.png`
+- `results/agreement_low_qc_housei_worst40.png`
+
+Generated classifications:
+
+- `results/agreement_low_repair_categories.csv`
+- `results/agreement_low_repair_categories_summary.csv`
+- `dataset/pairs_480/agreement_low_repair_categories/`
+
+Category counts over 1,302 unique `agreement_low` tiles:
+
+| category | count |
+|---|---:|
+| `valid_low_correspondence_or_metric_failure` | 702 |
+| `black_fill_or_solid_region` | 206 |
+| `line_too_sparse_fragment` | 115 |
+| `ako5_uninterpretable_rough_rebuild_or_exclude` | 105 |
+| `dirty_or_hazy_rough` | 97 |
+| `rough_too_sparse_vs_line` | 77 |
+
+Source/category summary:
+
+- `ako5`: 1,169 tiles
+  - many are visually weak/noisy rough against sparse or semantically mismatched
+    line fragments
+  - worst cases look like pair repair / extraction-QC candidates, not useful
+    router training data
+- `housei`: 127 tiles
+  - many are black-fill / solid-region or rough-too-sparse-vs-line cases
+  - this is less clearly "wrong pair"; more likely a metric failure or a
+    separate black-fill expert/router category
+- `lineart`/`orig`: only 3 each in `agreement_low`; not a major source of the
+  low-agreement problem
+
+Current interpretation:
+
+- `agreement_low` should not be treated as one homogeneous rebuild group.
+- User visual inspection confirmed that, unlike `housei`, the `ako5` and
+  overall worst montages include rough images that are not interpretable as
+  usable underdrawings.
+- Practical split:
+  - `ako5_uninterpretable_rough_rebuild_or_exclude`, `dirty_or_hazy_rough`,
+    `rough_too_sparse_vs_line`, and some `line_too_sparse_fragment` entries:
+    repair/re-extract/review or exclude
+  - `black_fill_or_solid_region`: keep separate as black-fill/solid-region
+    routing or metric-special-case data
+  - `valid_low_correspondence_or_metric_failure`: needs a second visual pass
+    before deciding whether it is valid hallucination-style data or metric
+    failure
+
+Next action:
+
+- treat `ako5_uninterpretable_rough_rebuild_or_exclude` as a hard repair /
+  exclusion queue before any router training
+- build a second-pass QC montage for `valid_low_correspondence_or_metric_failure`,
+  sampled by source, because this is now the largest unresolved bucket
+
+Additional generated QC:
+
+- `results/agreement_low_qc_ako5_uninterpretable_worst40.png`
+
+### Ako5 Uninterpretable Rough Origin Check
+
+User visually inspected the `agreement_low` montage and pointed out that the
+overall worst and `ako5` worst tiles contain rough images that are not
+underdrawings at all.
+
+Follow-up finding:
+
+- the problematic names are `ako5_...`, not `ako5r_...`
+- all 105 `ako5_uninterpretable_rough_rebuild_or_exclude` tiles are present in
+  `valid_train_std15.txt`
+- 0 of them are present in `valid_train_ako5_regions.txt`
+- therefore the source is the old same-coordinate / std15 ako5 extraction path,
+  not the newer region-matching ako5 extraction
+
+Trace:
+
+- old script: `tools/pair_extraction/prepare_ako5.py`
+  - tiled full pages into fixed 480px same-coordinate grid
+  - filtered only by rough autocontrast std >= 15
+  - did not require line ink, rough/line edge agreement, semantic
+    interpretability, or non-margin content
+- later script: `tools/pair_extraction/refilter_ako5.py`
+  - rebuilt `valid_train_ako5_clean.txt` from existing `ako5_*.jpg`
+  - used rough autocontrast std and line ink only
+  - still did not catch edge-less / margin / uninterpretable rough tiles
+
+Generated provenance artifacts:
+
+- `results/ako5_uninterpretable_provenance.csv`
+- `results/agreement_low_ako5_uninterpretable_raw_ac_line.png`
+- `results/ako5_001_saved_rough_grid_bad_marked.png`
+
+Concrete evidence:
+
+- 105 affected tiles span 21 pages, but 54 are from `ako5_001`
+- `ako5_001` bad coordinates cluster heavily around page top, left/right
+  margins, and near-empty grid cells
+- rough stats for the 105 affected tiles:
+  - mean gray: about 251 / 255
+  - mean rough ink: about 0.015
+  - median rough edge density: 0
+  - edge F1: 0 for all affected tiles
+- raw/ac/line montage shows many raw rough tiles are nearly blank, margin
+  artifacts, text/noise, or scan/JPEG residue rather than usable underdrawings
+
+Current decision:
+
+- `ako5_uninterpretable_rough_rebuild_or_exclude` is confirmed data pollution
+  from old full-page same-coordinate std15 extraction
+- do not use these tiles for router training, base training, or expert
+  comparison except as negative/audit examples
+- region-matched `ako5r_*` data remains the safer ako5 path; future ako5
+  rebuilds should start from region matching or add an explicit
+  interpretable-rough/content gate before saving
+
+### Ako5 Uninterpretable Hard Exclusion Lists
+
+Hard-excluded the 105 confirmed uninterpretable ako5 rough tiles from current
+affected training lists without overwriting the old lists.
+
+Added:
+
+- `tools/evaluation/filter_pair_list.py`
+- `experiments/filter_ako5_uninterpretable_lists.sh`
+
+Exclusion source:
+
+- `dataset/pairs_480/agreement_low_repair_categories/agreement_low_ako5_uninterpretable_rough_rebuild_or_exclude.txt`
+
+Generated replacement lists:
+
+| old list | new list | old rows | new rows | removed |
+|---|---|---:|---:|---:|
+| `valid_train_std15.txt` | `valid_train_std15_no_ako5_uninterp.txt` | 6622 | 6517 | 105 |
+| `valid_train_std15_clean_split_moredupes.txt` | `valid_train_std15_clean_split_moredupes_no_ako5_uninterp.txt` | 6598 | 6493 | 105 |
+| `valid_train_milddup800_clean.txt` | `valid_train_milddup800_clean_no_ako5_uninterp.txt` | 800 | 733 | 67 |
+| `valid_train_ako5_clean.txt` | `valid_train_ako5_clean_no_ako5_uninterp.txt` | 2498 | 2456 | 42 |
+| `valid_train_warm_plan1.txt` | `valid_train_warm_plan1_no_ako5_uninterp.txt` | 3158 | 3116 | 42 |
+| `valid_train_warm_plan2.txt` | `valid_train_warm_plan2_no_ako5_uninterp.txt` | 2824 | 2788 | 36 |
+
+For each generated list, a matching `_removed.txt` audit list was also written.
+
+Verification:
+
+- all generated `*_no_ako5_uninterp.txt` lists have zero overlap with the 105
+  excluded names
+
+Current operating rule:
+
+- use `*_no_ako5_uninterp.txt` variants for any future training or router/data
+  analysis that would otherwise use the affected old lists
+- do not launch new runs from `valid_train_std15.txt`,
+  `valid_train_std15_clean_split_moredupes.txt`,
+  `valid_train_milddup800_clean.txt`, or `valid_train_ako5_clean.txt` unless
+  explicitly auditing the old polluted lists
+
+### Broader Ako5 Bad-Rough Audit And Reformed Lists
+
+Expanded the audit after the user noted the issue is not merely low agreement:
+the bad `ako5` rough images are not underdrawings at all.
+
+Ran full scans:
+
+- `results/pair_feature_scan_std15_full.csv`
+- `results/pair_feature_scan_std15_full_summary.csv`
+- `results/pair_feature_scan_std15_no_ako5_uninterp.csv`
+- `results/pair_feature_scan_std15_no_ako5_uninterp_summary.csv`
+
+Finding:
+
+- the initial 105 hard-excluded tiles were only the worst/visible subset from
+  current feature scans
+- full `valid_train_std15.txt` still contained many same-origin bad rough
+  candidates from old `ako5_` same-coordinate page tiling
+- broad old-ako5 bad-rough rule found 859 candidates
+- union with the manually confirmed 105 produced a final exclude list of 884
+  names
+
+Generated:
+
+- `dataset/pairs_480/ako5_uninterpretable_broad/ako5_uninterpretable_broad_candidates.txt`
+- `dataset/pairs_480/ako5_uninterpretable_broad/ako5_uninterpretable_broad_new_candidates.txt`
+- `dataset/pairs_480/ako5_uninterpretable_broad/ako5_uninterpretable_final_exclude.txt`
+- `results/ako5_uninterpretable_broad_candidates.csv`
+- `results/ako5_uninterpretable_broad_candidates_qc_worst80.png`
+- `results/ako5_uninterpretable_broad_new_qc_worst80.png`
+
+Reformed affected lists using the 884-name final exclude set:
+
+| old list | new list | old rows | new rows | removed |
+|---|---|---:|---:|---:|
+| `valid_train_std15.txt` | `valid_train_std15_no_ako5_badrough.txt` | 6622 | 5738 | 884 |
+| `valid_train_std15_clean_split_moredupes.txt` | `valid_train_std15_clean_split_moredupes_no_ako5_badrough.txt` | 6598 | 5714 | 884 |
+| `valid_train_milddup800_clean.txt` | `valid_train_milddup800_clean_no_ako5_badrough.txt` | 800 | 728 | 72 |
+| `valid_train_ako5_clean.txt` | `valid_train_ako5_clean_no_ako5_badrough.txt` | 2498 | 2428 | 70 |
+| `valid_train_warm_plan1.txt` | `valid_train_warm_plan1_no_ako5_badrough.txt` | 3158 | 3088 | 70 |
+| `valid_train_warm_plan2.txt` | `valid_train_warm_plan2_no_ako5_badrough.txt` | 2824 | 2762 | 62 |
+
+Verification:
+
+- every generated `*_no_ako5_badrough.txt` list has zero overlap with
+  `ako5_uninterpretable_final_exclude.txt`
+- `valid_train_base_clean_unique.txt`,
+  `valid_train_warm_regions_clean_split.txt`, and
+  `valid_train_warm_regions_clean_unique.txt` have zero overlap with the final
+  exclude set
+
+Regenerated current feature scan from cleaned lists:
+
+- `results/pair_feature_scan_current_no_ako5_badrough.csv`
+- `results/pair_feature_scan_current_no_ako5_badrough_summary.csv`
+- `dataset/pairs_480/pair_feature_scan_current_no_ako5_badrough_splits/`
+
+New scan summary:
+
+- rows: 4,705, down from 4,847
+- exact overlap with final exclude: 0
+- broad bad-rough candidates remaining: 0
+- overall agreement score improved from `-0.2347` to `-0.1987`
+- `milddup800` agreement improved from `-0.2254` to `-0.0944`
+- `milddup800` edge F1 improved from `0.2323` to `0.2553`
+
+Updated defaults:
+
+- `experiments/run_pair_feature_scan.sh` now defaults to
+  `pair_feature_scan_current_no_ako5_badrough` and uses:
+  - `valid_train_milddup800_clean_no_ako5_badrough.txt`
+  - `valid_train_ako5_clean_no_ako5_badrough.txt`
+- `experiments/run_router_feature_probe.sh` now defaults to
+  `results/pair_feature_scan_current_no_ako5_badrough.csv`
+
+Current operating rule supersedes the previous narrower exclusion rule:
+
+- use `*_no_ako5_badrough.txt`, not `*_no_ako5_uninterp.txt`, for future
+  training/router/data analysis
+- old same-coordinate `ako5_` data remains suspect; prefer region-matched
+  `ako5r_*` for future ako5 expansion
+
+### Other Source Bad-Rough Check
+
+Checked whether the same non-underdrawing / margin-noise bug appears outside
+old `ako5_` data in the cleaned current scan:
+
+- scan: `results/pair_feature_scan_current_no_ako5_badrough.csv`
+- unique rows checked: 3,737
+- final ako5 bad-rough overlap: 0
+- broad bad-rough candidates remaining: 0 for `ako5`
+
+Source check:
+
+- `kurip`: no same-signature bad-rough candidates
+- `lineart`: no same-signature bad-rough candidates
+- `orig`: no same-signature bad-rough candidates
+- `housei`: 10 low-information / edge-failure candidates
+
+Generated:
+
+- `dataset/pairs_480/other_source_badrough_review.txt`
+- `results/other_source_badrough_review_qc.png`
+
+Interpretation:
+
+- the `housei` 10 are not the same bug as `ako5`; the roughs are interpretable
+  but often very sparse, text/fragment-like, or paired with black-fill /
+  solid-region targets that break the edge-agreement metric
+- keep them as a review / black-fill / metric-special-case bucket, not as a
+  broad hard-exclusion like old `ako5_` bad rough
+
+### Bad-Rough Clean Retrain Survey
+
+Ran a short e3 retrain survey on the cleaned mild list:
+
+- train list:
+  `dataset/pairs_480/valid_train_milddup800_clean_no_ako5_badrough.txt`
+  (728 rows)
+- eval list: `dataset/pairs_480/eval_clean_lineart004_8.txt`
+- runner: `experiments/run_badrough_retrain_survey.sh`
+- done marker: `logs/badrough_retrain_e3.done`
+- montage: `results/compare_badrough_retrain_e3.png`
+- fixed metrics:
+  `results/fixed_output_metrics_badrough_retrain_e3_compare.csv`
+- haze metrics:
+  `results/haze_uncertainty_metrics_badrough_retrain_e3_compare.csv`
+
+Results:
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| old edge_bghaze | 0.3855 | 5.871 | 1.370 | 0.3715 | 0.4041 |
+| new edge_bghaze | 0.3665 | 6.486 | 1.505 | 0.3514 | 0.3882 |
+| old dog | 0.3957 | 4.785 | 1.160 | 0.3440 | 0.4826 |
+| new dog | 0.4132 | 4.615 | 2.628 | 0.3060 | 0.6479 |
+| old lucy_mild | 0.4021 | 4.645 | 1.158 | 0.3371 | 0.5245 |
+| new lucy_mild | 0.4208 | 4.545 | 2.522 | 0.3067 | 0.6806 |
+| old lucy_thin | 0.4095 | 4.536 | 1.252 | 0.3198 | 0.5962 |
+| new lucy_thin | 0.4227 | 4.457 | 2.789 | 0.3005 | 0.7272 |
+
+Haze/uncertainty summary:
+
+- new edge_bghaze slightly reduces faint haze but loses F1/chamfer; do not
+  promote it over the existing edge_bghaze baseline from this e3 run
+- cleanup variants improve F1/chamfer by increasing recall, but all new cleanup
+  models substantially over-ink (`ink_ratio` 2.5-2.8)
+- line-near faint ratio drops strongly for the cleanup variants, especially
+  lucy_thin (`0.1906 -> 0.0955`), but the montage shows the gain comes with
+  visibly thicker/darker strokes
+
+Interpretation:
+
+- badrough removal changes training behavior; it is worth retraining ako5-touched
+  models rather than trusting the polluted checkpoints
+- however, the e3 cleanup retrains are not direct replacements because they are
+  too recall/ink heavy
+- next cleanup retrain should keep the cleaned list but add a stronger ink or
+  width constraint, or reduce recall pressure / aux darkness before considering
+  longer training
+
+### Bad-Rough Ink/Width Constrained Survey
+
+Ran a follow-up e3 cleanup-only survey to counter the over-inking from
+`badrough_retrain_e3`.
+
+Runner:
+
+- `experiments/run_badrough_inkwidth_survey.sh`
+- tag: `badrough_inkwidth_e3`
+- train list:
+  `dataset/pairs_480/valid_train_milddup800_clean_no_ako5_badrough.txt`
+- reused aux from `badrough_retrain_e3`
+- cleanup settings:
+  - `pos_weight=4.0` (down from 5.0)
+  - `ink_weight=0.18` (up from 0.14)
+  - `binary_weight=0.16` (up from 0.10)
+  - `width_weight=0.08`
+  - `structure_weight=0.06` (up from 0.04)
+  - `adv_weight=0.025` (down from 0.03)
+  - `aux_dropout=0.25`, `aux_scale_min=0.75`
+
+Generated:
+
+- `results/compare_badrough_inkwidth_e3.png`
+- `results/fixed_output_metrics_badrough_inkwidth_e3_compare.csv`
+- `results/haze_uncertainty_metrics_badrough_inkwidth_e3_compare.csv`
+- `logs/badrough_inkwidth_e3.done`
+
+Fixed metric summary:
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| old dog | 0.3957 | 4.785 | 1.160 | 0.3440 | 0.4826 |
+| clean dog | 0.4132 | 4.615 | 2.628 | 0.3060 | 0.6479 |
+| inkwidth dog | 0.3846 | 5.130 | 1.339 | 0.3236 | 0.4794 |
+| old lucy_mild | 0.4021 | 4.645 | 1.158 | 0.3371 | 0.5245 |
+| clean lucy_mild | 0.4208 | 4.545 | 2.522 | 0.3067 | 0.6806 |
+| inkwidth lucy_mild | 0.3834 | 4.993 | 1.191 | 0.3153 | 0.4941 |
+| old lucy_thin | 0.4095 | 4.536 | 1.252 | 0.3198 | 0.5962 |
+| clean lucy_thin | 0.4227 | 4.457 | 2.789 | 0.3005 | 0.7272 |
+| inkwidth lucy_thin | 0.4013 | 4.747 | 1.659 | 0.2977 | 0.6264 |
+
+Haze/uncertainty summary:
+
+- `inkwidth_dog` returns haze and ink metrics almost to old dog, but gives up the
+  clean retrain's F1/chamfer gains
+- `inkwidth_lucy_mild` is also over-corrected; lower F1 than the old model
+- `inkwidth_lucy_thin` is the only useful middle point:
+  - ink ratio reduced from `2.789` to `1.659`
+  - recall reduced from `0.7272` to `0.6264`
+  - F1 falls from `0.4227` to `0.4013`, slightly below old lucy_thin `0.4095`
+  - faint line-near uncertainty stays better than old lucy_thin
+    (`0.1630` vs `0.1906`)
+
+Interpretation:
+
+- the first ink/width setting is too strong for dog and lucy_mild
+- for lucy_thin, the direction is promising but should be relaxed:
+  width around `0.04-0.06`, binary around `0.12-0.14`, and/or less aux dropout
+  should target `ink_ratio` around `1.4-1.6` without giving up as much F1
+- current best production candidate remains old `lucy_thin` or the clean
+  `lucy_thin` only if over-ink can be tolerated; no automatic promotion from
+  `badrough_inkwidth_e3`
+
+### Bad-Rough Lucy-Thin Relaxed Survey
+
+Ran a focused lucy_thin-only follow-up after the first ink/width survey
+over-corrected into gray, weak strokes.
+
+Runner:
+
+- `experiments/run_badrough_lucy_thin_relaxed_survey.sh`
+- tag: `badrough_lucy_thin_relaxed_e3`
+- train list:
+  `dataset/pairs_480/valid_train_milddup800_clean_no_ako5_badrough.txt`
+- reused aux from `badrough_retrain_e3_lucy_thin_*`
+
+Variants:
+
+- `relaxed_a`: `pos_weight=4.3`, `ink_weight=0.16`, `binary_weight=0.12`,
+  `width_weight=0.04`, `aux_dropout=0.10`, `aux_scale_min=0.85`
+- `relaxed_b`: `pos_weight=4.5`, `ink_weight=0.16`, `binary_weight=0.14`,
+  `width_weight=0.05`, `aux_dropout=0.15`, `aux_scale_min=0.80`
+
+Generated:
+
+- `results/compare_badrough_lucy_thin_relaxed_e3.png`
+- `results/fixed_output_metrics_badrough_lucy_thin_relaxed_e3_compare.csv`
+- `results/haze_uncertainty_metrics_badrough_lucy_thin_relaxed_e3_compare.csv`
+- `logs/badrough_lucy_thin_relaxed_e3.done`
+
+Fixed metric summary:
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| old lucy_thin | 0.4095 | 4.536 | 1.252 | 0.3198 | 0.5962 |
+| clean lucy_thin | 0.4227 | 4.457 | 2.789 | 0.3005 | 0.7272 |
+| inkwidth lucy_thin | 0.4013 | 4.747 | 1.659 | 0.2977 | 0.6264 |
+| relaxed_a | 0.4137 | 4.605 | 2.066 | 0.3022 | 0.6672 |
+| relaxed_b | 0.4163 | 4.553 | 2.236 | 0.3021 | 0.6821 |
+
+Haze/uncertainty summary:
+
+- `relaxed_b` is the best numerical middle point from this survey:
+  - F1 improves over old lucy_thin (`0.4095 -> 0.4163`)
+  - chamfer is close to old (`4.536 -> 4.553`)
+  - ink is still high (`1.252 -> 2.236`), but less extreme than clean
+    lucy_thin (`2.789`)
+  - line-near faint ratio remains improved over old
+    (`0.1906 -> 0.1291`)
+- `relaxed_a` is slightly less inky (`2.066`) but also slightly lower F1
+  (`0.4137`)
+
+Interpretation:
+
+- relaxing the ink/width settings moves in the right direction compared with
+  `badrough_inkwidth_e3`
+- `relaxed_b` is the current best compromise if accepting some gray/thick
+  output is okay
+- none of the e3 relaxed variants fully solves the visual gray-stroke issue;
+  the next step should test a post-binarization / contrast calibration pass, or
+  train with an explicit output-threshold/blackness objective rather than only
+  lowering ink width
+
+### Bad-Rough Lucy-Thin Postprocess Calibration
+
+Ran postprocess calibration on the best relaxed candidate
+`badrough_lucy_thin_relaxed_e3_lucy_thin_relaxed_b`.
+
+Updated:
+
+- `tools/compare/postprocess_line_outputs.py` now supports generic
+  `thresholdNN` modes, not only the previously hard-coded thresholds.
+
+Runner:
+
+- `experiments/run_badrough_lucy_thin_postprocess_survey.sh`
+- tag: `badrough_lucy_thin_postprocess`
+- modes: `threshold48`, `threshold50`, `threshold52`, `threshold54`,
+  `threshold55`, `unsharp_curve`
+
+Generated:
+
+- `results/compare_badrough_lucy_thin_postprocess.png`
+- `results/fixed_output_metrics_badrough_lucy_thin_postprocess_compare.csv`
+- `results/haze_uncertainty_metrics_badrough_lucy_thin_postprocess_compare.csv`
+- `logs/badrough_lucy_thin_postprocess.done`
+
+Fixed metric summary:
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| old lucy_thin | 0.4095 | 4.536 | 1.252 | 0.3198 | 0.5962 |
+| clean lucy_thin | 0.4227 | 4.457 | 2.789 | 0.3005 | 0.7272 |
+| relaxed_b | 0.4163 | 4.553 | 2.236 | 0.3021 | 0.6821 |
+| threshold48 | 0.4203 | 4.472 | 2.539 | 0.3009 | 0.7103 |
+| threshold50 | 0.4163 | 4.553 | 2.236 | 0.3021 | 0.6821 |
+| threshold52 | 0.4096 | 4.667 | 1.917 | 0.3024 | 0.6466 |
+| threshold54 | 0.4015 | 4.822 | 1.612 | 0.3022 | 0.6096 |
+| threshold55 | 0.3955 | 4.934 | 1.431 | 0.3021 | 0.5836 |
+| unsharp_curve | 0.4172 | 4.269 | 4.442 | 0.2754 | 0.8699 |
+
+Interpretation:
+
+- hard thresholding removes the gray-stroke look, but exposes scratchy / rough
+  binary marks rather than clean confident line art
+- `threshold52` is the most practical compromise:
+  - F1 roughly matches old lucy_thin (`0.4096` vs `0.4095`)
+  - ink is reduced from relaxed_b `2.236` to `1.917`
+  - output is black/white instead of gray
+- `threshold54` and `threshold55` reduce ink further but give up too much F1 /
+  recall
+- `threshold48` keeps F1 high but remains over-inked
+- `unsharp_curve` is not useful here: very high recall and chamfer, but ink
+  explodes (`4.442`)
+
+Next direction:
+
+- postprocess can remove gray, but does not solve the underlying line-quality
+  issue
+- likely need training-time blackness / threshold-aware loss, e.g. match metrics
+  around an output threshold while keeping width/ink regularization modest
+
+### Bad-Rough Lucy-Thin Threshold-Loss Survey
+
+Added threshold-aware differentiable losses to `scripts/train_i2i_survey.py`:
+
+- `soft_threshold(pred, threshold, sharpness)`
+- new args:
+  - `--threshold-shape-weight`
+  - `--threshold-ink-weight`
+  - `--threshold-value`
+  - `--threshold-sharpness`
+- the added loss applies tolerant F1 and ink matching after a differentiable
+  threshold approximation, so training sees the quality of the thresholded
+  output rather than only the gray probability map
+
+Runner:
+
+- `experiments/run_badrough_lucy_thin_threshold_loss_survey.sh`
+- tag: `badrough_lucy_thin_threshold_e3`
+- train list:
+  `dataset/pairs_480/valid_train_milddup800_clean_no_ako5_badrough.txt`
+- reused `badrough_retrain_e3_lucy_thin_*` aux
+
+Variants:
+
+- `thresh_light`: `threshold_shape=0.04`, `threshold_ink=0.08`,
+  `threshold=0.52@24`, `binary=0.12`, `width=0.04`
+- `thresh_mid`: `threshold_shape=0.07`, `threshold_ink=0.12`,
+  `threshold=0.52@28`, `binary=0.12`, `width=0.04`
+
+Generated:
+
+- `results/compare_badrough_lucy_thin_threshold_e3.png`
+- `results/fixed_output_metrics_badrough_lucy_thin_threshold_e3_compare.csv`
+- `results/haze_uncertainty_metrics_badrough_lucy_thin_threshold_e3_compare.csv`
+- `logs/badrough_lucy_thin_threshold_e3.done`
+
+Fixed metric summary:
+
+| model | F1@2px | chamfer | ink_ratio | precision | recall |
+|---|---:|---:|---:|---:|---:|
+| old lucy_thin | 0.4095 | 4.536 | 1.252 | 0.3198 | 0.5962 |
+| clean lucy_thin | 0.4227 | 4.457 | 2.789 | 0.3005 | 0.7272 |
+| relaxed_b | 0.4163 | 4.553 | 2.236 | 0.3021 | 0.6821 |
+| relaxed_b threshold52 | 0.4096 | 4.667 | 1.917 | 0.3024 | 0.6466 |
+| thresh_light | 0.4199 | 4.489 | 2.227 | 0.3033 | 0.6938 |
+| thresh_light threshold52 | 0.4146 | 4.595 | 1.934 | 0.3044 | 0.6616 |
+| thresh_mid | 0.4211 | 4.471 | 2.204 | 0.3041 | 0.6965 |
+| thresh_mid threshold52 | 0.4172 | 4.551 | 1.922 | 0.3064 | 0.6652 |
+
+Interpretation:
+
+- threshold-aware loss improved the relaxed candidate:
+  - raw `thresh_mid` is now close to clean lucy_thin F1 but with less ink
+    (`0.4211`, ink `2.204` vs clean `0.4227`, ink `2.789`)
+  - `thresh_mid threshold52` is a better black/white postprocess point than
+    `relaxed_b threshold52` (`0.4172` vs `0.4096`)
+- montage still shows thresholded output is scratchy / rough-binary-like, not
+  truly clean final line art
+- current best compromise is `thresh_mid` as a gray/soft output, or
+  `thresh_mid threshold52` if black/white output is required
+- next useful step is either:
+  - longer training from `thresh_mid` settings, or
+  - a more structural threshold loss that penalizes speckle / disconnected
+    scratch texture after thresholding
+
+### 2026-07-24: Lucy-Thin Cleanup Tuning Pause
+
+現在の結論:
+
+- `ako5` bad-rough 汚染を除外した再学習は有効で、傾向は見えた
+- ただし `lucy_thin` 系の現行調整は、実用線画としてはまだ遠い
+- soft 出力では灰色の確率場になり、threshold 後は小連結成分が大量に
+  出てざらつく
+- 単純な後処理や閾値 loss だけでは、線画らしい一本線・連続線には届かない
+
+重要な判断:
+
+- `lucy_thin` / cleanup 系の loss 微調整はいったんここで締める
+- 次の主リソースは、モデル側の微調整ではなくデータ・preprocess 側へ移す
+
+次に優先する方向:
+
+- 下絵 preprocess の研究
+  - ノイズ除去
+  - グレー抑制
+  - 揺らぎ・重ね描き線の抑制
+  - ラフの候補線を「モデルが一本線として解釈しやすい入力」に寄せる
+- データセット拡張
+  - クリーンで一致度の高い rough/line ペアの絶対数を増やす
+  - old `ako5_` のような同座標グリッド抽出ではなく、region-matched /
+    alignment-aware な抽出を優先する
+  - agreement / badrough / black-fill special-case のQCを継続し、汚染を
+    増やさない
+
+現時点の扱い:
+
+- `badrough_lucy_thin_threshold_e3_lucy_thin_thresh_mid` は調査上の
+  参考候補として保持
+- 黒白が必要な場合の参考は
+  `badrough_lucy_thin_threshold_e3_lucy_thin_thresh_mid_post_threshold52`
+- ただしどちらも production 昇格はしない
+- 今後の改善軸は「より良い入力前処理」と「より良い高一致データ」
+
+### 2026-07-24: hamlabi Raw Dataset Import
+
+Input:
+
+- raw zip found in workspace: `dataset_hamlabi.zip`
+- user requested `dataset_hamulabi.zip`; actual filename is `hamlabi`
+- zip manifest contains 13 page-level line/sketch pairs
+- all line/sketch pages are same-size `(4961, 7016)`
+
+Extractor update:
+
+- updated `tools/pair_extraction/prepare_kurip_tiles.py`
+  - supports configurable `--zip-root`
+  - supports Windows-style zip members such as `dataset_hamlabi\manifest.json`
+  - supports configurable `--name-prefix`
+  - supports `--exclude-page`
+
+Extraction policy:
+
+- treated hamlabi as page-aligned same-coordinate data, but with strict QC
+- used 480px tile scan with:
+  - `--name-prefix hamlabi`
+  - `--min-rough-std 15`
+  - `--ink-min 0.03`
+  - `--min-edge-pixels 350`
+  - `--min-f1 0.25`
+  - `--max-chamfer 12`
+  - `--exclude-page 0009`
+- `page0009` was excluded because the accepted tile contained strong black page-edge fill
+
+Generated:
+
+- `dataset/pairs_480/valid_train_hamlabi.txt` = 12 pairs
+- `dataset/pairs_480/train/rough/hamlabi_*.jpg`
+- `dataset/pairs_480/train/line/hamlabi_*.jpg`
+- `results/hamlabi_tiles_strict_noedge.csv`
+- `results/hamlabi_tiles_strict_noedge_qc.png`
+- `results/hamlabi_tiles_strict_noedge_qc_tail.png`
+- `results/hamlabi_tiles_strict_noedge_qc_sample.png`
+
+Interpretation:
+
+- hamlabi currently adds only a small number of high-agreement pairs
+- QC shows the rough/line relationship is interpretable and does not resemble the old
+  `ako5_` same-coordinate bad rough contamination
+- this is useful as clean high-agreement data, not as a large-volume training source
+
+### 2026-07-24: results Cleanup After Bad-Rough Audit
+
+Removed obsolete `results/` artifacts tied to old bad-rough / old-list work:
+
+- `results/agreement_low_*`
+- `results/ako5_uninterpretable_*`
+- old same-coordinate ako5 inspection/QC artifacts:
+  - `results/ako5_001_saved_rough_grid_bad_marked.png`
+  - `results/ako5_align_*`
+  - `results/ako5_aligned_qc.png`
+  - `results/ako5_calib_qc.png`
+  - `results/ako5_hightone.png`
+  - `results/ako5_strict_survivors.png`
+  - `results/inspect_ako5_pairs.png`
+  - `results/refilter_ako5_pass.png`
+- superseded pair feature scans:
+  - `results/pair_feature_scan_current.csv`
+  - `results/pair_feature_scan_current_summary.csv`
+  - `results/pair_feature_scan_std15_full.csv`
+  - `results/pair_feature_scan_std15_full_summary.csv`
+  - `results/pair_feature_scan_std15_no_ako5_uninterp.csv`
+  - `results/pair_feature_scan_std15_no_ako5_uninterp_summary.csv`
+- old raw/clean mixed 2ch survey outputs based on pre-`no_ako5_badrough` lists:
+  - `results/raw_clean_mixed_2ch_e3_*`
+  - `results/compare_raw_clean_mixed_2ch_e3.png`
+  - `results/fixed_output_metrics_raw_clean_mixed_2ch_e3_compare.csv`
+  - `results/haze_uncertainty_metrics_raw_clean_mixed_2ch_e3_compare.csv`
+
+Kept:
+
+- `results/badrough_*` because those were post-exclusion retrain/tuning artifacts using
+  `valid_train_milddup800_clean_no_ako5_badrough.txt`
+- `results/ako5_region_*` because those refer to the separate region-matched `ako5r_*`
+  path, not the old same-coordinate `ako5_` path
+- cleaned feature scan artifacts such as
+  `results/pair_feature_scan_current_no_ako5_badrough.csv`
+
+### 2026-07-24: hamlabi Region-Matching Branch Start
+
+Branch:
+
+- `hamlabi-region-extraction`
+
+Reason:
+
+- user pointed out that the first hamlabi import repeated the old mistake:
+  extracting by same XY coordinates alone
+- revised assumption: for most raw manuscripts, same-XY crop equality is not a
+  valid correspondence signal even if rough/line page sizes match
+- the first `hamlabi_*.jpg` 12-pair strict extraction is therefore not a
+  production dataset; keep only as a failed baseline / QC reference
+
+Added policy doc:
+
+- `doc/region_dataset_extraction_policy.md`
+
+Policy:
+
+- do not create new raw-manuscript training pairs by XY equality alone
+- line image should provide semantic region proposals
+- rough image should be searched with translation and scale candidates
+- preserve aspect ratio and normalize by long side for region datasets
+- produce candidate CSV/JSON/QC first; do not write a production train list
+  until review decisions are recorded
+- use VLM only as second-pass review / rerank / reject gate, not as the primary
+  extractor
+
+Added deterministic hamlabi matcher:
+
+- `tools/pair_extraction/match_hamlabi_regions.py`
+
+Current run:
+
+- job: `hamlabi-region-match.service`
+- log: `logs/hamlabi_region_match.log`
+- input: `dataset_hamlabi.zip`
+- pages: 13
+- deterministic candidates generated: 72
+- deterministic `candidate` rows: 34
+- lower-score review rows: 38
+
+Generated:
+
+- `results/hamlabi_region_candidates.csv`
+- `results/hamlabi_region_candidates.json`
+- `results/hamlabi_region_candidates_qc.png`
+
+Added VLM review helper:
+
+- `tools/pair_extraction/vlm_review_hamlabi_regions.py`
+
+Generated panel-only review artifacts:
+
+- `results/hamlabi_region_vlm_review_panel_only.csv`
+- `results/hamlabi_region_vlm_review_panels/` = 72 panels
+- `results/hamlabi_region_vlm_review_panel_sheet_top24.png`
+
+VLM status:
+
+- local Ollama API at `127.0.0.1:11434` was not running
+- no Ollama user service was found
+- VLM review is prepared but not executed; run the helper without
+  `--panel-only` after a local vision model is available
+
+Initial visual interpretation:
+
+- the region matcher is clearly better aligned with the desired goal than
+  same-XY 480 tiles
+- top candidates include same character / same scene rough-line pairs at
+  panel or character scale
+- remaining issues:
+  - some regions are too large and close to full-panel crops
+  - black-fill and margin fragments still pass deterministic scoring
+  - VLM / human review is required before saving any training manifest
+
+Follow-up user interpretation:
+
+- quick visual review suggests the extracted region pairs are directionally good
+- large regions should not be rejected immediately; they can be treated as
+  parent regions and searched again internally for smaller character / body-part
+  pairs
+- black-fill-heavy regions are part of hamlabi's source style and should be kept
+  with labels rather than treated as contamination
+- for future MoE work, black-fill-heavy hamlabi samples may become a specialized
+  expert/router branch
+
+Updated:
+
+- `tools/pair_extraction/match_hamlabi_regions.py`
+  - adds `black_fill_ratio`
+  - adds `feature_tags`, including `large_parent`, `black_fill`, `wide_panel`,
+    and `tall_panel`
+- `doc/region_dataset_extraction_policy.md`
+  - black-fill regions are not automatic rejects
+  - large/multi-character regions are parent candidates for recursive search
+- `tools/pair_extraction/refine_hamlabi_large_regions.py`
+  - reads large parent rows from deterministic candidate CSV
+  - searches smaller child regions inside each parent
+  - preserves parent bbox metadata for traceability
+
+Child-region run:
+
+- input parents: 21 large parent candidates
+- output children: 110
+- deterministic `candidate` rows: 82
+- `review_low_score` rows: 28
+- tags:
+  - `black_fill`: 19
+  - `tall_panel`: 13
+  - `wide_panel`: 9
+  - `large_parent`: 7
+
+Generated:
+
+- `results/hamlabi_region_child_candidates.csv`
+- `results/hamlabi_region_child_candidates.json`
+- `results/hamlabi_region_child_candidates_qc.png`
+- `results/hamlabi_region_child_vlm_review_panel_only.csv`
+- `results/hamlabi_region_child_vlm_review_panels/` = 110 panels
+- `results/hamlabi_region_child_vlm_review_panel_sheet_top32.png`
+
+Interpretation:
+
+- parent candidates remain the better panel / character-scale pool
+- child candidates add useful subregions but also many fragments; keep as a
+  separate review lane rather than replacing parent candidates
+- no hamlabi region candidate has been promoted to a training list yet
+
+### 2026-07-24: hamlabi Parent Review Dataset Materialization
+
+Materialized the preliminary Codex-reviewed parent candidates as a variable
+aspect review dataset.
+
+Input:
+
+- review CSV: `results/hamlabi_region_codex_review_prelim.csv`
+- selected decision: `accept_review`
+- selected rows: 31
+
+Generated:
+
+- `dataset/regions_hamlabi_review/rough/` = 31 PNGs
+- `dataset/regions_hamlabi_review/line/` = 31 PNGs
+- `dataset/regions_hamlabi_review/manifest.json`
+- `dataset/regions_hamlabi_review/manifest.csv`
+- `dataset/regions_hamlabi_review/README.md`
+- `results/hamlabi_review_accept31_materialized_qc.png`
+
+Dataset properties:
+
+- variable aspect, long side normalized to 768 px
+- width range: 356-768 px
+- height range: 474-768 px
+- pages covered: 12 source pages
+- not added to any `dataset/pairs_480/*.txt` train list
+
+Review feature tags added to manifest:
+
+- `dense_ink_or_black_fill`: 18
+- `large_panel_or_character`: 11
+- `narrow_region`: 4
+
+Current interpretation:
+
+- this is the first usable hamlabi review dataset artifact
+- it remains review-stage, not production training data
+- black/dense-ink cases are deliberately preserved as hamlabi style features
+  for possible MoE specialization
+
+### 2026-07-24: hamlabi Child Region Curated Review Dataset
+
+Created a conservative child-region review lane after inspecting the child
+candidate contact sheet.
+
+Intermediate child review:
+
+- `results/hamlabi_region_child_codex_review_prelim.csv`
+  - heuristic `child_accept_review`: 33
+  - `child_hold_review`: 39
+  - `child_reject_prelim`: 38
+
+After Codex visual pass, the heuristic accept set was too permissive and was
+reduced:
+
+- `results/hamlabi_region_child_codex_review_curated.csv`
+  - `child_curated_review`: 17
+  - `child_hold_review`: 56
+  - `child_reject_prelim`: 37
+
+Materialized:
+
+- `dataset/regions_hamlabi_child_review/rough/` = 17 PNGs
+- `dataset/regions_hamlabi_child_review/line/` = 17 PNGs
+- `dataset/regions_hamlabi_child_review/manifest.json`
+- `dataset/regions_hamlabi_child_review/manifest.csv`
+- `dataset/regions_hamlabi_child_review/README.md`
+- `results/hamlabi_child_review_curated17_materialized_qc.png`
+
+Interpretation:
+
+- child curated data is lower confidence than parent review data
+- keep it separate as part / small-character / subregion candidates
+- do not mix into parent review or `pairs_480` train lists yet
+
+### 2026-07-24: hamlabi Codex VLM Final Review
+
+Ollama review was not available, so Codex VLM review was used for the current
+small candidate set.
+
+Inputs:
+
+- parent materialized review dataset: 31 rows
+- child curated review dataset: 17 rows
+- total reviewed rows: 48
+
+Generated final review CSV:
+
+- `results/hamlabi_region_codex_final_review.csv`
+
+Final review decisions over 48 rows:
+
+- `final_accept_black_fill`: 17
+- `final_accept`: 6
+- `final_accept_large_parent`: 5
+- `final_accept_child`: 6
+- `final_accept_child_black_fill`: 6
+- `final_hold_child`: 5
+- `final_hold_parent`: 3
+
+Materialized accepted rows:
+
+- `dataset/regions_hamlabi_final_review/rough/` = 40 PNGs
+- `dataset/regions_hamlabi_final_review/line/` = 40 PNGs
+- `dataset/regions_hamlabi_final_review/manifest.csv`
+- `dataset/regions_hamlabi_final_review/manifest.json`
+- `dataset/regions_hamlabi_final_review/README.md`
+- `results/hamlabi_final_review40_materialized_qc.png`
+
+Current status:
+
+- final review dataset is ready as a variable-aspect region artifact
+- it is still not a `pairs_480` train list
+- next required work is training-loader/materialization design for variable
+  aspect region datasets, or a deliberate conversion policy into model-size
+  tensors
+
+### 2026-07-24: Region Loader And Materialization Policy
+
+Added variable-aspect region dataset support:
+
+- `lineart/region_dataset.py`
+  - reads CSV/JSON region manifests
+  - resolves `final_rough_path` / `final_line_path`, or `rough_path` /
+    `line_path`
+  - supports `square_pad` fit mode
+  - supports `resize_stretch` as explicit compatibility mode
+  - returns model-ready square tensors while preserving source aspect ratio in
+    `square_pad`
+
+Updated:
+
+- `scripts/train_i2i_survey.py`
+  - `--region-manifest`
+  - `--region-fit-mode {square_pad,resize_stretch}`
+  - `--image-size`
+  - rejects unsupported region+aux and region+skeleton combinations for now
+
+Recommended region training invocation:
+
+```bash
+venv/bin/python scripts/train_i2i_survey.py \
+  --model cleanup \
+  --region-manifest dataset/regions_hamlabi_final_review/manifest.csv \
+  --region-fit-mode square_pad \
+  --image-size 480 \
+  --checkpoint-dir checkpoints/hamlabi_region_smoke
+```
+
+Added fixed materializer:
+
+- `tools/pair_extraction/materialize_region_manifest_square.py`
+
+Added policy doc:
+
+- `doc/region_materialization_policy.md`
+
+Policy:
+
+- canonical format remains variable-aspect manifest
+- `square_pad` is preferred for fixed-size conversion
+- `resize_stretch` is compatibility-only because it distorts raw manuscript
+  geometry
+- fixed materializations stay in separate directories and are not appended to
+  existing `pairs_480` lists by default
+
+Generated fixed materializations:
+
+- `dataset/regions_hamlabi_final_review_480_squarepad/`
+  - rough: 40
+  - line: 40
+  - size: 480x480
+  - QC: `results/hamlabi_final_review40_480_squarepad_qc.png`
+- `dataset/regions_hamlabi_final_review_768_squarepad/`
+  - rough: 40
+  - line: 40
+  - size: 768x768
+  - QC: `results/hamlabi_final_review40_768_squarepad_qc.png`
+
+Verification:
+
+- region loader returned valid 480 and 768 tensor batches
+- fixed materialized sample images have expected square dimensions
+- syntax check passed for loader, training script, and materializer
+
+### 2026-07-24: hamlabi Final Review v2 After User Visual Correction
+
+User visually reviewed `results/hamlabi_final_review40_materialized_qc.png`.
+
+Corrections:
+
+- remove mismatched final QC indices:
+  - 26
+  - 27
+  - 28
+  - 37
+  - 38
+  - 40
+- manually subcrop these multi-panel / multi-region rows to keep only the
+  matching panel/region:
+  - 1
+  - 2
+  - 30
+  - 34
+
+Generated manual subcrop QC:
+
+- `results/hamlabi_manual_subcrop_candidates_qc.png`
+
+Generated corrected canonical dataset:
+
+- `dataset/regions_hamlabi_final_review_v2/`
+  - rough: 34
+  - line: 34
+  - `manifest.csv`
+  - `manifest.json`
+  - `README.md`
+  - `removed_user_mismatch.txt`
+  - `manual_subcrop_replacements.txt`
+- QC:
+  - `results/hamlabi_final_review_v2_34_qc.png`
+
+Updated loader/materializer support:
+
+- `lineart/region_dataset.py` now prefers `v2_rough_path` / `v2_line_path`
+  before older final paths
+- `tools/pair_extraction/materialize_region_manifest_square.py` now also
+  prefers v2 paths and names
+
+Generated corrected fixed materializations:
+
+- `dataset/regions_hamlabi_final_review_v2_480_squarepad/`
+  - rough: 34
+  - line: 34
+  - size: 480x480
+  - QC: `results/hamlabi_final_review_v2_34_480_squarepad_qc.png`
+- `dataset/regions_hamlabi_final_review_v2_768_squarepad/`
+  - rough: 34
+  - line: 34
+  - size: 768x768
+  - QC: `results/hamlabi_final_review_v2_34_768_squarepad_qc.png`
+
+Current operating rule:
+
+- use `regions_hamlabi_final_review_v2`, not the earlier 40-row
+  `regions_hamlabi_final_review`, for future hamlabi region experiments
+- the non-v2 datasets remain historical audit artifacts
+
+### 2026-07-24: hamlabi Region v2 Loader Smoke Training
+
+Purpose:
+
+- verify the variable-aspect region manifest loader can drive the existing
+  i2i survey training path before launching longer hamlabi expert runs
+- avoid accidental CPU training when CUDA is hidden by the execution sandbox
+
+Code updates:
+
+- `scripts/train_i2i_survey.py`
+  - added `--require-cuda`
+  - training now fails fast if CUDA is required but unavailable
+- `tools/compare/make_region_manifest_compare.py`
+  - runs a checkpoint against a region manifest
+  - applies the same `square_pad` / `resize_stretch` normalization as the
+    region loader
+  - writes rough / model / line-GT review montage
+
+CUDA finding:
+
+- inside the managed sandbox, `/dev/nvidia*` is not visible and
+  `torch.cuda.is_available()` is false
+- outside the sandbox, PyTorch sees `NVIDIA GeForce RTX 3060`
+- long GPU jobs should therefore be launched with approved elevated
+  `systemd-run --user` service execution
+
+Smoke run:
+
+- unit: `hamlabi-region-v2-smoke.service`
+- manifest: `dataset/regions_hamlabi_final_review_v2/manifest.csv`
+- rows: 34
+- model: `cleanup`
+- image size: 480
+- fit mode: `square_pad`
+- epochs: 5
+- checkpoint dir: `checkpoints/hamlabi_region_v2_smoke/`
+- log: `logs/hamlabi_region_v2_smoke.log`
+
+Outputs:
+
+- `checkpoints/hamlabi_region_v2_smoke/best.pth`
+- `checkpoints/hamlabi_region_v2_smoke/epoch005.pth`
+- `results/hamlabi_region_v2_smoke_outputs/`
+- `results/hamlabi_region_v2_smoke_compare.png`
+
+Result:
+
+- training completed on CUDA
+- loss decreased from `G=0.7049` to `G=0.5696`
+- 5 epoch output remains very rough and gray, as expected for a smoke run on
+  only 34 pairs
+- the important result is that the corrected v2 region dataset can now pass
+  through loader, training, checkpoint save, inference, and montage review
+
+### 2026-07-24: hamlabi Region v2 480px Training Trials
+
+Cleanup 80 epoch trial:
+
+- unit: `hamlabi-region-v2-cleanup480.service`
+- checkpoint dir: `checkpoints/hamlabi_region_v2_cleanup480/`
+- log: `logs/hamlabi_region_v2_cleanup480.log`
+- epochs: 80
+- checkpoints:
+  - `best.pth`
+  - `epoch020.pth`
+  - `epoch040.pth`
+  - `epoch060.pth`
+  - `epoch080.pth`
+- montages:
+  - `results/hamlabi_region_v2_cleanup480_epoch020_compare.png`
+  - `results/hamlabi_region_v2_cleanup480_epoch080_compare.png`
+
+Cleanup result:
+
+- completed on CUDA
+- loss decreased from `G=0.7049` to `G=0.4613`
+- visual output remained mostly gray rough-copy enhancement
+- measured epoch080 output over the 12-sample review:
+  - mean intensity: `0.808`
+  - std: `0.140`
+  - black pixels `<0.2`: `0.000`
+  - white pixels `>0.8`: `0.617`
+- conclusion: the shallow cleanup model is not adequate for this
+  rough-to-finished-line mapping with the current 34-pair hamlabi set
+
+UNet 480 trial:
+
+- unit: `hamlabi-region-v2-unet480.service`
+- checkpoint dir: `checkpoints/hamlabi_region_v2_unet480/`
+- log: `logs/hamlabi_region_v2_unet480.log`
+- epochs: 80 target
+- montage so far:
+  - `results/hamlabi_region_v2_unet480_epoch020_compare.png`
+  - `results/hamlabi_region_v2_unet480_epoch040_compare.png`
+
+UNet interim result:
+
+- epoch020 reached `G=0.4414`, already below cleanup epoch080
+- epoch040 reached `G=0.3368`
+- visually, UNet learns strong black area placement but collapses fine line
+  structure into soft black blobs
+- interim conclusion: higher capacity helps optimization but hamlabi black-fill
+  regions dominate the signal; the next useful direction is likely stronger
+  line/fill separation or region-type/expert splitting rather than simply
+  extending the same loss longer
+
+UNet final result:
+
+- completed 80 epochs on CUDA
+- final loss: `G=0.2593`
+- checkpoints:
+  - `best.pth`
+  - `epoch020.pth`
+  - `epoch040.pth`
+  - `epoch060.pth`
+  - `epoch080.pth`
+- final montage:
+  - `results/hamlabi_region_v2_unet480_epoch080_compare.png`
+- output statistics over the 12-sample review:
+  - epoch020: mean `0.642`, std `0.208`, black `<0.2` `0.081`, white `>0.8` `0.029`
+  - epoch040: mean `0.723`, std `0.197`, black `<0.2` `0.059`, white `>0.8` `0.427`
+  - epoch080: mean `0.778`, std `0.203`, black `<0.2` `0.061`, white `>0.8` `0.692`
+
+Interpretation:
+
+- 34 curated pairs are enough to validate the region extraction and training
+  plumbing, but not enough to expect a clean hamlabi expert
+- UNet optimizes much better than cleanup, but it mostly learns black-fill
+  placement and loses fine line structure
+- this supports treating hamlabi as a future MoE/expert source with explicit
+  region-type splitting:
+  - line-dominant character/panel crops
+  - black-fill-heavy crops
+  - multi-character/layout crops
+- before larger training, prioritize increasing clean aligned pair count and
+  separating fill masks from line targets
+
+### 2026-07-24: Pair Expansion Policy After hamlabi Trials
+
+Decision:
+
+- apply the hamlabi variable-aspect region approach to future pair expansion
+  for other datasets as well
+- do not return to 480px fixed crops as the source pair creation rule
+- do not rely on same XY coordinates or regular fixed-size rectangular tiling
+  as the primary extraction method
+
+Reason:
+
+- the hamlabi trials showed that even visually plausible page associations do
+  not make identical coordinate crops reliable
+- successful same-XY matches are expected to be rare cases, not the default
+  behavior of raw manuscript datasets
+- with fewer than 50 pairs, training results are mainly useful for detecting
+  failure modes and validating data plumbing, not for expecting clean expert
+  quality
+
+Updated extraction direction:
+
+- anchor candidate generation on the finished line image
+- cut semantically coherent units first:
+  - panel / koma
+  - character
+  - face / body / hand
+  - large parent region when the exact child is not separable yet
+- search the rough image for matching content under translation, scale, and
+  aspect-preserving normalization candidates
+- keep oversized parent matches for recursive child search instead of forcing
+  them into fixed 480px squares
+- treat the rough-match search process itself as a major improvement target
+
+Documentation:
+
+- `doc/region_dataset_extraction_policy.md` now records this as the default
+  policy for hamlabi and other future raw-dataset pair expansion work
+
+### 2026-07-24: CPU-Only Region Search Loop
+
+Goal:
+
+- make variable-aspect pair exploration runnable while GPU training is active
+  or while the operator is away
+- keep the loop deterministic and review-gated; it should generate candidates,
+  not silently promote a training dataset
+
+Added:
+
+- `tools/pair_extraction/run_region_search_loop.py`
+  - restartable state file
+  - parent/child profile rounds
+  - CPU thread limits
+  - `CUDA_VISIBLE_DEVICES=` to avoid occupying GPU
+  - skip completed rounds unless `--force` is used
+- `doc/region_search_loop.md`
+  - operation notes
+  - output paths
+  - service command
+
+Started service:
+
+- unit: `region-search-loop-hamlabi.service`
+- log: `logs/region_search_loop_hamlabi.log`
+- state: `results/region_search_loop/state.json`
+- output root: `results/region_search_loop/`
+- CPU threads: 2
+
+Current behavior:
+
+- runs hamlabi parent candidate search profiles
+- for each parent profile, runs child refinement profiles against oversized /
+  large parent candidates
+- writes CSV/JSON/QC montage artifacts per round
+- does not materialize accepted training pairs automatically
+
+### 2026-07-24: Valid Mask Trial for Partially Rewritten Regions
+
+Motivation:
+
+- some large region pairs are mostly matched but contain local redrawn /
+  mismatched parts
+- instead of dropping the whole pair, try excluding only mismatched target
+  regions from the training loss
+
+Added:
+
+- `tools/pair_extraction/build_region_valid_masks.py`
+  - reads a region manifest
+  - normalizes rough/line with the same square-pad policy
+  - writes `valid_mask_path` per pair
+  - writes a QC montage with rough / line / valid mask / ignored overlay
+- `lineart/region_dataset.py`
+  - can load `valid_mask_path`
+  - returns `(rough, target, valid_mask)` when a mask is present
+- `scripts/train_i2i_survey.py`
+  - added `--region-mask-key`
+  - applies valid masks to BCE/L1 and masked variants of the region losses
+
+Generated mask datasets:
+
+- aggressive black-fill-aware trial:
+  - `dataset/regions_hamlabi_final_review_v2_768_masked/`
+  - result: too aggressive; black-fill regions caused large false ignores
+- conservative line-target-only trial:
+  - `dataset/regions_hamlabi_final_review_v2_768_masked_line_conservative/`
+  - QC: `dataset/regions_hamlabi_final_review_v2_768_masked_line_conservative/valid_mask_qc.png`
+
+Conservative mask statistics:
+
+- rows: 34
+- ignore ratio:
+  - min: `0.0000`
+  - median: `0.0204`
+  - mean: `0.0246`
+  - max: `0.1153`
+- interpretation: conservative enough for a first masked-loss experiment
+
+Smoke training:
+
+- unit: `hamlabi-region-v2-mask-smoke.service`
+- manifest:
+  - `dataset/regions_hamlabi_final_review_v2_768_masked_line_conservative/manifest.csv`
+- mask key: `valid_mask_path`
+- model: `cleanup`
+- image size: 480
+- epochs: 5
+- checkpoint dir:
+  - `checkpoints/hamlabi_region_v2_mask_smoke/`
+- log:
+  - `logs/hamlabi_region_v2_mask_smoke.log`
+- result:
+  - completed on CUDA
+  - loss decreased from `G=0.7031` to `G=0.5642`
+
+Conclusion:
+
+- the idea is implementable
+- black-fill mismatch masking needs special handling and should not be enabled
+  by default
+- the safer first version is target-line unsupported-region masking:
+  rough extra construction lines are left as input noise, while unsupported
+  target line regions are excluded from loss
+
+### 2026-07-24: Region Post-Alignment for Residual Slide
+
+Reason:
+
+- visually matching rough/line crops can still be shifted after normalization
+- supervised rough-to-line training assumes pixel correspondence
+- residual slide can encourage gray averaging, double lines, and misplaced
+  target lines
+
+Added:
+
+- `tools/pair_extraction/post_align_region_manifest.py`
+  - reads a region manifest
+  - normalizes rough/line with square-pad or stretch policy
+  - searches small residual rough translation against the line edge map
+  - writes `aligned_rough_path`, `aligned_line_path`, `align_dx`,
+    `align_dy`, and alignment score fields
+  - writes `post_align_qc.png`
+- `lineart/region_dataset.py`
+  - now prefers `aligned_rough_path` / `aligned_line_path` before v2/final
+    source paths
+- `tools/pair_extraction/build_region_valid_masks.py`
+  - now also prefers aligned paths when present
+
+Generated:
+
+- exploratory 24 px max-shift alignment:
+  - `dataset/regions_hamlabi_final_review_v2_768_postalign/`
+  - shifted: 32 / 34
+  - mean score gain: `0.3418`
+  - note: several rows hit the 24 px boundary; useful as a diagnostic but
+    potentially too aggressive
+- conservative 12 px max-shift alignment:
+  - `dataset/regions_hamlabi_final_review_v2_768_postalign12/`
+  - shifted: 32 / 34
+  - mean score gain: `0.2386`
+  - QC: `dataset/regions_hamlabi_final_review_v2_768_postalign12/post_align_qc.png`
+
+Mask after conservative post-align:
+
+- dataset:
+  - `dataset/regions_hamlabi_final_review_v2_768_postalign12_masked_line_conservative/`
+- QC:
+  - `dataset/regions_hamlabi_final_review_v2_768_postalign12_masked_line_conservative/valid_mask_qc.png`
+- ignore ratio comparison:
+  - before post-align: mean `0.0246`, median `0.0204`, max `0.1153`
+  - after 12 px post-align: mean `0.0200`, median `0.0138`, max `0.1106`
+  - after 24 px post-align: mean `0.0191`, median `0.0136`, max `0.1120`
+
+Smoke training:
+
+- unit: `hamlabi-region-v2-postalign-mask-smoke.service`
+- manifest:
+  - `dataset/regions_hamlabi_final_review_v2_768_postalign12_masked_line_conservative/manifest.csv`
+- model: `cleanup`
+- mask key: `valid_mask_path`
+- image size: 480
+- epochs: 5
+- result:
+  - completed on CUDA
+  - loss decreased from `G=0.7013` to `G=0.5629`
+
+Policy:
+
+- use conservative post-align before masked-loss training
+- boundary-hitting shifts are review signals
+- if a region needs different shifts in different subareas, keep it as a parent
+  and search child regions rather than forcing one translation

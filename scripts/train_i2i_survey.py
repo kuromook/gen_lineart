@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from lineart.losses import ink_loss, tolerant_f1_loss
 from lineart.model_zoo import MultiScalePatchDiscriminator, PatchDiscriminator, build_generator
+from lineart.region_dataset import RegionManifestDataset, region_collate
 
 
 IMAGE_SIZE = 480
@@ -130,8 +131,14 @@ def train_reconstruction(args, device):
     load_generator_weights(G, args.resume_generator, device, strict=args.strict_resume)
     opt_G = torch.optim.AdamW(G.parameters(), lr=args.lr, betas=(0.5, 0.999))
     pos_weight = torch.tensor(args.pos_weight, dtype=torch.float32, device=device)
-    bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight, reduction="none")
     return G, None, opt_G, None, bce
+
+
+def masked_mean(loss, mask=None):
+    if mask is None:
+        return loss.mean()
+    return (loss * mask).sum() / mask.sum().clamp_min(1.0)
 
 
 def binary_confidence_loss(pred):
@@ -143,6 +150,11 @@ def soft_width_loss(pred):
     """Penalize broad local ink spread while preserving sparse line candidates."""
     local = F.avg_pool2d(pred, kernel_size=7, stride=1, padding=3)
     return (pred * local).mean()
+
+
+def soft_threshold(pred, threshold, sharpness):
+    """Differentiable approximation of hard ink thresholding."""
+    return torch.sigmoid((pred - threshold) * sharpness)
 
 
 def structure_pyramid_loss(pred, target):
@@ -199,26 +211,47 @@ def feature_matching_loss(fake_features, real_features):
 
 
 def train(args):
+    global IMAGE_SIZE
+    IMAGE_SIZE = args.image_size
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    dataset = SketchDataset(
-        args.rough_dir,
-        args.line_dir,
-        args.file_list,
-        autocontrast_rough=args.autocontrast,
-        augment=args.augment,
-        aux_dir=args.aux_dir,
-        aux_dropout=args.aux_dropout,
-        aux_scale_min=args.aux_scale_min,
-        use_skeleton=args.skeleton_weight > 0.0,
-    )
+    if args.require_cuda and device != "cuda":
+        raise RuntimeError("--require-cuda was set, but torch.cuda.is_available() is False")
+    if args.region_manifest:
+        if args.aux_dir:
+            raise ValueError("--aux-dir is not supported with --region-manifest yet")
+        if args.skeleton_weight > 0.0:
+            raise ValueError("--skeleton-weight is not supported with --region-manifest yet")
+        dataset = RegionManifestDataset(
+            args.region_manifest,
+            image_size=args.image_size,
+            fit_mode=args.region_fit_mode,
+            autocontrast_rough=args.autocontrast,
+            augment=args.augment,
+            mask_key=args.region_mask_key,
+        )
+        collate_fn = region_collate
+    else:
+        dataset = SketchDataset(
+            args.rough_dir,
+            args.line_dir,
+            args.file_list,
+            autocontrast_rough=args.autocontrast,
+            augment=args.augment,
+            aux_dir=args.aux_dir,
+            aux_dropout=args.aux_dropout,
+            aux_scale_min=args.aux_scale_min,
+            use_skeleton=args.skeleton_weight > 0.0,
+        )
+        collate_fn = None
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.workers,
         pin_memory=True,
+        collate_fn=collate_fn,
     )
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     G, D, opt_G, opt_D, bce = train_reconstruction(args, device)
@@ -233,13 +266,23 @@ def train(args):
     print(f"model={args.model} gan={args.gan} multiscale_gan={args.multiscale_gan}")
     print(f"in_channels={2 if args.aux_dir else 1} aux_dir={args.aux_dir or ''}")
     print(f"aux_dropout={args.aux_dropout} aux_scale_min={args.aux_scale_min}")
-    print(f"file_list={args.file_list} rows={len(dataset)}")
+    if args.region_manifest:
+        print(
+            f"region_manifest={args.region_manifest} rows={len(dataset)} "
+            f"image_size={args.image_size} fit_mode={args.region_fit_mode} "
+            f"mask_key={args.region_mask_key or 'auto'}"
+        )
+    else:
+        print(f"file_list={args.file_list} rows={len(dataset)} image_size={args.image_size}")
     print(f"checkpoint_dir={args.checkpoint_dir}")
     print(
         f"loss: bce={args.bce_weight} l1={args.l1_weight} "
         f"tolerant={args.shape_weight} ink={args.ink_weight} "
         f"binary={args.binary_weight} skeleton={args.skeleton_weight} "
         f"width={args.width_weight} "
+        f"thresh_shape={args.threshold_shape_weight} "
+        f"thresh_ink={args.threshold_ink_weight} "
+        f"thresh={args.threshold_value}@{args.threshold_sharpness} "
         f"structure={args.structure_weight} "
         f"bg_haze={args.background_haze_weight}@{args.background_haze_radius}px "
         f"fm={args.feature_match_weight} "
@@ -254,30 +297,45 @@ def train(args):
         g_sum = d_sum = 0.0
         steps = 0
         for batch in loader:
+            valid_mask = None
+            skeleton = None
             if args.skeleton_weight > 0.0:
                 rough, target, skeleton = batch
                 skeleton = skeleton.to(device)
+            elif len(batch) == 3:
+                rough, target, valid_mask = batch
             else:
                 rough, target = batch
-                skeleton = None
             rough = rough.to(device)
             target = target.to(device)
+            if valid_mask is not None:
+                valid_mask = valid_mask.to(device).clamp(0.0, 1.0)
 
             pred_logits = G(rough)
             pred = torch.sigmoid(pred_logits)
+            pred_thresh = soft_threshold(
+                pred,
+                args.threshold_value,
+                args.threshold_sharpness,
+            )
+            masked_pred = pred if valid_mask is None else pred * valid_mask
+            masked_target = target if valid_mask is None else target * valid_mask
+            masked_pred_thresh = pred_thresh if valid_mask is None else pred_thresh * valid_mask
             loss_recon = (
-                args.bce_weight * bce(pred_logits, target)
-                + args.l1_weight * F.l1_loss(pred, target)
-                + args.shape_weight * tolerant_f1_loss(pred, target)
-                + args.ink_weight * ink_loss(pred, target)
-                + args.binary_weight * binary_confidence_loss(pred)
-                + args.width_weight * soft_width_loss(pred)
-                + args.structure_weight * structure_pyramid_loss(pred, target)
+                args.bce_weight * masked_mean(bce(pred_logits, target), valid_mask)
+                + args.l1_weight * masked_mean((pred - target).abs(), valid_mask)
+                + args.shape_weight * tolerant_f1_loss(masked_pred, masked_target)
+                + args.ink_weight * ink_loss(masked_pred, masked_target)
+                + args.binary_weight * masked_mean(pred * (1.0 - pred), valid_mask)
+                + args.width_weight * soft_width_loss(masked_pred)
+                + args.threshold_shape_weight * tolerant_f1_loss(masked_pred_thresh, masked_target)
+                + args.threshold_ink_weight * ink_loss(masked_pred_thresh, masked_target)
+                + args.structure_weight * structure_pyramid_loss(masked_pred, masked_target)
                 + args.background_haze_weight
-                * background_haze_loss(pred, target, args.background_haze_radius)
+                * background_haze_loss(masked_pred, masked_target, args.background_haze_radius)
             )
             if skeleton is not None:
-                loss_recon = loss_recon + args.skeleton_weight * bce(pred_logits, skeleton)
+                loss_recon = loss_recon + args.skeleton_weight * masked_mean(bce(pred_logits, skeleton), None)
             loss_G = loss_recon
             if D is not None:
                 if args.feature_match_weight > 0.0:
@@ -366,6 +424,11 @@ def main():
     parser.add_argument("--file-list", default="dataset/pairs_480/valid_train_milddup800_clean.txt")
     parser.add_argument("--rough-dir", default="dataset/pairs_480/train/rough")
     parser.add_argument("--line-dir", default="dataset/pairs_480/train/line")
+    parser.add_argument("--region-manifest", default=None)
+    parser.add_argument("--region-fit-mode", choices=["square_pad", "resize_stretch"], default="square_pad")
+    parser.add_argument("--region-mask-key", default=None)
+    parser.add_argument("--image-size", type=int, default=IMAGE_SIZE)
+    parser.add_argument("--require-cuda", action="store_true")
     parser.add_argument("--aux-dir", default=None)
     parser.add_argument("--aux-dropout", type=float, default=0.0)
     parser.add_argument("--aux-scale-min", type=float, default=1.0)
@@ -385,6 +448,10 @@ def main():
     parser.add_argument("--binary-weight", type=float, default=0.0)
     parser.add_argument("--skeleton-weight", type=float, default=0.0)
     parser.add_argument("--width-weight", type=float, default=0.0)
+    parser.add_argument("--threshold-shape-weight", type=float, default=0.0)
+    parser.add_argument("--threshold-ink-weight", type=float, default=0.0)
+    parser.add_argument("--threshold-value", type=float, default=0.52)
+    parser.add_argument("--threshold-sharpness", type=float, default=24.0)
     parser.add_argument("--structure-weight", type=float, default=0.0)
     parser.add_argument("--background-haze-weight", type=float, default=0.0)
     parser.add_argument("--background-haze-radius", type=int, default=9)
