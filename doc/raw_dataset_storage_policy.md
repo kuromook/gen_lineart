@@ -16,7 +16,20 @@ Current archives:
 - `dataset/raw_zips/dataset_ako5ver2.zip`
 - `dataset/raw_zips/dataset_hamlabi.zip`
 - `dataset/raw_zips/dataset_fitness_v4.zip`
-- `dataset/raw_zips/dataset_housei.zip`
+- `dataset/raw_zips/dataset_housei.zip` (superseded, kept for reference)
+- `dataset/raw_zips/dataset_housei_v2.zip` (superseded by `_v3`; adds per-page
+  `*_koma.jpg` panel-border layer and `koma_manifest.json`; zip root changed
+  from flat to `dataset_housei/`, so tools need `--zip-root dataset_housei`)
+- `dataset/raw_zips/dataset_housei_v3.zip` (current housei source; only
+  `housei_004_sketch.jpg` differs from v2, replacing a ラフ layout sketch
+  with the correct 下絵 — confirmed by hashing every archive member)
+- `dataset/raw_zips/dataset_ako5_koma.zip` (ako5ver2 panel-border layer,
+  arrived 2026-07-26; integrity-checked, not yet processed)
+- `dataset/raw_zips/dataset_hamlabi_koma.zip` (hamlabi panel-border layer,
+  arrived 2026-07-26; integrity-checked, not yet processed)
+- `dataset/raw_zips/dataset_kurip.zip` (arrived 2026-07-26 alongside the koma
+  layers above; includes its own koma layer; not yet inspected/reconciled
+  against the existing `fitness` source — see `doc/CURRENT.md` next actions)
 - `dataset/raw_zips/dataset_fighting.zip`
 
 `fitness` and `fighting` were renamed from their originally uploaded names

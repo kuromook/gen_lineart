@@ -229,12 +229,95 @@ needing manual review, (4) defer finer sub-character regions, which may have
 irregular/"special" deformation. Full detail:
 `doc/raw_dataset_extraction_knowledge.md` ("Residual Misalignment").
 
+## 2026-07-26 (later) housei Koma Panel Segmentation And Tile Extraction
+
+The panel-border-layer extraction unblocked for `housei` (delivered as
+`dataset/raw_zips/dataset_housei_v2.zip`; ako5ver2/hamlabi still pending on
+the other machine). Built `tools/pair_extraction/match_koma_panels.py`
+(panel detection from the koma layer + per-panel translation/scale alignment
+search) and ran it across all 18 housei pages: 81 panels, chamfer median
+17.24 -> 14.55. Found and resolved two anomalies on review: `housei_004`
+excluded (true page-level asset mismatch, rough is a ラフ layout sketch not
+下絵, confirmed by user); `housei_010`/`011`/`012` flagged as a distinct
+high-residual-misalignment cluster (real content correspondence, much higher
+chamfer; ruled out contrast/faintness as the cause via a 4-method test).
+
+Per user direction, filtered at panel granularity rather than page
+granularity: a `chamfer <= 20.0` gate (a real distribution gap, not a fitted
+elbow) kept 59/74 non-housei_004 panels, excluding housei_010/011/012's
+panels specifically while keeping every other page's panels including the
+otherwise-good pages that happen to contain those 3. Materialized
+(`tools/pair_extraction/materialize_koma_panels.py`) and ran through the
+existing native mask + strict-tile pipeline (`build_region_valid_masks.py`,
+`tile_region_manifest_480.py`) unchanged: 58 tiles from 287 raw candidates,
+0 integrity findings. Saved as
+`dataset/pairs_480/valid_train_housei_koma_native_strict_20260726.txt`. Full
+detail: `doc/raw_dataset_extraction_knowledge.md` (`## housei`) and
+`doc/dataset_status.md` (`## housei` -> "Koma Panel Segmentation").
+
+## 2026-07-26 (later still) housei_004 Fixed, Sub-Region Split, Yield Improved
+
+User supplied `dataset_housei_v3.zip` (corrected `housei_004_sketch.jpg`,
+confirmed the only changed file vs v2) plus, separately, `dataset_ako5_koma.zip`
+and `dataset_hamlabi_koma.zip` (koma layers for the other two sources,
+integrity-checked OK, not yet processed — user said proceed with housei first).
+
+Re-ran housei_004 alone against v3: now passes cleanly (chamfer 12.3-18.6, was
+30-40/excluded). Diagnosed the 58-tile yield as low via a per-gate funnel
+measurement: `ink_range` rejected 80.9% of candidates (koma panels are
+panel-border geometry, not content density, so much of a panel is blank),
+alignment only 0.7%. Built `tools/pair_extraction/split_koma_panel_subregions.py`
+(reuses hamlabi's page-level ink-connected-component region proposal, scoped
+to one already-aligned panel) to crop dense content islands before tiling.
+Result: 66 panels -> 179 sub-regions -> 75 tiles (up from 58), 0 integrity
+findings. This supersedes the earlier 58-tile panel-level-only set. Full
+detail: `doc/raw_dataset_extraction_knowledge.md` (`## housei`).
+
+## 2026-07-26 (even later) Per-Sub-Region Alignment Refinement
+
+User's follow-up observation from looking at the sub-region tile QC
+directly: content matches panel-to-panel, but zoomed in there's still
+noticeable misalignment — asked how much character/region-level realignment
+within one panel would help. Added `--refine-alignment` to
+`split_koma_panel_subregions.py`: a small local translation+scale search per
+sub-region, starting from the panel's own alignment (already roughly right)
+rather than a wide from-scratch search. Ran across all 179 sub-regions in 3
+chunks (chamfer improved ~8-11% per chunk; some individual sub-regions
+needed a real correction, e.g. one 32px shift cut chamfer 19.1->16.3).
+Re-tiled through the unchanged mask+tile pipeline: **85 tiles** (up from 75
+unrefined, up from 58 at the original whole-panel level), 0 integrity
+findings. This is now the current housei koma-panel training source,
+superseding both earlier sets (left on disk, not deleted). Full progression:
+58 -> 75 -> 85 tiles across whole-panel -> sub-region-split ->
++alignment-refinement. Full detail: `doc/raw_dataset_extraction_knowledge.md`
+(`## housei`).
+
 ## Next Actions
 
-1. **Blocked on external work**: panel-border-layer extraction (another
-   machine, user-side). Resume the panel-boundary-first region segmentation
-   plan once that dataset is available; see
-   `doc/raw_dataset_extraction_knowledge.md`.
+1. **housei koma-panel pipeline done for now**: 85 tiles, saved, audited
+   (`dataset/pairs_480/valid_train_housei_koma_subregion_refined_native_strict_20260726.txt`).
+2. **ako5ver2 and hamlabi koma layers have arrived** (`dataset_ako5_koma.zip`,
+   `dataset_hamlabi_koma.zip`, both integrity-checked OK) but have not been
+   processed yet — user said to finish housei first. Next natural step:
+   apply the same full pipeline (panel detection -> alignment -> chamfer
+   gate -> sub-region split -> per-sub-region alignment refinement -> mask ->
+   tile) to these two sources. The sub-region split's 121px morphological
+   dilate is slow on large panel images (single chunks of ~15-33 panels each
+   took 5-10 min here, right at the edge of this environment's background-job
+   kill window) — chunk aggressively (~15-20 panels/run) and consider
+   downscaling the dilate step first for these larger sources.
+3. housei now has three independently-extracted tile sets: native_strict
+   grid+local-offset (65 tiles), koma-panel-level (58 tiles, superseded),
+   koma-subregion-level (75 tiles, superseded), koma-subregion-refined (85
+   tiles, current). Not yet trained on individually or combined; decide
+   whether to train separately first or design a deliberate mixing
+   experiment before combining with each other or with the other sources
+   (ako5ver2/fitness/fighting).
+4. There is also a new `dataset_kurip.zip` in raw_zips (117 files, includes
+   its own koma layer) — not yet inspected/reconciled against the existing
+   `fitness` (formerly kurip) source; check whether this is a koma-layer
+   addition for fitness parallel to housei/ako5ver2/hamlabi's, before using
+   it.
 2. Model-side: decide the next model direction using the now-broader pool
    (ako5ver2 native strict, fitness, housei, fighting) — longer training,
    non-BCE-heavy loss, or reuse of an existing halo/Lucy/cleanup candidate

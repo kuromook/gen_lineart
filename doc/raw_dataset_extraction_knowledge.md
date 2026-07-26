@@ -411,6 +411,332 @@ used in `materialize_region_manifest_native.py` and `match_hamlabi_regions.py`).
 
 Route and result: see `doc/dataset_status.md` (`## housei` section).
 
+### Panel-Border Layer Delivered (2026-07-26): Koma Panel Segmentation
+
+`dataset/raw_zips/dataset_housei_v2.zip` (kept alongside the original as
+`dataset_housei.zip`) adds a per-page panel-border-only layer,
+`housei_NNN_koma.jpg`, plus `koma_manifest.json` (per-page `sources`: which
+named `コマ` vector/raster layer(s) in the original production file the koma
+image traces, and an `ink` ratio). This is the panel-border-layer dataset
+"Planned Fix: Panel-Boundary-First Region Segmentation" (below) was waiting
+on, delivered for `housei` only so far (not ako5ver2/hamlabi). Zip layout also
+changed: files now live under a `dataset_housei/` subfolder, so tools need
+`--zip-root dataset_housei` for the v2 archive, not `""`.
+
+New tool: `tools/pair_extraction/match_koma_panels.py`. Two stages, both
+dry-run/candidate-generation only:
+
+1. `detect_panels()`: the koma layer contains only panel-border ink on an
+   otherwise blank page. Panel interiors are the connected components of the
+   *non-ink* area (after closing small border gaps with a morphological
+   close), excluding whatever component(s) touch the page edge (outer
+   margin/background). Verified against the koma reference image directly:
+   detected boxes matched the visual panel layout exactly on every page
+   checked, including a page with a nested inset panel (handled correctly as
+   two separate components, the inset and the surrounding ring).
+2. Per-panel alignment: reuses the fixed alignment-gate primitives
+   (`edge_map`/`support_f1`/`chamfer`, `ALIGNMENT_*` constants) from
+   `tile_region_manifest_480.py`, extended with a uniform-scale search
+   (0.85-1.15), per the already-documented per-panel scale/deformation
+   finding above.
+
+Performance note (reusable beyond housei): an initial implementation scored
+every translation candidate via full boolean-array indexing
+(`line_support[rough_edge_window]`) over whole-panel-sized arrays, which cost
+O(panel area) per candidate and made a 2-page test take 11m40s. Rewriting to
+index sparse edge-pixel coordinates (`np.nonzero`) instead, so per-candidate
+cost scales with ink density rather than panel area, cut the same test to
+2m57s (~4x) with byte-identical results. Even so, a translation search wide
+enough to avoid boundary-hit false optima (needed `--max-shift 160`, not the
+initial `64`, since many pages' true offset was 60-160px) makes the full
+18-page/81-panel batch too slow for one process given this environment's
+background-job kill window (see "Environment: Long Background Jobs Get
+Silently Killed" above); it was run in 6 chunks of 3 pages
+each (~3.5-5.5 min/chunk) using `--start-page`/`--end-page`/`--append`.
+
+Two distinct anomalies found on full-resolution review, illustrating why
+review must happen before any production use:
+
+- **`housei_004` (page0001): true page-level asset mismatch, not an alignment
+  problem.** All 7 panels hit the `--max-shift 160` search boundary with
+  chamfer staying high (30-40) even at the best found offset. The whole-page
+  downsampled edge overlay showed the line art drawn at a substantially larger
+  scale than the rough, spilling far outside the rough's corresponding
+  content — not fixable by translation/scale search at any reasonable range.
+  Root cause, confirmed by the user: this page's rough is actually a ラフ
+  (layout-stage rough), not the 下絵 (shitae/underdrawing) the rest of the
+  source pairs use — visible in the manifest as a differently-formatted
+  `sketch_layer_name` (`"n.houseiA_001-0"` vs. the normal
+  `"p.housei_NNN"` pattern; this is the *only* entry among all 18 pages with
+  the `"n."` prefix, confirmed by listing every page's `sketch_layer_name`).
+  Checked whether the previously-used (pre-koma) zip had a better rough for
+  this page: `housei_004_sketch.jpg` is byte-identical (same md5) between
+  `dataset_housei.zip` and `dataset_housei_v2.zip`, so this was already the
+  asset in use before the koma layer was added, not a regression from the v2
+  upload. No fix available from data already on hand; would need the actual
+  shitae layer re-extracted from the source production file. Decision: hold
+  `housei_004` out of this batch entirely (`hold_layer_difference`-style, but
+  at the whole-page level rather than a sub-region).
+- **`housei_010`/`housei_011`/`housei_012` (page0007/page0012/page0019): a
+  distinct cluster of much higher residual misalignment, but real content
+  correspondence.** Per-page median best-chamfer is 27.8-34.4 for these three
+  vs. 11.2-16.5 for every other page in the batch; 10 of 74 non-housei_004
+  panels landed within 20px of the `--max-shift 160` boundary, concentrated in
+  these three pages. Unlike `housei_004`, full-resolution panel crops confirm
+  correct rough/line content correspondence throughout (same characters, same
+  poses, recognizable after alignment) — this is not a wrong-page or
+  wrong-asset mismatch. Read as the already-documented non-uniform
+  deformation/residual-misalignment finding (see "Residual Misalignment"
+  above) showing up more severely here, plausibly because these panels have
+  busier or more dynamic content (multiple overlapping characters, action
+  poses) than the rest of the batch. Their `sketch_layer_name` is normal
+  (`p.housei_NNN`), ruling out the `housei_004`-style asset-type explanation.
+  Decision: keep these panels in the batch (do not exclude like `housei_004`,
+  since the content match is real), but flag them as high-residual-alignment
+  for a later chamfer-based quality gate to filter naturally at the tile
+  level, rather than forcing a page-specific fix into the general pipeline.
+
+Batch result (81 panels detected across 17 processed pages, `housei_004`
+excluded from the count below):
+
+- `results/housei_koma_panels_20260726.csv` / `.json`: 74 accepted-page rows
+  (housei_004's 7 rows also present in the file but should be excluded on
+  read)
+- chamfer median: base 17.24 -> best 14.55 (mean 20.84 -> 17.02)
+- QC: `results/housei_koma_panels_20260726_qc_chunk{1..6}.png` (per-chunk,
+  not combined); page-level panel-box overlays:
+  `results/housei_koma_panels_20260726_overlays/housei_NNN_panels.png`
+
+### Panel-Level Quality Gate And Materialization (2026-07-26)
+
+User direction: page-level mismatch (housei_004) is exclude-worthy, but a
+page with some bad panels (housei_010/011/012) should still contribute its
+good panels rather than being dropped wholesale — filter at panel
+granularity, not page granularity.
+
+Chamfer distribution across the 74 non-housei_004 panels showed a clean
+natural gap: p80=20.02, p90=28.92 (stable count for cutoffs 20-25, so this is
+a real gap, not a fitted elbow) and the gap boundary lines up exactly with
+the housei_010/011/012 cluster identified earlier. Adopted `chamfer <= 20.0`
+as the panel-level accept gate: 59/74 panels pass, rejecting all of
+housei_010 (5) + housei_011 (4) + housei_012 (3) plus 3 individual weak
+panels from otherwise-good pages (housei_001 panel1, housei_018 panel3, and
+one more). Visually reviewed the full accepted set at native tile resolution
+(`results/housei_koma_panels_20260726_materialized_qc.png`) before and after
+the gate — clean throughout, including the tail near the cutoff.
+
+Contrast-adjustment side investigation (before settling on the chamfer gate):
+tested autocontrast cutoff=1/2, CLAHE, and percentile stretch against the
+existing autocontrast cutoff=0 baseline on housei_010/011/012 panels plus a
+clean reference (housei_002). All four alternatives gave negligible F1/chamfer
+change (within ~0.01 F1 / ~1 chamfer point) on every page including the clean
+one — contrast/faintness is not the bottleneck for these three pages; the gap
+is a genuine structural stroke-position mismatch (loose rough drawing and/or
+real non-uniform deformation), not an image-processing artifact. This
+superseded an earlier, now-retracted hypothesis that faint rough contrast
+explained the cluster.
+
+New tool: `tools/pair_extraction/materialize_koma_panels.py`. For each
+accepted panel, re-crops the rough page at its already-found best
+`(dx, dy, scale)` and the line page at the raw panel bbox, both at native
+pixel resolution, matching the line panel's exact pixel dimensions (no
+`line_box` column is written, since these panels are native 1:1 by
+construction — see note below). Dry-run writes a QC montage only; `--save`
+writes PNG pairs plus `manifest.csv`/`manifest.json` with a `native_long_side`
+column, directly compatible with `build_region_valid_masks.py`.
+
+Downstream pipeline reused as-is (no changes needed), matching the already-
+validated ako5ver2/fitness/housei native-strict recipe:
+
+1. `materialize_koma_panels.py --save` -> `dataset/regions_housei_koma_panels_20260726/`
+   (59 rough/line PNG pairs + manifest)
+2. `build_region_valid_masks.py --image-size 0 --reuse-source-images
+   --support-px 20 --window 61 --expand-ignore 16 --close-ignore 16` (same
+   native-scale settings validated for ako5ver2 native and housei) ->
+   `dataset/regions_housei_koma_panels_20260726_masked_line_conservative/`
+3. `tile_region_manifest_480.py` with the ako5ver2-validated strict gates
+   (`--ink-min 0.012 --ink-max 0.08 --max-black-component-ratio 0.025
+   --max-thick-ink-ratio 0.015 --max-line-width-p50 6.0
+   --max-long-line-ratio 0.25 --min-support 0.90 --score-mode strict
+   --duplicate-overlap 0.50 --max-per-region 4 --min-tile-score 2.5
+   --dedup-scope page`), plus housei's already-established
+   `--max-soft-ink-ratio 0.50` relaxation
+
+One real gotcha, not specific to koma panels: the `src_per_out` region-scale
+gate (`--min-src-per-out`/`--max-src-per-out`) requires a `line_box` column
+to compute a real scale ratio; without it, `region_scale_stats()` falls back
+to `source_long_side = native_long_side`, giving a flat `src_per_out = 1.0`
+for every region, which a `--min-src-per-out 1.2` gate (ako5ver2's validated
+value) then rejects entirely (`region rejects: src_per_out_low=59`, 0
+accepted on the first attempt). This gate exists to catch *resized* regions
+(where source and output resolution differ); koma panels are native 1:1 by
+construction (no resize step), so the gate is inapplicable and was left at
+its default `0` (disabled) rather than worked around with a synthetic
+`line_box`. Record this if any other native-1:1-by-construction source hits
+the same all-rejected symptom.
+
+Also cosmetic-only gotcha: `tile_region_manifest_480.py --name-prefix`
+defaults to the literal string `"ako5k281"` (hardcoded leftover from the tool's
+original ako5ver2-only origin) — output tile filenames read
+`ako5k281_NNNN_...` regardless of source unless `--name-prefix` is passed
+explicitly. Cosmetic only (`source_name`/`source_page` columns in the CSV are
+correct regardless), but always pass an explicit `--name-prefix` for a new
+source to avoid confusing filenames.
+
+Final result: 58 tiles accepted from 287 raw candidates across 59 panels
+(59/59 regions used). Saved:
+
+- list: `dataset/pairs_480/valid_train_housei_koma_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_native_strict_20260726`
+- rough dir: shared `dataset/pairs_480/train/rough` (tiles prefixed
+  `houseikoma_`)
+- tile CSV: `results/housei_koma_tiles_480_strict.csv`
+- QC: `results/housei_koma_tiles_480_strict_qc.png` /
+  `_qc_tail.png` (tail reviewed at full native tile resolution before saving:
+  sparse/simple single-stroke fragments, no content mismatches)
+- integrity audit: 0 findings
+  (`results/pair_dataset_integrity_summary_housei_koma_native_strict.csv`)
+
+Status: superseded by the sub-region split below (housei_004 fix + content-
+density splitting produced a larger, cleaner set from the same panels). The
+58-tile line dir/list above are left on disk as historical reference, not
+deleted, but should not be used for new work — use
+`housei_koma_subregion_native_strict_20260726` instead.
+
+### housei_004 Fixed (v3), And Ink-Density Sub-Region Split (2026-07-26)
+
+Two follow-ups landed together, both increasing yield over the 58-tile panel-
+level set above.
+
+**housei_004 fixed.** User supplied `dataset/raw_zips/dataset_housei_v3.zip`
+with a replaced `housei_004_sketch.jpg` (confirmed as the only changed file
+vs. v2 by hashing every member of both archives). The manifest's
+`sketch_layer_name` field for this entry is still the stale
+`"n.houseiA_001-0"` label (not updated), but the image content is a genuine
+下絵 now: a whole-page downsampled edge overlay against the line page shows
+tight scale/position correspondence throughout, unlike the wildly
+oversized-relative-to-rough line content seen with the old ラフ asset.
+Re-ran `match_koma_panels.py` for this one page only (page index 3) against
+v3: chamfer improved from a 30-40 range (all 7 panels boundary-hit and
+excluded) to a 12.3-18.6 range (all 7 panels now pass the `chamfer<=20.0`
+gate). Merged these 7 rows into `results/housei_koma_panels_20260726.csv`,
+replacing the old bad housei_004 rows. Panel-level accepted count is now
+66 (up from 59).
+
+**Ink-density sub-region split.** Root-caused via a per-gate funnel
+measurement (evaluating every gate independently on a stride=480,
+non-overlapping sample of 480px windows across all accepted panels, mirroring
+`diagnose_gate_funnel.py`'s approach but implemented ad hoc against this
+region-manifest pipeline since that tool is built for the other zip-based
+route): `ink_range` alone rejected 80.9% of candidate windows (median line
+ink density 0.0018, far below the 0.012 floor; 75.9% specifically too
+sparse), `soft_ink_ratio` rejected 61.5%, while the alignment gate rejected
+only 0.7%. Diagnosis: koma panels are defined by panel-border *geometry*, not
+content density (unlike ako5ver2's region proposals, which are built from
+ink-connected-components in the first place), so a large fraction of a
+panel's area is blank background/margin, and a naive 480px sliding window
+over the whole panel wastes most candidates there.
+
+New tool: `tools/pair_extraction/split_koma_panel_subregions.py`. Reuses the
+same ink-connected-component region-proposal logic already validated for
+hamlabi's whole-page region finding (`match_hamlabi_regions.py`'s
+`region_proposals()`/`line_ink_mask()`, same default thresholds — no
+rescaling needed since koma panels are native-resolution crops from the same
+source pages), scoped to one already-aligned koma panel instead of a whole
+page. Sub-regions inherit the panel's already-verified alignment (rough and
+line were already re-cropped pixel-aligned at materialization time using the
+panel's best found `dx`/`dy`/`scale`), so no re-alignment is needed, only a
+content-aware crop. If a panel has no dense sub-region, the whole panel is
+kept as a fallback so nothing is silently dropped (0/66 panels needed the
+fallback in practice).
+
+Performance note: the 121px morphological dilate kernel (reused unchanged
+from `match_hamlabi_regions.py`, calibrated for whole-page grouping) is slow
+on some of these large panel images — a 66-panel dry-run took 6m52s, right at
+the edge of this environment's background-job kill window (see
+"Environment: Long Background Jobs" above). It finished both times it was
+run, but if this needs to run on more panels later (ako5ver2/hamlabi), either
+downscale the image before the dilate+connected-components step (scaling
+boxes back up afterward) or chunk the run.
+
+Result: 179 sub-regions from 66 panels (avg 2.7/panel, 0 fallback). Ran
+through the unchanged `build_region_valid_masks.py` (same native settings)
+and `tile_region_manifest_480.py` (same strict gates) pipeline:
+
+- tiles: 75 accepted from 349 raw candidates (up from 58/287 at the panel
+  level — the sub-region split alone improved yield ~29% at matched gates,
+  on top of the 7 additional panels housei_004 contributed)
+- list: `dataset/pairs_480/valid_train_housei_koma_subregion_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_subregion_native_strict_20260726`
+- rough dir: shared `dataset/pairs_480/train/rough` (tiles prefixed
+  `houseikomasub_`)
+- QC reviewed top and tail at full native tile resolution before saving:
+  same quality pattern as the panel-level set (tight correspondence at the
+  top, sparse-but-correct single-stroke fragments at the tail, no mismatches)
+- integrity audit: 0 findings
+  (`results/pair_dataset_integrity_summary_housei_koma_subregion_native_strict.csv`)
+
+Status: superseded by the per-sub-region alignment refinement below.
+
+### Per-Sub-Region Alignment Refinement (2026-07-26)
+
+User's observation, from looking at the sub-region tile QC directly: "panel
+by panel the same picture is there, but zoomed in it's still fairly
+misaligned — how much would character/region-level alignment within one
+panel improve this?" This is exactly the gap in the sub-region split above:
+each sub-region inherited its parent panel's single `(dx, dy, scale)`, but
+that transform is only the best *average* fit for the whole panel — a busy
+panel with multiple content islands (e.g. two characters at different
+depths) can have per-island residual misalignment, the same non-uniform-
+deformation finding already documented for whole panels, recurring one level
+down.
+
+Added `--refine-alignment` (on by default) to
+`split_koma_panel_subregions.py`: after finding each sub-region box, runs a
+small local translation+scale search (`--refine-max-shift 48
+--refine-shift-step 8`, default `PANEL_SCALES` 0.85-1.15) starting from the
+panel's own alignment rather than a wide from-scratch search, since the
+panel is already roughly right and only a small residual needs finding.
+Reuses the same sparse-edge-coordinate scoring approach as the panel-level
+search in `match_koma_panels.py` for speed.
+
+Result across all 179 sub-regions (3 chunks): sub-region chamfer median
+improved modestly at every chunk (14.54->13.40, 13.08->11.96, 14.31->12.85 —
+roughly 8-11% each), confirming the effect is real but modest in aggregate,
+consistent with panels already being reasonably aligned overall (chamfer<=20
+gate). Individual sub-regions occasionally needed a substantial correction
+(e.g. one case found a 32px shift, chamfer 19.1->16.3), confirming genuine
+per-content-island residual misalignment exists, not just noise — but most
+sub-regions only needed a small nudge.
+
+Re-tiled through the same unchanged mask+tile pipeline:
+
+- tiles: 85 accepted from 372 raw candidates (up from 75/349 without
+  refinement, up from 58/287 at the original whole-panel level — refinement
+  alone added ~13% on top of the sub-splitting's ~29%)
+- list: `dataset/pairs_480/valid_train_housei_koma_subregion_refined_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_subregion_refined_native_strict_20260726`
+- rough dir: shared `dataset/pairs_480/train/rough` (tiles prefixed
+  `houseikomasubrefined_`)
+- QC reviewed top and tail at full native tile resolution: same quality
+  pattern as every earlier stage (tight correspondence at top, sparse-but-
+  correct single-stroke fragments at tail, no mismatches)
+- integrity audit: 0 findings
+  (`results/pair_dataset_integrity_summary_housei_koma_subregion_refined_native_strict.csv`)
+
+Full progression across all three koma-panel extraction stages, same source
+panels throughout: **58 -> 75 -> 85 tiles** (whole-panel tiling -> ink-density
+sub-region split -> + per-sub-region alignment refinement).
+
+Status: reviewed, saved, integrity-audited; this is now the current housei
+koma-panel training source, superseding both the 58-tile panel-level-only set
+and the 75-tile unrefined-sub-region set above (both left on disk as
+historical reference, not deleted, but should not be used for new work). Not
+yet trained on; not yet mixed with the existing `housei_native_strict`
+grid-based tile set (65 tiles, different extraction route — grid+local-offset
+anchored vs. this panel/sub-region-anchored route) — keep as a separate
+source until a deliberate mixing/comparison experiment is designed.
+
 ## Template For New Raw Dataset Notes
 
 Use this shape for future entries:

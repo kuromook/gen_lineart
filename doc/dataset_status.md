@@ -406,6 +406,98 @@ Status:
 - superseded for the first combined training pass by a chamfer-based
   alignment filter; see `## Combined Training Runs (2026-07-26)` below
 
+### Koma Panel Segmentation (2026-07-26, separate from the tile set above)
+
+A panel-border layer (`housei_NNN_koma.jpg`) was delivered for housei only, in
+a new `dataset/raw_zips/dataset_housei_v2.zip` (kept alongside the original
+`dataset_housei.zip`; `--zip-root dataset_housei` for v2, layout changed from
+flat). This unblocks (for housei only) the panel-boundary-first segmentation
+plan in `doc/raw_dataset_extraction_knowledge.md`.
+
+`tools/pair_extraction/match_koma_panels.py` detects panels from the koma
+layer and verifies rough/line alignment per panel (translation + uniform
+scale search, reusing the fixed `ALIGNMENT_*` primitives). Run across all 18
+pages (chunked, 6 x 3-page runs): 81 panels detected, chamfer median 17.24 ->
+14.55 after search. Two anomalies found on review: `housei_004` is a true
+page-level asset mismatch (its rough is a ラフ layout sketch, not 下絵, per
+the user; excluded from the batch) and `housei_010`/`011`/`012` are a
+distinct high-residual-misalignment cluster (median chamfer 27.8-34.4 vs.
+11.2-16.5 elsewhere) with real content correspondence, kept but flagged. Full
+detail: `doc/raw_dataset_extraction_knowledge.md` (`## housei` ->
+"Panel-Border Layer Delivered").
+
+Panel-level chamfer gate (`<=20.0`, a natural distribution gap that lines up
+exactly with the housei_010/011/012 cluster) accepted 59/74 panels, rejecting
+housei_010/011/012 fully plus 3 individual weak panels from good pages.
+Contrast-adjustment (autocontrast cutoff=1/2, CLAHE, percentile stretch) was
+tested and ruled out as a fix for that cluster — negligible effect on
+F1/chamfer even on a clean reference page, so the gap is a real structural
+stroke-position mismatch, not an image-processing artifact.
+
+Materialized (`tools/pair_extraction/materialize_koma_panels.py`) and run
+through the existing native mask + strict-tile pipeline unchanged
+(`build_region_valid_masks.py`, `tile_region_manifest_480.py` with the
+ako5ver2-validated gates plus housei's `--max-soft-ink-ratio 0.50`):
+
+- tiles: 58 accepted from 287 raw candidates, 59/59 panels used
+- list: `dataset/pairs_480/valid_train_housei_koma_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_native_strict_20260726`
+- integrity audit: 0 findings
+  (`results/pair_dataset_integrity_summary_housei_koma_native_strict.csv`)
+
+Superseded (see below): housei_004 got a corrected sketch (`dataset_housei_v3.zip`)
+and a content-density sub-region split improved yield further. Use the
+sub-region set as the current housei koma-panel source; the 58-tile
+panel-level list above is left on disk as historical reference only.
+
+### housei_004 Fix + Sub-Region Split (2026-07-26, current koma source)
+
+- `dataset_housei_v3.zip` replaced `housei_004_sketch.jpg` (only that file
+  changed vs v2, confirmed by hashing every archive member); the new sketch
+  is a genuine 下絵 at correct scale (was a ラフ before). housei_004's 7
+  panels now pass the chamfer<=20 gate (12.3-18.6, was 30-40/all excluded).
+  Panel-level accepted count: 66 (was 59).
+- New tool `tools/pair_extraction/split_koma_panel_subregions.py`: a
+  per-gate funnel measurement found `ink_range` rejected 80.9% of candidate
+  tiles (koma panels are geometry-defined, not content-defined, so much of a
+  panel is blank background) while alignment rejected only 0.7%. Reuses
+  hamlabi's page-level ink-connected-component region-proposal logic, scoped
+  to one already-aligned panel, to crop just the dense content islands
+  before 480px tiling.
+- Result: 179 sub-regions from 66 panels -> 75 tiles accepted (up from 58),
+  0 integrity findings.
+- list: `dataset/pairs_480/valid_train_housei_koma_subregion_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_subregion_native_strict_20260726`
+
+Superseded by per-sub-region alignment refinement (below).
+
+### Per-Sub-Region Alignment Refinement (2026-07-26, current koma source)
+
+User noticed, from the sub-region tile QC directly, that sub-regions still
+looked somewhat misaligned up close despite matching content — asked how
+much character/region-level realignment within one panel would help. Added
+`--refine-alignment` to `split_koma_panel_subregions.py`: small local
+translation+scale search per sub-region, starting from the panel's own
+alignment (not from scratch). Chamfer improved modestly (~8-11%) at each of
+3 processing chunks; some individual sub-regions needed a real correction
+(one found a 32px shift, chamfer 19.1->16.3).
+
+Full progression, same source panels throughout: **58 -> 75 -> 85 tiles**
+(whole-panel tiling -> sub-region split -> + alignment refinement).
+
+- list: `dataset/pairs_480/valid_train_housei_koma_subregion_refined_native_strict_20260726.txt`
+- line dir: `dataset/pairs_480/train/line_housei_koma_subregion_refined_native_strict_20260726`
+- integrity audit: 0 findings
+
+Status: reviewed, saved, integrity-audited; this is the current housei
+koma-panel training source, superseding both the 58-tile panel-level set and
+the 75-tile unrefined-sub-region set (both left on disk, not deleted, but not
+for new work). Not yet trained on, not yet mixed with the existing
+`housei_native_strict` grid-based tile set (65 tiles, different extraction
+route) — keep separate until a deliberate mixing experiment. Full detail:
+`doc/raw_dataset_extraction_knowledge.md` (`## housei` -> "Per-Sub-Region
+Alignment Refinement").
+
 ## Combined Training Runs (2026-07-26)
 
 First attempts at training on more than one reviewed native-strict source
