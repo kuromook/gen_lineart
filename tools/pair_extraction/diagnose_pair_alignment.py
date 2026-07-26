@@ -27,9 +27,18 @@ DEFAULT_ZIP_ROOT = "dataset_kurip_v4"
 TILE = 480
 
 
+def read_zip_member(zf, zip_root, name):
+    for candidate in (f"{zip_root}/{name}", f"{zip_root}\\{name}", name):
+        try:
+            return zf.read(candidate)
+        except KeyError:
+            pass
+    raise KeyError(f"missing zip member for {name!r}")
+
+
 def load_manifest(zip_path, zip_root):
     with zipfile.ZipFile(zip_path) as zf:
-        return json.loads(zf.read(f"{zip_root}/manifest.json"))
+        return json.loads(read_zip_member(zf, zip_root, "manifest.json"))
 
 
 def page_label(entry):
@@ -37,8 +46,8 @@ def page_label(entry):
 
 
 def load_zip_pair(zf, zip_root, entry):
-    rough = Image.open(io.BytesIO(zf.read(f"{zip_root}/{entry['sketch']}"))).convert("L")
-    line = Image.open(io.BytesIO(zf.read(f"{zip_root}/{entry['line']}"))).convert("L")
+    rough = Image.open(io.BytesIO(read_zip_member(zf, zip_root, entry["sketch"]))).convert("L")
+    line = Image.open(io.BytesIO(read_zip_member(zf, zip_root, entry["line"]))).convert("L")
     return rough, line
 
 

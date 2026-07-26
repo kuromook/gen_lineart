@@ -38,6 +38,22 @@ def load_gray(zf, filename, max_dim):
     return gray, resize_scale
 
 
+def available_manifest_entries(zf, manifest):
+    names = set(zf.namelist())
+    rows = []
+    missing = 0
+    for entry in manifest:
+        sketch_path = f"dataset_ako5/{entry['sketch']}"
+        line_path = f"dataset_ako5/{entry['line']}"
+        if sketch_path in names and line_path in names:
+            rows.append(entry)
+        else:
+            missing += 1
+    if missing:
+        print(f"skip missing manifest rows: {missing}", flush=True)
+    return rows
+
+
 def prepare(gray, sift):
     ac = np.asarray(ImageOps.autocontrast(Image.fromarray(gray), cutoff=0))
     blur = cv2.GaussianBlur(ac, (0, 0), 1.0)
@@ -338,6 +354,7 @@ def main():
     sketches, lines = {}, {}
     with zipfile.ZipFile(args.zip_path) as zf:
         manifest = json.loads(zf.read("dataset_ako5/manifest.json"))
+        manifest = available_manifest_entries(zf, manifest)
         sketch_files = {page_id(entry["sketch"]): entry["sketch"] for entry in manifest}
         line_files = {page_id(entry["line"]): entry["line"] for entry in manifest}
         selected_sketches = sorted(sketch_files)[:args.sketch_limit or None]

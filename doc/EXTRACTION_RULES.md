@@ -16,6 +16,10 @@ their model-quality conclusions as current guidance.
 6. Run integrity audit before training.
 7. Record the exact list, line directory, QC, metrics, and known exceptions.
 
+Record reusable dataset-specific exceptions, such as source-layer differences
+or recurring mask failures, in `doc/raw_dataset_extraction_knowledge.md` so they
+do not get buried in the chronological work log.
+
 ## Alignment Preflight
 
 Run `tools/pair_extraction/diagnose_pair_alignment.py` for any new raw dataset.
@@ -27,8 +31,9 @@ Use the recommendation as the route:
 - `needs_region_matching`: search corresponding rough regions from line anchors.
 - `hold_for_manual_review`: do not train from this dataset yet.
 
-The kurip failure came from trusting same-coordinate extraction too early. Do
-not repeat that.
+An early same-coordinate extraction attempt on one source (now internally
+called `fitness`; renamed from an earlier name that was a person's username)
+failed from trusting same-coordinate extraction too early. Do not repeat that.
 
 ## Matching Strategy
 
@@ -178,3 +183,6 @@ Minimum metadata to preserve:
 - line path
 - crop scale
 - notes for manual/VLM review decisions
+
+If a review decision reveals source-specific knowledge, also update
+`doc/raw_dataset_extraction_knowledge.md`.

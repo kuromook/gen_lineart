@@ -39,6 +39,12 @@ def tensor_from_image(image):
     return TF.to_tensor(image).unsqueeze(0)
 
 
+def path_keys(explicit_key, candidates):
+    keys = [explicit_key] if explicit_key else []
+    keys.extend(candidates)
+    return keys
+
+
 def draw_montage(items, output, image_size):
     columns = ["rough", "model", "line (GT)"]
     header_h = 28
@@ -78,6 +84,8 @@ def main():
     parser.add_argument("--montage", required=True)
     parser.add_argument("--image-size", type=int, default=480)
     parser.add_argument("--fit-mode", choices=["square_pad", "resize_stretch"], default="square_pad")
+    parser.add_argument("--rough-key", default=None)
+    parser.add_argument("--line-key", default=None)
     parser.add_argument("--limit", type=int, default=12)
     parser.add_argument("--autocontrast", action="store_true")
     parser.add_argument("--require-cuda", action="store_true")
@@ -99,8 +107,22 @@ def main():
     with torch.no_grad():
         for index, row in enumerate(rows[: args.limit], start=1):
             name = row_name(row, index)
-            rough_path = row_path(row, manifest_path, ("v2_rough_path", "final_rough_path", "rough_path"))
-            line_path = row_path(row, manifest_path, ("v2_line_path", "final_line_path", "line_path"))
+            rough_path = row_path(
+                row,
+                manifest_path,
+                path_keys(
+                    args.rough_key,
+                    ("aligned_rough_path", "v2_rough_path", "final_rough_path", "rough_path"),
+                ),
+            )
+            line_path = row_path(
+                row,
+                manifest_path,
+                path_keys(
+                    args.line_key,
+                    ("aligned_line_path", "v2_line_path", "final_line_path", "line_path"),
+                ),
+            )
             rough = load_image(rough_path, args.image_size, args.fit_mode, args.autocontrast)
             line = load_image(line_path, args.image_size, args.fit_mode)
             pred = torch.sigmoid(model(tensor_from_image(rough).to(device)))

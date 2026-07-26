@@ -23,10 +23,15 @@ def path_for(row, manifest_path, keys):
 
 
 def row_name(row, index):
-    for key in ("v2_name", "final_name", "name", "materialized_name"):
+    for key in ("native_name", "v2_name", "final_name", "name", "materialized_name"):
         if row.get(key):
             return Path(row[key]).stem
     return f"region_{index:04d}"
+
+
+def normalize(image, size, mode):
+    """`--image-size 0` keeps the incoming variable-aspect native resolution."""
+    return image if size <= 0 else fit_square(image, size, mode)
 
 
 def edge_map(gray, blur_sigma):
@@ -152,6 +157,7 @@ def main():
     parser.add_argument("--black-window", type=int, default=45)
     parser.add_argument("--black-density", type=float, default=0.16)
     parser.add_argument("--min-valid-ratio", type=float, default=0.35)
+    parser.add_argument("--reuse-source-images", action="store_true")
     parser.add_argument("--qc-count", type=int, default=34)
     parser.add_argument("--qc-thumb", type=int, default=220)
     args = parser.parse_args()
@@ -172,28 +178,34 @@ def main():
         rough_path = path_for(
             row,
             manifest_path,
-            ("aligned_rough_path", "v2_rough_path", "final_rough_path", "rough_path", "materialized_rough_path"),
+            ("native_rough_path", "aligned_rough_path", "v2_rough_path", "final_rough_path", "rough_path", "materialized_rough_path"),
         )
         line_path = path_for(
             row,
             manifest_path,
-            ("aligned_line_path", "v2_line_path", "final_line_path", "line_path", "materialized_line_path"),
+            ("native_line_path", "aligned_line_path", "v2_line_path", "final_line_path", "line_path", "materialized_line_path"),
         )
         rough = Image.open(rough_path).convert("L")
         line = Image.open(line_path).convert("L")
         if args.autocontrast_rough:
             rough = ImageOps.autocontrast(rough, cutoff=0)
-        rough_norm = fit_square(rough, args.image_size, args.fit_mode)
-        line_norm = fit_square(line, args.image_size, args.fit_mode)
+        rough_norm = normalize(rough, args.image_size, args.fit_mode)
+        line_norm = normalize(line, args.image_size, args.fit_mode)
+        if rough_norm.size != line_norm.size:
+            rough_norm = rough_norm.resize(line_norm.size, Image.Resampling.BICUBIC)
         mask_arr, stats = build_mask(rough_norm, line_norm, args)
         mask = Image.fromarray(mask_arr)
 
         name = f"masked_{index:04d}_{row_name(row, index)}.png"
-        rough_out = rough_dir / name
-        line_out = line_dir / name
         mask_out = mask_dir / name
-        rough_norm.save(rough_out)
-        line_norm.save(line_out)
+        if args.reuse_source_images:
+            # Native-resolution regions are large; avoid a second full-size copy.
+            rough_out, line_out = rough_path, line_path
+        else:
+            rough_out = rough_dir / name
+            line_out = line_dir / name
+            rough_norm.save(rough_out)
+            line_norm.save(line_out)
         mask.save(mask_out)
         out_row = {
             **row,

@@ -37,6 +37,12 @@ def load_pages(zip_path, needed_sketches, needed_lines):
     sketches, lines = {}, {}
     with zipfile.ZipFile(zip_path) as zf:
         manifest = json.loads(zf.read("dataset_ako5/manifest.json"))
+        names = set(zf.namelist())
+        manifest = [
+            entry for entry in manifest
+            if f"dataset_ako5/{entry['sketch']}" in names
+            and f"dataset_ako5/{entry['line']}" in names
+        ]
         sketch_files = {page_id(entry["sketch"]): entry["sketch"] for entry in manifest}
         line_files = {page_id(entry["line"]): entry["line"] for entry in manifest}
         for pid in sorted(needed_sketches):

@@ -26,9 +26,18 @@ QC_OUT = "results/kurip_region_match_qc.png"
 TILE = 480
 
 
+def read_zip_member(zf, zip_root, name):
+    for candidate in (f"{zip_root}/{name}", f"{zip_root}\\{name}", name):
+        try:
+            return zf.read(candidate)
+        except KeyError:
+            pass
+    raise KeyError(f"missing zip member for {name!r}")
+
+
 def load_manifest(zip_path, zip_root):
     with zipfile.ZipFile(zip_path) as zf:
-        return json.loads(zf.read(f"{zip_root}/manifest.json"))
+        return json.loads(read_zip_member(zf, zip_root, "manifest.json"))
 
 
 def page_id(entry):
@@ -36,8 +45,8 @@ def page_id(entry):
 
 
 def load_pair(zf, zip_root, entry):
-    rough = Image.open(io.BytesIO(zf.read(f"{zip_root}/{entry['sketch']}"))).convert("L")
-    line = Image.open(io.BytesIO(zf.read(f"{zip_root}/{entry['line']}"))).convert("L")
+    rough = Image.open(io.BytesIO(read_zip_member(zf, zip_root, entry["sketch"]))).convert("L")
+    line = Image.open(io.BytesIO(read_zip_member(zf, zip_root, entry["line"]))).convert("L")
     rough = ImageOps.autocontrast(rough, cutoff=0)
     return np.asarray(rough), np.asarray(line)
 

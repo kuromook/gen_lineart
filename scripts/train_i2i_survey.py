@@ -229,6 +229,8 @@ def train(args):
             fit_mode=args.region_fit_mode,
             autocontrast_rough=args.autocontrast,
             augment=args.augment,
+            rough_key=args.region_rough_key,
+            line_key=args.region_line_key,
             mask_key=args.region_mask_key,
         )
         collate_fn = region_collate
@@ -270,6 +272,8 @@ def train(args):
         print(
             f"region_manifest={args.region_manifest} rows={len(dataset)} "
             f"image_size={args.image_size} fit_mode={args.region_fit_mode} "
+            f"rough_key={args.region_rough_key or 'auto'} "
+            f"line_key={args.region_line_key or 'auto'} "
             f"mask_key={args.region_mask_key or 'auto'}"
         )
     else:
@@ -426,6 +430,8 @@ def main():
     parser.add_argument("--line-dir", default="dataset/pairs_480/train/line")
     parser.add_argument("--region-manifest", default=None)
     parser.add_argument("--region-fit-mode", choices=["square_pad", "resize_stretch"], default="square_pad")
+    parser.add_argument("--region-rough-key", default=None)
+    parser.add_argument("--region-line-key", default=None)
     parser.add_argument("--region-mask-key", default=None)
     parser.add_argument("--image-size", type=int, default=IMAGE_SIZE)
     parser.add_argument("--require-cuda", action="store_true")

@@ -1,41 +1,57 @@
 # Results Layout
 
-`results/` contains current clean-eval artifacts, extraction QC, and archived
-historical output. Many old comparison scripts still reference legacy paths, so
-archived paths should only be restored intentionally for audit.
+Updated: 2026-07-25 JST
 
-Use `config/results_manifest.json` as the current index. It categorizes files into:
+`results/` now keeps metrics, manifests, CSV/JSON outputs, and only a small set
+of currently referenced montage images.
 
-- `comparisons`: top-level `compare_*.png` montages.
-- `inference_outputs`: model output folders such as `shape1/`, `kurip_clean540/`, `routed/`.
-- `qc_and_dataset_build`: dataset matching, tile CSVs, and QC montages.
-- `metrics_and_gate`: metrics CSVs and dataset-gate reports.
-- `legacy_loose_outputs`: old one-off root-level outputs.
-- `other`: uncategorized files that need manual review before moving.
+Large resolved image outputs were deleted during the 2026-07-25 cleanup.
+Per-sample output images and old QC panels should be regenerated from scripts,
+manifests, and checkpoints when needed.
 
-Current recommended outputs:
+Use `config/results_manifest.json` as the current lightweight index. It has
+been pruned to paths that still exist after cleanup.
 
-- Current clean-eval index: `results/CURRENT.md`
-- Current clean BCE comparison:
-  - `results/compare_clean_baselines_lineart004.png`
-  - `results/fixed_output_metrics_base_clean_lineart004_compare.csv`
-- Pending epoch020 moredupes comparison:
-  - `results/compare_exp1_moredupes_epoch020_lineart004.png`
-  - `results/fixed_output_metrics_exp1_moredupes_epoch020_lineart004_compare.csv`
+## Current Kept Images
 
-Deprecated or non-recommended experiment outputs should remain available for
-audit, but should not be used by routing:
+Remaining image files under `results/`:
 
-- `results/archive/leaky_pre_clean_eval/`: old leaky/pre-clean-eval model
-  outputs, comparisons, and metrics.
-- `results/archive/legacy_root_oneoffs/`: old root one-off outputs moved out of
-  the top-level results namespace.
-- `checkpoints/kurip/`: dirty kurip fine-tune checkpoint; noisy.
+- `results/compare_badrough_lucy_thin_threshold_e3.png`
+- `results/compare_clean_baselines_lineart004.png`
+- `results/compare_exp1_moredupes_epoch020_lineart004.png`
+- `results/compare_linefield_initial_e2.png`
+- `results/compare_shape1_std15_clean_split_moredupes_bce_epoch020_lineart004.png`
+- `results/hamlabi_filtered398_unet480_epoch040_compare.png`
 
-Safe cleanup policy:
+Current ako5ver2 review image is outside `results/`:
 
-1. Update `config/results_manifest.json` before moving files.
-2. Search code references with `rg "results/" --glob '!results/**'`.
-3. Move only unreferenced one-off files into `results/archive/`.
-4. Keep stable script-facing paths intact unless the scripts are updated in the same change.
-5. Re-run the relevant comparison or evaluation script after any path change.
+- `dataset/regions_ako5ver2_varregion_20260725_postalign12_masked_line_conservative/valid_mask_qc.png`
+
+## What To Keep
+
+Keep:
+
+- active montage images explicitly referenced by current docs
+- metrics CSVs
+- review CSVs
+- candidate manifests
+- integrity audit summaries/findings
+- lightweight JSON route/manifest outputs
+
+Delete after resolution:
+
+- per-sample inference image directories
+- old smoke-test images
+- old QC sheets once review decisions are recorded
+- archived/leak-era images that are not needed for active docs
+
+## Cleanup Policy
+
+1. Search active docs for direct `results/*.png|jpg|jpeg` references.
+2. Protect only those current references.
+3. Delete unreferenced `results/` image files.
+4. Keep non-image metrics/manifests unless a separate cleanup asks to remove
+   them.
+5. Update `config/results_manifest.json` after deletion so it contains only
+   existing paths.
+6. Record major cleanup counts in `doc/work_log.md`.

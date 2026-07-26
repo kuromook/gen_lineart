@@ -37,7 +37,20 @@ def read_zip_member(zf, root, name):
 
 def load_manifest(zip_path, zip_root):
     with zipfile.ZipFile(zip_path) as zf:
-        return json.loads(read_zip_member(zf, zip_root, "manifest.json"))
+        manifest = json.loads(read_zip_member(zf, zip_root, "manifest.json"))
+        rows = []
+        missing = 0
+        for entry in manifest:
+            try:
+                read_zip_member(zf, zip_root, entry["sketch"])
+                read_zip_member(zf, zip_root, entry["line"])
+            except KeyError:
+                missing += 1
+                continue
+            rows.append(entry)
+        if missing:
+            print(f"skip missing manifest rows: {missing}", flush=True)
+        return rows
 
 
 def page_id(entry):
