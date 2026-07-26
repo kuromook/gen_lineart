@@ -80,6 +80,29 @@ def load_gray(zf, zip_root, name, autocontrast=False):
     return np.asarray(image)
 
 
+def page_id(entry):
+    """Generic per-page identifier across manifest schemas: housei's manifest
+    has a dedicated 'housei' field (e.g. 'housei_004'); ako5/hamlabi/kurip's
+    koma-layer manifests only have 'file' (e.g. 'page0001.clip'), so fall back
+    to that stem.
+    """
+    if entry.get("housei"):
+        return entry["housei"]
+    source = entry.get("file") or entry.get("page") or "unknown"
+    return Path(source).stem
+
+
+def koma_lookup(koma_manifest):
+    """Join key: koma_manifest's 'page' field matches the main manifest's
+    'page' (housei's schema) or 'file' (ako5/hamlabi/kurip's schema) field.
+    """
+    return {km["page"]: km for km in koma_manifest}
+
+
+def join_key(entry):
+    return entry.get("page") or entry.get("file")
+
+
 def detect_panels(koma_gray, ink_thresh=200, min_area_ratio=0.01, close_px=7):
     """Panel interiors = connected non-ink components, excluding the margin."""
     height, width = koma_gray.shape
@@ -277,23 +300,23 @@ def main():
     with zipfile.ZipFile(args.zip_path) as zf:
         manifest = load_json_member(zf, args.zip_root, "manifest.json")
         koma_manifest = load_json_member(zf, args.zip_root, "koma_manifest.json")
-        koma_by_id = {entry["housei"]: entry for entry in koma_manifest}
+        koma_by_page = koma_lookup(koma_manifest)
         entries = manifest[args.start_page:args.end_page] if args.end_page else manifest[args.start_page:]
 
         rows = []
         qc_rows = []
         for index, entry in enumerate(entries, 1):
-            housei_id = entry["housei"]
-            koma_entry = koma_by_id.get(housei_id)
+            pid = page_id(entry)
+            koma_entry = koma_by_page.get(join_key(entry))
             if koma_entry is None:
-                print(f"skip {housei_id}: no koma layer")
+                print(f"skip {pid}: no koma layer")
                 continue
             koma_gray = load_gray(zf, args.zip_root, koma_entry["koma"])
             line_gray = load_gray(zf, args.zip_root, entry["line"])
             rough_gray = load_gray(zf, args.zip_root, entry["sketch"], autocontrast=True)
 
             panels = detect_panels(koma_gray, min_area_ratio=args.min_area_ratio, close_px=args.close_px)
-            make_page_overlay(line_gray, panels, Path(args.overlay_dir) / f"{housei_id}_panels.png")
+            make_page_overlay(line_gray, panels, Path(args.overlay_dir) / f"{pid}_panels.png")
 
             for panel_index, panel in enumerate(panels, 1):
                 x0, y0, x1, y1 = panel["x0"], panel["y0"], panel["x1"], panel["y1"]
@@ -312,7 +335,7 @@ def main():
                 best, base = search_panel_alignment(rough_gray, line_edge, line_support, line_dist, cx, cy, out_w, out_h, args)
 
                 row = {
-                    "housei": housei_id, "page": koma_entry.get("page", ""), "panel_index": panel_index,
+                    "housei": pid, "page": koma_entry.get("page", ""), "panel_index": panel_index,
                     "x0": x0, "y0": y0, "x1": x1, "y1": y1,
                     "area_ratio": round(panel["area_ratio"], 4), "fill_ratio": round(panel["fill_ratio"], 4),
                     "base_edge_f1": base["edge_f1"], "base_chamfer": base["chamfer"],
@@ -334,7 +357,7 @@ def main():
                     else:
                         rough_best_aligned = rough_base
                     qc_rows.append({
-                        "housei": housei_id, "panel_index": panel_index,
+                        "housei": pid, "panel_index": panel_index,
                         "line_img": line_crop, "rough_base_img": rough_base if rough_base is not None else line_crop,
                         "rough_best_img": rough_best_aligned,
                         "overlay_img": overlay_edges(best["win_edge"], line_edge),
@@ -343,12 +366,12 @@ def main():
                         "scale": best["scale"], "dx": best["dx"], "dy": best["dy"],
                     })
                 print(
-                    f'{housei_id} panel{panel_index} chamfer {base["chamfer"]:.1f}->{best["chamfer"]:.1f} '
+                    f'{pid} panel{panel_index} chamfer {base["chamfer"]:.1f}->{best["chamfer"]:.1f} '
                     f'F1 {base["edge_f1"]:.2f}->{best["edge_f1"]:.2f} scale={best["scale"]:.2f} '
                     f'd=({best["dx"]},{best["dy"]})',
                     flush=True,
                 )
-            print(f"[{index}/{len(entries)}] {housei_id}: {len(panels)} panels", flush=True)
+            print(f"[{index}/{len(entries)}] {pid}: {len(panels)} panels", flush=True)
 
     csv_path, json_path = Path(args.csv_out), Path(args.json_out)
     csv_path.parent.mkdir(parents=True, exist_ok=True)

@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from match_koma_panels import ZIP_PATH, ZIP_ROOT, crop_page, extract_scaled_roi, load_gray, load_json_member
+from match_koma_panels import ZIP_PATH, ZIP_ROOT, crop_page, extract_scaled_roi, load_gray, load_json_member, page_id
 
 
 def materialize_rough(rough_gray, cx, cy, out_w, out_h, dx, dy, scale, pad=170):
@@ -90,7 +90,7 @@ def main():
     qc_items = []
     with zipfile.ZipFile(args.zip_path) as zf:
         manifest = load_json_member(zf, args.zip_root, "manifest.json")
-        by_id = {e["housei"]: e for e in manifest}
+        by_id = {page_id(e): e for e in manifest}
         page_cache = {}
         for index, row in enumerate(accepted, 1):
             hid = row["housei"]
