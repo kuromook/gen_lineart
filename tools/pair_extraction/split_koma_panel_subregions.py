@@ -222,7 +222,7 @@ def main():
         for sub_index, sub in enumerate(boxes, 1):
             x0, y0, x1, y1 = sub["box"]
             out_w, out_h = x1 - x0, y1 - y0
-            line_sub = line[y0:y1, x0:x1]
+            line_sub = np.array(line[y0:y1, x0:x1])
 
             if args.refine_alignment:
                 cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
@@ -230,7 +230,7 @@ def main():
                     rough, line_sub, cx, cy, out_w, out_h, args
                 )
             else:
-                rough_sub = rough[y0:y1, x0:x1]
+                rough_sub = np.array(rough[y0:y1, x0:x1])
                 r_scale, r_dx, r_dy, r_base_chamfer, r_chamfer = 1.0, 0, 0, None, None
 
             name = f"sub_{panel_row['name'].rsplit('.', 1)[0]}_s{sub_index}.png"

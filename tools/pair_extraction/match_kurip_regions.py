@@ -162,7 +162,7 @@ def match_tile(rough, rough_edges_full, line_tile, line_edge, x, y, args):
                 "orientation_entropy": ent,
                 "rough_edges": int(rough_edge.sum()),
                 "rough_std": float(rough_tile.std()),
-                "rough_tile": rough_tile,
+                "rough_tile": np.array(rough_tile),
             }
     if refined is None:
         return None
@@ -171,7 +171,7 @@ def match_tile(rough, rough_edges_full, line_tile, line_edge, x, y, args):
         - 0.20 * refined["chamfer"]
         + 0.8 * refined["orientation_entropy"]
     )
-    return {**refined, "match_score": score, "line_tile": line_tile}
+    return {**refined, "match_score": score, "line_tile": np.array(line_tile)}
 
 
 def process_page(entry, rough, line, args):
@@ -220,7 +220,7 @@ def process_page(entry, rough, line, args):
                 "orientation_entropy": match["orientation_entropy"],
                 "match_score": match["match_score"],
                 "rough_tile": match["rough_tile"],
-                "line_tile": line_tile,
+                "line_tile": np.array(line_tile),
             }
             rows.append(row)
     rows.sort(key=lambda item: item["match_score"], reverse=True)

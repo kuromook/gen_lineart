@@ -301,10 +301,25 @@ superseding both earlier sets (left on disk, not deleted). Full progression:
    processed yet — user said to finish housei first. Next natural step:
    apply the same full pipeline (panel detection -> alignment -> chamfer
    gate -> sub-region split -> per-sub-region alignment refinement -> mask ->
-   tile) to these two sources. The sub-region split's 121px morphological
-   dilate is slow on large panel images (single chunks of ~15-33 panels each
-   took 5-10 min here, right at the edge of this environment's background-job
-   kill window) — chunk aggressively (~15-20 panels/run) and consider
+   tile) to these two sources. Note: the "background-job kill window" this
+   note used to warn about was misdiagnosed — see
+   `doc/raw_dataset_extraction_knowledge.md` ("Long Background Jobs Died From
+   Real OOM, Not A Silent Timeout"); it was genuine kernel OOM from a
+   verified, now-fixed memory bug (numpy slice views into full-resolution
+   page arrays pinning ~35 MB each, kept alive in growing lists/caches
+   across the whole run) present in `match_koma_panels.py`,
+   `materialize_koma_panels.py`, and `split_koma_panel_subregions.py`, all
+   fixed 2026-07-27. This should meaningfully reduce peak memory for
+   ako5ver2/hamlabi (which have more pages than housei's 18, so would have
+   hit the same bug harder), but the fix has only been verified by code
+   inspection and a synthetic numpy check, not a real monitored run yet —
+   run a first monitored pass (watch RSS) before trusting a full unattended
+   run on these larger sources. The sub-region split's 121px morphological
+   dilate is still slow on large panel images purely on CPU-time grounds
+   (single chunks of ~15-33 panels each took 5-10 min here) — chunk
+   moderately (~15-20 panels/run) as a throughput/checkpointing convenience
+   (so a crash or interruption only loses one chunk), not because of any
+   fixed kill window, and consider
    downscaling the dilate step first for these larger sources.
 3. housei now has three independently-extracted tile sets: native_strict
    grid+local-offset (65 tiles), koma-panel-level (58 tiles, superseded),
@@ -313,11 +328,16 @@ superseding both earlier sets (left on disk, not deleted). Full progression:
    whether to train separately first or design a deliberate mixing
    experiment before combining with each other or with the other sources
    (ako5ver2/fitness/fighting).
-4. There is also a new `dataset_kurip.zip` in raw_zips (117 files, includes
-   its own koma layer) — not yet inspected/reconciled against the existing
-   `fitness` (formerly kurip) source; check whether this is a koma-layer
-   addition for fitness parallel to housei/ako5ver2/hamlabi's, before using
-   it.
+4. Reconciled 2026-07-27: the former `dataset_kurip.zip` is confirmed to be
+   the existing `fitness` source (same 38 pages, all line/sketch files
+   byte-identical) plus a per-page koma panel-border layer — the same kind
+   of addition already delivered for housei/ako5ver2/hamlabi. Renamed to
+   `dataset/raw_zips/dataset_fitness_koma.zip` (do not use `kurip` in any new
+   output for this source); see `doc/raw_dataset_storage_policy.md`. Panel
+   detection for `fitness` is queued to run after the `ako5ver2` panel
+   detection pass above finishes (sequenced, not concurrent, to keep peak
+   memory margin comfortable while the OOM-bug fix is still being validated
+   at larger scale — see the memory note in item 2 above).
 2. Model-side: decide the next model direction using the now-broader pool
    (ako5ver2 native strict, fitness, housei, fighting) — longer training,
    non-BCE-heavy loss, or reuse of an existing halo/Lucy/cleanup candidate

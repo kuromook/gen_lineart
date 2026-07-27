@@ -69,6 +69,13 @@ def read_zip_member(zf, zip_root, name):
     raise KeyError(f"missing zip member for {name!r}")
 
 
+def member_exists(zf, zip_root, name):
+    if not name:
+        return False
+    names = set(zf.namelist())
+    return any(candidate in names for candidate in (f"{zip_root}/{name}", f"{zip_root}\\{name}", name))
+
+
 def load_json_member(zf, zip_root, name):
     return json.loads(read_zip_member(zf, zip_root, name))
 
@@ -90,6 +97,16 @@ def page_id(entry):
         return entry["housei"]
     source = entry.get("file") or entry.get("page") or "unknown"
     return Path(source).stem
+
+
+def resolve_files(entry):
+    """Return a dict with 'sketch'/'line'/'koma' filenames regardless of
+    manifest schema: housei/ako5/hamlabi/fitness keep 'sketch'/'line' as
+    top-level entry keys, with 'koma' on a separate koma_manifest.json entry
+    (looked up via join_key()/koma_lookup()); gakuen nests all three under a
+    single entry's 'files' dict instead, with no koma_manifest.json at all.
+    """
+    return entry.get("files", entry)
 
 
 def koma_lookup(koma_manifest):
@@ -157,6 +174,105 @@ def extract_scaled_roi(page_gray, cx, cy, out_w, out_h, pad, scale):
     return cv2.resize(crop, out_size, interpolation=interp)
 
 
+def _score_offset(dx, dy, pad, out_w, out_h, rough_support, rough_ys, rough_xs, line_ys, line_xs, line_support, n_line):
+    y0, x0 = pad + dy, pad + dx
+    recall = float(rough_support[line_ys + y0, line_xs + x0].mean()) if n_line else 0.0
+    wy = rough_ys - y0
+    wx = rough_xs - x0
+    inside = (wy >= 0) & (wy < out_h) & (wx >= 0) & (wx < out_w)
+    n_inside = int(inside.sum())
+    if n_inside < 10 or n_line < 10:
+        f1 = 0.0
+    else:
+        precision = float(line_support[wy[inside], wx[inside]].mean())
+        f1 = 2.0 * precision * recall / max(precision + recall, 1e-9)
+    return f1, y0, x0
+
+
+MIN_COARSE_EDGE_PIXELS = 40
+
+
+def coarse_offset_estimate(rough_page, line_edge, cx, cy, out_w, out_h, downscale, max_shift, shift_step):
+    """Wide, cheap translation-only pre-search on downscaled images.
+
+    Per-panel/per-character finishing shifts can exceed what's affordable to
+    search exhaustively at native resolution and step size (see
+    doc/raw_dataset_extraction_knowledge.md, "Residual Misalignment"): an
+    exhaustive native search is roughly O(max_shift^2 * edge_count), so
+    widening it to chase a larger true offset gets expensive fast. Searching
+    the same *effective* native range at 1/downscale resolution instead costs
+    roughly O((max_shift/downscale)^2) with edge counts also shrinking by
+    downscale^2, so a much wider net is affordable here; the fine, scale-aware
+    search in `search_panel_alignment` then only needs to refine a small
+    residual around this coarse estimate rather than hunt for it from scratch.
+
+    Scores every candidate offset with the same sparse-edge-coordinate F1
+    metric used by the fine search below (`_score_offset`), not a generic
+    image-similarity metric: a `cv2.matchTemplate` (normalized cross-
+    correlation) version was tried and measured faster, but a real test run
+    showed it silently picks *worse* neighborhoods on real panels (this
+    dataset's median chamfer got worse after "search", base=40.21 ->
+    best=43.83, vs. base=40.21 -> best=34.92 with the F1 loop below on the
+    same panels) — cross-correlation between binary edge maps can be
+    maximized by incidental dense/repeated structure that has nothing to do
+    with genuine rough/line correspondence, so it is not a safe substitute
+    for the F1 metric the rest of this pipeline was validated against.
+    `shift_step` therefore keeps its real effect here (grid spacing at
+    downscaled resolution); increase it (or `downscale`) to trade search
+    density for speed rather than switching metrics.
+
+    Guards against noise-driven false offsets on near-empty panels: a panel
+    with too little inked content (weak baseline correspondence, e.g. a
+    mostly-blank panel) has no real signal for translation search to lock
+    onto, and an earlier test run showed exactly this on the F1 loop too — a
+    spurious large coarse offset made one panel's chamfer slightly *worse*
+    than doing no coarse correction at all. Below `MIN_COARSE_EDGE_PIXELS`
+    line edge pixels, skip the coarse stage and let the fine search run at
+    the panel's own center, same as if `--coarse-max-shift 0` had disabled it
+    entirely.
+    """
+    if int(line_edge.sum()) < MIN_COARSE_EDGE_PIXELS:
+        return 0, 0
+
+    d = max(1, int(downscale))
+    pad = max(1, int(max_shift))
+    roi = extract_scaled_roi(rough_page, cx, cy, out_w, out_h, pad, 1.0)
+    if roi is None:
+        return 0, 0
+    small_roi = cv2.resize(roi, (max(1, roi.shape[1] // d), max(1, roi.shape[0] // d)), interpolation=cv2.INTER_AREA)
+    small_edge = edge_map(small_roi)
+    small_ys, small_xs = np.nonzero(small_edge)
+
+    small_out_w, small_out_h = max(1, out_w // d), max(1, out_h // d)
+    small_pad = max(1, pad // d)
+    small_line_edge = cv2.resize(
+        line_edge.astype(np.uint8), (small_out_w, small_out_h), interpolation=cv2.INTER_AREA
+    ) > 0
+    small_line_support = cv2.resize(
+        (cv2.dilate(line_edge.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0).astype(np.uint8),
+        (small_out_w, small_out_h), interpolation=cv2.INTER_AREA,
+    ) > 0
+    line_ys, line_xs = np.nonzero(small_line_edge)
+    n_line = len(line_ys)
+    if n_line == 0 or len(small_ys) == 0:
+        return 0, 0
+
+    close_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    small_rough_support = cv2.dilate(small_edge.astype(np.uint8), close_kernel) > 0
+
+    step = max(1, shift_step // d)
+    best_dx, best_dy, best_f1 = 0, 0, -1.0
+    for dy in range(-small_pad, small_pad + 1, step):
+        for dx in range(-small_pad, small_pad + 1, step):
+            f1, _, _ = _score_offset(
+                dx, dy, small_pad, small_out_w, small_out_h,
+                small_rough_support, small_ys, small_xs, line_ys, line_xs, small_line_support, n_line,
+            )
+            if f1 > best_f1:
+                best_f1, best_dx, best_dy = f1, dx, dy
+    return best_dx * d, best_dy * d
+
+
 def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, cy, out_w, out_h, args):
     """Joint translation+scale search; returns metrics for the best candidate and scale=1/dx=0/dy=0 baseline.
 
@@ -164,6 +280,14 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
     full-array boolean indexing, so cost scales with ink density, not panel
     pixel area; a panel-sized ROI is still large (thousands of px), but the
     number of edge pixels drawn on it is a small fraction of that.
+
+    If `args.coarse_max_shift` is set, a cheap downscaled pre-search
+    (`coarse_offset_estimate`) finds a coarse neighborhood first and the fine
+    search below re-centers on it, so `args.max_shift` only needs to cover the
+    residual rather than the true (possibly much larger) offset. Returned
+    `dx`/`dy` are always the total native-pixel offset from the panel's own
+    `(cx, cy)`, coarse contribution included, so downstream consumers
+    (`materialize_koma_panels.py` etc.) don't need to change.
     """
     close_kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE, (int(ALIGNMENT_CLOSE_PX) * 2 + 1, int(ALIGNMENT_CLOSE_PX) * 2 + 1)
@@ -177,11 +301,18 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
     line_ys, line_xs = np.nonzero(line_edge)
     n_line = len(line_ys)
 
+    coarse_dx, coarse_dy = 0, 0
+    if getattr(args, "coarse_max_shift", 0):
+        coarse_dx, coarse_dy = coarse_offset_estimate(
+            rough_page, line_edge, cx, cy, out_w, out_h,
+            args.coarse_downscale, args.coarse_max_shift, args.coarse_shift_step,
+        )
+    cx_search, cy_search = cx + coarse_dx, cy + coarse_dy
+
     best = None
-    baseline = None
     pad = args.max_shift
     for scale in SCALES:
-        roi = extract_scaled_roi(rough_page, cx, cy, out_w, out_h, pad, scale)
+        roi = extract_scaled_roi(rough_page, cx_search, cy_search, out_w, out_h, pad, scale)
         if roi is None:
             continue
         roi_edge = edge_map(roi)
@@ -189,25 +320,40 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
         rough_ys, rough_xs = np.nonzero(roi_edge)
 
         for dx, dy in offsets:
-            y0, x0 = pad + dy, pad + dx
-            if n_line == 0:
-                recall = 0.0
-            else:
-                recall = float(roi_support[line_ys + y0, line_xs + x0].mean())
-            wy = rough_ys - y0
-            wx = rough_xs - x0
-            inside = (wy >= 0) & (wy < out_h) & (wx >= 0) & (wx < out_w)
-            n_inside = int(inside.sum())
-            if n_inside < 10 or n_line < 10:
-                f1 = 0.0
-            else:
-                precision = float(line_support[wy[inside], wx[inside]].mean())
-                f1 = 2.0 * precision * recall / max(precision + recall, 1e-9)
-            candidate = {"scale": scale, "dx": dx, "dy": dy, "edge_f1": f1, "roi_edge": roi_edge, "y0": y0, "x0": x0}
-            if scale == 1.0 and dx == 0 and dy == 0:
-                baseline = candidate
+            f1, y0, x0 = _score_offset(
+                dx, dy, pad, out_w, out_h, roi_support, rough_ys, rough_xs, line_ys, line_xs, line_support, n_line
+            )
+            candidate = {
+                "scale": scale, "dx": coarse_dx + dx, "dy": coarse_dy + dy,
+                "edge_f1": f1, "roi_edge": roi_edge, "y0": y0, "x0": x0,
+            }
             if best is None or f1 > best["edge_f1"]:
                 best = candidate
+
+    # True zero-shift baseline (scale=1, dx=0, dy=0 at the panel's own original
+    # center), computed independently of the coarse pre-search so base_chamfer/
+    # base_edge_f1 stay a stable "no correction at all" reference regardless of
+    # --coarse-* settings.
+    baseline = None
+    baseline_roi = extract_scaled_roi(rough_page, cx, cy, out_w, out_h, pad, 1.0)
+    if baseline_roi is not None:
+        baseline_edge = edge_map(baseline_roi)
+        baseline_support = cv2.dilate(baseline_edge.astype(np.uint8), close_kernel) > 0
+        baseline_ys, baseline_xs = np.nonzero(baseline_edge)
+        f1, y0, x0 = _score_offset(
+            0, 0, pad, out_w, out_h, baseline_support, baseline_ys, baseline_xs, line_ys, line_xs, line_support, n_line
+        )
+        baseline = {"scale": 1.0, "dx": 0, "dy": 0, "edge_f1": f1, "roi_edge": baseline_edge, "y0": y0, "x0": x0}
+
+    # Do-no-harm guarantee: the coarse pre-search can occasionally lock onto a
+    # spurious distant local optimum (seen on real data — repetitive/ambiguous
+    # panel content scoring a similar or higher F1 far from the true offset,
+    # making the reported "best" chamfer meaningfully *worse* than doing no
+    # correction at all). The baseline is always a valid, already-scored
+    # candidate, so if the search's own best is no better than it, just report
+    # the baseline instead of a confidently-wrong distant offset.
+    if baseline is not None and (best is None or baseline["edge_f1"] >= best["edge_f1"]):
+        best = baseline
 
     def finalize(candidate):
         win_edge = candidate["roi_edge"][candidate["y0"]:candidate["y0"] + out_h, candidate["x0"]:candidate["x0"] + out_w]
@@ -224,7 +370,10 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
 
 
 def crop_page(page_gray, x0, y0, x1, y1):
-    return page_gray[y0:y1, x0:x1]
+    # np.array() forces an independent copy: a plain slice is a view that
+    # keeps the entire source page buffer (tens of MB) alive for as long as
+    # the crop is referenced, e.g. when stored in qc_rows across a whole run.
+    return np.array(page_gray[y0:y1, x0:x1])
 
 
 def overlay_edges(rough_edge, line_edge):
@@ -285,8 +434,17 @@ def main():
     parser.add_argument("--zip-root", default=ZIP_ROOT)
     parser.add_argument("--min-area-ratio", type=float, default=0.01)
     parser.add_argument("--close-px", type=int, default=7)
-    parser.add_argument("--max-shift", type=int, default=64)
+    parser.add_argument("--max-shift", type=int, default=64,
+                         help="fine-search radius in native px, around the coarse estimate when --coarse-max-shift is set (otherwise around the panel's own center)")
     parser.add_argument("--shift-step", type=int, default=16)
+    parser.add_argument("--coarse-max-shift", type=int, default=480,
+                         help="wide pre-search radius in native px on a downscaled image, to find the neighborhood before the expensive fine search; 0 disables coarse pre-search (old behavior, single native-resolution search only)")
+    parser.add_argument("--coarse-downscale", type=int, default=4)
+    parser.add_argument("--coarse-shift-step", type=int, default=32,
+                         help="native-px step for the coarse pre-search grid (internally divided by --coarse-downscale); "
+                              "coarser than --shift-step by default since the coarse stage only needs a neighborhood, "
+                              "not a precise offset, and grid size (hence Python-loop cost) scales with the square of "
+                              "max_shift/step")
     parser.add_argument("--start-page", type=int, default=0)
     parser.add_argument("--end-page", type=int, default=0, help="0 = all pages")
     parser.add_argument("--append", action="store_true", help="append rows to existing csv-out/json-out instead of overwriting; use for chunked runs")
@@ -299,21 +457,41 @@ def main():
 
     with zipfile.ZipFile(args.zip_path) as zf:
         manifest = load_json_member(zf, args.zip_root, "manifest.json")
-        koma_manifest = load_json_member(zf, args.zip_root, "koma_manifest.json")
-        koma_by_page = koma_lookup(koma_manifest)
+        has_koma_manifest = member_exists(zf, args.zip_root, "koma_manifest.json")
+        koma_by_page = koma_lookup(load_json_member(zf, args.zip_root, "koma_manifest.json")) if has_koma_manifest else None
         entries = manifest[args.start_page:args.end_page] if args.end_page else manifest[args.start_page:]
 
         rows = []
         qc_rows = []
         for index, entry in enumerate(entries, 1):
             pid = page_id(entry)
-            koma_entry = koma_by_page.get(join_key(entry))
-            if koma_entry is None:
-                print(f"skip {pid}: no koma layer")
+            files = resolve_files(entry)
+
+            if koma_by_page is not None:
+                koma_entry = koma_by_page.get(join_key(entry))
+                if koma_entry is None:
+                    print(f"skip {pid}: no koma layer")
+                    continue
+                if not koma_entry.get("koma"):
+                    print(f"skip {pid}: koma manifest entry present but koma field is null/empty (ink={koma_entry.get('ink')}, sources={koma_entry.get('sources')}) (data gap, not a bug)")
+                    continue
+                koma_name, page_field = koma_entry["koma"], koma_entry.get("page", "")
+            else:
+                # gakuen-style: koma is embedded in the main manifest entry
+                # itself (files['koma']), no separate koma_manifest.json.
+                koma_name = files.get("koma")
+                if not koma_name:
+                    print(f"skip {pid}: no koma field in manifest entry (data gap, not a bug)")
+                    continue
+                page_field = entry.get("page", "")
+
+            sketch_name, line_name = files.get("sketch"), files.get("line")
+            if not member_exists(zf, args.zip_root, line_name) or not member_exists(zf, args.zip_root, sketch_name):
+                print(f"skip {pid}: koma layer present but line/sketch asset missing from zip (data gap, not a bug)")
                 continue
-            koma_gray = load_gray(zf, args.zip_root, koma_entry["koma"])
-            line_gray = load_gray(zf, args.zip_root, entry["line"])
-            rough_gray = load_gray(zf, args.zip_root, entry["sketch"], autocontrast=True)
+            koma_gray = load_gray(zf, args.zip_root, koma_name)
+            line_gray = load_gray(zf, args.zip_root, line_name)
+            rough_gray = load_gray(zf, args.zip_root, sketch_name, autocontrast=True)
 
             panels = detect_panels(koma_gray, min_area_ratio=args.min_area_ratio, close_px=args.close_px)
             make_page_overlay(line_gray, panels, Path(args.overlay_dir) / f"{pid}_panels.png")
@@ -335,7 +513,7 @@ def main():
                 best, base = search_panel_alignment(rough_gray, line_edge, line_support, line_dist, cx, cy, out_w, out_h, args)
 
                 row = {
-                    "housei": pid, "page": koma_entry.get("page", ""), "panel_index": panel_index,
+                    "housei": pid, "page": page_field, "panel_index": panel_index,
                     "x0": x0, "y0": y0, "x1": x1, "y1": y1,
                     "area_ratio": round(panel["area_ratio"], 4), "fill_ratio": round(panel["fill_ratio"], 4),
                     "base_edge_f1": base["edge_f1"], "base_chamfer": base["chamfer"],

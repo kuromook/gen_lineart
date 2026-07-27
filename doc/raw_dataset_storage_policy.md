@@ -24,12 +24,25 @@ Current archives:
   `housei_004_sketch.jpg` differs from v2, replacing a ラフ layout sketch
   with the correct 下絵 — confirmed by hashing every archive member)
 - `dataset/raw_zips/dataset_ako5_koma.zip` (ako5ver2 panel-border layer,
-  arrived 2026-07-26; integrity-checked, not yet processed)
+  arrived 2026-07-26; integrity-checked; panel-detection pass in progress
+  2026-07-27)
 - `dataset/raw_zips/dataset_hamlabi_koma.zip` (hamlabi panel-border layer,
-  arrived 2026-07-26; integrity-checked, not yet processed)
-- `dataset/raw_zips/dataset_kurip.zip` (arrived 2026-07-26 alongside the koma
-  layers above; includes its own koma layer; not yet inspected/reconciled
-  against the existing `fitness` source — see `doc/CURRENT.md` next actions)
+  arrived 2026-07-26; integrity-checked; panel detection completed
+  2026-07-27, 64 panels across all 13 pages, pending chamfer-gate review)
+- `dataset/raw_zips/dataset_fitness_koma.zip` (fitness panel-border layer;
+  arrived 2026-07-26 as `dataset_kurip.zip`, renamed 2026-07-27 — do not use
+  the `kurip` name going forward, including in any new results/output
+  filenames for this source. Reconciled against the existing
+  `dataset_fitness_v4.zip`: same 38 pages, all 76 line/sketch JPEGs
+  byte-identical by md5 to `dataset_fitness_v4.zip` (internal zip root
+  `dataset_kurip_v4`), so this archive is exactly that source plus a
+  per-page `*_koma.jpg` panel-border layer and `koma_manifest.json`, nothing
+  else changed. Internal zip root is still literally `dataset_kurip` (baked
+  into the archive's own file paths, not repackaged) — pass
+  `--zip-root dataset_kurip` when reading it; this is an internal parameter
+  only, not a visible name, same asymmetry already accepted elsewhere in
+  this project (see `fitness` section below and
+  `doc/raw_dataset_extraction_knowledge.md`))
 - `dataset/raw_zips/dataset_fighting.zip`
 
 `fitness` and `fighting` were renamed from their originally uploaded names

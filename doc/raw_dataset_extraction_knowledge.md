@@ -331,35 +331,107 @@ Plan (paused here, panel-layer extraction happens on another machine):
    irregular/"special" per the user, needs separate consideration once stages
    1-2 are working.
 
-## Environment: Long Background Jobs Get Silently Killed
+## Environment: Long Background Jobs Died From Real OOM, Not A Silent Timeout
 
-Observed 2026-07-26 while extracting `fitness` (formerly `kurip`) and
-`housei`: this environment kills long-running extraction processes somewhere
-around 10-13 minutes of wall-clock time, with no traceback, no OOM entry in
-`dmesg`/`journalctl`, and no correlation to row count (different runs died at
-different row counts processing the same file). Confirmed not a memory issue:
-`free -h` showed ample headroom at the time of failure.
+Originally recorded 2026-07-26 (during `fitness`/`housei` extraction) as an
+apparent silent kill around 10-13 minutes of wall-clock time with "no OOM
+entry in dmesg/journalctl" and "confirmed not a memory issue". That
+conclusion was wrong — re-checked 2026-07-27 by reading `journalctl -k`
+directly instead of relying on a `free -h` snapshot taken after the fact.
 
-This affected three different execution methods equally:
+Actual root cause: genuine kernel OOM kills. `journalctl -k` shows 5 separate
+`Out of memory: Killed process ... (python)` events on 2026-07-26 (08:06,
+08:23, 10:02, 10:19, 10:24), each with `anon-rss` between 15 GB and 28.5 GB.
+The machine has 31 GB RAM, no swap, and no cgroup memory limit
+(`memory.max` = `max`), so a Python process that grows unbounded eventually
+gets killed once it approaches total RAM. This fully explains the earlier
+observations: different runs "died at different row counts" because memory
+growth rate (not a fixed timer) determined time-to-death, and the original
+`free -h` check was almost certainly taken after the OOM-killed process had
+already released its memory, not at the actual peak.
+
+Root-caused 2026-07-27 to a concrete bug, and fixed: `match_kurip_regions.py`
+and `filter_matched_region_tiles.py` (the exact pair used for `fitness`/
+`housei` on 2026-07-26) both stored per-candidate `rough_tile`/`line_tile`
+crops as raw numpy slices (`page[y:y+TILE, x:x+TILE]`) directly in their
+long-lived `rows`/`accepted` lists. A numpy basic-slice is a *view*: it looks
+like a 0.23 MB 480x480 array, but `.base` still points at the entire ~35 MB
+source page buffer, which numpy therefore cannot free as long as the view is
+referenced. Two effects compounded this into double-digit-GB growth:
+
+1. Every stored tile view alone keeps its whole ~35 MB source page alive,
+   not just the ~0.23 MB crop it looks like.
+2. `match_kurip_regions.py` sorts its output globally by `match_score` before
+   writing the CSV, so page order in that CSV is not grouped by page.
+   `filter_matched_region_tiles.py` reads that CSV in this interleaved order
+   and keeps only a single-page `cache` (cleared and reloaded on every page
+   change), so a page that recurs later in the (score-sorted, not
+   page-grouped) match list gets reloaded as a brand-new array instance each
+   time — and any earlier accepted tile's view into that page's *previous*
+   instance is still pinned alive by (1). Net effect: potentially many
+   separate ~35 MB copies of the same page's data alive simultaneously,
+   scaling with match count and how scattered a page's matches are in the
+   sorted list, not just with the final accepted-tile count.
+
+Fix applied: both scripts now wrap the tile crop in `np.array(...)` at the
+point of storage, forcing an independent copy (`tile.base is None`) instead
+of a view, before it goes into the long-lived list. Confirmed with a direct
+`.base`/`nbytes` check (an unfixed slice reports 0.23 MB via `.nbytes` but
+`.base.nbytes` is the true ~35 MB retained; after `np.array(...)`, `.base is
+None` and the true retained size matches `.nbytes`). `tile_region_manifest_480.py`
+(the region-manifest/native-scale route used for ako5ver2/hamlabi-koma/housei-
+koma) was checked and does not have this bug: its per-tile `analyze_tile()`
+return value is scalar metrics only, never the pixel arrays themselves.
+`match_koma_panels.py` was also checked: its unbounded `rows` list holds only
+scalars, and the list that does hold pixel crops (`qc_rows`) is explicitly
+capped at 60 entries, so it was already safe. `match_hamlabi_regions.py` and
+`split_koma_panel_subregions.py` were spot-checked (their accumulating lists
+also appear to hold scalar rows, not raw tile views) but not exhaustively
+audited the way the two fixed scripts were.
+
+This affected three different execution methods equally (all are just
+regular processes subject to the same kernel-wide OOM killer, so this is
+expected, not evidence of a harness-specific mechanism):
 
 - a detached `nohup ... & disown` process (untracked by the harness)
 - a properly harness-tracked `run_in_background: true` Bash task
 - two overnight autonomous background agents (their transcripts became
   unrecoverable; `SendMessage` to their agent IDs returned "No transcript
-  found")
+  found" — separately explained, since an OOM-killed process leaves no trace
+  for whatever was supervising it)
 
-A command piped through `| tail` or `| tee` can also make this failure
-invisible: those commands exit 0 even when the upstream process was killed
-partway, so a "completed exit code 0" task notification is not proof the
-underlying script finished. Always check that the expected output file
+A command piped through `| tail` or `| tee` can still make this failure
+invisible: those commands exit 0 even when the upstream process was OOM
+killed partway, so a "completed exit code 0" task notification is not proof
+the underlying script finished. Always check that the expected output file
 actually exists, not just the reported exit code, for any long extraction run
 in this environment.
 
-Workaround: split long extraction/filter passes into short chunks (~250 rows
-took a few minutes each, safely under the failure window) using
+Workaround (still valid, reasoning corrected): split long extraction/filter
+passes into short chunks (~250 rows took a few minutes each) using
 `--offset`/`--limit`/`--append` on `filter_matched_region_tiles.py`, running
-each chunk as its own foreground tool call rather than one long background
-job. Verify each chunk's output file before starting the next.
+each chunk as its own foreground tool call rather than one long unattended
+run. This works because it bounds peak memory per process (each chunk starts
+fresh and exits, releasing memory) — not because it stays under some fixed
+wall-clock window. Verify each chunk's output file before starting the next.
+If a script needs to process a large source in one long run again, prefer
+first checking/fixing its memory growth (e.g. stream/release full-resolution
+images instead of holding a growing list of them) over just re-chunking
+around the symptom.
+
+Side effect discovered during the 2026-07-27 re-investigation: several old
+chunk-completion "wait" wrapper loops
+(`until ! pgrep -f "<pattern>" ...; do sleep N; done`) launched during this
+work were still running 1-1.5+ days later. Root cause: the `pgrep -f`
+pattern each loop polls for is a substring that also matches the wrapper's
+own `eval '...'` command line, so `pgrep` found the wrapper process itself
+forever and the loop never exited. Harmless (near-zero CPU, just sleeping),
+but killed manually on discovery (PIDs 225580, 225723, 226837, 275222,
+282073). If constructing a similar poll-until-done wrapper again, pick a
+`pgrep -f` pattern that cannot also match the wrapper's own command line
+(e.g. the target script's absolute path plus a distinguishing argument not
+also passed to the poller), or check the process is gone via a PID file /
+`wait` on a tracked job instead of a self-referential string match.
 
 ## fitness (formerly kurip)
 

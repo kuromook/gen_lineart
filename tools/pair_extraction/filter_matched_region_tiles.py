@@ -18,11 +18,16 @@ from `tile_region_manifest_480.py` instead of re-implementing it, so every
 source using this route gets the same quality bar. See
 `doc/region_dataset_extraction_policy.md`.
 
-Also supports `--offset`/`--limit`/`--append` for chunked runs: this
-environment has been observed to silently kill long-running background
-processes somewhere around 10-13 minutes with no traceback, so a slow full
-pass should be split into several short, resumable invocations rather than run
-as one long job.
+Also supports `--offset`/`--limit`/`--append` for chunked runs: an unchunked
+full pass was observed to trigger real kernel OOM kills (see
+`doc/raw_dataset_extraction_knowledge.md`), traced to `rough_tile`/`line_tile`
+below being raw numpy views into the full per-page image (each pins the
+entire ~35 MB source page alive, not just the 480x480 crop) accumulated in the
+`accepted` list for the whole run, compounded by `match_kurip_regions.py`
+sorting matches globally by score so `matches` here is not page-grouped and
+the single-entry `cache` reloads (and re-pins) the same page repeatedly.
+Copying the tile slices below fixes the per-tile pinning; chunking remains a
+good idea regardless, since it still bounds the size of `accepted` itself.
 
 Dry-run is the default; use --save after reviewing QC.
 """
@@ -256,8 +261,8 @@ def main():
             ):
                 rejected += 1
                 continue
-            rough_tile = rough_page[ry : ry + TILE, rx : rx + TILE]
-            line_tile = line_page[ly : ly + TILE, lx : lx + TILE]
+            rough_tile = np.array(rough_page[ry : ry + TILE, rx : rx + TILE])
+            line_tile = np.array(line_page[ly : ly + TILE, lx : lx + TILE])
 
             mask_arr, _ = build_mask(Image.fromarray(rough_tile), Image.fromarray(line_tile), mask_args)
 
