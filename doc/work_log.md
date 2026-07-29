@@ -1198,3 +1198,112 @@ because (per the earlier finding this session) an in-session background
 monitor can die with the CLI session itself even though the actual work it's
 watching survives; only a fully OS-detached process is guaranteed to still
 fire the ntfy notification if the session drops before training finishes.
+
+## 2026-07-29 (later still): combined_koma_20260729 Result, Recipe Pivot, Branch Merge
+
+`combined_koma_20260729_480_warm_clean_bce_e10` finished (loss 0.2413 ->
+0.2183 monotonic, `checkpoints/combined_koma_20260729_480_warm_clean_bce_e10/best.pth`).
+Ran inference on the standard 8-sample clean eval list
+(`dataset/pairs_480/eval_fixed_clean_lineart004.txt`) and built a rough/
+output/GT montage:
+`results/compare_combined_koma_20260729_480_warm_clean_bce_e10_cleaneval.png`.
+
+Visual result: same soft/gray "marbled" density-map texture seen in every
+prior single-source and the 2026-07-26 combined run — follows rough stroke
+direction and picks up general density but never converges to binary line
+strokes, on all 8 samples including ones with crisp GT lines. No content
+mismatches, just the same known ceiling.
+
+Diagnosis (why this run isn't very informative on its own): the recipe's
+loss weights (`bce=0.6 l1=0.2 tolerant=0.05 ink=0.02`, every structure/
+binary/skeleton/width/threshold/bg-haze/feature-match weight at `0.0`,
+`adv=0.02`) are essentially bare BCE+L1 — the same weak recipe that already
+produced this exact failure mode on every earlier single-source and
+2026-07-26 combined run, regardless of data quality. This run mostly
+reconfirms the recipe ceiling rather than telling us something new about
+the koma pipeline's data quality; per `doc/model_results_summary.md`, the
+`lucy_mild_aux_msgan`/`lucy_thin_aux_msgan`/msgan family (structure loss +
+adversarial + atari/lucy aux hint) already produces real binary-ish line
+output (F1@2px ~0.40-0.41) under the *old* pre-koma data, so that family had
+never been tested against the new alignment-corrected koma dataset.
+
+Decision: retrain the `lucy_mild_aux_msgan` recipe (from
+`experiments/run_lucy_mask_deep_survey.sh` / `run_badrough_retrain_survey.sh`:
+`cleanup` model, `--gan --multiscale-gan`, `bce=0.75 l1=0.03 shape=0.08
+ink=0.14 binary=0.10 structure=0.04 adv=0.03 fm=0.08`, lucy_mild atari-hint
+aux channel) on the combined 1489-tile koma dataset, to isolate whether the
+soft/density-map ceiling is recipe-side (as suspected) rather than
+data-side, now that the data itself is the largest and most alignment-clean
+pool built so far.
+
+New runner: `experiments/run_combined_koma_lucy_mild_msgan_20260729.sh`.
+Chains: (1) inference of the already-trained plain-bce koma checkpoint on
+the `eval_clean_lineart004_8.txt` list for a same-sample before/after
+baseline (the pre-existing `lucy_mask_deep_e2_lucy_mild_aux_msgan` reference
+outputs no longer exist post-2026-07-25 results cleanup, so this run only
+compares against the plain-bce koma baseline, not the old pre-koma
+lucy_mild); (2) atari-hint generation
+(`checkpoints/model_resnet_binft_e3_resnet_gan_advsharp_binft/best.pth`) over
+all 1489 koma train tiles + 8 eval tiles; (3) `lucy_mild` aux preprocessing;
+(4) 3-epoch `cleanup`+GAN+multiscale-GAN training with the koma train
+list/line-dir; (5) eval inference, montage
+(`results/compare_combined_koma_lucy_mild_msgan_20260729.png`), and fixed
+metrics (`results/fixed_output_metrics_combined_koma_lucy_mild_msgan_20260729_compare.csv`).
+
+Launched detached (`nohup ... & disown`, PID 615641) so it survives the CLI
+session ending; completion fires the existing
+`experiments/send_autoloop_notification.sh` ntfy notification, same as the
+2026-07-29 combined-bce launch above. Status as of this note: still running
+(atari aux generation done, lucy_mild preprocessing/training in progress).
+
+### hamlabi-region-extraction Branch Closed Out
+
+Per user direction, committed and fast-forward-merged this branch into
+`main` to close out the region-extraction line of work, since the next
+branch (architecture improvement vs router/MoE) depends on this retrain's
+result and shouldn't be decided or started on this branch.
+
+Commit `b47b226` bundled: the koma alignment do-no-harm fix (guards against
+a nominally-higher-F1 offset that actually lands on a blank/void crop, found
+on gakuen) and a QC padding fix in `match_koma_panels.py`; a
+`resolve_files()` fix in `materialize_koma_panels.py` for gakuen's
+embedded-files-dict manifest schema; the new
+`run_koma_tile_pipeline.sh`/`run_all_koma_pipelines_20260729.sh` driver
+scripts; the `doc/raw_dataset_storage_policy.md` update recording the final
+corrected archive versions and the SCP-through-symlink incident; the
+`results/` per-source reorganization (`doc/RESULTS.md`,
+`config/results_manifest.json`, deletion of superseded
+`results/ako5_region_matches*`/`ako5_region_tiles.csv`); and both new
+combined-training runners (plain-bce baseline and this lucy_mild msgan
+retrain).
+
+Since `main` was already a strict ancestor of this branch (0 main-only
+commits), the merge was a clean fast-forward. To avoid any risk to the
+lucy_mild retrain running detached from this same working directory (a
+`git checkout main` would rewrite the working tree, and the running bash
+process was mid-execution of a script file only present on this branch),
+the merge was done without ever checking out `main`: `git branch -f main
+hamlabi-region-extraction` followed by `git push origin main`, staying on
+`hamlabi-region-extraction` throughout. Both branches pushed to origin at
+`b47b226`.
+
+### Next Actions
+
+1. Wait for `combined_koma_lucy_mild_msgan_20260729` to finish (ntfy
+   notification or `logs/combined_koma_lucy_mild_msgan_20260729.log`).
+   Review the montage and metrics at full resolution before drawing any
+   conclusion — per this project's standing rule, visual review is the
+   adoption gate, not F1/chamfer alone.
+2. If it produces real binary-ish line output (unlike the bare-bce runs),
+   that confirms the ceiling was recipe-side: next branch should be
+   architecture/recipe improvement (per `doc/model_directions.md`'s
+   still-open survey directions) applied to this koma dataset, or a
+   deliberate per-source curriculum/MoE split if source-style diversity
+   turns out to matter.
+3. If it still shows the same soft/density-map ceiling even with structure
+   + adversarial + aux-hint losses, that would be new information — the
+   problem may not be pure recipe weakness, and router-moe (already
+   scaffolded in `../lineart-router-moe`) or a source-specific
+   split/expert approach may need to move up in priority.
+4. Decide the next branch (architecture-improvement vs router-moe) only
+   after that review, per explicit user direction — not preemptively.
