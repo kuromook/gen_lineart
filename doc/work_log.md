@@ -983,19 +983,218 @@ review, (5) defer finer sub-character regions (may have irregular/"special"
 deformation). Full detail: `doc/raw_dataset_extraction_knowledge.md`
 ("Residual Misalignment").
 
+## 2026-07-27/29: OOM Root-Cause, Coarse-To-Fine Koma Alignment, 5-Source Panel-To-Tile Pipeline
+
+The panel-border-layer extraction unblocked for ako5ver2/hamlabi (delivered
+as `dataset_ako5_koma.zip`/`dataset_hamlabi_koma.zip`), and two more koma
+sources arrived: `fitness`'s own koma layer (as `dataset_kurip.zip`,
+reconciled and renamed) and a wholly new source, `gakuen`.
+
+### OOM Root-Cause And Fix
+
+The "background jobs silently die around 10-13 min" note from 2026-07-26 was
+wrong — re-checked via `journalctl -k` and found 5 genuine kernel OOM kills
+(15-28 GB anon-rss) on the day it was first observed. Root cause: several
+scripts stored raw numpy slice *views* of full-resolution source pages
+directly in long-lived lists (`match_kurip_regions.py`,
+`filter_matched_region_tiles.py`, `match_koma_panels.py`'s `crop_page`,
+`materialize_koma_panels.py`'s never-evicted `page_cache`) — a "small"
+stored tile secretly kept its whole ~35 MB parent page alive. Fixed by
+copying at the point of storage / evicting the cache on page change. Full
+detail and the exact mechanism: `doc/raw_dataset_extraction_knowledge.md`
+("Long Background Jobs Died From Real OOM").
+
+### Coarse-To-Fine Koma Alignment Search
+
+hamlabi's panel detection showed poor alignment; diagnosed to the old flat
+`--max-shift 160` (housei's already-corrected value) still being
+insufficient — 48-83% of panels across all four then-available sources had
+a true offset beyond 160px. Added `coarse_offset_estimate()` to
+`match_koma_panels.py`: a cheap wide pre-search on a downscaled image
+(default 480px range) finds the neighborhood before the existing
+native-resolution fine search refines it (~544px effective combined reach).
+A `matchTemplate`/cross-correlation variant was tried for speed and
+rejected — it measurably picked worse neighborhoods on real panels than the
+sparse-edge-coordinate F1 metric the fine search already uses. Added a
+do-no-harm fallback (report the true zero-shift baseline if the coarse-guided
+result isn't actually better by the same F1 metric) after finding 3-4
+panels/source where the coarse stage locked onto a spurious distant optimum.
+Also fixed a QC-display-only bug (wrong pad/center in the montage generation
+code, unrelated to the correctly-computed CSV chamfer values) that had been
+showing garbled/black crops for any panel with a large coarse-found offset —
+this affected every already-generated QC montage and required regenerating
+all of them for reliable visual review. Full detail:
+`doc/raw_dataset_extraction_knowledge.md`.
+
+### Symlink Incident And Storage Policy Change
+
+Three root-level compatibility symlinks (`gakuen`, `dataset_ako5.zip`,
+`dataset_hamlabi.zip`) were each destroyed the same day: an `scp` upload to
+the symlink's path followed the link and overwrote the real archive under
+`dataset/raw_zips/` in place, rather than replacing the link. Original bytes
+unrecoverable each time. Renamed the resulting archives to versioned
+filenames and, per explicit user decision, discontinued root-level symlinks
+entirely going forward — this supersedes the old "allowed for sources with a
+hardcoded legacy reference" exception. Full detail:
+`doc/raw_dataset_storage_policy.md` ("Compatibility Symlinks —
+Discontinued").
+
+### Broader Page-Extraction Bug Fix, Final Panel Detection (5 Sources)
+
+The corrected re-uploads (fixing gakuen's original page1/11/12
+ラフ-vs-下絵 issue) turned out to be an incomplete fix for a broader
+page-extraction bug on the user's side, affecting `line` files (not just
+`sketch`) across gakuen, housei, and fitness. Final corrected archives:
+`dataset_ako5_koma_v2.zip`, `dataset_hamlabi_koma_v2.zip`,
+`dataset_fitness_koma_v2.zip`, `dataset_gakuen_v3.zip`,
+`dataset_housei_v4.zip` (ako5ver2/hamlabi were confirmed final for the day;
+gakuen/housei/fitness needed one more round). Panel detection re-run against
+all five with the final coarse-to-fine + do-no-harm code:
+
+| source | panels | pages | base chamfer median | best chamfer median | worse-than-baseline |
+|---|---:|---:|---:|---:|---:|
+| ako5ver2 | 175 | 44 | 29.50 | 19.38 | 2 |
+| hamlabi | 65 | 13 | 32.75 | 23.07 | 0 |
+| fitness | 110 | 36 | 25.25 | 21.29 | 2 |
+| gakuen | 46 | 16 | 25.35 | 14.63 | 0 |
+| housei | 81 | 18 | 15.19 | 13.01 | 3 |
+
+Notably, `housei_010`/`011`/`012` — previously flagged (2026-07-26) as a
+distinct "high-residual-misalignment cluster" and hypothesized to be a real,
+possibly-irreducible non-uniform-deformation case — dropped from
+chamfer 27.8-34.4 to 9.64-15.4 (in line with the rest of the source) once
+re-run against the bug-fixed `housei_v4` data. That hypothesis is now
+considered wrong: the cluster was a page-extraction artifact, not real
+deformation.
+
+### Panel-To-Tile Pipeline, Launched For All 5 Sources
+
+Built `tools/pair_extraction/run_koma_tile_pipeline.sh`, a driver chaining
+`materialize_koma_panels.py` (`--max-chamfer 45`, generous — the real
+alignment gate is the fixed `ALIGNMENT_*` tile-level constants, this is only
+an efficiency pre-filter) -> `split_koma_panel_subregions.py`
+(`--refine-alignment` default on) -> `build_region_valid_masks.py` (native
+settings: `--support-px 20 --window 61 --expand-ignore 16 --close-ignore 16`)
+-> `tile_region_manifest_480.py` (ako5ver2-validated native-strict style
+gates for every source; housei alone keeps its established
+`--max-soft-ink-ratio 0.50` relaxation). Found and fixed one more manifest-
+schema gap while testing: `materialize_koma_panels.py` still read
+`entry["line"]`/`entry["sketch"]` directly instead of using
+`match_koma_panels.py`'s `resolve_files()` helper, so it crashed on gakuen's
+embedded-`files`-dict schema.
+
+Piloted on gakuen (smallest, 46 panels): 117 sub-regions, 202 tiles, ~33
+min end to end. Per user direction, launched the remaining four sources
+(ako5ver2, hamlabi, fitness, housei) as one sequential unattended run via
+`tools/pair_extraction/run_all_koma_pipelines_20260729.sh`, started fully
+detached (`nohup ... & disown`) so it survives this CLI session ending;
+progress logs to `results/koma_memtest/master_pipeline_20260729.log`, and
+`experiments/send_autoloop_notification.sh` (existing ntfy config in
+`config/autoloop_notify.env`) fires on completion with a per-source tile
+count summary. Estimated total runtime ~5 hours by linear extrapolation from
+the gakuen pilot.
+
 ## Next Actions
 
-1. **Blocked on external work**: panel-border-layer extraction (another
-   machine, user-side). Resume the panel-boundary-first segmentation plan
-   once available.
-2. Model-side experiment design using the broadened pool (ako5ver2 native
-   strict 422, fitness 271, housei 65, fighting 40) remains open, but
-   attribute the soft/density-map ceiling partly to unresolved alignment/scale
-   mismatch now, not recipe-only; see `doc/CURRENT.md`.
-3. Decide whether to rename the remaining 5 `kurip`-named infra scripts.
-4. Do not mix fitness/housei/fighting/ako5ver2-native sources into one list
-   without a deliberate experiment design.
-5. If more housei volume is wanted later, `soft_ink_ratio` still has
-   documented headroom (0.60/0.70 yield more tiles); use
-   `diagnose_gate_funnel.py` on any new source before assuming which gate to
-   loosen.
+1. **Check the overnight panel-to-tile run's outcome** (ntfy notification or
+   `results/koma_memtest/master_pipeline_20260729.log` directly if the
+   session dropped): confirm all 4 remaining sources
+   (ako5ver2/hamlabi/fitness/housei) completed, check each source's final
+   tile count and QC (top and tail, at native resolution — this project's
+   standing rule that thumbnail QC and gate scores alone are not a
+   content-match guarantee still applies here).
+2. Once all 5 sources have tiles, decide on a training experiment: train each
+   source separately first, or design a deliberate mixing/curriculum
+   experiment across ako5ver2/hamlabi/fitness/gakuen/housei — do not
+   casually concatenate without a stated rationale, per this project's
+   long-standing rule.
+3. Revisit whether `--max-soft-ink-ratio` needs a per-source
+   `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
+   housei has an established relaxed value so far); yield may be
+   conservative for the others under the shared default.
+4. Decide whether to rename the remaining `kurip`-named infra scripts
+   (`match_kurip_regions.py` and others) — still open, unrelated to tonight's
+   work.
+5. Model-side experiment design using the now-much-larger reviewed pool
+   remains open; the soft/density-map ceiling seen in earlier single-source
+   runs should be re-evaluated once trained against this alignment-corrected
+   data, not assumed to still apply as-is.
+
+## 2026-07-29 (later): `results/` Per-Source Reorganization + Cleanup
+
+Visual QC of hamlabi's final koma tiles (top/tail) came back clean. User
+then flagged that `results/` (427 top-level entries, 1.3G) had become too
+cluttered to tell which files were current, and asked for per-work folders
+plus deletion of rarely-used old files. Confirmed scope (full `results/`,
+keep-latest-version-only per work) before acting, since deletion is
+one-way for this gitignored directory.
+
+Discovered a 6th source, `fighting` (see `doc/dataset_status.md`), distinct
+from `fitness`/`kurip` — a small already-fixed-tile source (8 pages, 192
+tiles) that never went through region matching or the koma pipeline, so
+nothing under it is superseded; it got its own folder with everything kept.
+
+For the 5 koma-pipeline sources (ako5ver2/hamlabi/fitness/gakuen/housei),
+kept only the latest accepted panels manifest (+overlays/qc) and the
+completed 2026-07-29 materialize/subregion/tiles_480 outputs; deleted every
+earlier dated/versioned panel-detection iteration and all pre-koma legacy
+approaches (region matches, native_strict tiles, ako5ver2's
+keep281/varregion/strict88 tile-selection-and-training-run experiments,
+hamlabi's old region/codex/vlm review files, etc.) — those approaches are
+fully superseded by the koma pipeline's alignment quality and yield, and
+per `doc/RESULTS.md`'s own cleanup policy, per-sample inference directories
+and old QC sheets are meant to be deleted once superseded.
+
+Result: 427 → 126 top-level entries, 1.3G → 465M. Left untouched: cross-
+source model/architecture-comparison experiment output (`halo_*`,
+`haze_uncertainty_*`, `router_*`, `line_refiner_*`, `fixed_output_metrics_*`,
+`combined_20260726_*`, `dataset_gate_*`, etc.) — these aren't organized
+per-manuscript-source and weren't part of this ask; a separate pass would
+be needed to judge which of those are still relevant.
+
+Updated `doc/RESULTS.md` (new "Per-Source Folders" section, moved the
+`hamlabi_filtered398_unet480_epoch040_compare.png` reference to its new
+path) and pruned `config/results_manifest.json` (21 stale entries for
+already-nonexistent paths removed; none of its tracked paths were among the
+files moved into source folders).
+
+New per-source koma pipeline runs should write directly into
+`results/<source>/` going forward (update `run_koma_tile_pipeline.sh`'s
+`--out`/`--csv-out`/etc. paths next time it's touched, rather than
+retrofitting immediately).
+
+## 2026-07-29 (later still): Combined 5-Source Koma Training Launch
+
+User visually reviewed final tile QC (top/tail, native resolution) for all 5
+koma sources and confirmed all okay. Asked whether to train mixed or
+per-source; recommended mixed — per-source counts (132-536 tiles) are small
+enough to risk overfitting alone, and the pool only reaches 1489 tiles
+combined — with the tradeoff noted (mixing can average out a source's style
+idiosyncrasies; a per-source fine-tune from the mixed base stays an option
+later if one source's fidelity needs attention).
+
+Built the combined training set the same way as the 2026-07-26 combined run
+(`## 2026-07-26 Combined Training...` above): per-file symlinks from a new
+`dataset/pairs_480/train/line_combined_koma_20260729/` into each source's own
+`line_<source>_koma_20260729/` dir (tile name prefixes like `ako5ver2koma_`
+already prevent collisions), and `valid_train_combined_koma_20260729.txt` as
+the straight concatenation of the 5 per-source lists (536+164+455+202+132 =
+1489).
+
+New runner `experiments/run_combined_koma_20260729_warm_clean_bce_e10.sh`
+reuses the exact 2026-07-26 combined recipe unchanged (unet, warmstart from
+`shape1_clean_split_bce`, 10 epochs, bce-heavy, lr 1e-5) specifically so this
+result is a direct, recipe-controlled comparison against that earlier 798-tile
+run — isolating the effect of the larger, alignment-corrected koma dataset.
+Launched via `nohup ... & disown` (PID 609254; training log
+`logs/train_combined_koma_20260729_480_warm_clean_bce_e10.log`, checkpoint
+dir `checkpoints/combined_koma_20260729_480_warm_clean_bce_e10`, inference
+output `results/combined_koma_20260729_480_warm_clean_bce_e10_outputs`).
+
+Also launched a second, independently `nohup`+`disown`'d wrapper process that
+waits on PID 609254 and then calls `send_autoloop_notification.sh` — done as
+a separate detached process rather than a Bash-tool `run_in_background` call,
+because (per the earlier finding this session) an in-session background
+monitor can die with the CLI session itself even though the actual work it's
+watching survives; only a fully OS-detached process is guaranteed to still
+fire the ntfy notification if the session drops before training finishes.

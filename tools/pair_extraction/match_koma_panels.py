@@ -190,6 +190,7 @@ def _score_offset(dx, dy, pad, out_w, out_h, rough_support, rough_ys, rough_xs, 
 
 
 MIN_COARSE_EDGE_PIXELS = 40
+MIN_ALIGNED_ROUGH_STD = 8.0
 
 
 def coarse_offset_estimate(rough_page, line_edge, cx, cy, out_w, out_h, downscale, max_shift, shift_step):
@@ -325,7 +326,7 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
             )
             candidate = {
                 "scale": scale, "dx": coarse_dx + dx, "dy": coarse_dy + dy,
-                "edge_f1": f1, "roi_edge": roi_edge, "y0": y0, "x0": x0,
+                "edge_f1": f1, "roi": roi, "roi_edge": roi_edge, "y0": y0, "x0": x0,
             }
             if best is None or f1 > best["edge_f1"]:
                 best = candidate
@@ -354,6 +355,22 @@ def search_panel_alignment(rough_page, line_edge, line_support, line_dist, cx, c
     # the baseline instead of a confidently-wrong distant offset.
     if baseline is not None and (best is None or baseline["edge_f1"] >= best["edge_f1"]):
         best = baseline
+
+    # Second do-no-harm check, orthogonal to the F1 one above: F1 alone can
+    # look "improved" while the found offset has actually walked the crop
+    # into a degenerate region — off the real page content into a black
+    # scanner-bed margin or similar blank void — because a near-empty target
+    # can score a higher (but still low) F1 than an equally-near-empty
+    # baseline by chance. Observed on real data (gakuen): two panels' "best"
+    # showed a solid near-black aligned crop despite edge_f1 nominally
+    # improving. Guard with the same rough_std convention already used
+    # elsewhere in this pipeline's style gates (e.g. match_kurip_regions.py's
+    # --min-rough-std) — real manuscript content has texture; a blank/void
+    # crop does not.
+    if best is not baseline and baseline is not None and "roi" in best:
+        best_window = best["roi"][best["y0"]:best["y0"] + out_h, best["x0"]:best["x0"] + out_w]
+        if float(best_window.std()) < MIN_ALIGNED_ROUGH_STD:
+            best = baseline
 
     def finalize(candidate):
         win_edge = candidate["roi_edge"][candidate["y0"]:candidate["y0"] + out_h, candidate["x0"]:candidate["x0"] + out_w]
@@ -528,7 +545,14 @@ def main():
                     rough_base = extract_scaled_roi(rough_gray, cx, cy, out_w, out_h, 0, 1.0)
                     rough_best = extract_scaled_roi(rough_gray, cx, cy, out_w, out_h, 0, best["scale"])
                     if rough_best is not None:
-                        pad = args.max_shift
+                        # pad must exceed |dx|/|dy| or the y0w/x0w crop below
+                        # goes negative or past the ROI edge (silent numpy
+                        # wraparound / a bogus black-looking crop, not a clean
+                        # error) — best["dx"]/["dy"] are the *combined*
+                        # coarse+fine offset relative to this panel's own
+                        # (cx, cy), which the coarse pre-search can push well
+                        # past args.max_shift alone.
+                        pad = max(args.max_shift, abs(best["dx"]) + 8, abs(best["dy"]) + 8)
                         roi_best = extract_scaled_roi(rough_gray, cx, cy, out_w, out_h, pad, best["scale"])
                         y0w, x0w = pad + best["dy"], pad + best["dx"]
                         rough_best_aligned = roi_best[y0w:y0w + out_h, x0w:x0w + out_w]

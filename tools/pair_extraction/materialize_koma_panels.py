@@ -23,7 +23,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from match_koma_panels import ZIP_PATH, ZIP_ROOT, crop_page, extract_scaled_roi, load_gray, load_json_member, page_id
+from match_koma_panels import (
+    ZIP_PATH, ZIP_ROOT, crop_page, extract_scaled_roi, load_gray, load_json_member, page_id, resolve_files,
+)
 
 
 def materialize_rough(rough_gray, cx, cy, out_w, out_h, dx, dy, scale, pad=170):
@@ -112,8 +114,9 @@ def main():
             if hid not in page_cache:
                 page_cache.clear()
                 entry = by_id[hid]
-                line_gray = load_gray(zf, args.zip_root, entry["line"])
-                rough_gray = load_gray(zf, args.zip_root, entry["sketch"], autocontrast=True)
+                files = resolve_files(entry)
+                line_gray = load_gray(zf, args.zip_root, files["line"])
+                rough_gray = load_gray(zf, args.zip_root, files["sketch"], autocontrast=True)
                 page_cache[hid] = (line_gray, rough_gray)
             line_gray, rough_gray = page_cache[hid]
 

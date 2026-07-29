@@ -5,17 +5,9 @@
       "count": 26,
       "size_bytes": 20197
     },
-    "inference_outputs": {
-      "count": 8,
-      "size_bytes": 21802012
-    },
     "metrics_and_gate": {
-      "count": 15,
-      "size_bytes": 11246
-    },
-    "qc_and_dataset_build": {
-      "count": 7,
-      "size_bytes": 15993262
+      "count": 9,
+      "size_bytes": 8434
     }
   },
   "items": [
@@ -63,46 +55,6 @@
       "path": "results/archive/routing_checks/routed_smoke/lineart_004_002_route.json",
       "category": "archive",
       "size_bytes": 425
-    },
-    {
-      "path": "results/kurip_tiles.csv",
-      "category": "inference_outputs",
-      "size_bytes": 573208
-    },
-    {
-      "path": "results/kurip_tiles_lenient.csv",
-      "category": "inference_outputs",
-      "size_bytes": 764533
-    },
-    {
-      "path": "results/ako5ver2_varregion_keep281_masked_unet480_e20_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 4538076
-    },
-    {
-      "path": "results/ako5ver2_varregion_keep281_masked_unet480_warm_clean_bce_e10_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 4057197
-    },
-    {
-      "path": "results/ako5ver2_varregion_keep281_masked_unet480_warm_clean_bce_e10_threshold52_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 4213140
-    },
-    {
-      "path": "results/ako5ver2_strict88_480_warm_clean_bce_e10_threshold52_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 3242368
-    },
-    {
-      "path": "results/ako5ver2_strict88_480_warm_clean_bce_e10_threshold_sweep_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 1788671
-    },
-    {
-      "path": "results/ako5ver2_keep281_tiles_nobeta_top300_480_warm_clean_bce_e10_threshold_sweep_compare.png",
-      "category": "inference_outputs",
-      "size_bytes": 2624819
     },
     {
       "path": "results/archive/leaky_pre_clean_eval/model_outputs/routed/housei_002_06_15_route.json",
@@ -225,36 +177,6 @@
       "size_bytes": 499
     },
     {
-      "path": "results/dataset_gate_kurip_ako5_cnn_report.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 354
-    },
-    {
-      "path": "results/dataset_gate_kurip_ako5_voting_g16.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 497
-    },
-    {
-      "path": "results/dataset_gate_kurip_ako5_voting_g32.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 495
-    },
-    {
-      "path": "results/dataset_gate_kurip_ako5_voting_g4.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 485
-    },
-    {
-      "path": "results/dataset_gate_kurip_ako5_voting_g8.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 484
-    },
-    {
-      "path": "results/dataset_gate_kurip_ako5_voting_report.json",
-      "category": "metrics_and_gate",
-      "size_bytes": 497
-    },
-    {
       "path": "results/dataset_gate_report.json",
       "category": "metrics_and_gate",
       "size_bytes": 511
@@ -263,41 +185,6 @@
       "path": "results/archive/leaky_pre_clean_eval/metrics/fixed_output_metrics.csv",
       "category": "archive",
       "size_bytes": 4332
-    },
-    {
-      "path": "results/ako5_region_matches.csv",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 63318
-    },
-    {
-      "path": "results/ako5_region_matches.json",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 188713
-    },
-    {
-      "path": "results/ako5_region_matches_test.csv",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 11665
-    },
-    {
-      "path": "results/ako5_region_matches_test.json",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 41167
-    },
-    {
-      "path": "results/ako5_region_tiles.csv",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 111164
-    },
-    {
-      "path": "results/ako5ver2_keep281_tiles_480_nobeta_top300_qc.png",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 9989419
-    },
-    {
-      "path": "results/ako5ver2_keep281_tiles_480_nobeta_top300_qc_tail.png",
-      "category": "qc_and_dataset_build",
-      "size_bytes": 5587816
     }
   ]
 }
