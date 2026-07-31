@@ -1697,3 +1697,76 @@ environment (`env -i` test) before relying on this.
    adherence to the rough conditioning) appears.
 2. Resolve the `checkpoints/README.md` / `shape1/*.pth` git-tracking
    question -- now resolved (see above), no longer open.
+
+**Per-tile WD14 auto-tagging for Direction 4 captions, and orphaned rough/line
+cleanup (2026-07-31, later).** User asked whether spending the weekend on
+tagging (for either Direction 4 conditioning or the parked CNN/GAN MoE
+track) would help. Recommendation given: Direction 4 conditioning tags are
+the more directly useful lever right now, since the just-diagnosed
+hallucination problem (SD1.5 anime prior dominating over the rough
+conditioning) is plausibly worsened by the fixed caption giving the model
+zero per-tile signal to distinguish tiles. Installed `onnxruntime` +
+downloaded `SmilingWolf/wd-v1-4-moat-tagger-v2` (~312MB ONNX,
+`~/disk/checkpoint/wd14_tagger/`) and wrote `scripts/tag_wd14.py`.
+Spot-checked on 6 sample tiles: tagging the **line** (clean target) tiles
+gives good, differentiated danbooru-style tags (1girl/multiple_girls,
+expression, hair length, etc.); tagging the **rough** tiles is noisier and
+sometimes contradicts the line tagging on the same content (e.g. detected
+"no_humans" on a rough tile where the line version correctly got
+"1girl, solo"), so captions should come from the line tiles, matching the
+existing convention that the caption describes the diffusion target, not
+the ControlNet conditioning image.
+
+User approved tagging all 1489 `combined_koma_20260729` line tiles and
+wiring per-tile captions into training. Launched
+`scripts/tag_wd14.py --file-list valid_train_combined_koma_20260729.txt
+--image-dir train/line_combined_koma_20260729 --output-csv
+dataset/pairs_480/captions_combined_koma_20260729_wd14.csv` in the
+background (CPU-only, ~1489 tiles at ~1.2-1.3s/tile once warmed up, took
+noticeably longer than the ~32min estimate due to CPU contention with
+concurrent smoke tests). Extended `scripts/train_controlnet.py` with
+`--caption-csv` (falls back to the existing fixed `--caption` for any tile
+missing from the CSV; per-tile `input_ids` now flow through the dataset
+and `encoder_hidden_states` is computed per-batch inside the training loop
+instead of precomputed once globally, since captions are no longer
+uniform). Verified the default fixed-caption path still works unchanged
+(regression check, since the scheduled Monday long run does not pass
+`--caption-csv` and must not be affected).
+
+Separately, investigated the user's observation that `dataset/pairs_480/train/rough`
+(17,950 files total) is dominated by `housei`/`ako5`-prefixed files
+(16,446 of them) accumulated across the project's entire history, not
+specific to the current `combined_koma_20260729` set (confirmed zero
+filename overlap with the old `std15`-family manifests). User asked about
+deleting unreferenced ("orphaned") ones. **First pass had a real bug**:
+searched only `valid_train_*.txt` (glob), which misses the base
+`valid_train.txt` (no underscore before `.txt`) -- this file is still the
+default `--file-list` for `scripts/train.py` and `scripts/train_gan.py`
+and was not caught by the glob. Archived and deleted 5,635 "orphans" using
+the incomplete list, then a broader re-check (all `*.txt` under
+`dataset/pairs_480` including subdirectories, plus `pair_metadata.csv` and
+the router-feature-probe label CSV, plus a whole-repo grep for the
+candidate names outside `dataset/`) found 2,725 of those were in fact
+referenced by `valid_train.txt`. **Immediately restored everything from
+the archive** (verified byte-identical via checksum spot-checks both
+before deleting and again before re-deleting) and redid the analysis
+properly: true orphan count is 2,910 (not 5,635), archived to
+`dataset/archive/orphaned_housei_ako5_rough_line_20260731.tar.gz` (14MB
+compressed, verified via tar member count + checksum spot-checks before
+and after deletion) and removed from
+`dataset/pairs_480/train/{rough,line}`. Final sanity check: cross-referenced
+every name in every `valid_train*.txt` manifest against the post-deletion
+directory listing -- 4,946 were already missing beforehand (pre-existing,
+unrelated manifest/data drift, not caused by this cleanup) and zero of the
+deleted 2,910 orphans were referenced by anything. Net effect: freed ~115MB
+of disk (rough+line combined) -- not disk-pressure-relevant at current
+64GB/313GB free, this was purely a tidiness cleanup, reversible via the
+archive.
+
+**Process lesson:** when computing "is X referenced anywhere" for a
+destructive operation, glob patterns like `valid_train_*.txt` are not
+equivalent to "all manifests with this naming family" -- verify against a
+`find`/`ls` listing of the actual files present, not an assumed pattern,
+especially before deleting. Caught this time via checksum-verified
+archive-before-delete (so recovery was immediate and lossless) plus a
+mandatory broader re-check before the second (final) deletion pass.

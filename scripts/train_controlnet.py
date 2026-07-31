@@ -6,14 +6,19 @@ Reference data format:
   --rough-dir   dataset/pairs_480/train/rough            (conditioning image)
   --line-dir    dataset/pairs_480/train/line_combined_koma_20260729  (target image)
 
-There is no per-tile caption, so a single fixed caption is used for every
-example (--caption). The base SD checkpoint, text encoder, and VAE are
-frozen; only the ControlNet adapter is trained (~361M params on top of the
-AOM3A1B_orangemixs UNet), following diffusers' train_controlnet.py pattern
-adapted for a single 12GB GPU (fp16, gradient checkpointing, grad accum).
+By default there is no per-tile caption, so a single fixed caption is used
+for every example (--caption). Optionally pass --caption-csv (columns
+name,caption -- see scripts/tag_wd14.py, which auto-tags tiles with a
+WD14-style anime tagger) to use a real per-tile caption instead, falling
+back to --caption for any tile missing from the CSV. The base SD
+checkpoint, text encoder, and VAE are frozen; only the ControlNet adapter
+is trained (~361M params on top of the AOM3A1B_orangemixs UNet), following
+diffusers' train_controlnet.py pattern adapted for a single 12GB GPU
+(fp16, gradient checkpointing, grad accum).
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
@@ -32,12 +37,15 @@ from torchvision import transforms
 
 
 class ControlNetTileDataset(Dataset):
-    def __init__(self, file_list, rough_dir, line_dir, resolution, input_ids):
+    def __init__(self, file_list, rough_dir, line_dir, resolution, input_ids_by_name):
+        """input_ids_by_name: dict mapping tile name -> tokenized input_ids tensor.
+        Pass a defaultdict-like object (e.g. build_input_ids_by_name below) so every
+        tile name resolves to something, including a fixed-caption fallback."""
         with open(file_list) as f:
             self.files = [line.strip() for line in f if line.strip()]
         self.rough_dir = rough_dir
         self.line_dir = line_dir
-        self.input_ids = input_ids
+        self.input_ids_by_name = input_ids_by_name
         self.target_transform = transforms.Compose(
             [
                 transforms.Resize((resolution, resolution), interpolation=transforms.InterpolationMode.BILINEAR),
@@ -62,7 +70,7 @@ class ControlNetTileDataset(Dataset):
         return {
             "pixel_values": self.target_transform(line),
             "conditioning_pixel_values": self.cond_transform(rough),
-            "input_ids": self.input_ids,
+            "input_ids": self.input_ids_by_name[name],
         }
 
 
@@ -80,6 +88,14 @@ def parse_args():
     parser.add_argument(
         "--caption",
         default="monochrome line art, clean linework, manga panel, black and white",
+        help="fixed fallback caption, used for every tile unless --caption-csv is given "
+        "(and for any tile missing from it)",
+    )
+    parser.add_argument(
+        "--caption-csv",
+        default=None,
+        help="optional CSV with columns name,caption for real per-tile captions "
+        "(see scripts/tag_wd14.py); falls back to --caption for missing tiles",
     )
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--grad-accum", type=int, default=4)
@@ -147,15 +163,36 @@ def main():
     text_encoder.to(accelerator.device, dtype=weight_dtype)
     unet.to(accelerator.device, dtype=weight_dtype)
 
-    input_ids = tokenizer(
-        args.caption,
-        padding="max_length",
-        truncation=True,
-        max_length=tokenizer.model_max_length,
-        return_tensors="pt",
-    ).input_ids[0]
+    def tokenize(caption):
+        return tokenizer(
+            caption,
+            padding="max_length",
+            truncation=True,
+            max_length=tokenizer.model_max_length,
+            return_tensors="pt",
+        ).input_ids[0]
 
-    dataset = ControlNetTileDataset(args.file_list, args.rough_dir, args.line_dir, args.resolution, input_ids)
+    caption_cache = {}
+
+    def cached_tokenize(caption):
+        if caption not in caption_cache:
+            caption_cache[caption] = tokenize(caption)
+        return caption_cache[caption]
+
+    fallback_input_ids = cached_tokenize(args.caption)
+
+    class InputIdsByName(dict):
+        def __missing__(self, key):
+            return fallback_input_ids
+
+    input_ids_by_name = InputIdsByName()
+    if args.caption_csv:
+        with open(args.caption_csv) as f:
+            for row in csv.DictReader(f):
+                input_ids_by_name[row["name"]] = cached_tokenize(row["caption"])
+        print(f"[train_controlnet] loaded {len(input_ids_by_name)} per-tile captions from {args.caption_csv}")
+
+    dataset = ControlNetTileDataset(args.file_list, args.rough_dir, args.line_dir, args.resolution, input_ids_by_name)
     dataloader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -170,9 +207,6 @@ def main():
     max_train_steps = args.max_train_steps or steps_per_epoch * args.epochs
 
     controlnet, optimizer, dataloader = accelerator.prepare(controlnet, optimizer, dataloader)
-
-    with torch.no_grad():
-        encoder_hidden_states_fixed = text_encoder(input_ids.unsqueeze(0).to(accelerator.device))[0]
 
     global_step = 0
     is_latest = args.resume_from_checkpoint == "latest"
@@ -218,9 +252,12 @@ def main():
                 pixel_values = batch["pixel_values"].to(accelerator.device, dtype=weight_dtype)
                 conditioning_pixel_values = batch["conditioning_pixel_values"].to(accelerator.device, dtype=weight_dtype)
 
+                input_ids = batch["input_ids"].to(accelerator.device)
+
                 with torch.no_grad():
                     latents = vae.encode(pixel_values).latent_dist.sample()
                     latents = latents * vae.config.scaling_factor
+                    encoder_hidden_states = text_encoder(input_ids)[0].to(weight_dtype)
 
                 noise = torch.randn_like(latents)
                 bsz = latents.shape[0]
@@ -228,8 +265,6 @@ def main():
                     0, noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device
                 ).long()
                 noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-
-                encoder_hidden_states = encoder_hidden_states_fixed.to(weight_dtype).expand(bsz, -1, -1)
 
                 down_block_res_samples, mid_block_res_sample = controlnet(
                     noisy_latents,
