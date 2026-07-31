@@ -87,7 +87,19 @@ def parse_args():
     parser.add_argument("--max-train-steps", type=int, default=None, help="overrides --epochs if set (smoke tests)")
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--mixed-precision", default="fp16", choices=["no", "fp16", "bf16"])
-    parser.add_argument("--save-steps", type=int, default=500)
+    parser.add_argument(
+        "--save-steps",
+        type=int,
+        default=500,
+        help="interval for the (overwritten, ~4.3GB) crash-resume state -- cheap, can be frequent",
+    )
+    parser.add_argument(
+        "--eval-snapshot-steps",
+        type=int,
+        default=0,
+        help="interval for accumulating weights-only (~1.4GB each) step_N/ eval snapshots; "
+        "0 disables (default) since these are NOT overwritten and accumulate on disk",
+    )
     parser.add_argument("--log-steps", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--num-workers", type=int, default=4)
@@ -173,14 +185,17 @@ def main():
     elif resume_dir:
         raise FileNotFoundError(f"--resume-from-checkpoint given but no state at {resume_state_path}")
 
-    def save_checkpoint(step):
+    def save_resume_state(step):
         state_path = os.path.join(args.output_dir, "resume_state")
         accelerator.save_state(state_path)
         with open(os.path.join(state_path, "trainer_state.json"), "w") as f:
             json.dump({"global_step": step}, f)
+        print(f"saved {state_path} (resume, overwritten)")
+
+    def save_eval_snapshot(step):
         light_path = os.path.join(args.output_dir, f"step_{step}")
         accelerator.unwrap_model(controlnet).save_pretrained(light_path)
-        print(f"saved {state_path} (resume) and {light_path} (weights-only)")
+        print(f"saved {light_path} (weights-only eval snapshot)")
 
     start_time = time.time()
     print(
@@ -255,7 +270,11 @@ def main():
                         f"elapsed={elapsed:.0f}s ({elapsed / max(steps_done_this_run, 1):.2f}s/step)"
                     )
                 if global_step % args.save_steps == 0 or global_step >= max_train_steps:
-                    save_checkpoint(global_step)
+                    save_resume_state(global_step)
+                if args.eval_snapshot_steps and (
+                    global_step % args.eval_snapshot_steps == 0 or global_step >= max_train_steps
+                ):
+                    save_eval_snapshot(global_step)
                 if global_step >= max_train_steps:
                     done = True
                     break
