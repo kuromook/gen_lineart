@@ -15,7 +15,7 @@ import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 from torch.utils.data import DataLoader, Dataset
 
-from lineart.losses import ink_loss, tolerant_f1_loss
+from lineart.losses import edge_loss, ink_loss, tolerant_f1_loss
 from lineart.model_zoo import MultiScalePatchDiscriminator, PatchDiscriminator, build_generator
 from lineart.region_dataset import RegionManifestDataset, region_collate
 
@@ -337,7 +337,7 @@ def train(args):
         f"thresh_shape={args.threshold_shape_weight} "
         f"thresh_ink={args.threshold_ink_weight} "
         f"thresh={args.threshold_value}@{args.threshold_sharpness} "
-        f"structure={args.structure_weight} "
+        f"structure={args.structure_weight} edge={args.edge_weight} "
         f"bg_haze={args.background_haze_weight}@{args.background_haze_radius}px "
         f"fm={args.feature_match_weight} "
         f"adv={args.adv_weight}"
@@ -402,6 +402,8 @@ def train(args):
                 + args.background_haze_weight
                 * background_haze_loss(masked_pred, masked_target, args.background_haze_radius)
             )
+            if args.edge_weight > 0.0:
+                loss_recon = loss_recon + args.edge_weight * edge_loss(masked_pred, masked_target)
             if skeleton is not None:
                 skeleton_pred_logits = aux_skeleton_logits if aux_skeleton_logits is not None else pred_logits
                 loss_recon = loss_recon + args.skeleton_weight * masked_mean(bce(skeleton_pred_logits, skeleton), None)
@@ -553,6 +555,13 @@ def main():
     parser.add_argument("--threshold-value", type=float, default=0.52)
     parser.add_argument("--threshold-sharpness", type=float, default=24.0)
     parser.add_argument("--structure-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--edge-weight",
+        type=float,
+        default=0.0,
+        help="Canny-edge L1 loss (lineart.losses.edge_loss), matching the "
+        "pre-GAN notebooks/gen_lineart.ipynb recipe",
+    )
     parser.add_argument("--background-haze-weight", type=float, default=0.0)
     parser.add_argument("--background-haze-radius", type=int, default=9)
     parser.add_argument("--feature-match-weight", type=float, default=0.0)
