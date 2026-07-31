@@ -173,6 +173,21 @@ converge to the same soft/marbled F1@2px ~0.41 ceiling; darken-only is not
 a net improvement (worse chamfer/recall). See `doc/work_log.md`
 ("2026-07-31: Direction 6/8/9 Survey Concluded").
 
+**Result (2026-08-01, no-GAN ablation):** tested whether the soft/marbled
+ceiling is a loss-design artifact (adversarial loss) rather than an
+architecture limit, by retraining `cleanup` with the adversarial/
+feature-matching/structure losses removed and a plain
+`BCE+L1+edge_loss` recipe instead (`combined_koma_lucy_mild_noadv_20260801`).
+Result: worse on every metric (F1@2px 0.20 vs 0.42, severe under-inking),
+and still visually soft/marbled, just fainter. Root cause instead traced
+to the atari/ResNet-GAN generator's own output already being
+halftone/dithered-soft before `cleanup` ever sees it --
+`ResidualCleanupGenerator`'s `tanh`-bounded correction (`max_delta=4.0`)
+cannot diverge far enough from that soft anchor regardless of loss
+function. See `doc/work_log.md` ("2026-08-01: No-Adversarial-Loss
+Ablation"). Do not retry a no-GAN variant of `cleanup` again without a
+change to the atari generator or the correction bound.
+
 ## Direction 6: Confidence / Thickness Multi-Head
 
 Separate line presence from line strength/thickness.

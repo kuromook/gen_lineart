@@ -1466,3 +1466,71 @@ record for that family's short architecture survey before the switch.
 5. Older open items (kurip-named script renames, ako5ver2 umbrella rows,
    per-source `--max-soft-ink-ratio` tuning) remain open and unrelated to
    either the concluded survey or the new Direction 4 branch.
+
+## 2026-08-01: No-Adversarial-Loss Ablation — Disproves the GAN Hypothesis, Finds the Real Cause
+
+User recalled that the earliest (leaky-era, pre-`pairs_480`) model,
+preserved in `notebooks/gen_lineart.ipynb`, produced more genuinely
+line-art-like (crisper, less soft/marbled) output than the current adopted
+`combined_koma_lucy_mild_msgan_20260729`, despite that era's eval numbers
+being unusable (data leakage). Reading the notebook: that early model was
+a plain U-Net direct regression (no aux/atari hint, no residual-anchor
+structure) trained with `0.8*BCE(pos_weight=3) + 0.2*L1 + 0.5*edge_loss
+(Canny-based L1)` — zero adversarial loss, unlike the entire adopted
+CNN+GAN family. Hypothesis: adversarial loss (which rewards local-patch
+plausibility over deterministic pixel/edge correctness) might itself be
+causing the soft/marbled ceiling that Directions 5/6/8/9 all converged to.
+
+Since GPU time was free over the weekend ahead of the Direction 4 long
+run scheduled for Monday, tested this directly. Added `--edge-weight`
+(wires up the already-existing but unused `lineart.losses.edge_loss`,
+Canny-based L1) to `scripts/train_i2i_survey.py`. New experiment
+`experiments/run_combined_koma_lucy_mild_noadv_20260801.sh`
+(`combined_koma_lucy_mild_noadv_20260801`): same `--model cleanup`
+residual-anchor architecture and same atari/lucy_mild aux hint as the
+adopted recipe, but with adversarial/feature-matching/shape/ink/binary/
+structure losses all removed and replaced with
+`0.8*BCE(pos_weight=3)+0.2*L1+0.5*edge_loss` (explicitly zeroed
+`--shape-weight`/`--ink-weight`, which default to 0.05/0.02 rather than
+0 in the script). 3 epochs, same data, same eval set as the baseline.
+
+**Result: hypothesis disproved.** F1@2px 0.20 vs baseline 0.42 — worse,
+not better. Ink_ratio collapsed to 0.18 (severe under-inking) vs
+baseline's 1.56; recall dropped to 0.15 vs 0.60. Visually
+(`results/compare_combined_koma_lucy_mild_noadv_20260801.png`): still the
+same soft/marbled texture, just fainter — no crispness gain whatsoever.
+
+**Root cause found by inspecting the aux hint images directly**
+(`results/combined_koma_lucy_mild_noadv_20260801_atari_eval/*.png`): the
+atari/ResNet-GAN generator's own output is already halftone/dithered-soft
+*before* the `cleanup` stage ever sees it. `ResidualCleanupGenerator`
+(`lineart/model_zoo.py`) only computes `out = aux_logits + tanh(correction)
+* max_delta` with `max_delta=4.0` — a small bounded correction on top of
+that already-soft anchor. No loss-function change on the `cleanup` stage
+can make the output crisp if the anchor itself is soft and the correction
+is bounded this tightly; the adversarial term in the adopted recipe was
+actually doing useful work (pushing the correction to add more confident
+ink), not causing the marbling. This is a better-supported explanation
+than the adversarial-loss hypothesis it replaces: the soft/marbled
+ceiling across the whole Direction 5/6/8/9 family is a **two-stage
+pipeline / bounded-correction-architecture limitation** (the atari
+generator's own texture quality, propagated through too-conservative
+correction bounds), not primarily a loss-design artifact.
+
+### Next Actions
+
+1. Do not re-suggest a plain-regression/no-GAN retry as a fix for the
+   soft/marbled ceiling -- tested, doesn't work.
+2. If revisiting the CNN+GAN family again, the more promising untried
+   levers are (a) improving the atari/ResNet-GAN generator itself (the
+   actual source of the softness), or (b) loosening/removing
+   `ResidualCleanupGenerator`'s `max_delta` bound so the correction can
+   diverge further from a soft anchor -- not further loss tweaks on the
+   `cleanup` stage alone.
+3. `combined_koma_lucy_mild_msgan_20260729` remains the production
+   candidate; this ablation is not adopted (worse on every metric).
+4. Branch note: this ablation ran on `cleanup-refiner` (checked out
+   specifically for this experiment, since it's the CNN+GAN-family
+   branch); must switch back to `diffusion-controlnet` before the
+   Monday 2026-08-03 00:00 JST scheduled long run, which depends on
+   `scripts/train_controlnet.py` (only present on that branch).
