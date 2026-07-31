@@ -1511,3 +1511,66 @@ branch, covering Next Actions items 1-2 from the prior entry:
    baseline on the clean eval montage.
 3. `combined_koma_lucy_mild_msgan_20260729` remains the production
    candidate on the `cleanup-refiner` line; unaffected by this branch.
+
+## 2026-07-31: Direction 4 First Real Training Run + Eval — Qualitative Break, Not Yet Faithful
+
+Ran `scripts/train_controlnet.py` for real (10 epochs, 1860 steps, batch
+2/grad-accum 4/512px/fp16) in the background on the full 1489-tile
+`combined_koma_20260729` manifest. Completed in ~113 min with no errors;
+final checkpoint at `checkpoints/controlnet_koma_direction4_20260731/final/`
+(1.4GB). Cleaned up the 10 intermediate `step_*` checkpoints afterward
+(they had ballooned to ~15GB combined and pushed root-disk free space down
+to 17GB) — only `final` is kept.
+
+Wrote `scripts/infer_controlnet.py` (new): loads the trained ControlNet
+onto `AOM3A1B_orangemixs.safetensors` via `StableDiffusionControlNetPipeline`
++ `UniPCMultistepScheduler`, samples from the 8-tile
+`eval_clean_lineart004_8.txt` set, and writes outputs in the existing
+`results/{tag}/{base}_out.png` convention — this let both
+`tools/evaluation/evaluate_fixed_outputs.py` and
+`tools/compare/make_multi_model_eval_compare.py` be reused unmodified for
+scoring/montage against the `combined_koma_lucy_mild_msgan_20260729`
+baseline (both tools needed zero changes, confirming the pixel-output
+convention is diffusion-compatible as long as inference writes into it).
+
+**Numeric result:** worse than baseline on the pixel metrics — F1@2px 0.20
+vs baseline 0.42, chamfer 8.93 vs 4.68, ink_ratio 6.36 (baseline 1.56, so
+~4x more ink than the baseline already over-inks relative to GT).
+
+**Qualitative result (montage: `results/compare_controlnet_koma_direction4_20260731.png`):**
+strikingly different failure mode from the CNN/GAN family. Baseline output
+is the known soft/marbled gray "cleanup" look; ControlNet output is crisp,
+confident, fully binary black ink with real anime-style linework (clean
+eyes, hair strands, cloth folds) — the first result in this project to
+visually break the soft/marbled texture ceiling. But it does this by
+**hallucinating plausible content loosely keyed to the rough's rough
+composition rather than faithfully tracing the specific input strokes** —
+e.g. a generated face/expression that doesn't match GT's pose, invented
+background elements, large solid-black fill regions not present in GT.
+This is the likely cause of the bad pixel metrics: it's an unfaithful but
+structurally coherent generation, not a faithful cleanup, after only 10
+epochs on 1489 tiles.
+
+**Interpretation:** consistent with expectations for this stage — 10
+epochs / 1489 tiles is a small amount of ControlNet fine-tuning, and the
+current inference settings (`--guidance-scale 3.0
+--controlnet-conditioning-scale 1.0`) let the SD1.5 anime-merge's strong
+prior dominate over the (still loosely-learned) conditioning. Untried
+levers before drawing conclusions: raise `--controlnet-conditioning-scale`
+(e.g. 1.5-2.0) and/or lower `--guidance-scale` (toward 1.0) to force
+tighter adherence to the rough conditioning at inference time without
+retraining; more training epochs; deterministic (non-CFG) sampling.
+
+### Next Actions
+
+1. Sweep `--controlnet-conditioning-scale` and `--guidance-scale` on the
+   existing checkpoint (inference-only, cheap) before deciding whether more
+   training epochs are needed.
+2. If conditioning-scale sweep doesn't recover faithfulness, the
+   domain-adaptation pretraining idea (unsupervised diffusion fine-tune on
+   rough-only imagery before attaching ControlNet) becomes more relevant as
+   a way to sharpen the model's rough-image "understanding" before the
+   paired ControlNet stage.
+3. Not adopted / not comparable to `combined_koma_lucy_mild_msgan_20260729`
+   yet — this is a first probe, numeric metrics are currently worse despite
+   the qualitative ceiling break.
