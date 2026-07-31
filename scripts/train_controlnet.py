@@ -175,15 +175,18 @@ def main():
         encoder_hidden_states_fixed = text_encoder(input_ids.unsqueeze(0).to(accelerator.device))[0]
 
     global_step = 0
-    resume_dir = args.output_dir if args.resume_from_checkpoint == "latest" else args.resume_from_checkpoint
+    is_latest = args.resume_from_checkpoint == "latest"
+    resume_dir = args.output_dir if is_latest else args.resume_from_checkpoint
     resume_state_path = os.path.join(resume_dir, "resume_state") if resume_dir else None
     if resume_state_path and os.path.isdir(resume_state_path):
         accelerator.load_state(resume_state_path)
         with open(os.path.join(resume_state_path, "trainer_state.json")) as f:
             global_step = json.load(f)["global_step"]
         print(f"[train_controlnet] resumed from {resume_state_path} at step {global_step}")
-    elif resume_dir:
+    elif resume_dir and not is_latest:
         raise FileNotFoundError(f"--resume-from-checkpoint given but no state at {resume_state_path}")
+    elif resume_dir:
+        print(f"[train_controlnet] --resume-from-checkpoint latest: no prior state at {resume_state_path}, starting fresh")
 
     def save_resume_state(step):
         state_path = os.path.join(args.output_dir, "resume_state")
