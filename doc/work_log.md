@@ -1617,3 +1617,47 @@ its own to justify a MoE/router-by-agreement-score direction right now.
    to `diffusion-controlnet` on completion (verified) since this ran
    unattended overnight and the Monday 2026-08-03 00:00 JST cron job
    depends on `scripts/train_controlnet.py`, only present there.
+
+## 2026-08-01: Third Agreement-Halo Re-Test (Pipeline-Native edge_f1) — Effect Now Reversed/Gone
+
+Immediately re-ran the agreement-halo test a third time, this time
+splitting on a more precise signal: `tools/pair_extraction/
+tile_region_manifest_480.py` (the koma tiling pipeline itself) already
+computes per-tile `edge_f1` *after* its own coarse-to-fine alignment
+refinement, saved in `results/{source}/{source}_koma_tiles_480_20260729.csv`
+for each of the 5 koma sources (1489 rows total, exactly matching
+`combined_koma_20260729`). Unlike `score_pair_agreement.py` (used in the
+prior rerun), this score is computed by the same process that already did
+the alignment correction, so it should isolate residual content
+ambiguity even more cleanly. Added
+`tools/evaluation/split_koma_by_tile_edge_f1.py` (merges the 5 source
+CSVs, splits by a chosen score field) and
+`experiments/run_combined_koma_tile_edge_f1_halo_20260801.sh` (same
+training/eval methodology and aux-hint reuse as the prior rerun, ~4 min
+total).
+
+**Result: the gap is now essentially gone, F1 direction even reverses.**
+F1@2px: high-edge_f1 0.4305 vs low-edge_f1 0.4386 (low marginally
+*higher* -- noise-level difference). `halo_band_faint_ratio`: 0.175 vs
+0.243 (1.4x, down from the prior rerun's 1.6x, down from the original
+2.7x). Visually
+(`results/compare_combined_koma_tile_edge_f1_halo_20260801.png`) high/low/
+baseline are nearly indistinguishable.
+
+**Conclusion (three tests, monotonic trend): whatever causes the
+soft/marbled ceiling is not meaningfully explained by rough-line
+correspondence quality once coordinate alignment is properly controlled
+for.** The more precisely the score isolates alignment from content
+ambiguity, the smaller the high/low gap gets, converging to ~zero on F1.
+This closes out the agreement/correspondence-based MoE/router idea for
+`combined_koma_20260729` -- the earlier no-adversarial-loss ablation's
+root-cause finding (atari/ResNet-GAN generator's own soft texture,
+propagated through `cleanup`'s bounded correction) remains the best
+explanation and the more promising lever if this family is revisited.
+
+### Next Actions
+
+1. Agreement/correspondence-based MoE/router split is closed out for this
+   dataset -- don't re-suggest without genuinely new evidence.
+2. Branch note: ran on `cleanup-refiner`, auto-switched back to
+   `diffusion-controlnet` on completion (verified).
