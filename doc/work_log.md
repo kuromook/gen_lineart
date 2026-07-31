@@ -1770,3 +1770,50 @@ equivalent to "all manifests with this naming family" -- verify against a
 especially before deleting. Caught this time via checksum-verified
 archive-before-delete (so recovery was immediate and lossless) plus a
 mandatory broader re-check before the second (final) deletion pass.
+
+**WD14 tagging run completed (2026-08-01, after a mid-run restart).** The
+first attempt at the full 1489-tile batch ran ~103+ min against a ~32 min
+estimate with no visible progress output (stdout fully buffered) and no
+clear hang/crash signal; killed it and restarted after two fixes: (1)
+capped the onnxruntime session to `intra_op_num_threads=4` /
+`inter_op_num_threads=1` (previously unbounded, 18 threads observed on an
+8-core machine), (2) switched to incremental per-row CSV writes with
+`flush=True` progress logging every 20 images instead of collecting
+everything in memory and writing once at the end. The restarted run still
+took ~7281s (~121 min) at a stable 4.89s/img -- slower than the original
+clean-machine benchmark (~1.2-1.3s/img), and `idle_inject` kernel threads
+observed in `ps` at the time pointed to sustained CPU thermal throttling
+(`uptime` load average 7-9 on an 8-core box) as the likely cause, not a
+bug in the tagging script itself. Completed cleanly: 1489/1489 rows
+written to `dataset/pairs_480/captions_combined_koma_20260729_wd14.csv`,
+process exited normally.
+
+Smoke-tested `scripts/train_controlnet.py --caption-csv
+dataset/pairs_480/captions_combined_koma_20260729_wd14.csv` (6 steps,
+scratch output-dir): loaded all 1489 per-tile captions (zero fallback to
+the fixed caption), trained without errors. Also re-verified the default
+fixed-caption path is unaffected (the scheduled Monday
+2026-08-03 00:00 JST long run, `experiments/run_controlnet_direction4_longrun_20260803.sh`,
+does not pass `--caption-csv` and was not touched by this work).
+
+### Next Actions
+
+1. Per-tile captions are ready but not yet used in any real training run
+   -- decide whether/when to run a real ControlNet training pass with
+   `--caption-csv` (e.g. after the Monday long run's fixed-caption result
+   is in, to isolate the two variables) rather than conflating both
+   changes in one run.
+2. Separately recorded and deferred (see
+   [[project_architecture_direction_order]] equivalent section below):
+   revisit a plain-regression (no adversarial loss) CNN recipe on
+   `combined_koma_20260729` after Direction 4 settles, motivated by
+   `notebooks/gen_lineart.ipynb` showing the pre-leak-fix era model used
+   `BCE+L1+edge_loss` with no GAN term and reportedly produced more
+   line-art-like (less soft/marbled) output than the current adopted
+   `lucy_mild_aux_msgan`.
+3. New raw manuscript data `dataset_4th.zip` (33 pages, same artist as the
+   existing 5 sources per user confirmation, CLIP-STUDIO-layer-derived
+   line/sketch pairs with a manifest) has arrived but is not yet run
+   through the koma-panel extraction pipeline -- not urgent per the
+   earlier discussion (current bottleneck is diagnosed as undertraining,
+   not data scarcity), but ready whenever it's needed.
