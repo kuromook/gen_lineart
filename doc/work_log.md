@@ -1574,3 +1574,78 @@ retraining; more training epochs; deterministic (non-CFG) sampling.
 3. Not adopted / not comparable to `combined_koma_lucy_mild_msgan_20260729`
    yet — this is a first probe, numeric metrics are currently worse despite
    the qualitative ceiling break.
+
+**Sweep result (same day, immediately after):** ran the conditioning-scale
+sweep from Next Action #1 — `controlnet_conditioning_scale` in
+{1.0, 1.5, 2.0, 2.5} x `guidance_scale` in {1.0, 3.0} on the same 8-tile
+eval set (`results/compare_controlnet_koma_direction4_20260731_sweep.png`,
+`results/fixed_output_metrics_controlnet_koma_direction4_20260731_sweep_compare.csv`).
+**Did not fix it.** F1@2px stayed flat at 0.20-0.21 across every
+combination — inference-time knobs cannot recover faithfulness here.
+Visually: low/default conditioning scale (1.0-1.5) keeps producing a
+different, hallucinated illustration nearly ignoring the rough's specific
+content; pushing conditioning scale up to 2.5 does start visibly pulling
+output structure toward the rough's stroke directions, but at the cost of
+turning the whole image into noisy chaotic hatching — quality collapses
+rather than converging to clean faithful line art. Conclusion: this is not
+an inference-tuning problem, it's an undertrained-ControlNet problem.
+
+**Working hypothesis: "sudden convergence phenomenon."** ControlNet
+training is documented (by the original ControlNet author) to often show
+near-zero conditioning influence for a long stretch of training, then
+transition somewhat abruptly to tight conditioning-following once training
+progresses far enough — the zero-initialized output convolutions mean the
+adapter's effective contribution ramps from nothing. 10 epochs / 1860
+steps / 1489 tiles at lr=1e-5 is a small step count by the standards this
+phenomenon is usually reported at; the current behavior (SD1.5 anime prior
+dominating, conditioning only loosely shaping composition) is consistent
+with being short of that transition rather than at a bad local optimum.
+Not yet confirmed — untested whether substantially more steps (e.g.
+5-10x, tens of thousands of steps territory) triggers the transition on
+this dataset size, or whether 1489 tiles is simply too little data for the
+phenomenon to kick in at all regardless of step count.
+
+### Next Actions (revised)
+
+1. Decide whether to commit to a much longer training run (many more
+   epochs / repeated passes over the 1489 tiles) to test the
+   sudden-convergence hypothesis, given the multi-hour GPU cost.
+2. Domain-adaptation pretraining (unsupervised diffusion fine-tune on
+   rough-only imagery, including the skima pool, before attaching
+   ControlNet) remains an alternative/complementary lever, not yet tried.
+3. Not adopted / not comparable to `combined_koma_lucy_mild_msgan_20260729`
+   yet.
+
+**Disk relocation + resume support (same day).** `checkpoints/` had grown
+to 34GB and pushed root-disk free space down to 30GB; moved it to
+`~/disk/lineart_checkpoints/` with `checkpoints` left as a symlink in this
+worktree (root disk back to ~64GB free; `~/disk` has ~312GB free). Only
+affects this worktree (`lineart-halo-loss`/`lineart-router-moe` are
+separate worktrees with their own `checkpoints/`). Note:
+`checkpoints/README.md` and `checkpoints/shape1/*.pth` were tracked in git
+(pre-dating the `checkpoints/*` gitignore rule); after the move git sees
+those as deleted, not yet resolved/committed — the physical files are
+intact under `~/disk/lineart_checkpoints/`, this is just a pending
+git-tracking cleanup decision.
+
+Since the user wants to run long (many-hour, possibly multi-day) training
+sessions on weekdays with the option to stop for the weekend, and the
+initial run had no way to continue after a stop/crash, added
+crash/pause-resume support to `scripts/train_controlnet.py`:
+`--resume-from-checkpoint <output-dir|latest>` calls `accelerator.load_state()`
+on a `resume_state/` directory (saved via `accelerator.save_state()` at
+every `--save-steps`, overwritten each time, alongside a small
+`trainer_state.json` tracking `global_step`) to restore model + optimizer
+state and continue `global_step` counting correctly against
+`--max-train-steps`. Verified end-to-end on a scratch run (steps 1-6, kill,
+resume with `--resume-from-checkpoint latest --max-train-steps 10`,
+continued cleanly at step 7 through 10, no errors).
+
+### Next Actions
+
+1. Launch the longer (5-10x step count) training run to test the
+   sudden-convergence hypothesis, now with resume support so it can be
+   stopped/restarted across weekday sessions without losing progress.
+2. Resolve the `checkpoints/README.md` / `shape1/*.pth` git-tracking
+   question (remove from tracking now that `checkpoints/` is a symlink, or
+   restore them another way) — not urgent, doesn't block training.

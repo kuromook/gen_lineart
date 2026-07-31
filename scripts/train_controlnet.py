@@ -14,6 +14,7 @@ adapted for a single 12GB GPU (fp16, gradient checkpointing, grad accum).
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -90,6 +91,12 @@ def parse_args():
     parser.add_argument("--log-steps", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        default=None,
+        help="output-dir of a previous run to resume from (reads <dir>/resume_state); "
+        "if 'latest', resumes from --output-dir itself",
+    )
     return parser.parse_args()
 
 
@@ -156,12 +163,35 @@ def main():
         encoder_hidden_states_fixed = text_encoder(input_ids.unsqueeze(0).to(accelerator.device))[0]
 
     global_step = 0
+    resume_dir = args.output_dir if args.resume_from_checkpoint == "latest" else args.resume_from_checkpoint
+    resume_state_path = os.path.join(resume_dir, "resume_state") if resume_dir else None
+    if resume_state_path and os.path.isdir(resume_state_path):
+        accelerator.load_state(resume_state_path)
+        with open(os.path.join(resume_state_path, "trainer_state.json")) as f:
+            global_step = json.load(f)["global_step"]
+        print(f"[train_controlnet] resumed from {resume_state_path} at step {global_step}")
+    elif resume_dir:
+        raise FileNotFoundError(f"--resume-from-checkpoint given but no state at {resume_state_path}")
+
+    def save_checkpoint(step):
+        state_path = os.path.join(args.output_dir, "resume_state")
+        accelerator.save_state(state_path)
+        with open(os.path.join(state_path, "trainer_state.json"), "w") as f:
+            json.dump({"global_step": step}, f)
+        light_path = os.path.join(args.output_dir, f"step_{step}")
+        accelerator.unwrap_model(controlnet).save_pretrained(light_path)
+        print(f"saved {state_path} (resume) and {light_path} (weights-only)")
+
     start_time = time.time()
     print(
         f"[train_controlnet] {len(dataset)} tiles, {steps_per_epoch} steps/epoch, "
-        f"target max_train_steps={max_train_steps}, device={accelerator.device}, "
-        f"mixed_precision={args.mixed_precision}"
+        f"target max_train_steps={max_train_steps}, starting from step {global_step}, "
+        f"device={accelerator.device}, mixed_precision={args.mixed_precision}"
     )
+    if global_step >= max_train_steps:
+        print("[train_controlnet] already at/past max_train_steps, nothing to do")
+        return
+    initial_step = global_step
 
     done = False
     while not done:
@@ -217,16 +247,15 @@ def main():
 
             if accelerator.sync_gradients:
                 global_step += 1
+                steps_done_this_run = global_step - initial_step
                 if global_step % args.log_steps == 0:
                     elapsed = time.time() - start_time
                     print(
                         f"step {global_step}/{max_train_steps} loss={loss.item():.4f} "
-                        f"elapsed={elapsed:.0f}s ({elapsed / global_step:.2f}s/step)"
+                        f"elapsed={elapsed:.0f}s ({elapsed / max(steps_done_this_run, 1):.2f}s/step)"
                     )
                 if global_step % args.save_steps == 0 or global_step >= max_train_steps:
-                    save_path = os.path.join(args.output_dir, f"step_{global_step}")
-                    accelerator.unwrap_model(controlnet).save_pretrained(save_path)
-                    print(f"saved {save_path}")
+                    save_checkpoint(global_step)
                 if global_step >= max_train_steps:
                     done = True
                     break
