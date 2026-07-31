@@ -1661,3 +1661,51 @@ explanation and the more promising lever if this family is revisited.
    dataset -- don't re-suggest without genuinely new evidence.
 2. Branch note: ran on `cleanup-refiner`, auto-switched back to
    `diffusion-controlnet` on completion (verified).
+
+## 2026-08-01: Single-Stage Direct-Regression Ablation — Inconclusive (Undertrained, Not a Fair Test)
+
+All of tonight's ablations (noadv, three agreement-halo reruns) held the
+atari+`cleanup` two-stage bounded-correction architecture fixed and only
+varied loss or data. Root-caused the soft/marbled ceiling to the atari
+generator's own soft output propagating through `cleanup`'s tanh-bounded
+correction (`max_delta=4.0`). The one variable not yet tested:
+architecture itself. `notebooks/gen_lineart.ipynb`'s original crisper
+model was a **single-stage direct regression** (rough -> line, no atari
+intermediate, no residual anchor) -- `lineart/unetgenerator.py`'s
+`UNetGenerator` is architecturally that same model (64->128->256->512
+channels, ResBlocks, dilated convs), already wired up as `--model unet`
+in `scripts/train_i2i_survey.py`.
+
+Ran `experiments/run_combined_koma_direct_unet_20260801.sh`: `--model
+unet`, no `--aux-dir` (so no atari materialization/preprocessing needed
+at all -- fastest run of the night, ~15 min including training), same
+loss recipe as the noadv ablation (`BCE(pos_weight=3)+L1+edge_loss`, no
+GAN), 3 epochs on all 1489 `combined_koma_20260729` tiles.
+
+**Result: near-blank output, F1@2px 0.012, ink_ratio 0.011** -- far worse
+than every other candidate, and visually
+(`results/compare_combined_koma_direct_unet_20260801.png`) the softest/
+blurriest of the whole night, not crisper. **But this is not a fair
+architecture comparison**: the training loss was still dropping steadily
+at the end of 3 epochs (0.377 -> 0.292 -> 0.273, no sign of convergence),
+whereas the notebook trained for 50 epochs (0.594 -> 0.207). The
+atari+`cleanup` family starts "warm" from the pretrained atari
+generator's already-reasonable output and only has to learn a small
+correction, so it converges fast even in 2-3 epochs; a cold-start
+full U-Net learning the entire rough-to-line mapping from scratch needs
+far more gradient steps. **Inconclusive, not a negative result for the
+single-stage hypothesis** -- would need a substantially longer training
+budget (tens of epochs, matching the notebook's actual schedule) for a
+fair test.
+
+### Next Actions
+
+1. If the single-stage direct-regression idea is revisited, budget
+   real training time (tens of epochs, not 3) to give it a fair shot --
+   don't conclude anything from this run's near-blank result.
+2. This wraps up tonight's CNN+GAN-family investigation thread. Current
+   state: root cause of the soft/marbled ceiling is understood (atari
+   generator's own soft output + `cleanup`'s bounded correction);
+   agreement/data-mixing is ruled out; adversarial loss is ruled out;
+   single-stage architecture is untested-but-plausible, pending a
+   properly long training run.
