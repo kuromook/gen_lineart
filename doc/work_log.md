@@ -1558,3 +1558,62 @@ effect is just a confidence/darkness shift on an unchanged spatial
 pattern -- a raw-output mid-gray-fraction check or a pixel-correlation
 check between candidate outputs is a cheap way to catch this before
 trusting F1 deltas as evidence of structural improvement.
+
+## 2026-08-01: Agreement-Halo Hypothesis Re-Tested — Mostly Explained By The (Now-Fixed) Alignment Problem
+
+User raised a new hypothesis: the soft/marbled ceiling's lack of
+confidence might come from training on a mix of high and low rough-line
+correspondence tiles, forcing the model to hedge. This is exactly what
+`experiments/run_agreement_halo_survey.sh` (`agreement_halo_e2`,
+2026-07-20, on the old `valid_train_milddup800_clean.txt`) had already
+tested and supported: high-agreement-only training beat every mixed-data
+candidate on F1@2px (0.436) and recall (0.726), while low-agreement-only
+training was much fainter (`halo_band_faint_ratio` 0.526 vs 0.196).
+
+**Critical caveat the user raised before re-running it**: on
+2026-07-20 the raw rough/line pairs still had unresolved XY-coordinate
+alignment problems -- part of the motivation for the koma-panel
+extraction pipeline's alignment work that followed. So the 2026-07-20
+agreement split likely captured a mix of *raw registration error* and
+*intrinsic content ambiguity*. Since the koma pipeline has since resolved
+most of that registration problem, a rerun on the current clean
+`combined_koma_20260729` should isolate the latter.
+
+Reran the same methodology as `experiments/run_combined_koma_agreement_halo_20260801.sh`
+(background, ~4 min total by reusing the already-materialized aux hints
+from the 2026-08-01 noadv ablation run instead of regenerating them --
+skips the ~32min preprocessing bottleneck). Scored agreement on all 1489
+`combined_koma_20260729` tiles, split into 450 high / 450 low, trained
+each with the same GAN recipe as the adopted `lucy_mild_msgan` (2 epochs),
+evaluated against that baseline.
+
+**Result: the user's prediction was correct -- the effect shrank
+dramatically.** F1@2px: high 0.432 vs low 0.423 (gap 0.009, ~noise --
+vs 0.436 vs 0.281, gap 0.155, on 2026-07-20). `halo_band_faint_ratio`:
+0.165 vs 0.270 (low 1.6x higher -- vs 0.196 vs 0.526, 2.7x, before).
+Visually (`results/compare_combined_koma_agreement_halo_20260801.png`)
+high_agree and low_agree are nearly indistinguishable from each other and
+from the mixed baseline -- same soft/marbled texture, high_agree just a
+bit darker (and noticeably over-inked, ink_ratio 3.4, likely a side
+effect of the smaller 450-tile/2-epoch subset). **Most of the 2026-07-20
+agreement-halo effect was a byproduct of the now-fixed coordinate
+misalignment problem, not primarily intrinsic rough-line correspondence
+ambiguity.** A real but much smaller residual effect remains on
+`halo_band_faint_ratio` (1.6x) -- the hypothesis isn't fully dead, just
+far weaker than the 2026-07-20 result suggested, and not strong enough on
+its own to justify a MoE/router-by-agreement-score direction right now.
+
+### Next Actions
+
+1. Do not cite the 2026-07-20 `agreement_halo_e2` numbers as current-data
+   evidence for the agreement/MoE idea without this caveat; use the
+   2026-08-01 numbers if this comes up again.
+2. The residual (smaller) halo-faint-ratio gap could still be worth a
+   closer look eventually (e.g. a 3-way split with a genuine "ambiguous
+   content" bucket rather than a coordinate-contaminated one), but not
+   prioritized right now -- Direction 4 (Monday's scheduled long run)
+   remains the active focus.
+3. Branch note: ran on `cleanup-refiner`; the script auto-switched back
+   to `diffusion-controlnet` on completion (verified) since this ran
+   unattended overnight and the Monday 2026-08-03 00:00 JST cron job
+   depends on `scripts/train_controlnet.py`, only present there.
