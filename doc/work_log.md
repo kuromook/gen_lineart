@@ -1466,3 +1466,48 @@ record for that family's short architecture survey before the switch.
 5. Older open items (kurip-named script renames, ako5ver2 umbrella rows,
    per-source `--max-soft-ink-ratio` tuning) remain open and unrelated to
    either the concluded survey or the new Direction 4 branch.
+
+## 2026-07-31: Direction 4 Training Script Landed, Smoke-Tested
+
+Implemented `scripts/train_controlnet.py` on the `diffusion-controlnet`
+branch, covering Next Actions items 1-2 from the prior entry:
+
+- **Data format**: `ControlNetTileDataset` reads the existing
+  `dataset/pairs_480/valid_train_combined_koma_20260729.txt` manifest
+  (1489 tiles) directly — rough tile (`dataset/pairs_480/train/rough/`) as
+  the ControlNet conditioning image, line tile
+  (`dataset/pairs_480/train/line_combined_koma_20260729/`) as the diffusion
+  target. No new dataset materialization needed. Since there is no per-tile
+  caption, a single fixed caption (`"monochrome line art, clean linework,
+  manga panel, black and white"`) is tokenized once and reused for every
+  example (its text-encoder embedding is also computed once, not
+  per-batch).
+- **Training loop**: standard diffusers ControlNet recipe (VAE-encode
+  target -> add noise -> ControlNet produces down/mid residuals from the
+  rough conditioning -> frozen UNet predicts noise with those residuals ->
+  MSE loss), built from `diffusers` model classes directly since the
+  `train_controlnet.py` reference script isn't shipped in the pip package.
+  Only the ControlNet adapter trains; VAE/text-encoder/UNet stay frozen.
+  Uses `accelerate` for fp16 mixed precision + gradient accumulation,
+  gradient checkpointing on both UNet and ControlNet. Base checkpoint:
+  `~/disk/checkpoint/Stable-diffusion/AOM3A1B_orangemixs.safetensors`.
+- **Smoke test**: ran on the real 12GB RTX 3060. At `--batch-size 2
+  --grad-accum 4` (effective batch 8) and 512px resolution, peak VRAM was
+  9.7GB/12GB (comfortable headroom) and loss dropped step to step (e.g.
+  0.061 -> 0.033 -> ... -> 0.021 over 8 steps) with no errors. ~3.8s/step
+  once warmed up, so a full 1489-tile epoch (186 steps at this batch
+  config) is roughly 12 minutes; a saved ControlNet checkpoint is ~1.4GB.
+
+### Next Actions
+
+1. Launch a real (non-smoke) training run in the background — epoch count
+   and whether to do the domain-adaptation pretraining step first (still
+   not implemented) are open choices, not yet decided.
+2. No inference/eval pipeline exists yet for the diffusion route (the
+   existing `tools/evaluation/evaluate_fixed_outputs.py` assumes direct
+   pixel-output CNN/GAN models, not a diffusion sampling loop) — will need
+   a small `StableDiffusionControlNetPipeline`-based inference script
+   before this can be compared against the `combined_koma_lucy_mild_msgan_20260729`
+   baseline on the clean eval montage.
+3. `combined_koma_lucy_mild_msgan_20260729` remains the production
+   candidate on the `cleanup-refiner` line; unaffected by this branch.

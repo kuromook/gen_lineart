@@ -139,6 +139,19 @@ Minimum experiment:
 - defer until more raw manuscript pairs exist
 - consider only after simpler i2i routes are exhausted
 
+**Status (2026-07-31, `diffusion-controlnet` branch):** active direction —
+the CNN+GAN refiner family (Directions 5/6/8/9) hit the same ~0.40-0.42
+F1@2px ceiling regardless of architecture tweak, so this is now the primary
+line of work. `scripts/train_controlnet.py` implements a ControlNet adapter
+on `AOM3A1B_orangemixs.safetensors`, conditioned on rough tiles and
+denoising toward line tiles from the existing 1489-tile
+`combined_koma_20260729` manifest (no new data prep needed). Smoke-tested
+on the 12GB RTX 3060: fits in ~9.7GB VRAM at batch 2 / grad-accum 4 / 512px,
+loss decreases cleanly. Not yet run to convergence and no diffusion
+inference/eval pipeline exists yet to compare against the adopted
+`combined_koma_lucy_mild_msgan_20260729` checkpoint. See `doc/work_log.md`
+("2026-07-31: Direction 4 Training Script Landed, Smoke-Tested").
+
 ## Direction 5: Shallow Cleanup / Residual Refiner
 
 Use a smaller network that is structurally biased toward cleaning the atari
