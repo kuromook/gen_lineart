@@ -1307,3 +1307,162 @@ hamlabi-region-extraction` followed by `git push origin main`, staying on
    split/expert approach may need to move up in priority.
 4. Decide the next branch (architecture-improvement vs router-moe) only
    after that review, per explicit user direction — not preemptively.
+
+## 2026-07-31: Direction 6/8/9 Survey Concluded (Same Ceiling); Unpaired-Rough Integration; Direction 4 Branch Starting
+
+Fixed a missed argparse-choices bug (`cleanupdark` was wired into
+`build_generator()` but not into `--model`'s choices list in
+`scripts/train_i2i_survey.py`, so `combined_koma_cleanupdark_20260730` had
+silently failed at launch). Fixed, relaunched, and gave an honest
+metrics+visual verdict: `cleanupdark` (darken-only correction) was not a net
+improvement over the bidirectional `cleanup`/`lucy_mild` result (F1@2px
+0.4090 vs 0.4175, chamfer worse) — not adopted.
+
+**Direction 6 (confidence/thickness dual-head) and Direction 8 (HED-style
+multi-scale side outputs), first attempt:** both new generators
+(`DualHeadRefinerGenerator`, `HedUNetGenerator` in `lineart/model_zoo.py`)
+converged to a chronically under-inked output after 3 epochs (F1@2px 0.198
+and 0.190 respectively, vs ~0.41-0.42 for the adopted cleanup family).
+Root-caused by code comparison: the adopted `ResidualCleanupGenerator`/
+`DarkenOnlyCleanupGenerator` predict a small bounded correction around the
+aux (atari) input's own logits (`out = aux_logits + bounded_delta`), so they
+start already close to a decent output; the new architectures reconstructed
+ink_logits from scratch with no anchor to aux, starting at ~sigmoid(0)=0.5
+everywhere, and 3 epochs (a budget calibrated for residual-anchored models)
+was nowhere near enough to learn ink density from nothing.
+
+**Fix applied and retried:** added a shared `aux_channel_logits()` helper and
+rewired both generators to predict `aux_logits + bounded_correction` (with
+zero/negative-bias-initialized final layers so training starts at exactly
+the aux baseline — verified via smoke test, initial output within 0.4% of
+aux). Retrain results: `combined_koma_dualhead_v2_20260731` reached F1@2px
+0.4096 / chamfer 4.530 (best chamfer of the whole family) but with
+precision 0.279 / ink_ratio 2.609 (over-inking) and a visible dark-blob
+artifact on one ambiguous sample — same soft/marbled texture family, not a
+qualitative jump. `combined_koma_hed_v2_20260731` (still 3 epochs) only
+reached F1@2px 0.235; a 10-epoch retry (`combined_koma_hed_v3_20260731`,
+this project's standard from-scratch-unet budget) reached F1@2px 0.328,
+still visually thinner than the adopted models and judged to be converging
+toward the same ceiling rather than a different one — not worth chasing
+further epochs.
+
+**Direction 9 (bottleneck self-attention refiner):** implemented directly
+with the residual-anchor lesson baked in from the start
+(`AttentionUNetGenerator`, `SelfAttention2d` with zero-initialized `gamma`
+so the block starts as a no-op) and trained for 10 epochs immediately
+(`combined_koma_attn_20260731`). F1@2px 0.348, chamfer 5.841, ink_ratio
+1.016 (best-balanced ink ratio of the family) but still below the adopted
+~0.41-0.42 ceiling, with no visible long-range coherence benefit from the
+attention block specifically.
+
+**Verdict: Directions 5, 6, 8, and 9 all converge to the same soft/marbled
+F1@2px ~0.40-0.42 ceiling (or below it, when undertrained), none producing a
+qualitatively sharper result.** Per `doc/model_directions.md`'s own decision
+rule, this closes out the short architecture survey without a breakthrough;
+`combined_koma_lucy_mild_msgan_20260729` (`cleanup` model) remains the
+adopted best checkpoint.
+
+**Unpaired-rough data (skima) prepared and tested.** User provided
+`skima_text_removal.zip` (626 full manga pages, pencil-only originals with
+no line-art counterpart ever produced, text auto-removed) at the repo root;
+moved to `dataset/unpaired_rough_raw/skima_text_removal.zip` and extracted
+to `dataset/unpaired_rough/skima/{cleaned,auto_mask,manifest.json}` (kept
+deliberately separate from the paired `dataset/raw/`/`dataset/raw_zips/`
+folders). Tiled via new `tools/pair_extraction/tile_unpaired_rough.py`
+(grid split + autocontrast/std blank filter, no alignment needed since
+there's no line-art target) — 626 pages -> 4917 tiles, QC'd visually
+(some tiles retain un-erased dialogue text, noted but not blocking for the
+adversarial-only use case below).
+
+Implemented a low-cost integration path in `scripts/train_i2i_survey.py`:
+new `UnpairedRoughDataset` (rough+aux only, no target) and
+`--unpaired-rough-file-list`/`--unpaired-rough-dir`/
+`--unpaired-rough-aux-dir`/`--unpaired-weight` flags. Each training step, an
+extra unpaired batch is passed through G and only
+`adversarial_mse(D(rough, G(rough)), 1.0)` is added to the generator loss
+(weighted by `--unpaired-weight`) — legal without a GT line target since the
+discriminator only judges plausibility, not a specific match. Generated the
+aux/atari pass for skima's tiles via the existing
+`model_resnet_binft_e3_resnet_gan_advsharp_binft` checkpoint +
+`preprocess_atari_aux.py --mode lucy_mild` (matching the adopted recipe's
+input format).
+
+Retrained the adopted `lucy_mild`/`cleanup` recipe with this branch added,
+isolating `--unpaired-weight` as the one variable:
+
+- `combined_koma_lucy_mild_unpaired_skima_20260731` (weight=0.03, matching
+  `--adv-weight`): clear metric regression (F1@2px 0.4175 -> 0.2381,
+  chamfer 4.680 -> 8.006, recall 0.597 -> 0.197) but a qualitatively
+  *different* failure mode from every other experiment this session — sparse,
+  high-contrast black fragments instead of the usual soft/marbled gray.
+  Hypothesis: the unpaired branch has no shape/structure/continuity loss (only
+  paired data gets those), and the PatchGAN discriminator judges local
+  patches only, so G found a cheap local trick (isolated high-contrast
+  speckles) that satisfies D without needing continuous strokes, and this
+  bled into the paired output through the shared weights.
+- `combined_koma_lucy_mild_unpaired_skima_w003_20260731` (weight=0.003, 10x
+  lower): F1@2px 0.4076 / chamfer 4.813 / recall 0.599 — visually and
+  metrically almost indistinguishable from the unmodified baseline. The
+  transition between "negligible effect" (0.003) and "dramatic disruptive
+  effect" (0.03) is sharp/nonlinear rather than a smooth scaling, consistent
+  with the cheap-fooling-trick hypothesis (small weight can't overcome the
+  reconstruction loss's dominance; once it can, the trick take over rather
+  than gradually blending in). Not adopted at either weight as tested; a
+  next step (not yet attempted) would be adding some form of GT-free
+  continuity/self-consistency regularizer to the unpaired branch itself
+  before revisiting the weight sweep.
+
+**Direction 4 (diffusion/ControlNet) groundwork.** User confirmed several
+locally-available SD1.5-family checkpoints at
+`~/disk/checkpoint/Stable-diffusion/` (`v1-5-pruned-emaonly.safetensors`
+plain SD1.5, plus anime-tuned merges `AOM3A1B_orangemixs.safetensors` /
+`Counterfeit-V2.5.safetensors` / `BloodOrangeMix.safetensors` — the anime
+merges are likely a better line-art starting point than plain SD1.5).
+Installed `diffusers`/`transformers`/`accelerate`/`peft`/`safetensors` into
+the project venv (added to `requirements.txt`) and confirmed feasibility:
+`StableDiffusionPipeline.from_single_file()` loads `AOM3A1B_orangemixs`
+correctly (unet in_channels=4, cross_attention_dim=768, standard SD1.5
+config), and `ControlNetModel.from_unet()` builds a fresh ~361M-parameter
+ControlNet adapter from it. The actual training script (data format
+conversion, denoising training loop, VRAM/precision tuning for the 12GB
+GPU) is not yet implemented — diffusers ships the model classes but not the
+`examples/controlnet/train_controlnet.py` reference script, which lives in
+the diffusers GitHub repo, not the pip package.
+
+User separately confirmed the unpaired-rough pool (skima-style, pencil-only
+manuscripts) could grow ~4x from material already on hand. Discussed which
+scenarios that would matter for: it would matter for (a) self-supervised
+domain-adaptation pretraining of the SD1.5 backbone on rough-sketch imagery
+before attaching ControlNet (unsupervised, scales with image count), and
+(b) a future CycleGAN-style setup once a line-only unpaired pool also
+exists; it would *not* directly fix the adversarial-branch fragmentation
+issue above (that's a loss-design problem, not a data-scarcity one), and it
+doesn't add usable data to the current paired-refiner training (which needs
+line-art GT that pencil-only manuscripts don't have).
+
+**Decision: start a new branch for Direction 4** (diffusion/ControlNet),
+since it is architecturally unrelated to the CNN+GAN refiner family this
+branch (`cleanup-refiner`) has been developing. This entry is the closing
+record for that family's short architecture survey before the switch.
+
+### Next Actions
+
+1. On the new Direction 4 branch: build the ControlNet training data format
+   (rough tile as conditioning image, GT line art as target, a fixed/simple
+   caption since per-tile captions don't exist) from the existing
+   `dataset/pairs_480` paired tiles.
+2. Adapt or write a training loop (diffusers' reference `train_controlnet.py`
+   pattern) sized for the 12GB GPU (fp16, gradient checkpointing, small
+   batch/grad-accum), starting from `AOM3A1B_orangemixs.safetensors` as the
+   base checkpoint.
+3. Before committing to full ControlNet training, consider the
+   domain-adaptation pretraining step discussed above (unsupervised
+   diffusion fine-tune on rough-only images, including the skima pool) if
+   the 4x-larger unpaired-rough pool has materialized by then.
+4. `combined_koma_lucy_mild_msgan_20260729` remains the production
+   candidate on the `cleanup-refiner` line; the unpaired-adversarial-branch
+   idea and the untried continuity-regularizer follow-up are recorded here
+   for later revisit, not currently active.
+5. Older open items (kurip-named script renames, ako5ver2 umbrella rows,
+   per-source `--max-soft-ink-ratio` tuning) remain open and unrelated to
+   either the concluded survey or the new Direction 4 branch.

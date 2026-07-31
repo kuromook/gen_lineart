@@ -1,6 +1,6 @@
 # Current Project State
 
-Updated: 2026-07-25 JST
+Updated: 2026-07-31 JST (later)
 
 This file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
@@ -292,65 +292,105 @@ superseding both earlier sets (left on disk, not deleted). Full progression:
 +alignment-refinement. Full detail: `doc/raw_dataset_extraction_knowledge.md`
 (`## housei`).
 
+## 2026-07-31 Koma Extraction Complete; Model Architecture Survey (6 -> 8 -> 9), Then Reconsider Direction 4
+
+All 5 koma-pipeline sources (ako5ver2/fitness/gakuen/hamlabi/housei) are fully
+extracted and combined: `dataset/pairs_480/valid_train_combined_koma_20260729.txt`
+(1489 tiles: ako5ver2koma 536 / fitnesskoma 455 / gakuenkoma 202 /
+hamlabikoma 164 / houseikoma 132), visually QC'd and already used for
+training. There is no remaining raw-extraction backlog for these 5 sources —
+the items below about "koma layers arrived but not processed yet" are
+resolved and were left in this file well past their relevance; see
+`doc/work_log.md` ("2026-07-29 (later still): Combined 5-Source Koma
+Training Launch") for how this finished.
+
+Current model-side status (see `doc/model_directions.md`): Direction 5
+(shallow residual cleanup refiner) was tried in two forms on the combined
+koma dataset — bidirectional (`cleanup`, `combined_koma_lucy_mild_msgan_20260729`)
+and darkening-only (`cleanupdark`, `combined_koma_cleanupdark_20260730`) — both
+converged to the same soft/marbled-gray F1@2px~0.40-0.43 / chamfer~4.5-5.6
+ceiling. Directions 1/2/3/7 (multi-scale PatchGAN, feature matching,
+structure/perceptual loss, soft width/skeleton loss) were also already tried
+in some form pre-koma with no clear jump past that same ceiling.
+
+**Decided plan:** try the remaining untested architecture directions in
+order — Direction 6 (confidence/thickness dual-head, `dualhead` model,
+in progress as of 2026-07-31 as `combined_koma_dualhead_20260731`), then
+Direction 8 (HED/DexiNed-style multi-scale edge head), then Direction 9
+(attention/Swin-like refiner block) — each a small delta on the existing
+CNN+GAN pipeline, evaluated on the same 8-sample clean eval montage. Only
+after those three, reconsider Direction 4 (diffusion/ControlNet-style
+refinement), previously deferred for cost/data reasons.
+
+In parallel with the 6/8/9 survey, the user is preparing new raw source
+material (additional manuscript pages from the same artist, on a separate
+machine) to grow the koma dataset beyond 1489 tiles. This is not a blocking
+prerequisite for Direction 4 (the 5 existing sources are all the same
+artist with some style variation, not different artists, so augmentation of
+the current pool was judged a reasonably good fit for that narrower
+generalization target) — it is opportunistic growth to do alongside the
+architecture survey, revisited once Direction 4 is actually reached.
+
+## 2026-07-31 (later) Direction 6/8/9 Survey Concluded; Unpaired-Rough Tested; Switching To A Direction 4 Branch
+
+Direction 6 (confidence/thickness dual-head) and Direction 8 (HED-style
+multi-scale side outputs) both initially failed (chronically under-inked)
+because the new generators reconstructed ink from scratch with no anchor to
+the aux/atari input, unlike the adopted `cleanup`/`cleanupdark` models
+(`out = aux_logits + bounded_correction`). Fixed both to use the same
+residual-anchor pattern and retrained; Direction 9 (bottleneck
+self-attention) was implemented with the fix applied from the start.
+**Result: Directions 5, 6, 8, and 9 all converge to the same soft/marbled
+F1@2px ~0.40-0.42 ceiling (or below it, when undertrained) — no
+architecture in this short survey produced a qualitative jump.**
+`combined_koma_lucy_mild_msgan_20260729` (`cleanup` model) remains the
+adopted best checkpoint. Full detail and numbers: `doc/model_directions.md`
+(Directions 5/6/8/9 "Result" notes) and `doc/work_log.md` ("2026-07-31:
+Direction 6/8/9 Survey Concluded").
+
+Also prepared and tested the first unpaired-rough pool (`skima`, 626
+pencil-only manuscript pages with no line-art counterpart, tiled to 4917
+rough-only tiles at `dataset/unpaired_rough/skima/`) via a new
+adversarial-only training branch (`--unpaired-weight` in
+`scripts/train_i2i_survey.py`). Not adopted at either weight tried (0.03:
+clear regression with a qualitatively different fragmented/binary failure
+mode; 0.003: negligible effect, ~reproduces baseline) — a next step (not
+yet attempted) would add a GT-free continuity regularizer to the unpaired
+branch itself. Full detail: `doc/work_log.md`.
+
+Explored Direction 4 (diffusion/ControlNet) feasibility: confirmed local
+SD1.5-family checkpoints exist (`~/disk/checkpoint/Stable-diffusion/`,
+anime-tuned merges preferred over plain SD1.5), installed
+`diffusers`/`transformers`/`accelerate`/`peft` into the project venv, and
+confirmed `ControlNetModel.from_unet()` builds correctly from a locally
+loaded checkpoint. Full ControlNet training script not yet implemented.
+
+**Decision: Direction 4 moves to its own branch**, since it is
+architecturally unrelated to the CNN+GAN refiner family developed on
+`cleanup-refiner`. This branch's architecture-survey work is considered
+closed out as of this commit.
+
 ## Next Actions
 
-1. **housei koma-panel pipeline done for now**: 85 tiles, saved, audited
-   (`dataset/pairs_480/valid_train_housei_koma_subregion_refined_native_strict_20260726.txt`).
-2. **ako5ver2 and hamlabi koma layers have arrived** (`dataset_ako5_koma.zip`,
-   `dataset_hamlabi_koma.zip`, both integrity-checked OK) but have not been
-   processed yet — user said to finish housei first. Next natural step:
-   apply the same full pipeline (panel detection -> alignment -> chamfer
-   gate -> sub-region split -> per-sub-region alignment refinement -> mask ->
-   tile) to these two sources. Note: the "background-job kill window" this
-   note used to warn about was misdiagnosed — see
-   `doc/raw_dataset_extraction_knowledge.md` ("Long Background Jobs Died From
-   Real OOM, Not A Silent Timeout"); it was genuine kernel OOM from a
-   verified, now-fixed memory bug (numpy slice views into full-resolution
-   page arrays pinning ~35 MB each, kept alive in growing lists/caches
-   across the whole run) present in `match_koma_panels.py`,
-   `materialize_koma_panels.py`, and `split_koma_panel_subregions.py`, all
-   fixed 2026-07-27. This should meaningfully reduce peak memory for
-   ako5ver2/hamlabi (which have more pages than housei's 18, so would have
-   hit the same bug harder), but the fix has only been verified by code
-   inspection and a synthetic numpy check, not a real monitored run yet —
-   run a first monitored pass (watch RSS) before trusting a full unattended
-   run on these larger sources. The sub-region split's 121px morphological
-   dilate is still slow on large panel images purely on CPU-time grounds
-   (single chunks of ~15-33 panels each took 5-10 min here) — chunk
-   moderately (~15-20 panels/run) as a throughput/checkpointing convenience
-   (so a crash or interruption only loses one chunk), not because of any
-   fixed kill window, and consider
-   downscaling the dilate step first for these larger sources.
-3. housei now has three independently-extracted tile sets: native_strict
-   grid+local-offset (65 tiles), koma-panel-level (58 tiles, superseded),
-   koma-subregion-level (75 tiles, superseded), koma-subregion-refined (85
-   tiles, current). Not yet trained on individually or combined; decide
-   whether to train separately first or design a deliberate mixing
-   experiment before combining with each other or with the other sources
-   (ako5ver2/fitness/fighting).
-4. Reconciled 2026-07-27: the former `dataset_kurip.zip` is confirmed to be
-   the existing `fitness` source (same 38 pages, all line/sketch files
-   byte-identical) plus a per-page koma panel-border layer — the same kind
-   of addition already delivered for housei/ako5ver2/hamlabi. Renamed to
-   `dataset/raw_zips/dataset_fitness_koma.zip` (do not use `kurip` in any new
-   output for this source); see `doc/raw_dataset_storage_policy.md`. Panel
-   detection for `fitness` is queued to run after the `ako5ver2` panel
-   detection pass above finishes (sequenced, not concurrent, to keep peak
-   memory margin comfortable while the OOM-bug fix is still being validated
-   at larger scale — see the memory note in item 2 above).
-2. Model-side: decide the next model direction using the now-broader pool
-   (ako5ver2 native strict, fitness, housei, fighting) — longer training,
-   non-BCE-heavy loss, or reuse of an existing halo/Lucy/cleanup candidate
-   family per `doc/model_results_summary.md`. Do not attribute the earlier
-   soft/density-map output to data quality alone; alignment/scale is now a
-   confirmed contributing factor, not yet fixed.
-3. Decide whether to rename the remaining 5 `kurip`-named infra scripts, given
-   `kurip` was a username. `prepare_kurip_tiles.py` affects hamlabi too, so
-   treat that one separately from the other 4.
-4. Decide whether umbrella/layer-difference rows (ako5ver2) should be manually
-   masked, tagged for future routing, or left held out.
-5. Keep strict88, the 768-normalized keep281 tile set, and the alignment-test
-   `alignfilt12` list separate from the main native tile sets. Keep fitness,
-   housei, fighting, and ako5ver2-native as separate sources until a
-   deliberate mixing experiment is designed (and ideally until the
-   panel-based re-alignment work lands).
+1. On the new Direction 4 branch: build ControlNet training data (rough
+   tile as conditioning image, GT line art as target image, fixed/simple
+   caption) from `dataset/pairs_480`, then adapt/write a training loop
+   (diffusers' `train_controlnet.py` pattern) sized for the 12GB GPU,
+   starting from `AOM3A1B_orangemixs.safetensors`.
+2. Consider a domain-adaptation pretraining step first (unsupervised
+   diffusion fine-tune on rough-only images, including a larger skima-style
+   pool if the user's ~4x expansion has materialized by then) before full
+   ControlNet training.
+3. The unpaired-rough adversarial-branch idea (continuity-regularizer
+   follow-up) is recorded but not currently active; revisit only if
+   explicitly picked back up.
+4. Decide whether to rename the remaining `kurip`-named infra scripts, given
+   `kurip` was a username (`match_kurip_regions.py` and others;
+   `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
+   the work above.
+5. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+   manually masked, tagged for future routing, or left held out. Still open.
+6. Revisit whether `--max-soft-ink-ratio` needs a per-source
+   `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
+   housei has an established relaxed value so far); yield may be
+   conservative for the others under the shared default. Still open.

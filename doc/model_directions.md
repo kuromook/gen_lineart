@@ -166,6 +166,13 @@ Minimum experiment:
 - small residual CNN with 2ch input
 - compare against `refiner_unet`, `tight_bin12`, and `bin20_ink16`
 
+**Result (2026-07-31, koma dataset):** tried both bidirectional
+(`cleanup`, adopted as `combined_koma_lucy_mild_msgan_20260729`) and
+darken-only (`cleanupdark`, `combined_koma_cleanupdark_20260730`). Both
+converge to the same soft/marbled F1@2px ~0.41 ceiling; darken-only is not
+a net improvement (worse chamfer/recall). See `doc/work_log.md`
+("2026-07-31: Direction 6/8/9 Survey Concluded").
+
 ## Direction 6: Confidence / Thickness Multi-Head
 
 Separate line presence from line strength/thickness.
@@ -190,6 +197,16 @@ Minimum experiment:
 
 - two-head U-Net where one head predicts skeleton/center confidence and the
   other predicts normal ink
+
+**Result (2026-07-31, koma dataset):** first attempt (no residual anchor to
+the aux input) was chronically under-inked (F1@2px 0.198, 3 epochs) --
+root-caused to the new architecture reconstructing ink from scratch instead
+of correcting the aux baseline like every adopted model. Fixed
+(`DualHeadRefinerGenerator` now predicts `aux_logits + bounded_correction`)
+and retrained: F1@2px 0.410 / best-of-family chamfer 4.530, but
+precision/ink_ratio show clear over-inking (2.61x) and the same
+soft/marbled texture family, not a qualitative jump. Not adopted. See
+`doc/work_log.md` ("2026-07-31: Direction 6/8/9 Survey Concluded").
 
 ## Direction 7: Soft Morphology / Line-Width Loss
 
@@ -236,6 +253,14 @@ Minimum experiment:
 - U-Net with side-output edge predictions at decoder scales
 - supervise side outputs with downsampled GT line/skeleton
 
+**Result (2026-07-31, koma dataset):** same under-anchored first attempt
+(F1@2px 0.190, 3 epochs), same residual-anchor fix applied. Even after the
+fix, needed the project's standard 10-epoch from-scratch-unet budget
+(3 epochs only reached 0.235) to reach F1@2px 0.328 -- still below the
+adopted ~0.41 ceiling and judged to be converging toward it rather than a
+different one; not worth further epochs. Not adopted. See
+`doc/work_log.md` ("2026-07-31: Direction 6/8/9 Survey Concluded").
+
 ## Direction 9: Attention / Swin-Like Refiner
 
 Add attention so the refiner can reason over longer line structures.
@@ -254,6 +279,18 @@ Minimum experiment:
 
 - add a lightweight bottleneck self-attention block to 2ch U-Net
 - compare to plain `refiner_unet`
+
+**Result (2026-07-31, koma dataset):** implemented with the residual-anchor
+lesson (from Directions 6/8's first attempts) applied from the start,
+trained 10 epochs directly. F1@2px 0.348, best-balanced ink_ratio of the
+family (1.016) but still below the adopted ~0.41 ceiling, no visible
+long-range-coherence benefit from the attention block specifically. Not
+adopted. **This closes out the short architecture survey (Directions
+5/6/8/9 all land at or below the same ~0.40-0.42 F1@2px soft/marbled
+ceiling)** -- per the decision rule below, next work moves to data/target
+design (unpaired-rough integration, tried and not yet successful -- see
+`doc/work_log.md`) or Direction 4. See `doc/work_log.md` ("2026-07-31:
+Direction 6/8/9 Survey Concluded").
 
 ## Short Survey Priority
 

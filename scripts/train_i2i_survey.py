@@ -92,6 +92,38 @@ class SketchDataset(Dataset):
         return torch.cat(tensors, dim=0), target
 
 
+class UnpairedRoughDataset(Dataset):
+    """Rough-only tiles with no paired line-art GT (e.g. dataset/unpaired_rough).
+    Yields just the model input tensor (rough, optionally + aux channel) --
+    there is no target to return. Meant to be consumed only for the
+    adversarial branch of training (see --unpaired-weight), since every loss
+    that needs a GT line target is unavailable here."""
+
+    def __init__(self, rough_dir, file_list, aux_dir=None, autocontrast_rough=True):
+        with open(file_list) as file:
+            self.files = [line.strip() for line in file if line.strip()]
+        self.rough_dir = rough_dir
+        self.aux_dir = aux_dir
+        self.autocontrast_rough = autocontrast_rough
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        name = self.files[idx]
+        rough = Image.open(os.path.join(self.rough_dir, name)).convert("L")
+        if self.autocontrast_rough:
+            rough = ImageOps.autocontrast(rough, cutoff=0)
+        rough = TF.resize(rough, (IMAGE_SIZE, IMAGE_SIZE))
+        tensors = [TF.to_tensor(rough)]
+        if self.aux_dir:
+            aux_name = f"{Path(name).stem}_out.png"
+            aux = Image.open(os.path.join(self.aux_dir, aux_name)).convert("L")
+            aux = TF.resize(aux, (IMAGE_SIZE, IMAGE_SIZE))
+            tensors.append(TF.to_tensor(aux))
+        return torch.cat(tensors, dim=0)
+
+
 def load_generator_weights(model, path, device, strict=True):
     if not path:
         return
@@ -255,6 +287,24 @@ def train(args):
         pin_memory=True,
         collate_fn=collate_fn,
     )
+    unpaired_loader = None
+    if args.unpaired_rough_file_list:
+        if not args.gan:
+            raise ValueError("--unpaired-rough-file-list requires --gan (the unpaired branch is adversarial-only)")
+        unpaired_dataset = UnpairedRoughDataset(
+            rough_dir=args.unpaired_rough_dir,
+            file_list=args.unpaired_rough_file_list,
+            aux_dir=args.unpaired_rough_aux_dir,
+            autocontrast_rough=args.autocontrast,
+        )
+        unpaired_loader = DataLoader(
+            unpaired_dataset,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=args.workers,
+            pin_memory=True,
+            drop_last=True,
+        )
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     G, D, opt_G, opt_D, bce = train_reconstruction(args, device)
     if args.gan:
@@ -282,7 +332,7 @@ def train(args):
     print(
         f"loss: bce={args.bce_weight} l1={args.l1_weight} "
         f"tolerant={args.shape_weight} ink={args.ink_weight} "
-        f"binary={args.binary_weight} skeleton={args.skeleton_weight} "
+        f"binary={args.binary_weight} skeleton={args.skeleton_weight} side={args.side_weight} "
         f"width={args.width_weight} "
         f"thresh_shape={args.threshold_shape_weight} "
         f"thresh_ink={args.threshold_ink_weight} "
@@ -292,6 +342,11 @@ def train(args):
         f"fm={args.feature_match_weight} "
         f"adv={args.adv_weight}"
     )
+    if unpaired_loader is not None:
+        print(
+            f"unpaired_rough: file_list={args.unpaired_rough_file_list} "
+            f"rows={len(unpaired_dataset)} weight={args.unpaired_weight}"
+        )
 
     best_loss = float("inf")
     for epoch in range(1, args.epochs + 1):
@@ -300,6 +355,7 @@ def train(args):
             D.train()
         g_sum = d_sum = 0.0
         steps = 0
+        unpaired_iter = iter(unpaired_loader) if unpaired_loader is not None else None
         for batch in loader:
             valid_mask = None
             skeleton = None
@@ -316,6 +372,14 @@ def train(args):
                 valid_mask = valid_mask.to(device).clamp(0.0, 1.0)
 
             pred_logits = G(rough)
+            aux_skeleton_logits = None
+            side_logits_list = None
+            if isinstance(pred_logits, tuple):
+                pred_logits, aux_output = pred_logits
+                if isinstance(aux_output, list):
+                    side_logits_list = aux_output
+                else:
+                    aux_skeleton_logits = aux_output
             pred = torch.sigmoid(pred_logits)
             pred_thresh = soft_threshold(
                 pred,
@@ -339,7 +403,14 @@ def train(args):
                 * background_haze_loss(masked_pred, masked_target, args.background_haze_radius)
             )
             if skeleton is not None:
-                loss_recon = loss_recon + args.skeleton_weight * masked_mean(bce(pred_logits, skeleton), None)
+                skeleton_pred_logits = aux_skeleton_logits if aux_skeleton_logits is not None else pred_logits
+                loss_recon = loss_recon + args.skeleton_weight * masked_mean(bce(skeleton_pred_logits, skeleton), None)
+            if side_logits_list is not None and args.side_weight > 0.0:
+                side_loss = 0.0
+                for side_logits in side_logits_list:
+                    side_target = F.adaptive_avg_pool2d(target, side_logits.shape[-2:])
+                    side_loss = side_loss + masked_mean(bce(side_logits, side_target), None)
+                loss_recon = loss_recon + args.side_weight * (side_loss / len(side_logits_list))
             loss_G = loss_recon
             if D is not None:
                 if args.feature_match_weight > 0.0:
@@ -355,6 +426,21 @@ def train(args):
                 if args.feature_match_weight > 0.0:
                     loss_G = loss_G + args.feature_match_weight * loss_fm
 
+            if unpaired_iter is not None and args.unpaired_weight > 0.0:
+                try:
+                    unpaired_rough = next(unpaired_iter)
+                except StopIteration:
+                    unpaired_iter = iter(unpaired_loader)
+                    unpaired_rough = next(unpaired_iter)
+                unpaired_rough = unpaired_rough.to(device)
+                unpaired_pred_logits = G(unpaired_rough)
+                if isinstance(unpaired_pred_logits, tuple):
+                    unpaired_pred_logits = unpaired_pred_logits[0]
+                unpaired_pred = torch.sigmoid(unpaired_pred_logits)
+                unpaired_fake_score = D(unpaired_rough[:, :1], unpaired_pred)
+                loss_unpaired_adv = adversarial_mse(unpaired_fake_score, 1.0)
+                loss_G = loss_G + args.unpaired_weight * loss_unpaired_adv
+
             opt_G.zero_grad()
             loss_G.backward()
             torch.nn.utils.clip_grad_norm_(G.parameters(), 1.0)
@@ -362,7 +448,10 @@ def train(args):
 
             if D is not None:
                 with torch.no_grad():
-                    fake = torch.sigmoid(G(rough))
+                    fake_logits = G(rough)
+                    if isinstance(fake_logits, tuple):
+                        fake_logits = fake_logits[0]
+                    fake = torch.sigmoid(fake_logits)
                 opt_D.zero_grad()
                 real_score = D(rough[:, :1], target)
                 fake_score = D(rough[:, :1], fake.detach())
@@ -416,6 +505,10 @@ def main():
             "unet_skip50",
             "resnet",
             "cleanup",
+            "cleanupdark",
+            "dualhead",
+            "hed",
+            "attn",
             "maskcleanup",
             "flowmaskcleanup",
             "flowmaskunet",
@@ -453,6 +546,7 @@ def main():
     parser.add_argument("--ink-weight", type=float, default=0.02)
     parser.add_argument("--binary-weight", type=float, default=0.0)
     parser.add_argument("--skeleton-weight", type=float, default=0.0)
+    parser.add_argument("--side-weight", type=float, default=0.0)
     parser.add_argument("--width-weight", type=float, default=0.0)
     parser.add_argument("--threshold-shape-weight", type=float, default=0.0)
     parser.add_argument("--threshold-ink-weight", type=float, default=0.0)
@@ -463,6 +557,10 @@ def main():
     parser.add_argument("--background-haze-radius", type=int, default=9)
     parser.add_argument("--feature-match-weight", type=float, default=0.0)
     parser.add_argument("--adv-weight", type=float, default=0.02)
+    parser.add_argument("--unpaired-rough-file-list", default=None)
+    parser.add_argument("--unpaired-rough-dir", default=None)
+    parser.add_argument("--unpaired-rough-aux-dir", default=None)
+    parser.add_argument("--unpaired-weight", type=float, default=0.0)
     parser.add_argument("--save-every", type=int, default=10)
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--autocontrast", action="store_true", default=True)
