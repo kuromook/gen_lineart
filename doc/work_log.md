@@ -1649,3 +1649,51 @@ continued cleanly at step 7 through 10, no errors).
 2. Resolve the `checkpoints/README.md` / `shape1/*.pth` git-tracking
    question (remove from tracking now that `checkpoints/` is a symlink, or
    restore them another way) — not urgent, doesn't block training.
+
+**Corrected disk relocation + long-run launch prepared (same day, later).**
+The single-symlink approach above broke `git add` for
+`checkpoints/README.md` / `checkpoints/shape1/*.pth` (git refuses to add
+through a symlinked directory) -- and `checkpoints/README.md` itself
+documents that those are intentional force-add exceptions to the
+`checkpoints/*` gitignore rule, so silently dropping them from tracking
+would violate stated policy. Fixed properly: `checkpoints/` is a real
+local directory again with `README.md`/`shape1/` restored as real
+git-tracked files; every other (large, untracked) subdirectory is
+individually symlinked to `~/disk/lineart_checkpoints/<name>`. `git
+status` is clean.
+
+Found and worked around a real gotcha with this approach: `mkdir -p` /
+`os.makedirs(exist_ok=True)` on a *new* subdirectory name (no existing
+symlink) just creates a real directory on the root disk -- it does not
+transparently redirect through a not-yet-existing symlink target.
+Pre-created `~/disk/lineart_checkpoints/controlnet_koma_direction4_longrun_20260803/`
+and symlinked `checkpoints/controlnet_koma_direction4_longrun_20260803`
+to it ahead of time so the scheduled run lands on `~/disk` from its first
+write; verified with `os.makedirs(exist_ok=True)` directly. See
+[[disk_layout]] memory for the general procedure to follow before any
+future new checkpoint run.
+
+Per user request (weekdays free for long GPU runs, weekends reserved for
+other PC use; today is Friday evening, next weekday start is Monday
+2026-08-03 00:00 JST): scheduled `experiments/run_controlnet_direction4_longrun_20260803.sh`
+via a one-shot system crontab entry (`0 0 3 8 *`, self-removing on fire)
+rather than the in-session `CronCreate` tool, since `CronCreate` jobs are
+session-only and would be lost if this Claude Code session ends before
+Monday. The launcher runs `train_controlnet.py --max-train-steps 18600`
+(10x the first run, ~19h at the observed ~3.7s/step) with
+`--resume-from-checkpoint latest` (safe to re-invoke to extend the run
+later), `--save-steps 300` (resume-state safety net) and
+`--eval-snapshot-steps 1860` (10 accumulating eval snapshots across the
+run, ~14GB total), and notifies via the configured ntfy webhook on
+completion. Verified GPU/CUDA is reachable under a minimal cron-like
+environment (`env -i` test) before relying on this.
+
+### Next Actions
+
+1. Nothing to do until the Monday 2026-08-03 00:00 JST cron fires; then
+   monitor `logs/controlnet_koma_direction4_longrun_20260803.log` and use
+   the `--eval-snapshot-steps` snapshots with `scripts/infer_controlnet.py`
+   to check whether/when the "sudden convergence" signal (tighter
+   adherence to the rough conditioning) appears.
+2. Resolve the `checkpoints/README.md` / `shape1/*.pth` git-tracking
+   question -- now resolved (see above), no longer open.
