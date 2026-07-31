@@ -1534,3 +1534,27 @@ correction bounds), not primarily a loss-design artifact.
    branch); must switch back to `diffusion-controlnet` before the
    Monday 2026-08-03 00:00 JST scheduled long run, which depends on
    `scripts/train_controlnet.py` (only present on that branch).
+
+**Refinement (same day, immediately after): the GAN-vs-noGAN gap is a
+confidence recalibration, not a structural difference.** User pointed out
+that the F1@2px/ink_ratio "improvement" from adversarial loss could just
+mean the model outputs ink more confidently, not that the output pattern
+is actually closer to real line art. Checked directly: pixel-wise
+correlation between the `combined_koma_lucy_mild_msgan_20260729` and
+`combined_koma_lucy_mild_noadv_20260801` eval outputs is **0.94-0.95
+across all 8 eval tiles** (near-identical spatial pattern), mean pixel
+value differs measurably (0.845 vs 0.886, `msgan` darker/more-inked), and
+the raw mid-gray-pixel fraction is nearly identical for both (~35-37%,
+neither is meaningfully more binary/crisp). So adversarial loss is not
+restructuring *where* ink goes -- that's ~95% fixed by the atari anchor +
+bounded correction shape regardless of loss -- it's recalibrating the
+overall darkness/confidence of the same fixed, still-fuzzy pattern. This
+sharpens, without contradicting, the root-cause conclusion: fixing the
+soft/marbled ceiling requires changing the atari generator's texture
+quality or the `cleanup` correction bound, not any loss-function tweak.
+Methodological takeaway for future model comparisons: post-threshold pixel
+metrics (F1@2px etc.) can look like a quality improvement when the real
+effect is just a confidence/darkness shift on an unchanged spatial
+pattern -- a raw-output mid-gray-fraction check or a pixel-correlation
+check between candidate outputs is a cheap way to catch this before
+trusting F1 deltas as evidence of structural improvement.
