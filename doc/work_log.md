@@ -1743,5 +1743,27 @@ improving together. Not adopted. Whether a longer/differently-regularized
 version could learn genuine correspondence while keeping the crispness is
 an open question, not pursued further tonight.
 
+**Correction (same morning, user review): "unrelated noise" was too
+harsh a characterization.** User confirmed this output matches what they
+remember seeing from the pre-leak-fix notebook era. Cropped rough vs.
+`direct_unet_100ep` side-by-side for several rows and found real
+(if inconsistent) spatial correlation with the rough's stroke locations
+-- e.g. row `lineart_004_008`: the rough's vertical/diagonal strokes have
+corresponding dark marks in roughly the same position in the model's
+output; row `lineart_004_009`: the rough's dense-hair-vs-shaded-shoulder
+density pattern is echoed in ink density, though specific shapes (the
+eye) are not reproduced. The correct read is **not** "unrelated noise
+satisfying aggregate loss statistics" but **"a genuine attempt to trace
+the rough that never stabilizes into a continuous confident stroke --
+instability shows up as jitter/fragmentation rather than as blur."**
+User's framing: the lack of confidence here is expressed as *wobble*, not
+*blur* -- qualitatively different from the `cleanup` family (blur) and
+from Direction 4's diffusion hallucination (confidently drawing
+different, unrelated content). In that sense this failure mode is
+arguably *more* faithful to the input than Direction 4's, even though its
+F1@2px is currently much worse. Updated `doc/architecture_decisions.md`
+(both branches) with this corrected characterization; the "resembles the
+unpaired-adversarial cheap-trick failure" comparison above is withdrawn.
+
 Updated `doc/architecture_decisions.md` (both branches) with this final
 result.
