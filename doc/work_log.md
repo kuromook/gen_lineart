@@ -1767,3 +1767,75 @@ unpaired-adversarial cheap-trick failure" comparison above is withdrawn.
 
 Updated `doc/architecture_decisions.md` (both branches) with this final
 result.
+
+## 2026-08-01 (afternoon): Data-Quantity Test for the Wobble — Densified Retile + dataset_4th Extraction
+
+User reflected on why they've kept extracting more raw manuscript data:
+originally hoped it would fix the CNN+GAN family's soft/marbled ceiling,
+but that ceiling now traces to an architecture limit (atari generator's
+softness + `cleanup`'s bounded correction), not data scarcity. But the
+newly-found single-stage "wobble" instability is a different failure mode
+that has never been tested against data quantity. Proposed two tests: (1)
+densify the existing 5 koma sources via looser dedup (cheap, but
+redundant/overlapping crops, not genuinely new content) and (2) extract
+the already-received `dataset_4th.zip` (33 pages, genuinely new content,
+same artist) for a cleaner test.
+
+**Densified retile**: `experiments/run_koma_dense_retile_20260801.sh`
+reran `tile_region_manifest_480.py` against the already-materialized
+masked subregion manifests for all 5 sources with loosened settings
+(`--duplicate-overlap 0.50->0.80`, `--max-per-region 4->10`,
+`--min-tile-score 2.5->2.0`), keeping all content-quality gates
+unchanged. Result: 1489 -> 5373 tiles (3.6x) after unioning with the
+original production list. Per-source: ako5ver2 536->1281,
+housei 132->631, hamlabi (in progress at time of writing),
+fitness 455->1114, gakuen 202->477.
+
+**dataset_4th extraction**: blocked earlier today on a missing `koma`
+(panel-border) layer -- `tools/pair_extraction/match_koma_panels.py`
+requires one per page and `dataset_4th`'s manifest had none. User
+re-exported and re-uploaded `dataset_4th.zip` with `4th_pageNNNN_koma.jpg`
+files added (32/33 pages, page0001 missing one -- a data gap the
+pipeline already handles gracefully). `manifest.json` didn't reference
+the new koma files by field, so manually augmented each entry with a
+`"koma"` field by filename pattern-matching and repackaged as
+`dataset/raw_zips/dataset_4th_koma.zip`. Ran the full pipeline: `match_koma_panels.py`
+(158 panels detected, 155 passed the chamfer gate) ->
+`tools/pair_extraction/run_koma_tile_pipeline.sh 4th ...` (materialize ->
+subregion split -> masks -> tiling, same as the other 5 sources).
+**Result: 530 new tiles** (`dataset/pairs_480/valid_train_4th_koma_20260801.txt`,
+`dataset/pairs_480/train/line_4th_koma_20260801/`), visually reviewed
+(`results/4th_koma_tiles_480_20260801_qc_sample.png`) -- good quality,
+comparable to or better than the existing 5 sources (F1 0.89-1.0, clean
+alignment). Not yet merged into `combined_koma_20260729` or the densified
+pool -- available for the next training run that wants it.
+
+**Densified-data training launched**: `experiments/run_combined_koma_direct_unet_dense_28ep_20260801.sh`
+-- same architecture/loss as the 100-epoch direct-regression run
+(`--model unet`, no aux, `BCE(pos_w=3)+L1+edge_loss`, no GAN), but on the
+5373-tile densified pool. Epoch count set to 28 (not 100) to match the
+*original run's total gradient-step budget* (100 epochs x 744
+steps/epoch = 74,400 steps ~= 28 epochs x 2686 steps/epoch on the
+3.6x-larger set), keeping wall-clock time comparable (~8h) rather than
+letting it balloon to ~29h and encroach on the 2026-08-03 00:00 JST
+Direction 4 cron job. Launched in background (nohup+disown, PPID=1) in
+parallel with the CPU-only dataset_4th extraction pipeline -- verified
+`tools/pair_extraction/` is byte-identical between `cleanup-refiner` and
+`diffusion-controlnet` branches, so the extraction pipeline (which reads
+from that directory) can't be affected by the training script's own
+branch-switch-back at the end. Result not in yet as of this entry.
+
+### Next Actions
+
+1. Check `results/compare_combined_koma_direct_unet_dense_28ep_20260801.png`
+   and its metrics once the run finishes: does 3.6x more (but redundant/
+   overlapping) tiles reduce the wobble seen at 1489 tiles?
+2. `dataset_4th`'s 530 tiles are ready but unused -- decide whether to
+   merge them into `combined_koma_20260729` (-> 2019 tiles) or the
+   densified pool for a future run, once the current comparisons land.
+3. Interpretation caveat carried over from the earlier data-quantity
+   discussion: the densified-retile result alone can't cleanly separate
+   "more data helps" from "more gradient steps on repeated content
+   helps" (same confound as the epoch-count test) -- `dataset_4th`'s
+   genuinely-new 530 tiles are the cleaner signal for that question, once
+   used in a training run.
