@@ -1839,3 +1839,47 @@ branch-switch-back at the end. Result not in yet as of this entry.
    helps" (same confound as the epoch-count test) -- `dataset_4th`'s
    genuinely-new 530 tiles are the cleaner signal for that question, once
    used in a training run.
+
+## 2026-08-01 (evening): Densified-Data Result — Worse, Not Better
+
+The 28-epoch densified run (`combined_koma_direct_unet_dense_28ep_20260801`,
+5373 tiles, ~74,700 steps to match the 100-epoch/1489-tile run's total
+step budget) finished. Result: F1@2px 0.150 (vs the 1489-tile run's
+0.187), chamfer 10.95 (vs 10.19), ink_ratio 0.596 -- notably *more*
+under-inked than the 1489-tile run's already-near-GT 0.924. Montage
+(`results/compare_combined_koma_direct_unet_dense_28ep_20260801.png`)
+shows the same wobbly crack-pattern texture, but visibly fainter/softer
+than the 1489-tile version, not more stable.
+
+**More (redundant) data made the wobble worse, not better, at matched
+total gradient-step budget.** Plausible explanation: matching total
+steps means matching total *epochs x tiles*, but since the tile count
+grew 3.6x, **per-tile exposure count dropped from 100 to 28** (each
+specific tile was seen roughly 3.6x less often in absolute terms, even
+though total steps were unchanged). This suggests the "wobble" is
+stabilized by *repeated exposure to the same specific examples*, not by
+total gradient-step count or data diversity -- i.e. this is more of a
+per-example convergence/memorization effect than a generalization-from-
+diversity effect. If so, the fix is likely "train longer on the existing
+data" (matching or exceeding the notebook's actual 50-epoch schedule more
+directly, or going well past 100 epochs on the 1489-tile set) rather than
+adding more tiles, redundant or genuinely new.
+
+**`dataset_4th`'s 530 genuinely-new tiles remain unused** -- this result
+doesn't rule them out (they're not redundant/overlapping like the
+densified retile's), but the per-tile-exposure theory above predicts they
+likely wouldn't help this specific wobble problem either, for the same
+reason (diluting exposure count per tile) unless combined with a
+correspondingly longer schedule. Updated `doc/architecture_decisions.md`
+(both branches).
+
+### Next Actions
+
+1. If the single-stage wobble problem is revisited, the more promising
+   lever now looks like "more epochs on the existing 1489 tiles" (e.g.
+   200+), not "more tiles at a matched step budget" -- the densified
+   result argues against the data-quantity hypothesis for this specific
+   failure mode.
+2. `dataset_4th`'s 530 tiles and the densified 5373-tile pool both remain
+   available on disk, unused in any adopted training, for whenever this
+   thread is picked up again.
