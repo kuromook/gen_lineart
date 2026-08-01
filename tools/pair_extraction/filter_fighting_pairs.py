@@ -13,7 +13,7 @@ width, gray/soft-ink fringe, long straight lines, tight-tolerance edge
 correspondence, tile-score cutoff) built while reviewing ako5ver2 native
 tiles. This script reuses that filter directly from `tile_region_manifest_480.py`
 so this source gets the same quality bar. See
-`doc/region_dataset_extraction_policy.md`.
+`doc/preprocess/region_dataset_extraction_policy.md`.
 
 Dry-run is the default; use --save after reviewing QC.
 """

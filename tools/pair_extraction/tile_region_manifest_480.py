@@ -13,7 +13,7 @@ Two selection modes exist:
 ## Alignment Gate vs Style Gate
 
 `analyze_tile()` deliberately separates two kinds of rejection, per
-`doc/region_dataset_extraction_policy.md`:
+`doc/preprocess/region_dataset_extraction_policy.md`:
 
 - **Alignment gate** (`ALIGNMENT_*` constants below): whether the rough and
   line edges actually sit on top of each other (chamfer distance, edge
@@ -42,7 +42,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 TILE = 480
 
 # Alignment gate: fixed, universal criteria for "rough and line agree on
-# position." Native-scale calibrated (see doc/raw_dataset_extraction_knowledge.md).
+# position." Native-scale calibrated (see doc/preprocess/raw_dataset_extraction_knowledge.md).
 # Change these only as a single deliberate cross-dataset decision, never per source.
 ALIGNMENT_CLOSE_PX = 22.0
 ALIGNMENT_STRICT_CLOSE_PX = 8.0

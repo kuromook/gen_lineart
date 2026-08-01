@@ -1,7 +1,7 @@
 """Segment housei-style pages into panel regions using a koma (panel-border) layer.
 
 This is the panel-boundary-first segmentation step planned in
-`doc/raw_dataset_extraction_knowledge.md` ("Planned Fix: Panel-Boundary-First
+`doc/preprocess/raw_dataset_extraction_knowledge.md` ("Planned Fix: Panel-Boundary-First
 Region Segmentation"), now unblocked for `housei` by a newly delivered koma
 layer (`housei_NNN_koma.jpg`, one per page, in `dataset_housei_v2.zip`).
 
@@ -15,7 +15,7 @@ Two stages, both dry-run/candidate-generation only:
    (`edge_map` / `support_f1` / `chamfer`, `ALIGNMENT_*` constants) from
    `tile_region_manifest_480.py`, extended with a uniform-scale search
    (0.85-1.15), since the finishing pass can rescale content per panel (see
-   "Residual Misalignment" in `doc/raw_dataset_extraction_knowledge.md`). For
+   "Residual Misalignment" in `doc/preprocess/raw_dataset_extraction_knowledge.md`). For
    each candidate scale, edge/support/distance maps are computed once for a
    padded ROI and then translation candidates are scored by cheap array
    slicing rather than recomputing Canny per offset.
@@ -198,7 +198,7 @@ def coarse_offset_estimate(rough_page, line_edge, cx, cy, out_w, out_h, downscal
 
     Per-panel/per-character finishing shifts can exceed what's affordable to
     search exhaustively at native resolution and step size (see
-    doc/raw_dataset_extraction_knowledge.md, "Residual Misalignment"): an
+    doc/preprocess/raw_dataset_extraction_knowledge.md, "Residual Misalignment"): an
     exhaustive native search is roughly O(max_shift^2 * edge_count), so
     widening it to chase a larger true offset gets expensive fast. Searching
     the same *effective* native range at 1/downscale resolution instead costs

@@ -42,7 +42,7 @@ dataset/
     *.txt      # 学習・評価用ファイルリスト
 ```
 
-生データからの抽出・保存・監査ルールは `doc/EXTRACTION_RULES.md` にまとめています。新しい raw dataset は、同一座標抽出を行う前に alignment 診断と QC を通してください。
+生データからの抽出・保存・監査ルールは `doc/preprocess/EXTRACTION_RULES.md` にまとめています。新しい raw dataset は、同一座標抽出を行う前に alignment 診断と QC を通してください。
 
 ---
 

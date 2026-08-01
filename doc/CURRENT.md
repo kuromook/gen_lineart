@@ -5,7 +5,7 @@ Updated: 2026-07-31 JST (later)
 This file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
 `doc/work_log.md`; reusable extraction knowledge lives in
-`doc/raw_dataset_extraction_knowledge.md`.
+`doc/preprocess/raw_dataset_extraction_knowledge.md`.
 
 Do not read files under `archive/` directories unless the user explicitly asks
 for archived history or audit material.
@@ -49,7 +49,7 @@ Dataset-specific note:
 
 - ako5ver2 has rough-only umbrella cases where rough contains an umbrella but
   the line art omits it, likely due to 3D, separate layer, or later compositing.
-  These are documented in `doc/raw_dataset_extraction_knowledge.md` and should
+  These are documented in `doc/preprocess/raw_dataset_extraction_knowledge.md` and should
   not be trained as normal pairs under the current mask.
 
 ## Current Model Interpretation
@@ -72,10 +72,10 @@ stronger ink/width control or a revised formulation before deeper use.
 
 Use:
 
-- `doc/EXTRACTION_RULES.md` for procedure and gates
-- `doc/region_dataset_extraction_policy.md` for variable-region extraction
-- `doc/region_materialization_policy.md` for manifest/materialization policy
-- `doc/raw_dataset_extraction_knowledge.md` for dataset-specific exceptions
+- `doc/preprocess/EXTRACTION_RULES.md` for procedure and gates
+- `doc/preprocess/region_dataset_extraction_policy.md` for variable-region extraction
+- `doc/preprocess/region_materialization_policy.md` for manifest/materialization policy
+- `doc/preprocess/raw_dataset_extraction_knowledge.md` for dataset-specific exceptions
 
 Current rules to preserve:
 
@@ -109,8 +109,8 @@ Current maintenance plan:
 
 The 768 px long-side normalization bottleneck identified during stroke-scale
 filter design has been resolved by re-materializing keep281 near native source
-resolution. See `doc/raw_dataset_extraction_knowledge.md` for the scale
-measurement and `doc/region_dataset_extraction_policy.md` for the scale-band
+resolution. See `doc/preprocess/raw_dataset_extraction_knowledge.md` for the scale
+measurement and `doc/preprocess/region_dataset_extraction_policy.md` for the scale-band
 and tile-score policy notes.
 
 Current native pipeline artifacts:
@@ -159,8 +159,8 @@ model-side experiments, not to reopen data-pipeline research.
 - `fighting` (renamed from `lineart` earlier this session): 40 tiles, already
   recorded above.
 
-Full details, routes, and rename rationale: `doc/dataset_status.md` and
-`doc/raw_dataset_extraction_knowledge.md`.
+Full details, routes, and rename rationale: `doc/preprocess/dataset_status.md` and
+`doc/preprocess/raw_dataset_extraction_knowledge.md`.
 
 Two overnight autonomous agents were assigned `fitness` and `housei`
 originally; both were lost mid-task (their transcripts became unrecoverable,
@@ -168,7 +168,7 @@ likely from an environment restart) and their work was picked up and completed
 directly. This surfaced an environment issue: long-running background
 extraction jobs get silently killed around 10-13 minutes regardless of
 execution method, with no traceback. Recorded as a standing operational note
-in `doc/raw_dataset_extraction_knowledge.md`; the practical workaround is
+in `doc/preprocess/raw_dataset_extraction_knowledge.md`; the practical workaround is
 chunked `--offset`/`--limit`/`--append` runs, now supported directly in
 `filter_matched_region_tiles.py`.
 
@@ -188,7 +188,7 @@ tiles) surfaced a clear per-source quality gradient in output crispness
 (fighting best, ako5ver2 worst) that tracked chamfer distance almost exactly.
 A post-hoc `chamfer<=12` re-filter (217 tiles) did not visibly improve output
 in a direct same-sample comparison against the unfiltered pool, despite the
-metric correlation holding — see `doc/region_dataset_extraction_policy.md`
+metric correlation holding — see `doc/preprocess/region_dataset_extraction_policy.md`
 ("Alignment Gate vs Style Gate") for the resulting architectural rule: keep
 alignment gates (chamfer, strict-tolerance edge correspondence) as fixed
 cross-dataset constants (`ALIGNMENT_*` in `tile_region_manifest_480.py`),
@@ -227,7 +227,7 @@ further into per-character regions within a panel if multiple characters are
 present, re-scoring alignment per character with only low-scoring cases
 needing manual review, (4) defer finer sub-character regions, which may have
 irregular/"special" deformation. Full detail:
-`doc/raw_dataset_extraction_knowledge.md` ("Residual Misalignment").
+`doc/preprocess/raw_dataset_extraction_knowledge.md` ("Residual Misalignment").
 
 ## 2026-07-26 (later) housei Koma Panel Segmentation And Tile Extraction
 
@@ -252,8 +252,8 @@ existing native mask + strict-tile pipeline (`build_region_valid_masks.py`,
 `tile_region_manifest_480.py`) unchanged: 58 tiles from 287 raw candidates,
 0 integrity findings. Saved as
 `dataset/pairs_480/valid_train_housei_koma_native_strict_20260726.txt`. Full
-detail: `doc/raw_dataset_extraction_knowledge.md` (`## housei`) and
-`doc/dataset_status.md` (`## housei` -> "Koma Panel Segmentation").
+detail: `doc/preprocess/raw_dataset_extraction_knowledge.md` (`## housei`) and
+`doc/preprocess/dataset_status.md` (`## housei` -> "Koma Panel Segmentation").
 
 ## 2026-07-26 (later still) housei_004 Fixed, Sub-Region Split, Yield Improved
 
@@ -271,7 +271,7 @@ alignment only 0.7%. Built `tools/pair_extraction/split_koma_panel_subregions.py
 to one already-aligned panel) to crop dense content islands before tiling.
 Result: 66 panels -> 179 sub-regions -> 75 tiles (up from 58), 0 integrity
 findings. This supersedes the earlier 58-tile panel-level-only set. Full
-detail: `doc/raw_dataset_extraction_knowledge.md` (`## housei`).
+detail: `doc/preprocess/raw_dataset_extraction_knowledge.md` (`## housei`).
 
 ## 2026-07-26 (even later) Per-Sub-Region Alignment Refinement
 
@@ -289,7 +289,7 @@ unrefined, up from 58 at the original whole-panel level), 0 integrity
 findings. This is now the current housei koma-panel training source,
 superseding both earlier sets (left on disk, not deleted). Full progression:
 58 -> 75 -> 85 tiles across whole-panel -> sub-region-split ->
-+alignment-refinement. Full detail: `doc/raw_dataset_extraction_knowledge.md`
++alignment-refinement. Full detail: `doc/preprocess/raw_dataset_extraction_knowledge.md`
 (`## housei`).
 
 ## 2026-07-31 Koma Extraction Complete; Model Architecture Survey (6 -> 8 -> 9), Then Reconsider Direction 4

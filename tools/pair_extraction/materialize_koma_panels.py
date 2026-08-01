@@ -105,7 +105,7 @@ def main():
         # keep every distinct page's full-resolution rough/line arrays
         # (~35 MB each) alive for the whole run instead of just the current
         # page — the same class of bug fixed elsewhere for this pipeline
-        # (see doc/raw_dataset_extraction_knowledge.md), and worse for
+        # (see doc/preprocess/raw_dataset_extraction_knowledge.md), and worse for
         # larger-page-count sources like ako5ver2/hamlabi than it was for
         # housei's 18 pages.
         page_cache = {}

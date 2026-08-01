@@ -1,7 +1,7 @@
 # Pair Extraction Tools
 
 Scripts in this folder prepare paired rough/line datasets from raw source data.
-Read `doc/EXTRACTION_RULES.md` before running these tools for a new dataset.
+Read `doc/preprocess/EXTRACTION_RULES.md` before running these tools for a new dataset.
 Run them from the repository root so their relative paths resolve against the
 standard dataset layout:
 
