@@ -155,9 +155,9 @@ Direction 1(multi-scale PatchGAN)・2(feature matching)・3(structure/edge loss)
 - **アーキテクチャ**: `UNetGenerator`、aux/atari入力なし(`in_channels=1`) — notebookのモデルとアーキテクチャ的に同一(64→128→256→512チャンネル、`ResBlock`+dilated conv、concat skip connection)
 - **数式**: `pred_logits = UNet(rough)`(残差アンカーなし)；lossはnoadvと同一: `L = 0.8·BCE(pos_w=3) + 0.2·L1 + 0.5·edge_loss`、GANなし
 - **実装のコード**: `lineart/unetgenerator.py::UNetGenerator`、`--model unet`で`--aux-dir`を指定しない；`experiments/run_combined_koma_direct_unet_20260801.sh`(3エポック)、`run_combined_koma_direct_unet_100ep_20260801.sh`(100エポック、2026-08-01夜通しで起動)
-- **目視評価**: 済み(3エポック版)。100エポック版は完了・評価待ち
-- **montageの場所**: `results/compare_combined_koma_direct_unet_20260801.png`；100エポック版のmontageは未生成
-- **その他メモ**: **3エポック版の結果は参考にならず、このアーキテクチャに対する反証として引用すべきではない**: ほぼ真っ白な出力(F1@2px 0.012)だが、学習lossは3エポック終了時点でも収束の兆しなく順調に低下中(0.377→0.292→0.273)。atariにアンカーされた一族は「温かい」状態から始まり2-3エポックで収束するのに対し、こちらはコールドスタートで全マッピングをゼロから学習する必要があるためもっと多くのステップが要る — notebook自体は50エポック学習していた。公平な検証のため100エポック版を起動済み；ここで何か結論を出す前に`results/compare_combined_koma_direct_unet_100ep_20260801.png`を確認すること。
+- **目視評価**: 済み(3エポック版・100エポック版とも)
+- **montageの場所**: `results/compare_combined_koma_direct_unet_20260801.png`(3エポック)；`results/compare_combined_koma_direct_unet_100ep_20260801.png`(100エポック、2026-08-01完了)
+- **その他メモ**: 3エポック版はほぼ真っ白な出力(F1@2px 0.012)だが、学習lossは終了時点でも収束の兆しなく順調に低下中(0.377→0.292→0.273)だったため、公平な検証として100エポック版(約8時間、lossは最終的に0.377→0.137付近で緩やかに収束)を実行。**100エポック版の結果は今夜で最も興味深い**: F1@2px 0.187、chamfer 10.19(今夜最悪)、ink_ratio 0.924(GTとほぼ同量)。montageを見ると、**cleanup/atari一族とは全く異なる失敗モード**であることが分かる — 出力は既存のどのモデルよりも明らかにcrispで完全な二値の黒線であり、soft/marbledではない(**このアーキテクチャは十分学習すればsoft/marbled天井を脱却できるという仮説を裏付ける**)。ただしその crisp な線は、キャラクターの構造とは無関係な、ひび割れ/血管状の無秩序なノイズパターンになっている。ink_ratio(≈GT並みの量)とF1/chamfer(内容は的外れ)の組み合わせは「線の総量は合わせられたが、どこに引くべきかは学習できていない」ことを示している。Direction 4(diffusion)の「幻覚」(もっともらしい別内容を生成)とも異なる、「意味のある構造を学ばずに損失関数だけを安く満たす近道を見つけた」タイプの失敗に見える — 2026-07-31のunpaired-adversarial branchで見られた「フラグメント化した高コントラストの点で安く敵対的損失を騙す」現象と構造的に似ている可能性がある。**結論: 単段直接回帰はcrispさの面ではatari一族に勝るが、内容的な正しさでは全く実用にならない。** アンカーなしで100エポックという設定そのものが、crispさと内容学習の間の別のトレードオフを露呈させた、と見るのが妥当。
 
 ---
 

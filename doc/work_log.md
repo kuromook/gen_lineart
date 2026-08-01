@@ -1709,3 +1709,39 @@ fair test.
    agreement/data-mixing is ruled out; adversarial loss is ruled out;
    single-stage architecture is untested-but-plausible, pending a
    properly long training run.
+
+## 2026-08-01 (morning): 100-Epoch Direct-Regression Result — Escapes the Ceiling, But Into Noise
+
+The 100-epoch single-stage direct-regression run (`combined_koma_direct_unet_100ep_20260801`,
+~8h, loss converged from 0.377 to ~0.137) finished. Result:
+F1@2px 0.187, chamfer 10.19 (worst of the night), ink_ratio 0.924 (close
+to GT's overall ink amount).
+
+**Montage review** (`results/compare_combined_koma_direct_unet_100ep_20260801.png`)
+shows a genuinely different failure mode from every other model tonight
+and in the whole Direction 5/6/8/9 survey: the output is visibly crisper
+and more fully binary/black than any atari-anchored model -- **this
+confirms the single-stage architecture can escape the soft/marbled
+ceiling given enough training**, supporting the original notebook-based
+hypothesis. But the crisp ink forms an incoherent crack/vein-like noise
+pattern with no relation to the actual character/line structure, not
+real line art. The metrics combination (near-GT ink *amount* but very
+poor F1/chamfer *placement*) is consistent with this: the model matched
+the aggregate statistics the loss rewards (right total dark fraction,
+crisp edges somewhere) without learning genuine rough-to-line
+correspondence. This resembles the "cheap trick" failure mode seen in
+the 2026-07-31 unpaired-adversarial branch (fragmented high-contrast
+speckles satisfying an adversarial loss without real structure) more
+than it resembles Direction 4's hallucination (which at least produces
+plausible, coherent alternate content).
+
+**Conclusion:** single-stage direct regression is not a usable
+replacement for the atari+cleanup family as currently configured (no
+anchor, no GAN, this loss recipe, 100 epochs on 1489 tiles) --  crispness
+and content-correctness traded off against each other rather than both
+improving together. Not adopted. Whether a longer/differently-regularized
+version could learn genuine correspondence while keeping the crispness is
+an open question, not pursued further tonight.
+
+Updated `doc/architecture_decisions.md` (both branches) with this final
+result.
