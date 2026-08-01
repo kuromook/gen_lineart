@@ -38,15 +38,22 @@ When the size gate is crossed:
 
 ## Where To Move Knowledge
 
-Use focused docs instead of adding more long sections to `work_log.md`:
+Use focused docs instead of adding more long sections to `work_log.md`.
+Preprocess (raw page/panel/pair extraction) docs live under
+`doc/preprocess/*.md`, separate from architecture/research docs at
+`doc/*.md`, so a plain `read doc/*.md` stays compact -- see "Layout" in
+`doc/README.md`. Put new preprocess docs under `doc/preprocess/`, and new
+architecture/research docs directly under `doc/`.
 
 - extraction procedure and gates:
-  - `doc/EXTRACTION_RULES.md`
+  - `doc/preprocess/EXTRACTION_RULES.md`
 - dataset-specific raw extraction knowledge:
-  - `doc/raw_dataset_extraction_knowledge.md`
+  - `doc/preprocess/raw_dataset_extraction_knowledge.md`
 - region extraction policy:
-  - `doc/region_dataset_extraction_policy.md`
-  - `doc/region_materialization_policy.md`
+  - `doc/preprocess/region_dataset_extraction_policy.md`
+  - `doc/preprocess/region_materialization_policy.md`
+- architecture/math/code per model, plus metrics glossary:
+  - `doc/architecture_decisions.md`
 - model direction summaries:
   - `doc/model_directions.md`
 - results layout:

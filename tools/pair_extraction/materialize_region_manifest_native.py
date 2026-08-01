@@ -4,7 +4,7 @@ The 768 px long-side normalization used by
 `tools/pair_extraction/materialize_region_candidates.py` is not scale-neutral:
 a 121 px region and a 6,947 px region both become 768 px, so downstream 480 px
 tiles mix 6x upscaled fragments with 9x downscaled page composition. See
-`doc/region_dataset_extraction_policy.md`.
+`doc/preprocess/region_dataset_extraction_policy.md`.
 
 This tool re-crops the same reviewed regions from the source pages at
 `source_size / --source-scale-divisor`, so every output pixel corresponds to a

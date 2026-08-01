@@ -4,7 +4,7 @@
 `match_kurip_regions.py` (name predates its use beyond its original source;
 fully generic via `--zip`/`--zip-root`) already performs the region-matching
 step this project requires (line-anchored, rough-side local offset search; see
-`doc/EXTRACTION_RULES.md`, route `needs_global_or_local_alignment`). Its
+`doc/preprocess/EXTRACTION_RULES.md`, route `needs_global_or_local_alignment`). Its
 candidate tiles are already native-resolution fixed 480x480 crops, so none of
 the source-scale normalization work done for ako5ver2 applies here (`src_per_out`
 is always 1.0 by construction).
@@ -16,11 +16,11 @@ ako5ver2 native tiles: metrics that individually pass every gate can still
 describe an unrelated rough/line pair. This script reuses that filter directly
 from `tile_region_manifest_480.py` instead of re-implementing it, so every
 source using this route gets the same quality bar. See
-`doc/region_dataset_extraction_policy.md`.
+`doc/preprocess/region_dataset_extraction_policy.md`.
 
 Also supports `--offset`/`--limit`/`--append` for chunked runs: an unchunked
 full pass was observed to trigger real kernel OOM kills (see
-`doc/raw_dataset_extraction_knowledge.md`), traced to `rough_tile`/`line_tile`
+`doc/preprocess/raw_dataset_extraction_knowledge.md`), traced to `rough_tile`/`line_tile`
 below being raw numpy views into the full per-page image (each pins the
 entire ~35 MB source page alive, not just the 480x480 crop) accumulated in the
 `accepted` list for the whole run, compounded by `match_kurip_regions.py`
@@ -144,7 +144,7 @@ def write_csv(rows, path, append=False):
 
     Used for chunked runs (`--offset`/`--limit`) so a slow full pass can be
     split into several short, resumable invocations. See
-    `doc/raw_dataset_extraction_knowledge.md` for why this was needed: this
+    `doc/preprocess/raw_dataset_extraction_knowledge.md` for why this was needed: this
     environment silently kills background jobs somewhere around 10-13 minutes
     regardless of the requested timeout, with no traceback.
     """

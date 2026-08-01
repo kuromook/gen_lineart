@@ -1,7 +1,7 @@
 #!/bin/bash
 # Warmstart control run for the native-resolution stroke-scale-filtered
-# ako5ver2 keep281 tiles (see doc/raw_dataset_extraction_knowledge.md and
-# doc/region_dataset_extraction_policy.md for the native re-materialization
+# ako5ver2 keep281 tiles (see doc/preprocess/raw_dataset_extraction_knowledge.md and
+# doc/preprocess/region_dataset_extraction_policy.md for the native re-materialization
 # and tile-score filter design).
 set -e
 cd "$(dirname "$0")/.."
