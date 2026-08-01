@@ -1900,3 +1900,48 @@ look at stroke continuity/shape (are fragments merging into single lines?),
 not just F1/chamfer/ink_ratio -- if ink just gets darker/bolder on the
 same fragmented pattern, that's a different (less useful) outcome than
 genuine stroke stabilization even if the metrics improve either way.
+
+**Built a metric for this directly (`tools/evaluation/evaluate_stroke_stability.py`),
+while the 200-epoch run trains in the background.** Skeletonizes the
+predicted ink, measures connected-component count/length
+(`component_count`, `mean_component_len`, `long_component_ratio` = share
+of skeleton pixels in components >=20px, `components_per_1k_ink_px`), and
+reuses `orientation_entropy` + `long_line_ratio` from
+`tools/pair_extraction/tile_region_manifest_480.py` (re-tuned
+`--min-length-fraction` down from that module's panel-border default,
+since character strokes are much shorter).
+
+**First run surfaced a real, useful finding** (msgan / noadv /
+direct_unet_100ep / direct_unet_dense_28ep, vs GT):
+
+| model | components | mean_len | long_component_ratio | components/1k ink px |
+|---|---:|---:|---:|---:|
+| GT | 290 | 19.0 | 0.819 | 20.9 |
+| `lucy_mild_msgan` | 3336 | 3.9 | 0.261 | 157.6 |
+| `lucy_mild_noadv` | 1177 | 2.0 | 0.037 | 490.5 |
+| `direct_unet_100ep` | 220 | 11.4 | 0.625 | 17.2 |
+| `direct_unet_dense_28ep` | 174 | 9.0 | 0.611 | 20.3 |
+
+**The "soft/marbled" cleanup family is actually far more fragmented at
+the skeleton level than the visually "wobbly" direct_unet family** --
+msgan's softness is many thousands of tiny disconnected ink specks
+(components_per_1k=157.6), not fewer/longer strokes; direct_unet_100ep's
+components_per_1k (17.2) is even *lower* than GT's own (20.9). This
+reframes "wobble" vs "soft/marbled" -- direct_unet's output is
+structurally *more* continuous than msgan's despite looking jitterier by
+eye, and msgan's apparent smoothness is itself a fragmentation artifact
+at the pixel level, just at a finer grain the eye reads as "soft" rather
+than "broken."
+
+Also notable: the 28ep->100ep exposure difference moved F1@2px/ink_ratio
+a lot but `long_component_ratio` only modestly (0.611->0.625) and
+`components_per_1k` similarly (20.3->17.2) -- consistent with the
+confidence-vs-stability split above: more exposure so far looks like it
+mainly restores *confidence* (ink amount), with only a modest effect on
+structural fragmentation. **This is the baseline to compare the running
+200-epoch result against** -- if `long_component_ratio` moves
+substantially closer to GT's 0.819 at 200 epochs, that's evidence for
+genuine stroke stabilization; if it stays near 0.6-0.65 while only
+F1/ink_ratio improve further, that confirms epochs mainly buy confidence,
+not continuity, and a different lever (e.g. an explicit continuity/
+smoothness loss term) would be needed for the latter.
