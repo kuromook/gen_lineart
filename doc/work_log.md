@@ -1883,3 +1883,20 @@ correspondingly longer schedule. Updated `doc/architecture_decisions.md`
 2. `dataset_4th`'s 530 tiles and the densified 5373-tile pool both remain
    available on disk, unused in any adopted training, for whenever this
    thread is picked up again.
+
+**Sharpened hypothesis before launching the 200-epoch (1489-tile) test
+(user prompt): "more repetition helps" conflates two separate claims.**
+(a) *Confidence/ink-amount* increasing with repetition is well-supported
+by the data so far -- monotonic across 3 epochs (near-blank, F1 0.012),
+the densified run's effective ~28 repeats/tile (under-inked, ink_ratio
+0.596), and 100 epochs (near-GT ink_ratio 0.924). (b) *Stability* --
+whether the wobbly crack-like fragments actually merge into continuous,
+coherent strokes, vs. just staying the same fragmented shape but getting
+darker/thicker -- has **no direct evidence either way yet**. The
+100-epoch output is already crisp (not soft), so confidence and crispness
+are already present; what's unresolved is whether more repetition fixes
+stroke *continuity* specifically. When reviewing the 200-epoch montage,
+look at stroke continuity/shape (are fragments merging into single lines?),
+not just F1/chamfer/ink_ratio -- if ink just gets darker/bolder on the
+same fragmented pattern, that's a different (less useful) outcome than
+genuine stroke stabilization even if the metrics improve either way.
