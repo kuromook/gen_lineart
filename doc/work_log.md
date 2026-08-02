@@ -2130,3 +2130,37 @@ soft/marbled ceiling problem (root-caused earlier to the atari
 generator's own texture quality, not this same mechanism). Not
 implemented or tested this session -- a candidate idea for next steps,
 not a decision.
+
+### Next Weekend's Plan (ranked, discussed with user 2026-08-02 night)
+
+1. **Checkpoint weight/logit averaging (SWA-style) -- try this first.**
+   Average weights (or blend output logits) between an early "faithful
+   but unconfident" checkpoint (~ep15-25) and a later "confident but
+   generic" checkpoint (~ep55) from
+   `checkpoints/combined_koma_direct_unet_finegrid_20260802/`. No new
+   training needed, checkpoints already exist -- cheapest thing to try,
+   answers in minutes whether blending the two regimes recovers both
+   properties at once.
+2. **Self-anchor two-stage decomposition, if (1) doesn't work.** Freeze
+   an early precise-but-soft checkpoint as a fixed anchor, train a small
+   correction/binarization head on top of it -- reusing the existing
+   `aux_logits + bounded_correction` structure already implemented for
+   the `cleanup` family in `lineart/model_zoo.py`, but with this
+   architecture's own early checkpoint as the anchor instead of the
+   atari/ResNet-GAN generator (sidesteps that generator's own
+   soft/marbled texture, which was root-caused earlier to be the
+   `cleanup` family's ceiling problem). Structurally the bigger lift of
+   the two options, but reuses existing code patterns.
+3. **Expand the fixed eval set (do in parallel with either 1 or 2).**
+   The current 8-tile `eval_clean_lineart004_8.txt` is proving too small
+   -- per-checkpoint metric noise is comparable in size to the
+   differences between candidate epochs (see the epoch-40-peak
+   non-replication above). Consider carving out held-out eval tiles from
+   the unused `dataset_4th` 530-tile pool
+   (`dataset/pairs_480/valid_train_4th_koma_20260801.txt`) rather than
+   reusing training-adjacent data.
+4. **Lower priority / fallback:** an explicit fidelity-preserving loss
+   (self-distillation from an early checkpoint, or a perceptual loss
+   against rough edges) is architecturally cleaner than a two-stage
+   pipeline but requires a fresh training run to test -- worth trying
+   only if (1) and (2) both disappoint.
