@@ -2164,3 +2164,125 @@ not a decision.
    against rough edges) is architecturally cleaner than a two-stage
    pipeline but requires a fresh training run to test -- worth trying
    only if (1) and (2) both disappoint.
+
+## 2026-08-03: Skip-Connection Ablation (Simo-Serra-Inspired), Dedicated Worktree
+
+User asked to look for outside literature hints for the wobbly/fragmented
+direct-regression failure mode. Read Simo-Serra et al.'s sketch-cleanup
+papers ("Learning to Simplify" 2016, "Mastering Sketching" 2018 -- the
+slide-deck PDF for the 2016 paper gave verified architecture detail beyond
+the abstract). Their network has **no long skip connections**: a plain
+down-conv (stride 2) -> flat-conv stack at an H/8 bottleneck -> up-conv
+hourglass, 23 layers, weighted MSE loss, BatchNorm called out as "critical",
+trained from scratch, with potrace vectorization + high-pass + binarization
+as a separate post-process stage (not a raster pixel threshold).
+
+Papers/links (for later full reading, not just this session's skim):
+
+- Simo-Serra et al., "Learning to Simplify: Fully Convolutional Networks
+  for Rough Sketch Cleanup" (SIGGRAPH 2016) -- project page + code:
+  https://esslab.jp/~ess/research/sketch/ ; slide-deck PDF (used this
+  session for architecture detail):
+  https://pdfs.semanticscholar.org/ba27/cfebd5f919e7bdb83d7c5ce3bfc264810fc5.pdf
+- Simo-Serra et al., "Mastering Sketching: Adversarial Augmentation for
+  Structured Prediction" (SIGGRAPH 2018) -- arXiv:
+  https://arxiv.org/abs/1703.08966 ; project page:
+  https://esslab.jp/~ess/research/sketch_master/
+- Code (both papers): https://github.com/bobbens/sketch_simplification
+- Not yet acted on this session (candidates for the other two documented
+  failure modes -- see "Next Actions" below):
+  - Shit et al., "clDice -- a Novel Topology-Preserving Loss Function for
+    Tubular Structure Segmentation" (topology/continuity loss, relevant to
+    the stroke-fragmentation metrics already tracked here):
+    https://arxiv.org/abs/2003.07311
+  - Li et al., "ControlNet++: Improving Conditional Controls with
+    Efficient Consistency Feedback" (ECCV 2024, relevant to Direction 4's
+    documented hallucination/unfaithfulness problem on the
+    `diffusion-controlnet` branch): https://arxiv.org/abs/2404.07987 ;
+    code: https://github.com/liming-ai/ControlNet_Plus_Plus
+
+**Correction to an earlier same-session claim:** the adopted `cleanup`
+family (`ResidualCleanupGenerator`) has no skip connections either -- it is
+a flat 5-block conv-IN-ReLU stack at full 480px resolution with no
+downsampling at all, structurally unlike both Simo-Serra's design and a
+U-Net. There is nothing to remove there. The actual structural match for
+"remove skip connections" is this branch's direct single-stage regression
+family (`UNetGenerator`, `--model unet`, no aux/atari input) -- the one
+already showing the wobbly/fragmented failure mode (see the fine-grid entry
+above) -- since it has classic 3-level concat skip connections
+(`torch.cat([up, encoder_feature], dim=1)` at every decoder level).
+Hypothesis: those concat skips let full-resolution rough-stroke noise reach
+the decoder directly at every scale, which may be why output never commits
+to a single continuous stroke the way Simo-Serra's skip-free hourglass does.
+
+**Convenient discovery:** `lineart/model_zoo.py` already has `ScaledSkipUNet`
++ `parse_skip_scale()` (built in an unrelated 2026-07-19-era 2ch-refiner
+survey, left at `unet_skip25`/`unet_skip50` and judged worse than plain
+`refiner_unet` in that different context -- not revisited since).
+`parse_skip_scale` already handles `unet_skip0` correctly (zeroes encoder
+features before concat, functionally equivalent to no skip connections) --
+it was simply never added to `train_i2i_survey.py`'s `--model` choices list.
+Added it (one line); no new generator class needed. Verified with a CPU
+forward pass (`ScaledSkipUNet skip_scale=0.0`, correct output shape).
+
+**Dedicated worktree.** Per user request, this and future CNN+GAN-family
+work now runs from `../lineart-cleanup-refiner` (this worktree, on
+`cleanup-refiner`) instead of time-sharing the main worktree with
+`diffusion-controlnet` (as the 2026-08-02 fine-grid run had to, checking out
+back and forth against a hard cron deadline -- see that run's script
+comments). `dataset/pairs_480/{train,test,valid_train_combined_koma_20260729.txt}`
+and `venv` are symlinked back to the main worktree (individually, not the
+whole `dataset`/`venv` directory, to avoid breaking `git add` on the few
+tracked exception files inside `dataset/` the same way the earlier
+single-symlink `checkpoints/` mistake did -- see [[disk_layout]]).
+`checkpoints/combined_koma_unet_skip0_finegrid_20260803` pre-created under
+`~/disk/lineart_checkpoints/` and symlinked before training, per the
+established procedure.
+
+**Experiment:** `experiments/run_combined_koma_unet_skip0_finegrid_20260803.sh`
+mirrors `run_combined_koma_direct_unet_finegrid_20260802.sh` exactly (same
+1489-tile `combined_koma_20260729` manifest, same loss recipe
+`0.8*BCE(pos_w=3)+0.2*L1+0.5*edge_loss`, no GAN, same 60-epoch/5-epoch-
+checkpoint trajectory protocol, same eval tool stack --
+`evaluate_fixed_outputs.py` + `evaluate_stroke_stability.py` + multi-model
+montage) with only `--model unet` -> `--model unet_skip0` changed, so
+skip-connection presence is the sole varied axis against that existing
+trajectory. Branch-switch-back step removed (not needed from a dedicated
+worktree).
+
+**Status:** queued, not yet run. The GPU (12GB) is occupied by the active
+`controlnet_koma_direction4_longrun_20260803` run in the
+`diffusion-controlnet` worktree (fired 00:00 JST today per its own cron
+entry, ~18600 steps / ~19h). Launched a detached wrapper
+(`experiments/run_after_controlnet_longrun_queue_unet_skip0_20260803.sh`,
+PID 1055335, `nohup ... & disown`) that polls the ControlNet PID every 300s,
+waits for it to exit, waits for GPU memory to drop below 3000 MiB (max
+600s extra wait), then launches this run automatically -- matching this
+project's established pattern for detached multi-hour job hand-offs.
+
+### Next Actions
+
+1. Wait for the queued `unet_skip0` fine-grid run to complete (ntfy
+   notification, or `logs/queue_unet_skip0_after_controlnet_20260803.log`
+   then `logs/combined_koma_unet_skip0_finegrid_20260803.log`). Compare its
+   stroke-stability trajectory (`long_component_ratio`,
+   `components_per_1k_ink_px`) and crop-level visual continuity against the
+   skip-connection baseline (`combined_koma_direct_unet_finegrid_20260802`)
+   at matched epochs -- per this project's standing rule, visual review is
+   the adoption gate, not the stability numbers alone.
+2. If skip-removal shows a real continuity improvement, BatchNorm-vs-
+   InstanceNorm (Simo-Serra calls BatchNorm "critical"; this project's
+   generators use InstanceNorm throughout) is the natural next isolated
+   variable to test -- deliberately not bundled into this run.
+3. If skip-removal shows no effect or hurts positional precision (plausible
+   -- skip connections also carry fine spatial alignment info, not only
+   noise), the binarization/rough-fidelity trade-off track (options 1-4
+   directly above this entry) remains the primary open thread.
+4. Potrace-style vector-based cleanup as a post-process stage (distinct
+   from the raster-threshold post-processing already tried and rejected in
+   `doc/badrough_lucy_thin_threshold_notes.md` for producing speckle/
+   fragmentation) and Simo-Serra's global-discriminator unpaired-data setup
+   (usable with line-only GT data, unlike the already-rejected skima
+   rough-only adversarial branch) are recorded but not yet started -- per
+   user direction, full literature-hint follow-through is intended
+   eventually, this session's scope was narrowed to (1) first.

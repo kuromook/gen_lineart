@@ -503,6 +503,7 @@ def main():
         "--model",
         choices=[
             "unet",
+            "unet_skip0",
             "unet_skip25",
             "unet_skip50",
             "resnet",
