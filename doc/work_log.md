@@ -2072,3 +2072,61 @@ noise) or averaging across more independent runs -- not done here.
    over the existing `combined_koma_lucy_mild_msgan_20260729` production
    checkpoint -- this remains an open architecture-comparison thread, not
    a completed decision.
+
+## 2026-08-02 (night): Binarization vs Rough-Fidelity Are a Real Trade-Off, Not One Confidence Axis
+
+User's visual read of the fine-grid montage: "line-art-like" black/white
+crispness already looks adequate by ~epoch 55 (epoch 35 still slightly
+soft), while faithfulness to the rough's specific content already starts
+degrading around epoch 15 and keeps getting worse. This reframes the
+question from "find the best epoch" to "how do you keep pushing
+binarization to ~epoch 55 without the picture degrading?"
+
+**First check (coarse Canny-edge agreement) did not confirm this.** Built
+`tools/evaluation/evaluate_rough_fidelity.py`, reusing
+`score_pair_agreement.py`'s `agreement_metrics()` (originally built to
+score rough/GT correspondence for data-split purposes) applied to
+(rough, prediction) instead of (rough, GT), run across both the
+200-epoch run's checkpoints and the fine-grid run's checkpoints
+(`results/rough_fidelity_trajectory_20260802.csv`). Result: `edge_f1`
+(rough-vs-prediction) rises from ~0 at epoch 10-20 (output is genuinely
+flat/edge-less at those checkpoints, not just under the ink threshold --
+confirmed by literal zero Canny edges) to 0.36-0.41 by epoch 40-160, only
+mildly declining by 180-200 (0.37, 0.36) -- essentially the same
+rise-then-plateau-then-mild-decline shape as the GT-comparison metrics,
+not a continuous decline from epoch 15. This metric does not support the
+"two separate axes" framing on its own.
+
+**Cropped side-by-side comparison (`results/crop_compare_finegrid_20260802.png`,
+3 samples x rough/ep05/ep15/ep35/ep55/GT, zoomed 240x240px region at
+3x) resolved the discrepancy: the user's read was right, but at a level
+of detail the coarse edge metric can't see.** ep05 and ep15 look nearly
+identical to each other: blurry/soft, but they trace the rough's actual
+specific stroke paths quite closely (basically a blurred copy of the
+input). By ep35/ep55, the output is crisper and darker but the ink no
+longer follows the *same specific stroke paths* -- it lands in roughly
+the same general region as the rough's stroke-dense areas but draws a
+different, more generic-looking "linework texture" instead of tracing
+the actual input curve. **`edge_f1`'s tolerance-based Canny-position
+matching can't detect this**: as ink coverage increases, the chance of
+incidentally landing near *some* rough edge within the tolerance radius
+also increases, propping up the score even as specific-curve fidelity
+degrades -- the same blind spot already noted for the 100-epoch
+result's GT comparison ("004_009's eye shape not reproduced" despite
+ink_ratio being GT-plausible).
+
+**Revised understanding: binarization/confidence and rough-fidelity are
+a genuine trade-off along this architecture's training trajectory, not
+one "confidence" axis with a single best point.** Early
+(low-epoch) checkpoints are precise-but-unconfident (a soft blur that
+closely tracks the input); later checkpoints are confident-but-generic
+(crisp ink that occupies plausible regions without tracing specific
+input curves). This is suggestive of a two-stage decomposition (a
+precise-but-soft trace stage, refined/binarized by a second stage) rather
+than expecting one single-stage regressor to deliver both properties at
+once -- structurally similar in spirit to the existing aux+bounded-
+correction `cleanup` architecture, though that family has its own
+soft/marbled ceiling problem (root-caused earlier to the atari
+generator's own texture quality, not this same mechanism). Not
+implemented or tested this session -- a candidate idea for next steps,
+not a decision.
