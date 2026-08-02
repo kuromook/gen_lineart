@@ -1945,3 +1945,67 @@ genuine stroke stabilization; if it stays near 0.6-0.65 while only
 F1/ink_ratio improve further, that confirms epochs mainly buy confidence,
 not continuity, and a different lever (e.g. an explicit continuity/
 smoothness loss term) would be needed for the latter.
+
+## 2026-08-02: 200-Epoch Direct-Regression Result — Hypothesis Rejected, Regression Not Improvement
+
+`experiments/run_combined_koma_direct_unet_200ep_20260801.sh` completed
+(1489 tiles, 200 epochs, ~16.6h). Neither the per-tile-exposure
+hypothesis nor a weaker "epochs mainly buy confidence" version of it
+survived: **200 epochs is worse than 100 on every metric, alignment and
+stability alike.**
+
+Fixed-output metrics (eval: `eval_clean_lineart004_8.txt`):
+
+| model | F1@2px | chamfer | ink_ratio |
+|---|---:|---:|---:|
+| `direct_unet_100ep` | 0.1873 | 10.191 | 0.924 |
+| `direct_unet_dense_28ep` | 0.1501 | 10.945 | 0.596 |
+| `direct_unet_200ep` | 0.1621 | 10.797 | 0.628 |
+
+Stroke-stability metrics (`tools/evaluation/evaluate_stroke_stability.py`,
+same eval list, `results/stroke_stability_metrics_200ep_20260802.csv`):
+
+| model | component_count | mean_component_len | long_component_ratio | components_per_1k_ink_px |
+|---|---:|---:|---:|---:|
+| GT | 290 | 19.0 | 0.819 | 20.9 |
+| `direct_unet_100ep` | 220 | 11.4 | 0.625 | 17.2 |
+| `direct_unet_dense_28ep` | 174 | 9.0 | 0.611 | 20.3 |
+| `direct_unet_200ep` | 215 | 9.3 | **0.507** | **24.9** |
+
+`long_component_ratio` moved *away* from GT (0.625 -> 0.507), and
+`components_per_1k_ink_px` moved *away* from GT (17.2 -> 24.9, i.e. more
+fragmented, not less). This directly falsifies the "more repetition on
+the same tiles stabilizes the wobble" hypothesis this run was designed to
+test -- the answer isn't "no effect," it's the opposite-signed effect.
+
+Visual review (`results/compare_combined_koma_direct_unet_200ep_20260801.png`):
+confirms the numbers. The `direct_unet_200ep` column looks like the same
+family of thin, wispy, fragmented scribble as `_100ep`/`_dense_28ep`, if
+anything slightly thinner/more hair-like than `_100ep`, not more
+GT-like. No visible sign of fragments merging into coherent strokes.
+
+**Revised picture across all three direct-regression runs so far**
+(28 exposures/5373 tiles, 100 exposures/1489 tiles, 200 exposures/1489
+tiles): moving *either direction* away from the 100-exposures/1489-tiles
+point made both alignment and stability metrics worse. That point looks
+like a local optimum for this architecture at this data scale, not a
+point on a monotonic "more repetition = more stable" curve. 100 epochs
+on 1489 tiles is likely near this small dataset's overfitting boundary
+for a from-scratch single-stage U-Net with no aux anchor -- 200 epochs
+plausibly overfits to the 1489 train tiles at the expense of the
+lineart_004 held-out eval domain, while the densified 28ep run traded
+per-tile repetition for content diversity and also lost ground, for
+still-unclear reasons (possibly diluted with lower-quality/harder tiles
+loosened in by the retile's relaxed dedup thresholds -- not yet checked).
+
+**Conclusion for this branch of investigation:** simply scaling epochs or
+tile count on the current combined_koma pool does not fix the wobble.
+Escaping it likely needs either (a) an explicit continuity/smoothness
+loss term (regularizing the skeleton structure directly, not just
+pixel-wise BCE/L1/edge), or (b) a genuinely larger and more diverse
+training pool than what's been tried (the untested `dataset_4th` 530
+tiles and a QC pass on the densified pool's added tiles are the two
+concrete next candidates), or (c) accepting that a from-scratch
+single-stage regressor without an aux anchor is not viable at this data
+scale and returning attention to the aux-anchor family's soft/marbled
+ceiling instead. Not decided yet -- holding for the next work session.
