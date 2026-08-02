@@ -2009,3 +2009,66 @@ concrete next candidates), or (c) accepting that a from-scratch
 single-stage regressor without an aux anchor is not viable at this data
 scale and returning attention to the aux-anchor family's soft/marbled
 ceiling instead. Not decided yet -- holding for the next work session.
+
+## 2026-08-02 (evening): Epoch-Trajectory Read Of The 200-Epoch Checkpoints — A Real Lead, Then Partially Walked Back
+
+Instead of comparing separate from-scratch runs at 100/200 epochs (each a
+different init/seed), evaluated all 10 checkpoints already saved every 20
+epochs *within* the single 200-epoch run
+(`checkpoints/combined_koma_direct_unet_200ep_20260801/epoch0{20..200}.pth`)
+against the eval list, using both `evaluate_fixed_outputs.py` and
+`evaluate_stroke_stability.py`. Finding: `long_component_ratio` and
+`components_per_1k_ink_px` both looked like they peaked sharply at epoch
+40 (0.692 / 12.7, both the best values in the whole 20-200 sweep) then
+degraded steadily through 200 (0.463 / 25.3), while F1/chamfer/ink_ratio
+were noisier but also best in the 40-160 range. Visual review of a
+6-column montage (`results/compare_combined_koma_direct_unet_200ep_20260801_trajectory.png`)
+supported this: ep020 still soft, ep040 crisp with long strokes, ep060+
+progressively more hairy/fragmented.
+
+**Replication run (`experiments/run_combined_koma_direct_unet_finegrid_20260802.sh`,
+fresh independent training, 5-epoch checkpoints from 5 to 60) partially
+contradicted the sharp-epoch-40-peak reading.** Results:
+`results/combined_koma_direct_unet_finegrid_20260802_trajectory_fixed_metrics.csv`
+/ `..._stability_metrics.csv`, montage
+`results/compare_combined_koma_direct_unet_finegrid_20260802_trajectory.png`.
+In this run, the "best" epoch depends on which metric you ask:
+`components_per_1k_ink_px` peaks at ep40 (12.3) as before, but
+`long_component_ratio` and chamfer both peak at ep50 (0.721 / 10.05), and
+F1@2px peaks at ep55 (0.204). Visually, ink density increases
+continuously from ep025 through ep055 with no obvious visual turnaround
+inside that range. **Also surfaced a new, unexplained instability**: this
+run's epoch010 and epoch015 checkpoints are near-totally blank
+(ink_ratio 0.001/0.010, long_component_ratio 0/0.150, orientation_entropy
+~0), a collapse *between* epoch005 (which already had some structure,
+long_component_ratio 0.257) and epoch020 (recovered, 0.227) -- training
+is not monotonically improving even in this narrow early window, echoing
+the original 3-epoch smoke test's near-blank result.
+
+**Corrected conclusion: there is no single identifiable "best epoch" at
+this eval-set size (8 tiles) -- the epoch-40-exact claim from the first
+read of this data was over-precise, an artifact of one run's specific
+per-checkpoint noise, not a robust transition point.** What *does*
+replicate across both this fine-grid run and the original 200-epoch run
+is the broader shape: metrics rise fast from ~epoch 20 to a good plateau
+somewhere in roughly epoch 30-60, and (per the original 200-epoch run,
+which is the only data covering that range) clearly and monotonically
+degrade over the much longer horizon from ~60 to 200. So "train for
+100-200 epochs" is still wrong, and "something in the 30-60 range" is a
+reasonable checkpoint-selection target, but pinning an exact optimal
+epoch requires either a larger eval set (to shrink the per-checkpoint
+noise) or averaging across more independent runs -- not done here.
+
+### Next Actions
+
+1. If this thread is revisited, prioritize enlarging the eval set (past
+   the current fixed 8-tile `eval_clean_lineart004_8.txt`) before trying
+   to pin an exact epoch further -- the per-checkpoint metric noise at
+   n=8 is comparable in size to the differences between candidate epochs.
+2. The epoch010/015 near-blank collapse is worth understanding if picked
+   up again (possibly a `pos_weight`/BCE-dominated transient), though not
+   pursued this session.
+3. No new checkpoint from this investigation has been adopted or promoted
+   over the existing `combined_koma_lucy_mild_msgan_20260729` production
+   checkpoint -- this remains an open architecture-comparison thread, not
+   a completed decision.
