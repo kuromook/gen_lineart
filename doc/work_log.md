@@ -2286,3 +2286,254 @@ project's established pattern for detached multi-hour job hand-offs.
    rough-only adversarial branch) are recorded but not yet started -- per
    user direction, full literature-hint follow-through is intended
    eventually, this session's scope was narrowed to (1) first.
+
+## 2026-08-03 (later): Vector-Based Post-Process Probe (Reference-Only), skip0 Fine-Grid Launched
+
+While the `unet_skip0` fine-grid run above was queued behind the
+`diffusion-controlnet` worktree's GPU job, tried the potrace-style
+post-process idea from the same Next Actions list as a cheap, GPU-free
+side probe: `tools/compare/vectorize_binarize_line_outputs.py` (new --
+`libpotrace-dev`/`pypotrace` are not installable here, no sudo, so this
+approximates potrace with OpenCV: binarize -> `findContours` -> drop
+small-area contours (despeckle) -> `approxPolyDP` simplify -> re-render
+filled polygons, holes punched via contour hierarchy).
+
+Tested on `combined_koma_direct_unet_finegrid_20260802`'s epoch060
+checkpoint (confident-but-fragmented regime) against the 8-tile clean eval
+set. F1@2px/chamfer/ink_ratio unchanged (2px-tolerant metrics don't see
+small-fragment cleanup). Stroke-stability metrics did move:
+`long_component_ratio` 0.641 (raw) -> 0.712 (despeckle+simplify combined),
+about 40% of the raw-to-GT gap (GT 0.819), at zero alignment-metric cost.
+Ablation found the improvement is mostly from polygon simplification, not
+despeckling alone (despeckle-only: 0.650; simplify-only: 0.702) -- despeckle
+alone barely moves it, consistent with (but not contradicting) the earlier
+`badrough_lucy_thin_threshold_notes.md` finding that naive small-component
+removal alone costs real thin strokes. Montage
+(`results/lessons/compare_direct_unet_ep060_vecpost.png`) confirms visually: the
+vector column is visibly less foggy/speckled than raw, but still reads as
+disconnected crack-like fragments, not GT's smooth continuous strokes --
+a measurable but modest cleanup, not a fix for the underlying wobble.
+
+Per user direction, treated as a reference-only result, not pursued further
+this session (no threshold/eps/min-area sweep, no test on the low-epoch
+"blurry-but-faithful" regime, where a quick check found threshold128 already
+fails badly for a different reason: epoch015's raw output ranges 120-252
+with only 0.05% of pixels below 128, so hard-thresholding at the standard
+value discards nearly all of its (real, gradient-encoded) structure --
+an adaptive/auto threshold would be needed before vectorization is even
+testable there, out of scope for this pass).
+
+Primary attention stays on the `unet_skip0` fine-grid run (launched
+~18:52 JST via the queued wrapper once the `diffusion-controlnet`
+worktree's ControlNet long run and GPU freed up); see the entry above for
+the hypothesis and protocol. Not yet complete as of this note.
+
+## 2026-08-03/04: unet_skip0 Fine-Grid Result -- Helps Early-Training Collapse, Not A Clear Late-Stage Win
+
+The queued `unet_skip0` fine-grid run (Simo-Serra-inspired skip-connection
+removal, see "2026-08-03: Skip-Connection Ablation" above) completed after
+the `diffusion-controlnet` worktree's GPU job freed up (~18:52 JST start,
+~00:05 JST finish, 60 epochs / 5-epoch checkpoints, same
+`combined_koma_20260729` manifest and loss recipe as the skip-connection
+baseline `combined_koma_direct_unet_finegrid_20260802`, `--model unet_skip0`
+the only changed flag).
+
+**Verdict: real but modest effect, concentrated in early-training
+stability, not a clear win at the practically relevant epoch40-60
+plateau.**
+
+Compared directly against the skip-connection baseline trajectory
+(`results/combined_koma_direct_unet_finegrid_20260802_trajectory_stability_metrics.csv`)
+at matched epochs, `long_component_ratio` (GT=0.819):
+
+| epoch | baseline (with skip) | skip0 (no skip) |
+|---|---:|---:|
+| 010 | 0.000 (total collapse) | 0.427 |
+| 020 | 0.227 | 0.457 |
+| 030 | 0.612 | 0.656 |
+| 040 | 0.692 | 0.676 |
+| 045 | 0.677 | **0.681 (skip0 best)** |
+| 050 | **0.721 (baseline best)** | 0.673 |
+| 060 | 0.643 | 0.646 |
+
+skip0 clearly wins epochs 005-030 (most notably: the skip-connection
+baseline suffers a total-collapse dip at epoch010, ink_ratio near zero,
+already known from the earlier fine-grid-trajectory replication work --
+skip0 does not show this collapse at all). But at the epoch040-060
+plateau where the practically useful checkpoints live, skip0 is roughly
+on par with the baseline and does not reach the baseline's single best
+value (skip0 peak 0.681 at ep045 vs baseline peak 0.721 at ep050).
+`components_per_1k_ink_px` shows no clear separation either (both
+families sit in the 12-17 range against GT's 20.88 across ep040-060).
+
+Montage (`results/lessons/compare_combined_koma_unet_skip0_finegrid_20260803_trajectory.png`)
+confirms visually: ep045/055 still show the same thin, branching
+"crack/vein" fragmentation pattern as the skip-connection baseline, not
+GT's smoothly continuous strokes -- no qualitatively different failure
+mode from removing skip connections.
+
+**Interpretation:** consistent with `doc/model_directions.md`'s standing
+caveat that skip connections "also carry fine spatial alignment info, not
+only noise" -- removing them nets out close to even at convergence
+(trading away some useful signal alongside the noise), but the literature
+hint was still a genuine, useful contribution: it measurably suppresses
+the early-training collapse failure mode (previously unexplained beyond
+"early-training instability, same family as the 3-epoch smoke-test's
+near-white output") and gives a concrete, testable mechanism (long
+concat-skip paths reintroducing raw rough-stroke noise at every decoder
+scale) rather than leaving that collapse as an unexplained artifact.
+
+**Decision: do not proceed to the planned BatchNorm-vs-InstanceNorm
+follow-up** (`doc/model_directions.md`'s Next Actions item 2 was
+explicitly gated on skip0 showing "a real continuity improvement" at the
+plateau, which it did not). Per the same Next Actions, fall back to the
+binarization/rough-fidelity trade-off track recorded in the "白黒化とrough忠実さのトレードオフ"
+entry in `doc/architecture_decisions.md` (blend/checkpoint-averaging an
+early precise-but-soft checkpoint with a late confident-but-drifting one,
+or the two-stage self-anchor decomposition) as the next candidate --
+already-existing checkpoints, no new training needed for the first probe.
+Potrace-style vectorized post-process (reference-only per the earlier
+entry) and Simo-Serra's global-discriminator unpaired-data setup remain
+recorded but unstarted.
+
+## 2026-08-04: Checkpoint Blend (Not Adopted) + Self-Anchor Two-Stage Decomposition (Pixel Accuracy Up, Continuity Down -- Sharpens The Trade-Off) + clDice Implemented
+
+Ran both remaining "Next Weekend's Plan" options from the prior entry
+against `combined_koma_direct_unet_finegrid_20260802`'s epoch025
+(precise-but-soft) and epoch055 (confident-but-drifting) checkpoints.
+
+**Option 1, checkpoint blend (`scripts/blend_checkpoints_infer.py`, new)
+-- not adopted.** Weight-averaging the two state_dicts and averaging raw
+pre-sigmoid logits both tried. Montage (`results/lessons/compare_blend_ep25ep55.png`)
+and metrics confirm neither recovers "both properties at once": weight-blend
+(F1@2px 0.209, `long_component_ratio` 0.502) is *worse* on continuity than
+ep055 alone (0.615); logit-blend reaches the best continuity of the pair
+(0.651) but under-inks even more severely than ep025 alone (`ink_ratio`
+0.458). Visually both just look like an intermediate blur level between the
+two source checkpoints, not a combination of their distinct strengths --
+consistent with ep025/ep055 being qualitatively different regimes rather
+than points on one interpolatable quality gradient.
+
+**Option 2, self-anchor two-stage decomposition
+(`experiments/run_combined_koma_selfanchor_ep25_msgan_20260804.sh`, new)
+-- sharpens the trade-off rather than resolving it.** Reused the existing
+`cleanup` (`ResidualCleanupGenerator`, aux_logits + bounded_correction) +
+msgan recipe unchanged from `combined_koma_lucy_mild_msgan_20260729`, with
+epoch025's own raw output standing in for the atari/ResNet-GAN aux hint (no
+new architecture code, no lucy_mild preprocessing -- the anchor is already
+a direct rough-to-line rendering). 3 epochs, same 1489-tile manifest.
+
+Result: pixel-alignment metrics improved clearly past both source
+checkpoints (F1@2px 0.275 vs ep025's 0.160 / ep055's 0.204; chamfer 8.82 vs
+10.8/10.3; recall 0.281, more than double either alone) -- but stroke
+continuity got *worse than both*, not just failing to improve:
+`long_component_ratio` 0.162 (GT 0.819) vs ep025's 0.421 and ep055's 0.615,
+and `component_count` 823 vs GT's 290 (worst fragmentation of any model
+compared this session). Montage
+(`results/lessons/compare_combined_koma_selfanchor_ep25_msgan_20260804.png`) shows
+the same soft/marbled fog texture as the rest of the `cleanup`+msgan
+family, not the anchor's own crisper strokes.
+
+**Notable secondary finding -- nuances the 2026-08-01 root-cause
+conclusion in `doc/architecture_decisions.md`.** That entry attributed the
+`cleanup` family's soft/marbled ceiling specifically to the atari/
+ResNet-GAN generator's own halftone-soft raw output being inherited
+through the small `tanh`-bounded correction. This run anchors on a
+*non-atari* source (a direct-regression `unet` checkpoint, not
+halftone-soft in the same way) and still produces visually the same
+marbled texture family. This suggests the `ResidualCleanupGenerator`
+architecture + msgan loss recipe combination may reproduce this texture
+largely on its own, regardless of what feeds the aux channel -- not
+purely inherited from the atari generator's specific softness. Not fully
+isolated (would need a no-GAN or no-tanh-correction ablation on this same
+self-anchor setup to confirm which piece drives it); recorded as an open
+correction to chase later, not re-litigated this session.
+
+**Reading across both probes plus the skip0 result (prior entry):**
+architecture changes (skip removal), weight/logit-space combination
+tricks, and a pixel-accuracy-optimizing correction head have now all been
+tried, and none of them net out as a clear win on stroke continuity --
+skip0 helps early stability only, blending is a wash, and the self-anchor
+correction head actively *trades* continuity away for pixel accuracy. No
+loss function tried so far (BCE, L1, tolerant-F1, ink, binary, structure,
+adversarial, feature-matching, edge/Canny) directly targets stroke
+connectivity as an objective; they all reward pixel-level overlap or
+generic sharpness, which the self-anchor result shows can move in the
+*opposite* direction from continuity. Per user direction, next work
+targets this gap directly with a topology-aware loss rather than another
+architecture or blending variant.
+
+**clDice implemented (Shit et al., "clDice -- A Novel Topology-Preserving
+Loss Function for Tubular Structure Segmentation," originally a medical/
+vessel-segmentation paper, flagged as a candidate in the 2026-08-03
+literature note): https://arxiv.org/abs/2003.07311.** Fetched the paper
+for the exact formulation (abstract page lacked the math; the ar5iv HTML
+rendering had it) rather than implementing from memory. Added
+`lineart/losses.py::soft_skeletonize` (differentiable morphological
+skeletonization via iterative soft-erode/soft-open using negated max-pool
+as min-pool, matching the paper's algorithm) and `soft_cldice_loss`
+(topology precision/sensitivity harmonic mean between predicted and GT
+soft skeletons, independent of raw pixel overlap). Wired into
+`scripts/train_i2i_survey.py` as `--cldice-weight`/`--cldice-iters`,
+following the exact pattern already used for `--edge-weight`.
+
+Verified before committing to a real run: CPU unit tests (a 1px line
+skeletonizes to itself unchanged; a 10px-thick blob eroded down to a much
+smaller skeleton mass; identical pred/target gives loss ~0; fully disjoint
+parallel lines give loss ~1; gradients finite and reasonably scaled) all
+passed, then a 2-epoch/16-tile GPU smoke test with `--cldice-weight 0.3`
+integrated cleanly (loss decreased 0.99 -> 0.83, no errors).
+
+**Queued** (`experiments/run_after_selfanchor_queue_cldice_20260804.sh`,
+detached): `combined_koma_unet_skip0_cldice_finegrid_20260804` --
+identical protocol to the skip0 fine-grid baseline (60 epochs, 5-epoch
+checkpoints, same manifest/eval, same base loss recipe) with
+`--cldice-weight 0.3 --cldice-iters 10` added as the sole new axis, so it
+is directly comparable epoch-for-epoch against both
+`combined_koma_direct_unet_finegrid_20260802` (with skip) and
+`combined_koma_unet_skip0_finegrid_20260803` (no skip) on
+`long_component_ratio`/`components_per_1k_ink_px`. Launches automatically
+once the self-anchor run's GPU usage clears (already happened; queue
+wrapper polls and hands off, matching the established
+`run_after_controlnet_longrun_queue_unet_skip0_20260803.sh` pattern). Not
+yet complete as of this note.
+
+### Next Actions
+
+1. Wait for the clDice fine-grid trajectory (ntfy notification or
+   `logs/combined_koma_unet_skip0_cldice_finegrid_20260804.log`). Compare
+   `long_component_ratio`/`components_per_1k_ink_px` at matched epochs
+   against both the with-skip and skip0-no-cldice baselines, plus visual
+   montage review per this project's standing rule.
+2. If clDice shows a real continuity win, consider a follow-up applying
+   it to the self-anchor correction-head setup specifically (option 2
+   above) -- that combination showed the largest, most concrete pixel-
+   accuracy-vs-continuity trade-off of anything tried this session, so a
+   continuity-aware loss there is a natural, well-motivated next test
+   distinct from the direct_unet family probe already queued.
+3. The `ResidualCleanupGenerator`+msgan-reproduces-marbled-texture-
+   regardless-of-anchor observation above is not yet isolated to a single
+   cause -- revisit if/when cleanup-family work resumes.
+4. Checkpoint blending (option 1) is closed out, not adopted.
+
+## 2026-08-04 (later): results/ Cleanup (This Worktree Only)
+
+Per user direction, pruned this worktree's `results/` (100M -> 25M):
+deleted the per-sample raw-output directories behind the session's four
+kept montages -- blend ep25/ep55 individual + blend variants,
+self-anchor's anchor/train/eval raw outputs (the 1489-image
+`..._anchor_train` dir alone was 64M), skip0 fine-grid's 12
+per-checkpoint output dirs (96 images) plus their now-broken root-level
+symlinks, and the vectorize-post-process's 4 raw-output variants. Kept:
+the 4 montages actually linked from this file (`compare_blend_ep25ep55.png`,
+`compare_combined_koma_selfanchor_ep25_msgan_20260804.png`,
+`compare_combined_koma_unet_skip0_finegrid_20260803_trajectory.png`,
+`compare_direct_unet_ep060_vecpost.png`) and every metrics CSV per
+`doc/RESULTS.md`'s standing policy (metrics/manifests are kept regardless
+of direct doc reference). Did not touch `results/archive/` or the
+in-progress `combined_koma_unet_skip0_cldice_finegrid_20260804_trajectory/`
+(actively being written by the running clDice job). Scope was this
+worktree only -- the main `lineart` worktree's much larger `results/`
+(pre-2026-08-03 CNN+GAN history plus the unrelated Direction 4/ControlNet
+work) was left untouched, since this cleanup was specifically about the
+continuity-lesson outputs from this session.

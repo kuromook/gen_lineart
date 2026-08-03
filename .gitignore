@@ -23,6 +23,8 @@ logs/
 results/**
 !results/
 !results/README.md
+!results/lessons/
+!results/lessons/**
 
 # Local notification secrets / endpoints.
 config/autoloop_notify.env
