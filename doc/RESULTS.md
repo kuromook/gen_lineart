@@ -31,6 +31,27 @@ Everything else (cross-source model/architecture-comparison experiments —
 top level; it isn't organized "per source" and wasn't reviewed for deletion
 in this pass.
 
+## `results/lessons/` (2026-08-04)
+
+Curated, small folder for outputs that carry a specific documented lesson
+forward -- distinct from `results/archive/` (old/historical, kept for
+audit only, not actively cited) and from the general top-level clutter
+(regenerable per-run outputs). Something belongs in `lessons/` only if a
+current doc (`doc/architecture_decisions.md`, `doc/work_log.md`) explicitly
+cites it as evidence for a stated finding, not just because it was a
+notable run. Named `lessons/` rather than `artifacts/` deliberately --
+everything under `results/` is technically an "artifact," so that name
+would not distinguish this folder's curated intent.
+
+Current contents: the direct-regression (`unet`/`unet_skip0`) epoch-
+trajectory lineage that grounds the ongoing stroke-continuity work --
+3-epoch smoke test, 100-epoch/200-epoch/dense-28-epoch comparisons, the
+epoch-trajectory montages, and the rough-fidelity-vs-binarization crop
+comparison. See `doc/architecture_decisions.md`'s "単段直接回帰" section
+for what each one demonstrates. When a doc reference to a `results/`-root
+path is moved into `lessons/`, update the citing doc's path in the same
+edit -- do not leave dangling references.
+
 ## Current Kept Images
 
 Remaining top-level image files under `results/`:

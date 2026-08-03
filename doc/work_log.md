@@ -1817,3 +1817,42 @@ does not pass `--caption-csv` and was not touched by this work).
    through the koma-panel extraction pipeline -- not urgent per the
    earlier discussion (current bottleneck is diagnosed as undertraining,
    not data scarcity), but ready whenever it's needed.
+
+## 2026-08-04: results/ Cleanup -- New `results/lessons/` Folder, ControlNet Raw-Output Trim
+
+Per user direction (continuing the `cleanup-refiner` worktree's own
+`results/` cleanup the same session), pruned redundant per-sample output
+here too, and introduced `results/lessons/` as a curated folder for
+outputs a current doc explicitly cites as evidence for a finding --
+distinct from `results/archive/` (old/historical, audit-only). See
+`doc/RESULTS.md` ("`results/lessons/` (2026-08-04)") for the naming
+rationale (`lessons/` chosen over `artifacts/`, which wouldn't distinguish
+itself from everything else in `results/`).
+
+Moved into `results/lessons/` (all cited by path in
+`doc/architecture_decisions.md`'s "単段直接回帰" section, updated in the
+same edit so no reference went stale): the 3-epoch/100-epoch/dense-28-epoch/
+200-epoch direct-regression montages, both epoch-trajectory montages
+(200ep and finegrid), the rough-fidelity-vs-binarization crop comparison,
+and their metrics CSVs. Deleted the now-redundant raw per-checkpoint
+output directories behind them (each montage already aggregates what
+those held).
+
+**ControlNet/Direction 4 outputs were explicitly NOT moved into
+`lessons/`** -- per user clarification, that work is a different research
+axis (faithfulness/hallucination, not stroke continuity), so it doesn't
+belong in a continuity-lesson folder. User's explicit call: keep the
+ControlNet montages (`compare_controlnet_koma_direction4_20260731.png`,
+`_sweep.png`, `compare_controlnet_koma_direction4_longrun_20260803.png`)
+on disk exactly where they are -- they're this branch's own primary
+research record, cited directly from `doc/architecture_decisions.md`'s
+Direction 4 section, not incidental clutter. Only deleted the genuinely
+redundant raw per-sample directories already aggregated into those
+montages (the base run's output dir, the long-run's output dir, and all 5
+conditioning/guidance-scale sweep variant dirs) -- none of those raw dirs
+were cited by path anywhere.
+
+`results/` total size effectively unchanged (2.5G before/after -- the
+deleted directories were a small fraction of the total; most of the bulk
+is unrelated per-source koma-extraction and other-family experiment
+output, out of scope for this pass per user direction).
