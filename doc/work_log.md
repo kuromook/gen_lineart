@@ -1856,3 +1856,25 @@ were cited by path anywhere.
 deleted directories were a small fraction of the total; most of the bulk
 is unrelated per-source koma-extraction and other-family experiment
 output, out of scope for this pass per user direction).
+
+## 2026-08-04/05: ControlNet 10x Long-Run Verdict -- Undertraining Hypothesis Rejected
+
+The `controlnet_koma_direction4_longrun_20260803` run (18,600 steps, 10x
+the original 1860-step probe, fired via crontab 2026-08-03 00:00 JST)
+completed and was inferred/evaluated the same day (18:50-18:56), but the
+result was discussed verbally and never written back into
+`doc/architecture_decisions.md`'s Direction 4 entry -- caught and fixed
+this session. Recording the conclusion here too since it was missing.
+
+Quantitative result barely moved versus the original 1860-step run:
+F1@2px 0.202 -> 0.216, ink_ratio 6.36 -> 5.93 (baseline CNN+GAN
+`combined_koma_lucy_mild_msgan_20260729`: F1 0.418, ink_ratio 1.56).
+User visually reviewed `results/compare_controlnet_koma_direction4_longrun_20260803.png`
+and confirmed the hallucination behavior (confident but rough-unrelated
+plausible content) did not resolve with 10x more steps. This rejects the
+"undertraining / sudden convergence phenomenon" diagnosis from the
+original 1860-step entry -- more steps alone is not the fix. This
+specific step-count axis is shelved; if Direction 4 is revisited, the
+next candidate variables are data volume, conditioning method, or the
+already-prepared but unused per-tile WD14 captions (`--caption-csv`),
+not further training-length increases.

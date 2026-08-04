@@ -144,8 +144,8 @@ Direction 1(multi-scale PatchGAN)・2(feature matching)・3(structure/edge loss)
 - **数式**: `ε̂ = UNet(z_t, t, τ, down/mid_residuals)`、`down/mid_residuals = ControlNet(z_t, t, τ, rough)`；`L = MSE(ε̂, ε)`；全タイル共通の固定caption `τ`(後にタイルごとのWD14自動タグに置き換え済みだが、まだ実学習には未使用)
 - **実装のコード**: `scripts/train_controlnet.py`、`scripts/infer_controlnet.py`、`scripts/tag_wd14.py`(いずれも`diffusion-controlnet`ブランチにのみ存在)
 - **目視評価**: 済み
-- **montageの場所**: `results/compare_controlnet_koma_direction4_20260731.png`、スイープ版`results/compare_controlnet_koma_direction4_20260731_sweep.png`
-- **その他メモ**: **プロジェクト全体で初めてsoft/marbled天井を視覚的に突破した結果** — わずか10エポック(1860ステップ)で、くっきりとした自信のある完全二値のアニメ風inkを達成。ただし入力ラフの具体的な内容とは緩くしか対応しない幻覚が発生する(一部タイルで表情/ポーズが違う)ため、見た目は良くてもF1@2pxはCNN+GANベースラインより悪化(0.20 vs 0.42)。conditioning-scale/guidance-scaleのスイープでも幻覚は解消せず(スイープ版montage参照) — 学習不足(ControlNetの既知の「sudden convergence phenomenon」)と診断、推論設定で直せる問題ではない。**2026-08-03 00:00 JSTにcrontabで10倍(18,600ステップ)の長時間ランを予約済み**、この文書時点ではまだ結果は出ていない。
+- **montageの場所**: `results/compare_controlnet_koma_direction4_20260731.png`、スイープ版`results/compare_controlnet_koma_direction4_20260731_sweep.png`、10倍長時間ラン版`results/compare_controlnet_koma_direction4_longrun_20260803.png`
+- **その他メモ**: **プロジェクト全体で初めてsoft/marbled天井を視覚的に突破した結果** — わずか10エポック(1860ステップ)で、くっきりとした自信のある完全二値のアニメ風inkを達成。ただし入力ラフの具体的な内容とは緩くしか対応しない幻覚が発生する(一部タイルで表情/ポーズが違う)ため、見た目は良くてもF1@2pxはCNN+GANベースラインより悪化(0.20 vs 0.42)。conditioning-scale/guidance-scaleのスイープでも幻覚は解消せず(スイープ版montage参照) — 学習不足(ControlNetの既知の「sudden convergence phenomenon」)と診断、推論設定で直せる問題ではない。**2026-08-03 00:00 JSTにcrontabで10倍(18,600ステップ)の長時間ランを実行、18:50完了**。**結果: 学習不足仮説は否定された** — F1@2pxは0.202→0.216、ink_ratioは6.36→5.93と、10倍の学習量でもほぼ動かず(`results/fixed_output_metrics_controlnet_koma_direction4_longrun_20260803_compare.csv`)。ユーザーがmontageを目視確認し、幻覚(roughの具体的な内容と無関係な、もっともらしい別内容を自信満々に生成する挙動)は解消していないと判断。sudden convergence phenomenonでは説明がつかず、ステップ数を伸ばす方向はこれ以上の投資に値しないと判断し、この軸は保留。次に試すなら学習量ではなく別の変数(データ量・conditioning方式・per-tile caption等)が候補。
 
 ---
 
