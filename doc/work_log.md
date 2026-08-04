@@ -1905,3 +1905,43 @@ conditional-only). First concrete step is the rough-pool cleanup
 (filter + QC), then deciding the actual training mechanism (LoRA/
 DreamBooth-style fine-tune vs. something else) once clean domain data is
 in hand.
+
+## 2026-08-05: Unpaired-Rough Pool -- No Finished-Ink Contamination Found
+
+Attempted an automated filter for the "finished ink mistakenly labeled as
+rough" contamination the pool-gathering script's docstring flagged as an
+open risk (`dataset/unpaired_rough_candidates/`, 2014 tiles across
+ako5ver2/fitness/gakuen/hamlabi/housei). Two heuristics tried, both
+inconclusive on visual follow-up:
+
+1. Rough-side dark-pixel ratio (fraction of drawn pixels below a
+   confident-black threshold, vs. the graphite-midtone majority expected
+   in genuine pencil rough). Top outliers (up to 0.74) visually inspected
+   (contact sheet) turned out to be legitimate confident/thick pencil-pen
+   strokes or near-empty tiles, not finished ink.
+2. Rough-vs-line pixel correlation, for the 4 sources with both saved
+   (1345 tiles; ako5ver2 has rough-only). A pipeline bug duplicating the
+   finished line art into the rough slot would show as near-identical
+   pairs. Highest-correlation pairs (up to 0.85) turned out to be simple
+   tiles with a single confident stroke that happens to closely match its
+   own line counterpart -- not duplication. Exact byte-identical
+   rough/line file check: 0 of 1345.
+
+Fell back to direct visual QC instead of further metric engineering,
+since neither heuristic cleanly separated a contamination cluster from
+legitimate content. New tool
+`tools/pair_extraction/make_unpaired_rough_qc_sheet.py` draws a
+stratified-random contact sheet (proportional to each source's pool
+size, thumbnail resolution -- sufficient for this specific "graphite vs.
+finished ink" gross visual judgment, unlike fine positional
+rough/line-correspondence review which needs full tile resolution):
+`results/qc_unpaired_rough_candidates_20260804.png`, 199 of 2014 tiles
+(ako5ver2 66, fitness 50, gakuen 25, hamlabi 20, housei 38).
+
+User reviewed the full sheet: every tile reads as genuine graphite
+pencil rough (construction lines, gray shading, multiple stroke passes)
+across all 5 sources -- no finished-ink contamination visible anywhere
+in the sample. **Conclusion: the pool is clean as gathered; no filter
+needed.** Both the filter task and the QC task are closed on this
+finding. The pool is ready to use as rough-domain training material for
+this branch's domain-only generation direction.
