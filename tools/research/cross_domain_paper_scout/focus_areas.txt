@@ -1,0 +1,13 @@
+medical imaging: vessel/vasculature segmentation (retinal, CT, MRI angiography)
+medical imaging: airway tree / bronchial structure segmentation
+connectomics: neuron and axon tracing in electron microscopy
+remote sensing: road network extraction from satellite/aerial imagery
+remote sensing: river and hydrological network extraction
+materials science / NDT: crack detection in concrete, pavement, or composites
+materials science: fiber tracking in fiber-reinforced composites
+electronics inspection: PCB trace and wire-bond defect detection
+geophysics: fault line and fracture network characterization from seismic/imagery data
+plant biology: root system architecture and mycelial network imaging
+infrastructure inspection: power line and cable detection from LiDAR/aerial imagery
+handwriting and online trajectory recognition: stroke completion and continuity modeling
+topological data analysis: persistent homology losses for general segmentation
