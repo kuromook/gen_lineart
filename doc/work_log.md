@@ -1945,3 +1945,63 @@ in the sample. **Conclusion: the pool is clean as gathered; no filter
 needed.** Both the filter task and the QC task are closed on this
 finding. The pool is ready to use as rough-domain training material for
 this branch's domain-only generation direction.
+
+## 2026-08-04 (later): Domain-Only LoRA Training Launched
+
+First concrete step on the domain-generation-quality direction. Design
+discussion with the user settled: same base checkpoint as the ControlNet
+work (`AOM3A1B_orangemixs.safetensors`, frozen), LoRA injected into the
+UNet's attention layers only (peft, rank 16, `to_k`/`to_q`/`to_v`/
+`to_out.0`), one LoRA per domain trained via plain unconditional txt2img
+diffusion loss (no conditioning image, no pairing) from a fixed trigger
+caption per domain. Verification/sampling uses a plain
+`StableDiffusionPipeline` + `pipe.load_lora_weights(...)`, matching how
+`scripts/infer_controlnet.py` already loads the base checkpoint, just
+without the ControlNet residual input. Explicitly scoped as a stepping
+stone, not the end goal: if both domains genuinely come through, the
+natural next experiment is img2img/SDEdit-style translation (rough
+latent + partial noise, denoise with the line-domain LoRA) as a
+fundamentally different mechanism from ControlNet's conditioning-residual
+approach, which might sidestep the hallucination failure mode -- but
+that's deferred until domain quality itself is confirmed.
+
+New code: `scripts/train_domain_lora.py` (mirrors `train_controlnet.py`'s
+model-loading/Accelerator/resume-state conventions, with the ControlNet
+network and paired dataset removed -- single `--image-dirs` pooled with
+no pairing key needed since there's no conditioning target),
+`scripts/sample_domain_lora.py` (txt2img sampling + contact-sheet
+montage for visual QC).
+
+Data: line domain uses the existing 1489-tile
+`dataset/pairs_480/train/line_combined_koma_20260729`. Rough domain
+turned out much larger than assumed --
+`dataset/pairs_480/train/rough` is the *shared cross-source* rough pool
+(19,454 images, not scoped to combined_koma) plus the newly-confirmed-
+clean `dataset/unpaired_rough_candidates/*/rough` (2,014) = 21,468
+images total. Pairing/alignment constraints that limited the paired
+training set don't apply here, so the full pool is valid domain
+material.
+
+Smoke-tested `train_domain_lora.py` (30 steps, line domain): trains and
+saves correctly, ~3.0-3.2s/step (batch 2, grad-accum 4, 512px, RTX 3060
+12GB) -- somewhat faster than ControlNet's 3.64s/step, as expected
+(no second network's forward/backward). Given the large rough/line pool
+size mismatch (~14x), matched epoch counts would be very time-unbalanced;
+settled on line=10 epochs (~1860 steps, ~1.6h) and rough=4 epochs
+(~10,732 steps, ~9.3h) as a first-look domain-quality check, not a
+final-convergence run.
+
+Launched `experiments/run_domain_lora_queue_20260804.sh` (line then
+rough sequentially, each followed by 16-sample contact-sheet generation
+via `sample_domain_lora.py` and an ntfy notification) via
+`nohup ... & disown`. Verified detached: queue script PID 1270658,
+PPID=1, no controlling terminal; nested training process PID 1270670
+confirmed running with the correct line-domain arguments.
+
+Next actions: once both complete (~11h total), review
+`results/domain_lora_line_20260804/contact_sheet_domain_lora_line_20260804.png`
+and the rough-domain equivalent -- does unconditional generation from
+the trigger caption actually look like this project's line art / rough
+sketch style, or does the LoRA fail to shift the base model's style
+meaningfully at this rank/step count? That verdict decides whether the
+SDEdit-style translation follow-up is worth attempting.
