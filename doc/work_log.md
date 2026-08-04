@@ -2537,3 +2537,203 @@ worktree only -- the main `lineart` worktree's much larger `results/`
 (pre-2026-08-03 CNN+GAN history plus the unrelated Direction 4/ControlNet
 work) was left untouched, since this cleanup was specifically about the
 continuity-lesson outputs from this session.
+
+## 2026-08-04 (later): clDice Fine-Grid Result -- Real Topology Gain, Achieved By Over-Inking Not Cleaner Strokes
+
+`run_combined_koma_unet_skip0_cldice_finegrid_20260804.sh` (cldice_weight
+0.3, cldice_iters 10, on top of skip0) completed. `long_component_ratio`
+came back worse than skip0-alone at every plateau epoch (e.g. ep050
+0.600 vs 0.673), which read as a plain regression at first glance --
+but per the user's observation that adding a new loss term naturally
+changes the trade-off surface, and that the montage's ep45/55 output
+looked visually *less* catastrophically collapsed than earlier bad runs
+(msgan/self-anchor's marbled-noise texture), two new metrics were added
+to `tools/evaluation/evaluate_stroke_stability.py` to check whether that
+visual impression had a quantitative basis:
+
+- `endpoint_count` / `endpoints_per_1k_ink_px`: count of skeleton pixels
+  with exactly one skeleton neighbor (a stroke end; every break adds 2).
+  GT-alignment-independent, like the existing component metrics.
+- `topo_precision` / `topo_sensitivity` / `hard_cldice`: the clDice
+  paper's own topology metric, computed on hard-thresholded masks
+  instead of the soft/differentiable training-loss version -- i.e. does
+  the training objective actually hold up under the same threshold the
+  other eval tools use, evaluated *against GT* (unlike the other metrics
+  in this file, this one is GT-paired). Unit-verified against synthetic
+  masks (straight line = 2 endpoints, broken line = 4; identical
+  pred/gt hard_cldice ~= 1.0; disjoint pred/gt = 0.0 exactly).
+
+Re-ran both trajectories (skip0-alone checkpoints regenerated from disk
+since their inference outputs had been deleted in the same-day cleanup
+pass above; the `.pth` files were untouched) through the updated script.
+Result at the practically relevant ep040-060 range:
+
+| epoch | metric | skip0-alone | skip0+clDice(0.3) |
+|---|---|---:|---:|
+| 045 | long_component_ratio | 0.681 | 0.508 |
+| 045 | endpoint_count (raw, lower=better) | 222.0 | 286.3 |
+| 045 | topo_sensitivity | 0.155 | 0.203 |
+| 045 | hard_cldice | 0.148 | 0.150 |
+| 050 | long_component_ratio | 0.673 | 0.600 |
+| 050 | endpoint_count (raw) | 170.3 | 276.4 |
+| 050 | topo_sensitivity | 0.079 | 0.246 |
+| 050 | hard_cldice (best of either trajectory) | 0.090 | 0.162 |
+
+`topo_precision` stayed roughly flat between the two (~0.12-0.14 both).
+`endpoints_per_1k_ink_px` (ink-normalized) looked *better* for clDice at
+first, but that's a dilution artifact of ~2x higher `ink_ratio`, not
+fewer actual breaks -- the raw `endpoint_count` is consistently higher
+for clDice at every plateau epoch, confirming the montage's "wide blurry
+band -> jagged blob" reading is real fragmentation, not just a visual
+impression.
+
+**Conclusion**: `soft_cldice_loss` genuinely improved the thing it
+targets -- `topo_sensitivity`/`hard_cldice` (GT-skeleton coverage,
+evaluated hard-threshold, not just the soft training loss) roughly
+doubled at ep050. But the mechanism was "paint wider/darker to
+increase the odds of covering the GT skeleton somewhere inside the
+stroke," not "trace more precisely" -- `topo_precision` didn't move and
+raw break count went up. This is a real, if partial, positive result
+(the topology term is not inert) but not yet the "cleaner continuous
+strokes" outcome hoped for, and it explains the visual "contained but
+still fragmented" read: `topo_precision` staying well above the 0.0
+disjoint-mask floor is why this doesn't look like the earlier
+marbled-noise collapse, even though `long_component_ratio` moved the
+wrong way.
+
+**Follow-up launched** (background, ~10-12h total,
+`experiments/run_cldice_paramsweep_20260804.sh`, PID 1194680,
+`logs/queue_cldice_paramsweep_20260804.log`): two variants to
+disentangle whether the over-inking is a weight-magnitude problem or a
+missing-counter-term problem, both on the same 60-epoch/5-checkpoint
+protocol --
+- `run_combined_koma_unet_skip0_cldice_lightweight_20260804.sh`:
+  cldice_weight 0.3 -> 0.15, ink_weight unchanged at 0.0.
+- `run_combined_koma_unet_skip0_cldice_inkpenalty_20260804.sh`:
+  cldice_weight unchanged at 0.3, ink_weight 0.0 -> 0.05 (an existing
+  but previously-unused-at-nonzero `ink_loss` term in
+  `scripts/train_i2i_survey.py`) as a direct counter-pressure against
+  the "paint it thick" loophole.
+
+Next actions: once both complete, compare `endpoint_count`/`ink_ratio`/
+`hard_cldice`/`topo_sensitivity` at matched epochs against this run's
+baseline (`cldice_weight=0.3, ink_weight=0.0`) and against skip0-alone,
+plus visual montage review, to see which lever (less pressure vs. an
+explicit counter-term) controls the bloat without giving up the
+topology gain.
+
+**Both variants completed 2026-08-04** (lightweight 12:15, inkpenalty
+17:23). Per-checkpoint stability CSVs averaged over the 8-sample eval
+set, ep040-060:
+
+| variant | ink_px | long_component_ratio | endpoint_count | topo_sensitivity | hard_cldice | component_count |
+|---|---|---|---|---|---|---|
+| GT | 14285 | 0.819 | 388 | 1.0 | 1.0 | 290 |
+| skip0-alone (baseline) | 9.7k-15.6k | 0.65-0.68 | 170-222 | 0.08-0.16 | 0.09-0.15 | ~200s |
+| cldice=0.3,ink=0 (original probe) | 20.7k-27.2k | 0.45-0.60 | 273-356 | 0.19-0.25 | 0.15-0.16 | - |
+| lightweight (cldice=0.15,ink=0) | 18.2k-21.2k | 0.65-0.70 | 227-317 | 0.16-0.19 | 0.14-0.16 | 230-330 |
+| inkpenalty (cldice=0.3,ink=0.05) | 19.7k-23.5k | 0.53-0.62 | 265-326 | 0.17-0.20 | 0.14-0.16 | 491-630 |
+
+`lightweight` is the clearer win: `long_component_ratio` recovers to
+almost skip0-alone's level (0.65-0.70 vs 0.65-0.68) and ink usage drops
+back toward baseline, while `topo_sensitivity`/`hard_cldice` stay above
+skip0-alone -- halving the weight bought back most of the continuity
+metric without fully giving up the topology gain. It's a genuine
+weight-magnitude trade-off, not a step-function collapse.
+
+`inkpenalty` did not work as intended: ink_px dropped only modestly,
+but `component_count` exploded to 491-630 -- well above GT (290) and
+lightweight (230-330). Penalizing raw ink quantity appears to have
+pushed the model toward a different loophole: thinner but far more
+fragmented strokes, rather than genuinely cleaner tracing. The
+aggregate `topo_sensitivity` number still looks fine (0.17-0.20)
+because scattered fragments can still incidentally cross the GT
+skeleton, so this metric alone doesn't catch the regression --
+`component_count` is what exposes it. Visual montage review
+(`results/compare_combined_koma_unet_skip0_cldice_inkpenalty_20260804_trajectory.png`)
+recommended to confirm before ruling this variant out entirely.
+
+Conclusion: of the two mechanisms tested, reducing the topology
+pressure directly (lightweight) controls the collapse/over-inking
+side effect better than adding an explicit ink counter-term
+(inkpenalty), which introduces its own fragmentation failure mode.
+`lightweight`'s cldice_weight=0.15 looks like the more promising
+starting point for any further clDice tuning on this architecture.
+
+## 2026-08-04 (later): Rough-Fidelity clDice Metric -- Confirms Real Rough Coverage Gain, But Finds A Shared Precision Ceiling
+
+User visual review of `lightweight`'s montage: around ep35 output starts
+looking properly binarized (線画らしい白黒) while collapse begins, but
+less severely than earlier bad runs. Framed the open question as: how
+to evaluate/control continuity *faithful to the rough*, not just to GT.
+This is the same axis flagged in `doc/architecture_decisions.md`
+(2026-08-02, binarization/rough-fidelity trade-off entry) -- and that
+entry's own `evaluate_rough_fidelity.py` (tolerance-based Canny edge_f1
+vs rough) had already failed to detect the analogous GT-side
+degradation, for a diagnosed reason: proximity-tolerance matching can't
+distinguish "ink near a rough edge-dense region" from "tracing the same
+specific curve."
+
+Added a curve-identity-aware version reusing this session's
+`hard_cldice_metrics` machinery, pointed at the rough instead of GT
+(`tools/evaluation/evaluate_stroke_stability.py`):
+`rough_topo_precision` / `rough_topo_sensitivity` / `rough_hard_cldice`.
+Rough is Canny-edge extracted (45/135 thresholds, same as
+`score_pair_agreement.py`) rather than gray-thresholded, since it's a
+lighter/softer pencil sketch, not a solid ink mask; the edge is used
+directly as the "skeleton" side and a 3px dilation of it (matching that
+module's established tolerance) stands in for the stroke's own local
+width on the "ink" side. Verified on synthetic cases: a pred line
+exactly overlapping a synthetic rough line gives `rough_topo_precision`
+~1.0; an unrelated pred line gives ~0.02.
+
+Re-ran across all 48 checkpoints (4 trajectories x 12 epochs: skip0-alone,
+cldice=0.3 original probe, lightweight, inkpenalty) against the same
+8-sample eval set:
+`results/stroke_stability_metrics_rough_fidelity_4way_20260804.csv`.
+
+Key numbers (`rough_topo_precision`, GT reference = 0.714):
+
+| epoch | skip0-alone | cldice=0.3 | lightweight | inkpenalty |
+|---|---:|---:|---:|---:|
+| 005 | 0.991 | 0.987 | 0.988 | 0.988 |
+| 015 | 0.732 | 0.932 | 0.946 | 0.951 |
+| 035 | 0.688 | 0.810 | 0.686 | 0.753 |
+| 050 | 0.725 | 0.742 | 0.742 | 0.700 |
+| 060 | 0.757 | 0.687 | 0.714 | 0.690 |
+
+**Finding 1**: all four trajectories converge to roughly the same
+`rough_topo_precision` band (~0.68-0.76) by ep050-060, close to GT's
+own reference value (0.714). Neither halving the clDice weight
+(lightweight) nor adding an ink counter-term (inkpenalty) moved this
+number versus the original cldice=0.3 probe or even versus skip0-alone
+with no clDice at all. The "confident but tracing a different,
+plausible-looking path than the rough's actual stroke" rate appears to
+be a shared ceiling of this base recipe at this epoch range, not
+something the clDice weight/counter-term axis controls. skip0-alone
+reaches its low plateau earlier and noisier (already 0.732 by ep015)
+while the clDice variants decline more smoothly from a near-1.0 start,
+but the endpoints are statistically indistinguishable.
+
+**Finding 2**: `rough_hard_cldice` (rough-side harmonic mean) is
+clearly and consistently higher for all three clDice variants than for
+skip0-alone at every matched epoch (e.g. ep050: skip0=0.090,
+cldice=0.3's 0.162, lightweight's 0.141, inkpenalty's 0.144) --
+tracking `rough_topo_sensitivity` (rough-coverage), which is the metric
+clDice variants clearly win on (e.g. ep050: skip0=0.079 vs 0.17-0.25
+across variants). This confirms clDice's GT-side topology gain
+(established in the earlier 2026-08-04 entry above) is not a "fake"
+generically-plausible-line artifact -- it corresponds to genuinely
+better coverage of the rough's actual structure, not just of GT's.
+
+**Conclusion**: the ep35 "looks less collapsed than before" visual
+impression is explained by the `long_component_ratio`/fragmentation
+axis (where `lightweight` genuinely helps, per the entry above), not by
+rough-path fidelity, which stays flat across every variant tested so
+far. Tuning clDice's weight or adding the ink counter-term does not
+move `rough_topo_precision`; if that specific number needs to improve,
+it likely needs a different lever -- e.g. a soft/differentiable version
+of this same rough-vs-pred clDice metric added directly as a training
+loss term (rough-anchoring), rather than further clDice-weight-vs-GT
+tuning. Not yet implemented -- next candidate if this direction
+continues.

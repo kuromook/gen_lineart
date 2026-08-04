@@ -15,7 +15,7 @@ import torchvision.transforms.functional as TF
 from PIL import Image, ImageOps
 from torch.utils.data import DataLoader, Dataset
 
-from lineart.losses import edge_loss, ink_loss, tolerant_f1_loss
+from lineart.losses import edge_loss, ink_loss, soft_cldice_loss, tolerant_f1_loss
 from lineart.model_zoo import MultiScalePatchDiscriminator, PatchDiscriminator, build_generator
 from lineart.region_dataset import RegionManifestDataset, region_collate
 
@@ -338,6 +338,7 @@ def train(args):
         f"thresh_ink={args.threshold_ink_weight} "
         f"thresh={args.threshold_value}@{args.threshold_sharpness} "
         f"structure={args.structure_weight} edge={args.edge_weight} "
+        f"cldice={args.cldice_weight}@{args.cldice_iters}iter "
         f"bg_haze={args.background_haze_weight}@{args.background_haze_radius}px "
         f"fm={args.feature_match_weight} "
         f"adv={args.adv_weight}"
@@ -404,6 +405,10 @@ def train(args):
             )
             if args.edge_weight > 0.0:
                 loss_recon = loss_recon + args.edge_weight * edge_loss(masked_pred, masked_target)
+            if args.cldice_weight > 0.0:
+                loss_recon = loss_recon + args.cldice_weight * soft_cldice_loss(
+                    masked_pred, masked_target, iterations=args.cldice_iters
+                )
             if skeleton is not None:
                 skeleton_pred_logits = aux_skeleton_logits if aux_skeleton_logits is not None else pred_logits
                 loss_recon = loss_recon + args.skeleton_weight * masked_mean(bce(skeleton_pred_logits, skeleton), None)
@@ -562,6 +567,21 @@ def main():
         default=0.0,
         help="Canny-edge L1 loss (lineart.losses.edge_loss), matching the "
         "pre-GAN notebooks/gen_lineart.ipynb recipe",
+    )
+    parser.add_argument(
+        "--cldice-weight",
+        type=float,
+        default=0.0,
+        help="soft-clDice topology loss (lineart.losses.soft_cldice_loss), "
+        "https://arxiv.org/abs/2003.07311 -- penalizes broken/disconnected "
+        "strokes independent of pixel overlap",
+    )
+    parser.add_argument(
+        "--cldice-iters",
+        type=int,
+        default=10,
+        help="soft-skeletonization iterations for --cldice-weight; must be "
+        ">= largest expected stroke radius in px",
     )
     parser.add_argument("--background-haze-weight", type=float, default=0.0)
     parser.add_argument("--background-haze-radius", type=int, default=9)

@@ -41,3 +41,45 @@ def ink_loss(pred, target):
         pred.mean(dim=(1, 2, 3)),
         target.mean(dim=(1, 2, 3)),
     )
+
+
+def _soft_erode(x):
+    return -F.max_pool2d(-x, kernel_size=3, stride=1, padding=1)
+
+
+def _soft_dilate(x):
+    return F.max_pool2d(x, kernel_size=3, stride=1, padding=1)
+
+
+def _soft_open(x):
+    return _soft_dilate(_soft_erode(x))
+
+
+def soft_skeletonize(x, iterations=10):
+    """Differentiable morphological skeletonization (Shit et al., clDice,
+    https://arxiv.org/abs/2003.07311). `iterations` must be >= the largest
+    stroke radius in pixels expected in `x`, or thick strokes won't fully
+    erode down to a 1px-wide centerline."""
+    x1 = _soft_open(x)
+    skel = F.relu(x - x1)
+    for _ in range(iterations):
+        x = _soft_erode(x)
+        x1 = _soft_open(x)
+        delta = F.relu(x - x1)
+        skel = skel + F.relu(delta - skel * delta)
+    return skel
+
+
+def soft_cldice_loss(pred, target, iterations=10, smooth=1e-6):
+    """1 - clDice: penalizes broken/disconnected predicted strokes (low
+    topology sensitivity, GT centerline not covered by predicted ink) and
+    predicted centerline branches landing outside the GT mask (low topology
+    precision), independent of raw pixel overlap. `pred`/`target` are
+    probability-space (post-sigmoid) tensors in [0, 1], same convention as
+    the other loss functions in this module."""
+    skel_pred = soft_skeletonize(pred, iterations)
+    skel_target = soft_skeletonize(target, iterations)
+    t_prec = (skel_pred * target).sum(dim=(1, 2, 3)) / (skel_pred.sum(dim=(1, 2, 3)) + smooth)
+    t_sens = (skel_target * pred).sum(dim=(1, 2, 3)) / (skel_target.sum(dim=(1, 2, 3)) + smooth)
+    cldice = 2.0 * t_prec * t_sens / (t_prec + t_sens + smooth)
+    return 1.0 - cldice.mean()
