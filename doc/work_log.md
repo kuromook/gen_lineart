@@ -1878,3 +1878,30 @@ specific step-count axis is shelved; if Direction 4 is revisited, the
 next candidate variables are data volume, conditioning method, or the
 already-prepared but unused per-tile WD14 captions (`--caption-csv`),
 not further training-length increases.
+
+## 2026-08-04/05: New `diffusion` Branch -- Domain Generation Instead Of Conversion
+
+Branched off `diffusion-controlnet` at `e5f72f6` (right after the 10x
+long-run verdict above) rather than continuing on it or renaming it in
+place, so the ControlNet conditional-translation work stays intact as
+its own historical record.
+
+User's reframing of the diffusion direction going forward: set the
+rough-to-line-art *conversion* task aside for now. Instead, focus on
+training/generation quality of the rough domain and the line-art domain
+*separately and unconditionally* (no pairing) -- i.e. can a diffusion
+model be adapted to genuinely understand what these rough sketches look
+like, and separately what this line art looks like, before attempting
+any cross-domain conditional task again. This directly motivates the
+concurrent unpaired-rough-pool cleanup work (see main branch's
+`dataset/unpaired_rough_candidates/`, tasks: filter out finished-ink
+contamination, then visual QC) -- that pool is training material for
+this domain-only generation goal, not ControlNet conditioning material
+as originally framed when it was gathered.
+
+Not yet started: no training code for unconditional/domain-only
+generation exists yet on this branch (`scripts/train_controlnet.py` is
+conditional-only). First concrete step is the rough-pool cleanup
+(filter + QC), then deciding the actual training mechanism (LoRA/
+DreamBooth-style fine-tune vs. something else) once clean domain data is
+in hand.

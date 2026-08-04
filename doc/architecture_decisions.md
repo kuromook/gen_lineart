@@ -6,7 +6,7 @@
 
 **このファイルを作った理由:** 数値指標は改善しているのに、montageで目視すると、そのアーキテクチャが本来解決しようとしていた目的に全く適っていなかった、というケースが何度か起きました(各項目の「目視評価」を参照 — 例: adversarial loss を外した実験は数値上悪化したが、montageレビューで理由が判明した。GAN有無の差は実は「変わらない曖昧な模様に対する濃さ・自信度の再調整」に過ぎず、数値が示唆していたような構造的な違いではなかった)。**どの項目についても、その他メモ・目視評価の記述を読まずに数値だけを信用しないこと。**
 
-**ブランチについて:** 下記のCNN+GAN系(「cleanup」/atari系列)は`cleanup-refiner`ブランチ上にあります(`lineart/model_zoo.py`, `scripts/train_i2i_survey.py`)。Direction 4(diffusion/ControlNet)は別の`diffusion-controlnet`ブランチ上にあります(`scripts/train_controlnet.py`) — アーキテクチャ的に無関係なので意図的に分けています。このファイルは横断的なまとめなので両ブランチで同期させておくべきです。もし内容がズレていたら、片方だけを信用せず手動でマージしてください。
+**ブランチについて:** 下記のCNN+GAN系(「cleanup」/atari系列)は`cleanup-refiner`ブランチ上にあります(`lineart/model_zoo.py`, `scripts/train_i2i_survey.py`)。Direction 4(diffusion)関連は`diffusion-controlnet`ブランチ(ControlNetによるrough→line条件付き変換、2026-08-04時点で一旦保留 — 10倍長時間ランでも幻覚が解消せず)と、そこから分岐した新しい`diffusion`ブランチ(2026-08-04〜、変換タスクは一旦棚上げし、rough/line各ドメイン単体の生成品質そのものを見る方向)の2つに分かれています — アーキテクチャ的にCNN+GAN系とは無関係なので意図的に分けています。このファイルは横断的なまとめなので関連ブランチ間で同期させておくべきです。もし内容がズレていたら、片方だけを信用せず手動でマージしてください。
 
 **データについて:** 特に断りがない限り、「koma」とついている項目はすべて`combined_koma_20260729`(5ソース計1489タイル、現在のクリーン/整合済みデータ)で学習・評価しており、比較には8タイルの`eval_clean_lineart004_8.txt`(クリーンeval set)を使っています。このデータより前の項目(BCEベースライン、ResNet-GAN atari、Direction 7の線幅損失スイープ)は古い世代のデータを使っています(各項目に記載)。
 
