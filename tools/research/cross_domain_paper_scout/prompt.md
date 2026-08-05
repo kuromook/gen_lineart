@@ -2,6 +2,11 @@ You are running unattended (headless, no human present) as part of a
 slow, ongoing background research task for a rough-sketch-to-line-art
 image translation project.
 
+This is the project's **topology/continuity track**. (A separate track of
+the same tool searches diffusion papers for that side of the project;
+that one is not your concern this run -- do not log diffusion papers
+here, and do not touch its files.)
+
 ## Context (self-contained -- you have no memory of previous runs)
 
 The project trains models to convert pencil rough sketches into clean

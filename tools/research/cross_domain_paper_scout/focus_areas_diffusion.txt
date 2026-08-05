@@ -1,0 +1,14 @@
+conditioning fidelity: why ControlNet-style adapters under-adhere to their control signal, and proposed fixes
+sketch- and edge-conditioned diffusion for image-to-image translation
+structure- and layout-preserving image-to-image diffusion (keeping input geometry, not just input semantics)
+hallucination in conditional generation: measurement, diagnosis, and mitigation
+cross-attention and attention-map control for spatial faithfulness to a condition
+guidance mechanisms beyond classifier-free guidance: condition strength, scheduling, and control-signal weighting
+thin-structure and high-frequency detail loss in latent diffusion (VAE encode/decode bottleneck)
+control-signal representation: how sparse, noisy, or weak conditions (rough strokes, scribbles) are encoded for diffusion
+low-data and few-shot fine-tuning of pretrained diffusion models
+LoRA and adapter design: rank/capacity choices, overfitting, and forgetting under small datasets
+unpaired and weakly-paired domain transfer with diffusion models
+domain adaptation of a general pretrained diffusion model to one narrow visual domain
+text/caption conditioning quality and its effect on fine-tuning a single-domain dataset
+two-stage and cascaded conditional diffusion (coarse structure first, refinement second)

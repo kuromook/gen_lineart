@@ -32,24 +32,51 @@ fi
 # Wall-clock cap so a hung run can't sit around until the next cron firing.
 RUN_TIMEOUT=${SCOUT_TIMEOUT:-30m}
 
-FOCUS_AREAS_FILE=focus_areas.txt
+WEEK=$((10#$(date -u +%U)))
+
+# Two tracks share the one weekly slot, alternating by week parity: odd
+# ISO week -> topology, even -> diffusion. Override for a manual run with
+# SCOUT_TRACK=topology|diffusion.
+TRACK=${SCOUT_TRACK:-}
+if [ -z "$TRACK" ]; then
+  if [ $((WEEK % 2)) -eq 1 ]; then TRACK=topology; else TRACK=diffusion; fi
+fi
+
+case "$TRACK" in
+  topology)
+    FOCUS_AREAS_FILE=focus_areas.txt
+    PROMPT_FILE=prompt.md
+    CANDIDATES_FILE=candidates.md
+    ;;
+  diffusion)
+    FOCUS_AREAS_FILE=focus_areas_diffusion.txt
+    PROMPT_FILE=prompt_diffusion.md
+    CANDIDATES_FILE=candidates_diffusion.md
+    ;;
+  *)
+    echo "[$(date -u --iso-8601=seconds)] error: unknown SCOUT_TRACK \"$TRACK\"" >&2
+    exit 1
+    ;;
+esac
+
 # Select among non-empty lines only, so both the count and the pick stay
-# consistent if blank lines are ever added to the file.
+# consistent if blank lines are ever added to the file. Each track's
+# rotation advances once per *its own* runs (i.e. every two weeks), so
+# alternating tracks does not make either list skip entries.
 mapfile -t AREAS < <(grep . "$FOCUS_AREAS_FILE")
 NUM_AREAS=${#AREAS[@]}
-WEEK=$((10#$(date -u +%U)))
-IDX=$((WEEK % NUM_AREAS))
+IDX=$(( (WEEK / 2) % NUM_AREAS ))
 FOCUS=${AREAS[$IDX]}
 
 # Always log how the run ended, including aborts (set -e, git failures).
 trap 'echo "[$(date -u --iso-8601=seconds)] run end, exit=$?"' EXIT
 
-echo "[$(date -u --iso-8601=seconds)] run start, focus=\"$FOCUS\""
+echo "[$(date -u --iso-8601=seconds)] run start, track=$TRACK, focus=\"$FOCUS\""
 
-PROMPT=$(cat prompt.md)
+PROMPT=$(cat "$PROMPT_FILE")
 PROMPT=${PROMPT//__FOCUS_AREA__/$FOCUS}
 
-# Restricted to web search + editing only this directory's candidates.md;
+# Restricted to web search + editing only this track's candidates file;
 # no shell/git access for the agent itself -- git is handled below.
 # Flag names verified against claude CLI 2.1.222 (2026-08-05).
 set +e
@@ -66,9 +93,9 @@ if [ "$CLAUDE_STATUS" -ne 0 ]; then
     | tee -a scout_run.log
 fi
 
-if ! git diff --quiet -- candidates.md; then
-  git add candidates.md
-  git commit -m "Cross-domain scout: candidates from ${FOCUS} ($(date -u +%Y-%m-%d))"
+if ! git diff --quiet -- "$CANDIDATES_FILE"; then
+  git add "$CANDIDATES_FILE"
+  git commit -m "Paper scout (${TRACK}): candidates from ${FOCUS} ($(date -u +%Y-%m-%d))"
   git pull --rebase
   git push
   echo "[$(date -u --iso-8601=seconds)] new candidates committed and pushed"
