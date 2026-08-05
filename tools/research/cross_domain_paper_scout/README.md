@@ -32,8 +32,13 @@ Add to crontab (adjust time; weekly is the intended pace -- see "Why
 weekly" below):
 
 ```
-0 9 * * 1 cd /path/to/gen_lineart/tools/research/cross_domain_paper_scout && ./scout.sh >> cron.log 2>&1
+0 9 * * 1 /path/to/gen_lineart/tools/research/cross_domain_paper_scout/scout.sh >> /path/to/gen_lineart/tools/research/cross_domain_paper_scout/cron.log 2>&1
 ```
+
+`scout.sh` `cd`s to its own directory and resolves the `claude` binary
+itself (`command -v`, falling back to `~/.local/bin` and
+`/usr/local/bin`), so cron's minimal `PATH` is not a problem. If `claude`
+lives elsewhere, set `CLAUDE_BIN=/path/to/claude` in the crontab line.
 
 Requires the `claude` CLI already authenticated on that machine, and git
 push access to this repo (the script commits and pushes its own findings
@@ -51,7 +56,11 @@ after each run).
   `WebSearch`/`WebFetch`/`Read`/`Edit` (search the web, edit only
   `candidates.md` -- no shell/git access for the agent itself), then
   commits and pushes `candidates.md` if it changed. Appends its own run
-  log to `scout_run.log` (gitignored).
+  log to `scout_run.log` (gitignored). The `claude` call is wrapped in a
+  wall-clock `timeout` (default 30m, override with `SCOUT_TIMEOUT`) so a
+  hung run can't survive until the next cron firing; if it fails or times
+  out the script logs the exit status and still commits whatever entries
+  were already appended.
 - `candidates.md`: the accumulating output -- one entry per candidate
   paper, deduplicated against existing entries by the agent each run (it's
   told to read the file first).
@@ -74,12 +83,13 @@ math in `scout.sh` if the cadence changes.
 
 ## Caveats
 
-- CLI flag names (`--allowedTools` etc.) in `scout.sh` were not verified
-  against the target machine's installed `claude` CLI version from the
-  session that authored this script -- check `claude --help` there and
-  adjust if flags differ.
+- CLI flag names were verified against `claude` CLI 2.1.222 on the
+  always-on machine (2026-08-05); re-check `claude --help` if that CLI is
+  upgraded and runs start failing.
 - The script assumes non-interactive git push works (credential helper /
-  SSH key already configured on that machine).
+  SSH key already configured on that machine). This has *not* been
+  exercised yet -- the first real run that finds a candidate is also the
+  first test of the commit/push path, so check `cron.log` after it.
 - If `claude -p` needs a permission-bypass flag on that machine's CLI
   version to run fully unattended (no prompts), add it -- but keep
   `--allowedTools` (or equivalent) scoped to `WebSearch,WebFetch,Read,Edit`
