@@ -44,6 +44,15 @@ Requires the `claude` CLI already authenticated on that machine, and git
 push access to this repo (the script commits and pushes its own findings
 after each run).
 
+The push must work non-interactively. An HTTPS `origin` with no
+credential helper will prompt for a username and fail under cron, so use
+an SSH remote with a passphrase-less key:
+
+```bash
+git remote set-url origin git@github.com:kuromook/gen_lineart.git
+ssh -T -o BatchMode=yes git@github.com   # should greet you by username
+```
+
 ## How it works
 
 - `focus_areas.txt`: a rotating list of non-art fields to search. `scout.sh`
@@ -86,10 +95,15 @@ math in `scout.sh` if the cadence changes.
 - CLI flag names were verified against `claude` CLI 2.1.222 on the
   always-on machine (2026-08-05); re-check `claude --help` if that CLI is
   upgraded and runs start failing.
-- The script assumes non-interactive git push works (credential helper /
-  SSH key already configured on that machine). This has *not* been
-  exercised yet -- the first real run that finds a candidate is also the
-  first test of the commit/push path, so check `cron.log` after it.
+- Non-interactive git push was verified on the always-on machine
+  (2026-08-05) after switching `origin` from HTTPS to SSH -- see "Setup"
+  above. Note that the `gh` on that machine's `PATH` is *not* GitHub CLI
+  (it's an unrelated Python package of the same name), so git's `gh`
+  credential fallback does not work there.
+- Only the manual push has been exercised, not one issued by `scout.sh`
+  itself under cron. The first run that actually finds a candidate is
+  still the first end-to-end test of the commit/pull/push block -- check
+  `cron.log` after it.
 - If `claude -p` needs a permission-bypass flag on that machine's CLI
   version to run fully unattended (no prompts), add it -- but keep
   `--allowedTools` (or equivalent) scoped to `WebSearch,WebFetch,Read,Edit`
