@@ -2005,3 +2005,358 @@ the trigger caption actually look like this project's line art / rough
 sketch style, or does the LoRA fail to shift the base model's style
 meaningfully at this rank/step count? That verdict decides whether the
 SDEdit-style translation follow-up is worth attempting.
+
+## 2026-08-05: Line-Domain LoRA Reviewed; New GT-Free Line-Art-Profile Tool
+
+The line-domain LoRA (`domain_lora_line_20260804`) finished overnight
+(1860 steps, loss 0.0128); the rough-domain LoRA is still training as of
+this entry (~50% through its 10,732-step budget).
+
+Visual review of the line-domain contact sheet
+(`results/domain_lora_line_20260804/contact_sheet_domain_lora_line_20260804.png`,
+16 unconditional txt2img samples): crisp, confident, fully binary anime
+linework -- no soft/marbled texture, the CNN+GAN family's persistent
+failure mode. Promising first signal that a domain-only diffusion LoRA
+can learn "line-art-ness" as a style from unpaired data alone.
+
+Discussed with the user what "line-art-ness" should even mean here,
+given this project's repeated pattern of a single optimized indicator
+hiding collapse on an unchecked axis (soft/marbled cleanup family, wobbly
+single-stage regression, ControlNet hallucination -- see
+`doc/architecture_decisions.md`'s Direction 4 entry and the direct-regression
+section). Conclusion: treat it as a multi-axis structural profile, not one
+scalar, and since domain-only generation has no GT/pairing, every axis
+must be computable from a single image alone.
+
+Built `tools/evaluation/measure_lineart_profile.py` (new): reuses
+`evaluate_stroke_stability.py`'s skeleton/component-length code and
+`tile_region_manifest_480.py`'s `line_width_stats`/`long_line_ratio`/
+`orientation_entropy`, plus new intensity-histogram and "faint-pixel
+locality" metrics. Full metric glossary and interpretation notes added to
+`doc/architecture_decisions.md` ("線画らしさプロファイル指標").
+
+**Calibration bug caught and fixed during first use:** the initial faint-
+locality design anchored "confident ink" at an arbitrary `<30` threshold
+and called the 30-220 band "midtone". A quick check of real ink-pixel
+values (`gray < 128`, this project's standard ink threshold) showed the
+median is 73 -- so most genuine ink was being miscounted as "midtone"
+purely from the uncalibrated anchor, making real GT tiles look ~90%+
+midtone-within-drawn-area, which is meaningless. Fixed by anchoring
+locality on the actual ink threshold (128) instead of an arbitrary
+stricter one; `deep_black_ratio` (`<30`) is kept only as a separate,
+non-locality diagnostic.
+
+First real comparison (koma_ref: full `combined_koma_20260729` 1489
+line tiles as the reference distribution; lora_line: the 17-sample
+contact sheet), full stats:
+`results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`.
+Medians:
+
+| metric | koma_ref | lora_line |
+|---|---:|---:|
+| long_component_ratio | 0.814 | 0.781 |
+| components_per_1k_ink_px | 10.85 | 8.38 |
+| line_width_p50 | 3.82px | 5.73px |
+| width_consistency (p95/p50) | 2.59 | 3.06 |
+| faint_of_drawn_ratio | 0.384 | 0.445 |
+| **faint_near_ink_ratio** | **0.899** | **0.663** |
+| faint_mean_dist_to_ink | 2.40px | 3.27px |
+
+Interpretation: stroke continuity is comparable or better than the
+reference (no wobble/fragmentation regression like the single-stage
+direct-regression case). Line width is clearly thicker and less uniform
+than real koma tiles -- expected, matches the visually "bold" contact
+sheet impression. The standout divergence is `faint_near_ink_ratio`: in
+real line art, ~90% of ambiguous/faint pixels sit within 3px of actual
+ink (a thin anti-aliasing halo hugging confident strokes); in the LoRA
+samples, only ~66% do -- more of its faint pixels are floating free of
+any confident stroke rather than hugging one. This is the kind of
+specific, non-obvious axis this tool was built to surface instead of a
+single pass/fail verdict.
+
+Caveat: `ink_ratio`/`background_ratio` differ a lot between the two sets
+(LoRA ~0.26 vs ref ~0.03) but this is confounded by framing -- the LoRA
+contact-sheet samples are all face/eye close-ups with little blank
+background, unlike the broader mix of full-panel real tiles -- not a
+direct line-art-ness signal by itself.
+
+### Next Actions
+
+1. Once the rough-domain LoRA finishes, run the same profile tool against
+   its contact sheet and review both visually and via this tool.
+2. Consider whether `faint_near_ink_ratio` divergence is specific to this
+   LoRA/rank/step-count combination or a more general property of
+   diffusion-sampled line art; no controlled comparison across
+   configurations exists yet.
+3. Domain LoRA training itself is still a stepping stone (per the
+   2026-08-04 entry above) -- the SDEdit-style translation follow-up
+   remains the next real milestone once both domains are judged
+   sufficiently "line-art-like"/"rough-like" by this profile plus visual
+   review.
+
+## 2026-08-05 (later): Rough-Domain LoRA Reviewed -- Content Mismatch, Not A Style Problem; Two Isolation Runs Launched
+
+`domain_lora_rough_20260804` finished (10,732 steps, 4 epochs over the full
+21,468-image cross-source rough pool, loss 0.2254). Contact sheet:
+`results/domain_lora_rough_20260804/contact_sheet_domain_lora_rough_20260804.png`.
+
+**Visual review, user's judgment:** looks like dense, repetitive
+line-practice scribbles -- almost every one of the 16 samples is dominated
+by parallel hatching/cross-hatch strokes, with only 1-2 tiles showing any
+recognizable figure/face content. Stroke darkness itself is borderline
+acceptable as pencil (some strokes are pen-dark, but that's within range
+for a strong pencil pass). The real problem the user flagged: **content and
+composition barely resemble the actual training tiles** -- this is a
+content/composition failure, not a texture/darkness failure.
+
+**Quantified with `measure_lineart_profile.py`** against the real rough
+pool as reference (`dataset/unpaired_rough_candidates/*/rough`, n=1354
+sampled, vs. the 16 LoRA samples):
+`results/lineart_profile_rough_ref_vs_domain_lora_rough_20260805.csv`.
+Medians:
+
+| metric | rough_ref (real) | lora_rough | read |
+|---|---:|---:|---|
+| ink_ratio | 0.018 | 0.307 | 17x more ink than real rough pages |
+| background_ratio | 0.90 | 0.51 | half the canvas covered vs. mostly blank paper |
+| faint_of_drawn_ratio | 0.79 | 0.39 | real rough is mostly faint graphite; LoRA draws confidently |
+| line_width_p50 | 2.74px | 4.23px | notably thicker strokes |
+| long_line_ratio | 0.46 | 0.84 | dominated by long straight-ish lines |
+| orientation_entropy | 0.79 | 0.73 | fewer distinct stroke directions (parallel-hatch signature) |
+
+Confirms the visual read quantitatively: high ink density, long straight
+strokes, low orientation diversity is consistent with convergence onto one
+dominant local texture pattern (parallel hatching) rather than the full
+rough-sketch content distribution (construction lines, faces, panel
+layouts).
+
+**Two candidate causes discussed, deliberately not conflated:**
+
+1. **Epoch/exposure deficit.** Confirmed from each run's own log line:
+   line domain = 1,489 images, 186 steps/epoch, 10 epochs = 10 passes/image.
+   Rough domain = 21,468 images, 2,683 steps/epoch, 4 epochs = 4
+   passes/image -- 2.5x fewer passes than line. Noted as a real but
+   possibly partial explanation: classic diffusion undertraining usually
+   shows as *weak* conditioning/style transfer (as with the ControlNet
+   1860-step probe), not a *strong, consistent* convergence onto one
+   specific texture, which is what's observed here.
+2. **Data composition skew (found while investigating).**
+   `dataset/pairs_480/train/rough` (19,454 of the pool's 21,468 images) is
+   the legacy cross-source pool accumulated over the project's whole
+   history for the CNN aux/atari generator, not curated for domain-LoRA
+   diversity. Prefix breakdown: `ako*` 9,332 (48%) + `housei*` 5,070 (26%)
+   = 74% from just two legacy sources, plus 2,603 images (13.5%) from
+   `*komadense` variants -- the same duplicate-overlap-loosened retiling
+   family the project already found reduces effective content diversity in
+   a different training (2026-08-01 direct-unet dense-28ep result, this
+   file above). The curated line-domain pool
+   (`line_combined_koma_20260729`) has no equivalent skew.
+
+**Decision (explicit user direction):** run both isolation experiments
+rather than guess, starting with the cheaper one first:
+
+- `experiments/run_domain_lora_roughclean_20260805.sh` (data-composition
+  isolation): same rank/caption/epoch-count as the line-domain run (10
+  epochs), but trained only on the 2026-08-05-confirmed-clean
+  `dataset/unpaired_rough_candidates/*/rough` pool (2,014 images, balanced
+  across all 5 sources, no legacy/dense duplication) -- 2,510 steps, ~2.5-3h.
+  Launched detached (`nohup ... & disown`), smoke-tested first (6-step dry
+  run into a scratch dir).
+- `experiments/run_domain_lora_roughfull_e10_20260805.sh` (epoch-count
+  isolation): resumes `domain_lora_rough_20260804`'s `resume_state` and
+  continues on the full 21,468-image pool up to the line domain's 10-epoch
+  equivalent (26,830 total steps, ~16,098 more from here, ~16-17h).
+  Writes to a new output dir so the original 4-epoch checkpoint/contact
+  sheet stays intact for comparison. Verified via smoke test that resume
+  correctly picks up at step 10,732 without touching the original
+  checkpoint dir.
+
+Since the roughclean run (~3h) may finish after the user is asleep,
+explicit direction: chain straight into the roughfull run on completion,
+with no interactive review gate in between. Built
+`experiments/run_domain_lora_chain_roughclean_then_roughfull_20260805.sh`,
+a detached watcher (`nohup ... & disown`, verified `PPID=1`) that polls
+`logs/domain_lora_roughclean_20260805.done` every 60s and launches
+`run_domain_lora_roughfull_e10_20260805.sh` the moment it appears (i.e.
+right after roughclean's training *and* contact-sheet generation both
+complete). Safety net: if roughclean's process disappears without ever
+writing that `.done` marker (crash), the watcher does not auto-launch
+roughfull -- logs the failure and exits, so a broken premise doesn't waste
+the whole overnight/daytime GPU window. All three scripts (`roughclean`,
+`roughfull_e10`, and the chain watcher) still send the existing ntfy
+notification on their own completion.
+
+### Next Actions
+
+1. Review `domain_lora_roughclean_20260805`'s contact sheet + profile-tool
+   comparison once it finishes tonight -- if it looks like real rough
+   content (unlike the full-pool run), that confirms data-composition skew
+   as the primary cause.
+2. Review `domain_lora_roughfull_e10_20260805`'s result the next
+   morning/day (should auto-launch unattended right after #1, per the
+   chain watcher above) -- if *this* fixes the content-mismatch problem
+   instead, epoch count was the primary cause; if neither fixes it cleanly,
+   both variables may matter together, or a third factor (fixed single
+   caption giving zero content-disambiguation signal across a diverse
+   pool, or rank-16 capacity) needs to be considered next.
+3. Once both isolation results are in, update `doc/architecture_decisions.md`
+   with the resolved verdict (currently only the line-domain LoRA and the
+   original 4-epoch rough-domain LoRA are recorded there).
+4. SDEdit-style translation follow-up remains blocked on both domains
+   being judged sufficiently "line-art-like"/"rough-like" -- unchanged from
+   the prior entry.
+
+## 2026-08-06: Rough-Domain Isolation Results In -- Both Miss The Real Failure; Root Cause Is Missing Content Specification In The Caption
+
+Both isolation runs from the prior entry finished (chain watcher worked as
+designed): `domain_lora_roughclean_20260805` (data-composition isolation,
+2,014-image clean pool, 10 epochs, completed 2026-08-06T00:15) then
+`domain_lora_roughfull_e10_20260805` (epoch-count isolation, resumed the
+original 4-epoch run to a 10-epoch-equivalent 26,830 steps on the full
+21,468-image pool, completed 2026-08-06T18:48).
+
+### Stroke-Metric Comparison: Data Composition Beat Epoch Count, But Both Missed The Point
+
+`results/lineart_profile_rough_isolation_compare_20260806.csv` (`rough_ref`
+n=2014 vs each LoRA n=16-17, medians):
+
+| metric | rough_ref | lora_rough_e4 | roughclean_e10 | roughfull_e10 | closer to ref |
+|---|---:|---:|---:|---:|---|
+| ink_ratio | 0.020 | 0.305 | 0.253 | 0.284 | roughclean |
+| background_ratio | 0.902 | 0.504 | 0.426 | 0.499 | roughfull (slight) |
+| faint_of_drawn_ratio | 0.784 | 0.405 | 0.571 | 0.416 | roughclean |
+| line_width_p50 | 2.74 | 3.82 | 3.82 | 5.73 | roughclean |
+| long_line_ratio | 0.477 | 0.839 | 0.744 | 0.862 | roughclean |
+| orientation_entropy | 0.790 | 0.723 | 0.783 | 0.728 | roughclean (near match) |
+| components_per_1k_ink_px | 37.2 | 15.1 | 20.7 | 9.4 | roughclean |
+
+7 of 8 stroke-level axes favored `roughclean` (data-composition isolation)
+over `roughfull_e10` (epoch-count isolation) -- the legacy/dense-heavy
+74%-of-pool skew identified in the prior entry really was hurting
+stroke-level realism, more than the epoch deficit was.
+
+But a human visual read of both contact sheets (user, before any of this
+was quantified) judged it the opposite way on the dimension that actually
+matters: "ep10 の方が少しだけ何か形らしいものを描こうとしてるようにみえる"
+(`roughfull_e10` looks slightly more like it's attempting recognizable
+shapes) -- both still read as overwhelmingly parallel-hatch texture, not
+line art. This flagged that the profile tool's existing axes (all
+stroke-level: width, faintness, continuity, orientation) cannot see the
+dimension the user was actually judging: whether the image has real
+macro composition at all, versus being a flat repeating texture that
+merely has plausible-looking individual strokes.
+
+### New Metric: `grid_ink_cv` / `blank_cell_fraction` (Structural Collapse, Not Stroke Quality)
+
+Added to `tools/evaluation/measure_lineart_profile.py`
+(`grid_heterogeneity()`): divide the image into an 8x8 grid, compute
+per-cell ink_ratio, report the coefficient of variation across cells
+(`grid_ink_cv`) and the fraction of near-empty "paper" cells
+(`blank_cell_fraction`, threshold 1% local ink). Rationale: a page that is
+one repeating hatch texture wall-to-wall can score fine on every stroke
+axis while being content-free; real sketches mix near-blank paper with
+locally dense subject regions (high variance), a uniform texture does not.
+
+Result, run against all three rough LoRA variants plus `rough_ref`
+(`results/lineart_profile_rough_isolation_compare_20260806.csv`, medians):
+
+| metric | rough_ref | lora_rough_e4 | roughclean_e10 | roughfull_e10 |
+|---|---:|---:|---:|---:|
+| grid_ink_cv | 2.03 | 0.39 | 0.43 | 0.47 |
+| blank_cell_fraction | **0.72** | 0.00 | 0.016 | 0.016 |
+
+Real rough pages are ~72% near-blank grid cells with sharp local density
+contrast (CV 2.0); all three LoRA variants are 0-1.6% blank with CV ~0.4 --
+roughly a fifth of real. On this axis all three are equally collapsed;
+neither isolation variable (data composition or epoch count) touched the
+actual failure the user was pointing at. This directly explains why the
+stroke-metric table above and the visual read diverged: they were
+measuring different things, and the thing the user cared about had no
+metric until this one.
+
+### Root Cause Test: Caption Has Zero Content Specification
+
+User's hypothesis: the fixed caption used for all 21,468 training images
+(`"roughsketchstyle, pencil rough sketch, messy sketchy construction
+lines, monochrome"`) never says *what* to draw, only *how* to render it --
+so the model has no per-image signal for composition and falls back to
+tiling a texture. Checked the training tiles themselves
+(`dataset/unpaired_rough_candidates/{ako5ver2,hamlabi}/rough` samples):
+confirmed they are tight single-character face/head crops with large
+blank margins, i.e. real, specific content that the caption never
+mentions.
+
+Tested cheaply -- inference only, no retraining, existing
+`domain_lora_roughclean_20260805/final` checkpoint:
+
+1. **Motif added** (`"1girl, portrait, face closeup, ..."`,
+   `results/domain_lora_roughclean_motiftest_20260806/`, 8 samples): all 8
+   samples became recognizable anime-style faces (eyes, hair, expression)
+   -- a dramatic, unambiguous visual break from the flat hatch texture.
+   Hypothesis confirmed for content-recognizability.
+2. **Full-body motif** (`"1girl, full body, standing pose, wide shot,
+   ..."`, `results/domain_lora_roughclean_motiftest_fullbody_20260806/`):
+   a recognizable standing figure appears in all 8 samples, but the
+   surrounding canvas is still filled edge-to-edge with the same
+   parallel-hatch texture -- `blank_cell_fraction` medians actually *lower*
+   than the face test (0.008 vs 0.039). Content-specification and
+   background-fill are separable problems; fixing one did not fix the
+   other.
+3. **Background-fill overcorrection**
+   (`"... plain background, empty background ..."` +
+   `--negative-caption "hatching, crosshatch, dense background lines,
+   filled background"`,
+   `results/domain_lora_roughclean_motiftest_fullbody_emptybg_20260806/`):
+   overshot badly -- output became fully flat-shaded, finished-illustration
+   anime renders with no line-art texture at all. Pushing the prompt hard
+   enough against the LoRA's own domain overrides the rank-16 LoRA's grip
+   on the rough-sketch style entirely, reverting to the base checkpoint's
+   (AOM3A1B) native rendering prior.
+4. **Hatch-phrase removal only** (dropped `"messy sketchy construction
+   lines"` from the full-body caption, no background push,
+   `results/domain_lora_roughclean_motiftest_fullbody_nohatchphrase_20260806/`):
+   negligible change (`blank_cell_fraction` 0.008 -> 0.016,
+   `grid_ink_cv` 0.469 -> 0.487, both still ~1/40 and ~1/4 of `rough_ref`
+   respectively). Rules out that specific phrase as the driver -- the
+   background-fill habit is baked into the LoRA weights (almost certainly
+   from the training pool's own composition-heavy legacy tiles), not
+   something caption wording at sampling time can undo.
+
+### Conclusions
+
+- The single fixed style-only caption used for rough-domain training is a
+  real, confirmed root cause of the content/composition failure -- adding
+  explicit motif words at *sampling* time (no retrain) fixes
+  content-recognizability immediately.
+- Canvas-filling/background-hatch is a separate failure mode, not fixed by
+  motif specification and not undoable by prompt engineering at sampling
+  time -- it is trained into the weights and needs to be addressed at
+  training time (data composition and/or per-image captions), not
+  inference time.
+- Prompt engineering has reached its practical limit for this checkpoint:
+  pushing further (explicit background suppression) breaks the LoRA's
+  domain grip rather than fixing composition.
+- This reframes both prior isolation runs: neither
+  `domain_lora_roughclean_20260805` nor `domain_lora_roughfull_e10_20260805`
+  addressed the actual dominant failure (structural/macro collapse); the
+  stroke-metric wins for `roughclean` were real but on the wrong axis.
+
+### Next Actions
+
+1. Plan a per-image content-aware caption retrain of the rough domain --
+   needs actual per-image content tags (motif/pose/framing), not one
+   shared style caption across the whole pool. Likely needs a tagging
+   pass (existing tagger/BLIP-style tool or heuristic) over the training
+   images before retraining.
+2. Investigate whether the background-fill habit traces to the same
+   legacy/dense-tile composition skew flagged in the prior entry (`ako*`
+   48% + `housei*` 26% + `*komadense` 13.5% of the full pool) -- if so, a
+   retrain combining the clean-pool data composition *and* per-image
+   captions may be needed together, not caption diversity alone.
+3. Update `doc/architecture_decisions.md` with the resolved verdict for
+   both isolation runs plus this caption-diagnosis finding (currently only
+   the line-domain LoRA and the original 4-epoch rough-domain LoRA are
+   recorded there).
+4. SDEdit-style translation follow-up remains blocked on the rough domain
+   being judged sufficiently "rough-like" -- unchanged from the prior
+   entry, now additionally blocked on the content-specification fix above.

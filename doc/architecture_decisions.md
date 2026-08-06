@@ -1,6 +1,6 @@
 # アーキテクチャ選択の記録
 
-更新: 2026-08-01 JST
+更新: 2026-08-05 JST
 
 このファイルは「**どのモデルアーキテクチャを何のために試したか、その数式・コードは何か、そして実際に目視で確認したか**(数値指標だけで判断していないか)」を一目で確認するための場所です。`doc/work_log.md`はセッションごとの経緯を追う物語的な記録、このファイルは「今何が存在し、何が証明されたか」を項目ごとに整理したものです。
 
@@ -38,6 +38,26 @@ GTの線から「core(線そのもの、距離0-2px)」「halo_band(線のすぐ
 | `halo_band_faint_ratio` | 線のすぐ外側のうち「かすれ」状態にあるピクセルの割合。**高いほど線の輪郭がぼやけている(marbled/soft) — 今夜の一連の検証で最も注目した指標** |
 | `far_bg_ink_mean` / `far_bg_faint_ratio` | 線から離れた背景での同様の指標。高いと関係ない場所にまで薄いinkが滲んでいる |
 | `halo_to_core` | `halo_band_ink_mean / core_ink_mean`。1に近いほど「線の周りのにじみが線本体とほぼ同じ濃さ」=輪郭が不明瞭。小さいほど線とそれ以外がくっきり分かれている |
+
+### 線画らしさプロファイル指標 -- GT/ペア不要(`measure_lineart_profile.py`)
+
+`diffusion`ブランチで導入(2026-08-05)。上記2つはいずれもGT線画とのペアが前提だが、domain-only LoRA(rough/lineを無条件・無ペアで生成)にはGTペアが存在しないため、**単一画像だけから計算できる**「線画らしさ」の多軸プロファイルとして新規に作成した。実装は`tools/evaluation/measure_lineart_profile.py`(モジュールdocstringに設計意図と失敗事例を詳述)。想定用途: 実線画タイル(リファレンス分布)と生成サンプルの両方に同じ指標をかけ、軸ごとにどこがリファレンス分布から外れているかを見る — 単一スコアに潰さないのは、このプロジェクトでこれまで単一指標最適化が別の軸での崩壊を隠してきた反省(本ファイル冒頭「このファイルを作った理由」と同じ教訓)による。
+
+いずれも閾値128(このプロジェクト全体で使うink/背景の標準閾値)を基準に計算する。**1点、設計時に閾値校正のミスがあり修正済み**: 初版は「confident-black」をink非依存の`<30`で独自定義し、それ以外(30-220)を一律"midtone"と呼んでいたが、実データ調査で実線画のink画素(`<128`)自体の中央値が73であることが判明 -- 大半の本物のinkが「30という恣意的な閾値」のせいで誤って"midtone"側にカウントされ、`faint_of_drawn_ratio`が実線画で異常に高く(0.9台)出るというバグを生んでいた。修正後はinkの標準閾値(128)を唯一のアンカーとして使う。
+
+| 指標 | 意味 |
+|---|---|
+| `ink_ratio` | 全画素に占めるink(`<128`)画素の割合 |
+| `deep_black_ratio` | 全画素に占める`<30`(ほぼ純黒)画素の割合。inkの中でもどれだけ濃いかの参考診断(locality計算のアンカーには使わない) |
+| `background_ratio` | 全画素に占める`>220`(確信ある白)画素の割合 |
+| `faint_of_drawn_ratio` | 「描かれた領域」(ink+faint)のうちfaint(128-220、曖昧なグレー)が占める割合 |
+| `faint_near_ink_ratio` | faint画素のうち、最寄りのink画素から3px以内にあるものの割合。**高いほど「曖昧さが本物のストロークに薄く貼り付いたアンチエイリアス縁」、低いほど「inkから浮いて拡散した曖昧さ」= soft/marbled失敗モードの兆候** |
+| `faint_mean_dist_to_ink` | faint画素から最寄りink画素までの平均距離(px) |
+| `long_component_ratio` / `components_per_1k_ink_px` | skeleton化後の連結成分長分布。`evaluate_stroke_stability.py`と同一実装、ストローク連続性(2026-08-01の「ぐらつき」調査で導入) |
+| `line_width_p50` / `width_consistency`(p95/p50) | 距離変換ベースの線幅と、その画像内でのばらつき。ばらつきが大きいほど太さが不均一(blobby) |
+| `long_line_ratio` / `orientation_entropy` | `tile_region_manifest_480.py`から流用。長い直線の比率とエッジ方向のエントロピー |
+
+2026-08-05時点の初回結果(koma_ref参照1489タイル vs. domain LoRA line生成17枚、中央値): ストローク連続性はほぼ同等(`long_component_ratio` 0.81 vs 0.78)。線幅はLoRAが明確に太い(3.82px vs 5.73px)。最も差が出たのは`faint_near_ink_ratio`(参照0.90 vs LoRA 0.66) -- LoRAのfaint画素はinkから浮いて拡散している割合が本物より高く、これが次に注視すべき軸。CSV: `results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`。詳細: `doc/work_log.md`(2026-08-05のエントリ)。
 
 ---
 
