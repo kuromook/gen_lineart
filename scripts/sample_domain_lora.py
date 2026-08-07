@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--resolution", type=int, default=512)
     parser.add_argument("--num-inference-steps", type=int, default=30)
     parser.add_argument("--guidance-scale", type=float, default=7.0)
+    parser.add_argument("--lora-scale", type=float, default=1.0, help="cross_attention_kwargs scale -- how strongly the LoRA delta is blended over the frozen base weights")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--output-dir", default=None, help="defaults to results/{tag}")
@@ -64,6 +65,7 @@ def main():
             num_inference_steps=args.num_inference_steps,
             guidance_scale=args.guidance_scale,
             generator=generator,
+            cross_attention_kwargs={"scale": args.lora_scale},
         ).images[0]
         out_path = output_dir / f"sample_{i:03d}.png"
         result.save(out_path)

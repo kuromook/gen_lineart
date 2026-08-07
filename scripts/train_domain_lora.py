@@ -93,6 +93,12 @@ def parse_args():
     )
     parser.add_argument("--resolution", type=int, default=512)
     parser.add_argument("--lora-rank", type=int, default=16)
+    parser.add_argument(
+        "--lora-target-modules",
+        nargs="+",
+        default=["to_k", "to_q", "to_v", "to_out.0"],
+        help="peft target module name suffixes; extend with conv module names (e.g. conv1 conv2 conv_shortcut proj_in proj_out) to raise capacity beyond attention-only",
+    )
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--epochs", type=float, default=10)
@@ -147,7 +153,7 @@ def main():
         r=args.lora_rank,
         lora_alpha=args.lora_rank,
         init_lora_weights="gaussian",
-        target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+        target_modules=args.lora_target_modules,
     )
     unet.add_adapter(unet_lora_config)
     unet.train()

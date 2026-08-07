@@ -33,6 +33,10 @@ working on extraction/tiling/panel-matching.
   checkpoint/status references.
 - `doc/badrough_lucy_thin_threshold_notes.md`: bad-rough/lucy_thin
   threshold-tuning results, ako5/ako6-derived.
+- `doc/diffusion_fidelity_budget_policy.md`: acceptance policy for
+  domain-only LoRA generation quality (`diffusion` branch) -- how much
+  deviation toward the base checkpoint's own habits is treated as within
+  control vs. a real failure.
 - `doc/worktree_policy.md`: which git worktree/branch each active
   direction (halo-loss, router-moe, cleanup-refiner, diffusion-controlnet)
   lives on.
