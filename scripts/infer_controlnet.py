@@ -37,6 +37,12 @@ def parse_args():
         "--controlnet-dir", default="checkpoints/controlnet_koma_direction4_20260731/final"
     )
     parser.add_argument(
+        "--controlnet-lora-dir",
+        default=None,
+        help="optional LoRA adapter dir (from train_controlnet.py --controlnet-lora-rank) to load "
+        "on top of --controlnet-dir's base weights",
+    )
+    parser.add_argument(
         "--base-ckpt",
         default=os.path.expanduser("~/disk/checkpoint/Stable-diffusion/AOM3A1B_orangemixs.safetensors"),
     )
@@ -50,6 +56,12 @@ def parse_args():
     parser.add_argument("--num-inference-steps", type=int, default=30)
     parser.add_argument("--guidance-scale", type=float, default=3.0)
     parser.add_argument("--controlnet-conditioning-scale", type=float, default=1.0)
+    parser.add_argument(
+        "--lora-dir",
+        default=None,
+        help="optional domain LoRA to load on top of the base UNet (e.g. checkpoints/domain_lora_line_sd15base_sksv2_20260807/final)",
+    )
+    parser.add_argument("--lora-scale", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", default=None, help="defaults to results/{tag}")
     return parser.parse_args()
@@ -61,9 +73,15 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     controlnet = ControlNetModel.from_pretrained(args.controlnet_dir, torch_dtype=torch.float16)
+    if args.controlnet_lora_dir:
+        controlnet.load_lora_adapter(
+            args.controlnet_lora_dir, weight_name="pytorch_lora_weights.safetensors", prefix=None
+        )
     pipe = StableDiffusionControlNetPipeline.from_single_file(
         args.base_ckpt, controlnet=controlnet, torch_dtype=torch.float16, safety_checker=None
     )
+    if args.lora_dir:
+        pipe.load_lora_weights(args.lora_dir)
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.to("cuda")
     pipe.set_progress_bar_config(disable=True)
@@ -85,6 +103,7 @@ def main():
             guidance_scale=args.guidance_scale,
             controlnet_conditioning_scale=args.controlnet_conditioning_scale,
             generator=generator,
+            cross_attention_kwargs={"scale": args.lora_scale} if args.lora_dir else None,
         ).images[0]
 
         out = result.convert("L").resize((IMAGE_SIZE, IMAGE_SIZE), Image.BILINEAR)

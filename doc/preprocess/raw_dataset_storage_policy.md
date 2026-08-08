@@ -76,6 +76,28 @@ Current archives:
   `sketch` files (`0004/0005/0007/0015/0016`) and `review_montage.jpg`. Flat
   zip layout unchanged, `--zip-root ""`)
 
+- `dataset/raw_zips/dataset_psd_line.zip` (arrived 2026-08-08, line-only batch
+  from a new source: 731 PSD documents auto-scanned by the user's own
+  `extract_line_and_sketch` tool on another PC, 275 line layers extracted
+  successfully (0 sketch/pairs -- line-only by design, per user; pairs are
+  a separate planned follow-up extraction). Zip member filenames are
+  mojibake (Shift-JIS/CP932 bytes misread as CP437 by the zip format's
+  default non-UTF8-flag fallback) -- e.g. `0001_名称未設定 1_line.png`
+  appeared as `0001_хРНчз░цЬкшинхоЪ 1_line.png`. Content (image bytes,
+  `manifest.json`, `index.tsv`) is unaffected, only the zip directory
+  entry names. Fixed by matching each garbled entry to `index.tsv`'s
+  correctly-UTF-8-encoded filename column via the numeric prefix (e.g.
+  `0001_`), which survives the corruption since digits are encoding-
+  invariant -- all 275 entries matched cleanly, no ambiguity. Repackaged
+  with correct names as `dataset/raw_zips/dataset_psd_line_v2.zip`
+  (standard Python 3 `zipfile` write, proper UTF-8 flag). Kept the
+  original `dataset_psd_line.zip` for audit; use `_v2` for any extraction
+  work. `manifest.json` also records 415 skipped (no line layer name
+  match), 26 ng, 4 errors (`aggdraw` package missing on the user's
+  extraction tool for vector-shape PSDs -- a fix for their side, not
+  ours), 11 excluded composite, 4 excluded tone. Not yet run through this
+  project's own extraction/tiling pipeline.
+
 Also arrived 2026-07-28: `dataset_kazenagare.zip`, a mislabeled duplicate
 upload — byte-identical to `dataset_housei_v4.zip`'s 58 members despite the
 different outer name and internal `housei_NNN_*` filenames (confirmed by

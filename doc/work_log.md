@@ -2592,3 +2592,314 @@ referenced by exact path in `doc/diffusion_fidelity_budget_policy.md`).
   `domain_lora_roughclean_20260805`, `domain_lora_roughfull_e10_20260805`.
   Kept: the two 2026-08-04 original baselines and the two adopted sksv2
   checkpoints. Disk free space: 25GB -> 42GB.
+
+## 2026-08-08: ControlNet Hallucination Re-Diagnosed -- Not Data-Scale Alone, Our Own LoRA Was Actively Hurting It
+
+With both domains' style fidelity resolved (prior entry), attempted to
+reconnect to conditional rough->line conversion. Two cheap diagnostics on
+our own custom-trained ControlNet
+(`checkpoints/controlnet_koma_direction4_longrun_20260803`) came back
+negative:
+
+1. **Pair alignment quality** (`dataset/pairs_480/pair_metadata.csv`'s
+   `alignment_quality` column: `same_coordinate`/`uncertain`/
+   `rough_shifted` buckets, 20 tiles each, `locally_refined` bucket
+   dropped -- its 123 rows' `rough_path`/`line_path` no longer exist on
+   disk, a stale `kurip`-source manifest entry, not investigated further).
+   Chamfer-to-GT (`edge_map`+`chamfer` from
+   `tile_region_manifest_480.py`, truncate=20px) was flat across buckets
+   (8.79 / 9.49 / 9.09 px median) -- hallucination severity does not
+   correlate with alignment quality, confirmed visually too (even
+   best-aligned tiles produced content unrelated to input).
+2. **`--controlnet-conditioning-scale` sweep** (1.0/1.3/2.0, `same_
+   coordinate` bucket, same 20 tiles re-verified after an initial sample-
+   list mismatch bug): flat chamfer (9.30 / 9.44 / 9.29 px median);
+   visually, scale2.0 broke generation into noise-like crosshatch chaos
+   rather than improving structure-following.
+
+This looked like a structural ControlNet limitation. **User then reported
+confirming ControlNet works fine in Stable Diffusion Forge, using a
+public `lineart`-type ControlNet model on the same kind of rough input**
+-- directly overturning that read. Re-diagnosed with three isolated
+tests, using the public `lllyasviel/control_v11p_sd15s2_lineart_anime`
+checkpoint (downloaded via diffusers, no local training) on the same
+10-tile validation subset:
+
+1. **Public ControlNet + our SD1.5 base + our line-domain LoRA
+   (scale1.4), raw rough input**: chamfer only marginally better (8.81 vs
+   our own ControlNet's 9.30 median) but visually a *different* failure
+   mode -- output collapsed into dense crosshatch/shading texture
+   covering the whole frame (`results/public_controlnet_lineart_
+   anime_20260808/`), resembling the earlier (since-fixed) rough-domain
+   "parallel-hatch collapse."
+2. **Add the standard `lineart_anime` preprocessor** (installed
+   `controlnet_aux`, `LineartAnimeDetector.from_pretrained("lllyasviel/
+   Annotators")` -- converts the raw noisy pencil scan into a clean
+   white-line-on-black edge map, the format public ControlNets actually
+   expect instead of a raw grayscale scan): chamfer barely moved (8.87
+   median) and the same dense-hatch texture persisted with our LoRA still
+   attached (`results/public_controlnet_lineart_anime_preprocessed_
+   20260808/`).
+3. **Drop our line-domain LoRA entirely** (plain SD1.5 base + public
+   ControlNet + preprocessed conditioning, generic caption): the fix.
+   Visually the best result this whole branch has produced -- confident
+   white-background linework with real structural correspondence to the
+   input on multiple tiles (one tile: a dagger/sword shape in the rough
+   reproduced recognizably in the output, the first clear input-specific
+   correspondence seen in any ControlNet variant tried). Chamfer 8.75
+   median, kept at
+   `results/public_controlnet_noLora_full_20260808/` (10 tiles) for
+   reference.
+
+**Conclusion**: three separate factors were conflated. Public-ControlNet
+pretraining scale (hundreds of thousands-plus images vs. our 1,489-2,510
+tiles) is real and matters -- "10x more training didn't fix it"
+(2026-08-04/05) meant 10x our own tiny baseline, not an absolute
+sufficient amount. Preprocessing format plausibly matters (raw noisy
+scan vs. clean edge map) but the chamfer numbers didn't show a large
+isolated effect here. The one clearly load-bearing factor in this test:
+**our own unconditionally-trained domain LoRA, stacked at scale1.4 on
+top of the public ControlNet, actively overrides its conditioning
+signal** -- the LoRA's own strong learned pull (toward its training
+domain's texture) wins out over the structural information the
+ControlNet is trying to inject, consistent with the same "base/adapter
+prior wins over conditioning" dynamic suspected from the start, just
+located in a different component (our LoRA) than originally assumed (the
+base checkpoint or the ControlNet itself).
+
+### Decision
+
+Do not train a new ControlNet from scratch. Once the in-progress paired
+rough/line dataset is ready (see `doc/work_log.md`'s dataset-extraction
+notes and `[[project_panel_layer_extraction]]` memory), **fine-tune the
+public `control_v11p_sd15s2_lineart_anime` checkpoint** on our own pairs
+instead -- transfer learning from its massive existing pretraining
+rather than starting from an empty `ControlNetModel.from_unet(unet)`
+copy. Our house style should be acquired through that fine-tune directly
+(the paired loss naturally pulls output toward our specific line-art
+style), not bolted on afterward as a separately-trained, unconditionally-
+learned LoRA -- today's result shows that composition actively fights
+the conditioning signal rather than complementing it.
+
+### Next Actions
+
+1. Once paired data arrives, fine-tune `control_v11p_sd15s2_lineart_
+   anime` (not `AOM3A1B`-based `ControlNetModel.from_unet`) on the new
+   pairs, with per-tile WD14 captions from the start (the domain-LoRA
+   chain's lesson: a single fixed caption starves the model of content-
+   disambiguation signal) and the `lineart_anime` preprocessor applied to
+   rough tiles before conditioning.
+2. Do not stack the current unconditionally-trained line-domain LoRA on
+   top of this pipeline -- confirmed actively harmful in this
+   configuration. Revisit whether *any* form of style adapter is safe to
+   add only after the paired fine-tune itself is working.
+3. `dataset/raw_zips/dataset_psd_line_v2.zip` (275 line-only tiles,
+   2026-08-08 arrival) is not yet paired data and cannot feed this fine-
+   tune directly -- usable for the line-domain LoRA's training pool if
+   that direction is revisited, but the paired-conversion work above is
+   blocked on the user's separately-planned paired extraction batch.
+
+## 2026-08-08 (later): Pseudo-Pair Bootstrap Attempt -- LoRA Confirmed Safer Than Full Fine-Tune, Result Still Inconclusive; Roughify Tuned Against Real Metrics
+
+While waiting for real paired data (user: "next week" earliest, possibly
+later), attempted a pseudo-pair bootstrap of the public ControlNet.
+
+### Pseudo-Pair Generation
+
+Built `tools/pair_extraction/roughify_line.py`: deterministic degradation
+of real clean line art (multi-pass jittered duplication + elastic
+distortion + graphite tone/noise) into synthetic "rough" images, so
+correspondence to the source is guaranteed by construction -- unlike
+SDEdit-based generation, which the same day's testing showed has
+unreliable structure preservation. Applied to all 1,489
+`line_combined_koma_20260729` tiles -> `dataset/pairs_480/train/rough_
+pseudo_roughified_20260808/`.
+
+### Full Fine-Tune Bootstrap: Destabilized The Pretrained ControlNet
+
+Added `--controlnet-init` to `scripts/train_controlnet.py` (fine-tune
+from a pretrained `ControlNetModel.from_pretrained(...)` instead of
+`ControlNetModel.from_unet(unet)` from-scratch init). Fine-tuned the
+public `control_v11p_sd15s2_lineart_anime` on the pseudo-pairs + per-tile
+WD14 captions (reused `results/domain_lora_line_captiontags_20260807/
+tags.csv`), LR=2e-6. Two runs (1860 steps, then a 300-step retry to test
+an overtraining hypothesis): both destabilized the pretrained ControlNet's
+clean output into new failure modes (dense hatch texture with raw input/
+generic caption; soft painterly gray rendering with preprocessed input/
+matched per-tile caption) despite retaining partial structural
+correspondence (a recurring "sword tile" stayed recognizable across every
+variant). 300 steps degraded about as much as 1860 -- not simply an
+overtraining/step-count issue.
+
+**Root cause, found via web research**: lllyasviel's own ControlNet
+training docs state small-dataset training is safe because zero-
+initialized output convolutions start as a no-op and grow gently --- but
+that guarantee is explicit about training from a *fresh* `ControlNetModel.
+from_unet()`-style cold start. It does not cover continuing to fine-tune
+an *already-trained* checkpoint: those "zero convolutions" are no longer
+zero once trained, so a warm-started full fine-tune has no equivalent
+safety net, and a small/noisy dataset's gradient updates can push already-
+fully-active weights arbitrarily. This resolved the apparent contradiction
+between the official "small data is safe" claim and what was observed.
+
+### LoRA Variant: Confirmed Safer, Not Yet A Clear Win
+
+Added `--controlnet-lora-rank` to `train_controlnet.py`: freezes
+`--controlnet-init` entirely and trains only a peft LoRA adapter on its
+attention layers (`ControlNetModel.add_adapter`/`save_lora_adapter`/
+`load_lora_adapter` -- note `load_lora_adapter` needs `prefix=None`
+explicitly, its default `prefix='transformer'` silently matches nothing
+against a ControlNetModel and loads no weights). Same pseudo-pairs, rank
+16, LR raised to 1e-4 (standard LoRA practice, vs. 2e-6 for full
+fine-tune). Result: visibly less destabilized than either full-fine-tune
+variant (the sword tile rendered with cleaner linework, less hatch/
+rendering-texture drift), but chamfer-to-GT was statistically
+indistinguishable across all three (LoRA 8.71 / full-FT 8.74 / untouched
+public ControlNet+preprocessor 8.75 px median on the same 10-tile set) --
+confirms the LoRA-is-safer hypothesis but does not show a clear quality
+win over just using the untouched public checkpoint.
+Montage: `results/controlnet_bootstrap_lora_pseudo_pairs_20260808_eval/_montage.png`.
+
+**Conclusion**: today's pseudo-pair bootstrap did not produce a checkpoint
+worth adopting over the untouched public ControlNet. Its value was
+methodological: confirmed LoRA (not full fine-tune) is the correct
+mechanism for adapting an already-trained ControlNet on small/synthetic
+data, and pinned down why (zero-conv safety net doesn't cover warm-start).
+Apply this once real paired data arrives.
+
+### Roughify Tuning Against `measure_lineart_profile.py`
+
+Separately (not yet re-tested against a new bootstrap run), tuned
+`roughify_line.py` by comparing its output's profile directly against
+real `rough_ref` via `tools/evaluation/measure_lineart_profile.py`. v1's
+biggest gaps: `long_line_ratio` (62% dev from real -- jittered whole-image
+affine copies stayed too parallel/continuous), `faint_mean_dist_to_ink`
+(66% dev -- faint pixels hugged the ink too closely, unlike real stray
+construction lines). Revised to per-pass independent local elastic
+distortion (instead of one shared whole-image warp after accumulation),
+added a stroke-fragmentation step (random small gaps punched into the ink
+mask) and a separate low-opacity/high-jitter "stray mark" pass. First
+revision (v2) overshot fragmentation in the other direction; reduced
+`fragment_gaps_per_1k_px` 6.0->2.5 and increased the stray pass's jitter/
+opacity (v3): `long_component_ratio` and `components_per_1k_ink_px` both
+now within ~1-2.5% of real (were 17-29% off), `long_line_ratio` improved
+to 44% dev (from 62%), `line_width_p50`/`faint_mean_dist_to_ink` still
+~40-54% off -- diminishing returns reached for this session, not fully
+converged. Regenerated the full 1,489-tile pseudo-rough pool with v3
+before further tuning continued elsewhere.
+
+### Next Actions
+
+1. Not yet done: re-run the LoRA ControlNet bootstrap against the v3
+   (improved) pseudo-rough pool, to test whether the earlier "no clear
+   win" result was specifically because v1's pseudo-rough statistics were
+   still too far from real rough.
+2. Continue roughify tuning if revisited: `line_width_p50` and
+   `faint_mean_dist_to_ink` remain the largest gaps.
+3. Once real paired data arrives, use the LoRA fine-tuning mechanism
+   (confirmed safer) on the public ControlNet checkpoint, per the prior
+   entry's decision.
+
+## 2026-08-09: v3-Data LoRA Bootstrap Retest -- Worse, Not Better; Pseudo-Pair Bootstrap Shelved
+
+Re-ran the LoRA ControlNet bootstrap (same recipe as the v1-data run:
+rank16, LR1e-4, 1860 steps) on the v3-tuned pseudo-rough pool (`dataset/
+pairs_480/train/rough_pseudo_roughified_20260808/`, regenerated with
+`roughify_line.py` v3 -- per-pass local elastic distortion, stroke
+fragmentation, separate stray-mark pass). Checkpoint: `checkpoints/
+controlnet_bootstrap_lora_pseudo_pairs_v3data_20260808/final`.
+
+4-way montage (rough / public ControlNet no-LoRA / v1-data LoRA / v3-data
+LoRA / GT) on the standard 10-tile diagnostic set: `results/
+controlnet_bootstrap_lora_pseudo_pairs_v3data_20260808_eval/
+_compare_montage.png`. Chamfer-to-GT (`edge_map`+`chamfer`, truncate=20px,
+same 10 tiles): public_noLora median 8.75 (mean 8.55), lora_v1data median
+8.71 (mean 9.13), **lora_v3data median 9.51 (mean 10.12) -- worse than
+both**, confirmed visually: v3data introduces a new, recurring
+plaid/grid/crosshatch texture-collapse artifact overlaid across most
+tiles regardless of input content (rows 1/2/3/4/6 of the montage all show
+a similar diagonal-grid or window-pane pattern), a failure mode not
+present in v1data or the untouched public checkpoint. Best guess: the v3
+roughify revision's structural regularities (per-pass local elastic
+warp's fixed sigma, or the stray-mark pass's fixed jitter geometry)
+introduced a subtle but consistent statistical pattern across the 1,489
+synthetic-rough tiles that the LoRA picked up as a spurious shortcut
+instead of genuine structure-following. Not investigated further, since
+this is pseudo-data by construction and the effort is better spent once
+real paired data arrives.
+
+**Decision**: shelve the pseudo-pair bootstrap approach entirely. Neither
+v1 nor v3 pseudo-rough data produced a ControlNet worth adopting over the
+untouched public checkpoint; v3 was actively worse. Do not pursue further
+roughify tuning iterations for this purpose. The LoRA-vs-full-fine-tune
+mechanism finding (2026-08-08 entry) remains valid and will be applied
+once real paired data arrives (~2026-08-31 per current estimate); until
+then, no further ControlNet training is planned.
+
+## 2026-08-09: Panel-Detection Prototype (`dataset_psd_line_v2.zip`) Reviewed -- Real Gaps On Both Ends
+
+Background Agent A's panel-detection prototype (`tools/pair_extraction/
+extract_psd_line_koma_regions.py`, salvaged from its worktree after its
+own background-resume failed) reviewed on its 30-page/129-tile sample
+output (`results/psd_line_koma_extraction_20260808/`).
+
+**Panel detection**: `pages.csv` panel_count distribution across 30
+sampled pages: `{1: 25, 2: 2, 3: 2, 7: 1}`, only 5/30 flagged
+`is_multi_panel=True`. Visual check against `panel_detection_overlay_qc.
+png` found at least one confirmed false negative: `0032_05_line`, which
+direct earlier inspection of the source PSD showed has ~3 visible panels
+separated by thick baked-in black borders, was tagged `n=1`. Several
+other pages that look multi-panel by eye were also tagged `n=1` --
+real recall gap in the detector, not yet root-caused.
+
+**Tiling**: `tile_qc.png` (129-tile grid with per-tile ink-ratio
+annotations) shows a large fraction of near-blank/low-content tiles --
+crops containing only a stray line or two, or isolated sound-effect/
+dialogue text, no real linework. The existing koma pipeline avoids this
+via a deliberate content-density-based sub-region split step (`doc/
+raw_dataset_extraction_knowledge.md`, housei section); this prototype
+does not yet have an equivalent step.
+
+**Status**: usable as a first draft, not production-ready. Needs (1) a
+second pass on the panel-detection recall gap and (2) a content-density
+gate before tiling, mirroring the existing koma pipeline's sub-region
+split. Not yet decided whether to invest further here vs. moving on to
+workstream C (eval-metric improvement, next in the user's stated
+priority order after B).
+
+## 2026-08-09 (later): Cleanup Before SSD Swap
+
+User is doing a physical SSD replacement in preparation for the large
+paired-dataset arrival; other work paused, used the downtime to clean up
+`results/`/`checkpoints/`/`dataset/` clutter. Root FS was at 25G free
+(229G total, 89% used).
+
+Deleted (all confirmed superseded/shelved earlier the same day, findings
+already recorded in this log and in `results/` eval montages which were
+kept):
+- `checkpoints/controlnet_bootstrap_pseudo_pairs_20260808/` (5.4G, full
+  fine-tune, rejected -- destabilized the pretrained ControlNet)
+- `checkpoints/controlnet_bootstrap_pseudo_pairs_short_20260808/` (5.4G,
+  300-step retry, also rejected)
+- `checkpoints/controlnet_bootstrap_lora_pseudo_pairs_20260808/` (1.4G,
+  LoRA on v1 pseudo-data, superseded by the shelve decision)
+- `checkpoints/controlnet_bootstrap_lora_pseudo_pairs_v3data_20260808/`
+  (1.4G, LoRA on v3 pseudo-data, confirmed worse than v1 -- see prior
+  entry)
+- `dataset/pairs_480/train/rough_pseudo_roughified_20260808/` (134M,
+  synthetic pseudo-rough pool feeding the now-shelved bootstrap approach)
+
+Not touched (explicitly kept per policy/still-referenced): domain LoRA
+checkpoints (`domain_lora_{line,rough}_20260804` baselines +
+`domain_lora_{line,rough}_sd15base_sksv2_20260807` adopted configs),
+`results/unpaired_skima_*` (~1GB, tied to
+`[[project_unpaired_data_pools]]`'s still-open continuity-regularization
+follow-up, not confirmed dead), all `results/*_eval*` diagnostic montages
+from today (small, kept as the recorded evidence for the shelve
+decisions), the salvaged `dataset_psd_line_v2.zip` panel-detection
+prototype output (2.3M+1.2M, still-open workstream A).
+
+Freed ~14GB (root FS 25G -> 39G free). Also removed Agent A's leftover
+worktree (`.claude/worktrees/agent-aca7212d7faf25055/`) and its throwaway
+branch after confirming its one untracked file was byte-identical to the
+already-salvaged copy in the main tree.

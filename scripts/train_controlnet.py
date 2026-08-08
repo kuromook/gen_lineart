@@ -31,6 +31,7 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 from diffusers import ControlNetModel, DDPMScheduler, StableDiffusionPipeline
+from peft import LoraConfig
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -84,6 +85,24 @@ def parse_args():
         default=os.path.expanduser("~/disk/checkpoint/Stable-diffusion/AOM3A1B_orangemixs.safetensors"),
     )
     parser.add_argument("--output-dir", default="checkpoints/controlnet_koma_direction4")
+    parser.add_argument(
+        "--controlnet-init",
+        default=None,
+        help="path to a pretrained ControlNetModel dir to fine-tune from (e.g. a downloaded "
+        "public checkpoint), instead of ControlNetModel.from_unet(unet) (fresh copy of the "
+        "base UNet's encoder, i.e. training from scratch)",
+    )
+    parser.add_argument(
+        "--controlnet-lora-rank",
+        type=int,
+        default=None,
+        help="if set, freeze --controlnet-init and train only a LoRA adapter of this rank on its "
+        "attention layers, instead of full-parameter fine-tuning. Intended for continuing an "
+        "already-trained (warm-started) ControlNet checkpoint, where the zero-convolution "
+        "safety net that protects from-scratch training no longer applies -- a small, bounded "
+        "LoRA delta is a safer perturbation than an unconstrained full fine-tune in that case. "
+        "See doc/work_log.md 2026-08-08 entry.",
+    )
     parser.add_argument("--resolution", type=int, default=512)
     parser.add_argument(
         "--caption",
@@ -149,11 +168,26 @@ def main():
     noise_scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
     del pipe
 
-    controlnet = ControlNetModel.from_unet(unet)
+    if args.controlnet_init:
+        controlnet = ControlNetModel.from_pretrained(args.controlnet_init, torch_dtype=torch.float32)
+    else:
+        controlnet = ControlNetModel.from_unet(unet)
 
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
     unet.requires_grad_(False)
+
+    if args.controlnet_lora_rank:
+        controlnet.requires_grad_(False)
+        lora_config = LoraConfig(
+            r=args.controlnet_lora_rank,
+            lora_alpha=args.controlnet_lora_rank,
+            init_lora_weights="gaussian",
+            target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+        )
+        controlnet.add_adapter(lora_config)
+        n_trainable = sum(p.numel() for p in controlnet.parameters() if p.requires_grad)
+        print(f"[train_controlnet] LoRA mode: rank={args.controlnet_lora_rank}, {n_trainable:,} trainable params (base frozen)")
     controlnet.train()
 
     unet.enable_gradient_checkpointing()
@@ -201,7 +235,8 @@ def main():
         drop_last=True,
     )
 
-    optimizer = torch.optim.AdamW(controlnet.parameters(), lr=args.lr)
+    trainable_params = [p for p in controlnet.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.lr)
 
     steps_per_epoch = max(1, len(dataloader) // args.grad_accum)
     max_train_steps = args.max_train_steps or steps_per_epoch * args.epochs
@@ -231,7 +266,11 @@ def main():
 
     def save_eval_snapshot(step):
         light_path = os.path.join(args.output_dir, f"step_{step}")
-        accelerator.unwrap_model(controlnet).save_pretrained(light_path)
+        unwrapped = accelerator.unwrap_model(controlnet)
+        if args.controlnet_lora_rank:
+            unwrapped.save_lora_adapter(light_path)
+        else:
+            unwrapped.save_pretrained(light_path)
         print(f"saved {light_path} (weights-only eval snapshot)")
 
     start_time = time.time()
@@ -294,7 +333,7 @@ def main():
 
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
-                    accelerator.clip_grad_norm_(controlnet.parameters(), 1.0)
+                    accelerator.clip_grad_norm_(trainable_params, 1.0)
                 optimizer.step()
                 optimizer.zero_grad()
 
@@ -318,7 +357,11 @@ def main():
                     break
 
     final_path = os.path.join(args.output_dir, "final")
-    accelerator.unwrap_model(controlnet).save_pretrained(final_path)
+    unwrapped_final = accelerator.unwrap_model(controlnet)
+    if args.controlnet_lora_rank:
+        unwrapped_final.save_lora_adapter(final_path)
+    else:
+        unwrapped_final.save_pretrained(final_path)
     print(f"[train_controlnet] done, saved final checkpoint to {final_path}")
 
 
