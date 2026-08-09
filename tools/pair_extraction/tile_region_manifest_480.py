@@ -37,6 +37,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import maximum_bipartite_matching
+from scipy.spatial import cKDTree
 
 
 TILE = 480
@@ -123,6 +126,108 @@ def chamfer(rough_edge, line_edge, truncate):
         )
         / 2
     )
+
+
+def bipartite_match_f1(pred_edge, gt_edge, tolerance_px):
+    """One-to-one matched precision/recall/F, BSDS-style (Martin/Fowlkes/
+    Malik; see `doc/eval_metric_literature_survey_20260809.md`).
+
+    `chamfer()`/`support_f1()` above are both many-to-one: a predicted pixel
+    only needs *a* GT pixel within tolerance, and any number of predicted
+    pixels can all claim the same GT pixel for free. That lets dense,
+    content-independent texture (e.g. a hallucinated crosshatch overlay)
+    score well simply by being dense enough to always have something
+    nearby, regardless of whether it structurally corresponds -- exactly
+    the failure mode found 2026-08-09 (chamfer-to-GT agreed with a hand
+    fidelity ranking on only 1/6 decisive tiles).
+
+    Here each predicted pixel can match at most one GT pixel and vice
+    versa (maximum-cardinality bipartite matching, `scipy.sparse.csgraph.
+    maximum_bipartite_matching`, restricted to candidate pairs within
+    `tolerance_px` via a KD-tree). Extra predicted ink near an
+    already-matched GT pixel becomes an unmatched false positive instead
+    of a free true positive. This is a maximum-*cardinality* match (ties
+    among candidate pairs broken arbitrarily by graph order), not BSDS's
+    exact minimum-cost LP formulation -- a documented simplification, not
+    a faithful reimplementation.
+    """
+    pred_pts = np.column_stack(np.nonzero(pred_edge))
+    gt_pts = np.column_stack(np.nonzero(gt_edge))
+    if len(pred_pts) == 0 or len(gt_pts) == 0:
+        return 0.0, 0.0, 0.0
+
+    tree = cKDTree(gt_pts)
+    candidates = tree.query_ball_point(pred_pts, r=tolerance_px)
+    rows, cols = [], []
+    for i, matches in enumerate(candidates):
+        for j in matches:
+            rows.append(i)
+            cols.append(j)
+    if not rows:
+        return 0.0, 0.0, 0.0
+
+    graph = csr_matrix((np.ones(len(rows), dtype=bool), (rows, cols)), shape=(len(pred_pts), len(gt_pts)))
+    match = maximum_bipartite_matching(graph, perm_type="column")
+    matched = int((match >= 0).sum())
+
+    precision = matched / len(pred_pts)
+    recall = matched / len(gt_pts)
+    f1 = 2 * precision * recall / max(precision + recall, 1e-9)
+    return f1, precision, recall
+
+
+def orientation_histogram_grid(mask, cells, bins):
+    """Per-cell gradient-orientation histogram, GF-HOG-inspired (Hu, Barnard
+    &amp; Collomosse, sketch-based image retrieval; see
+    `doc/eval_metric_literature_survey_20260809.md`). Returns a dict keyed
+    by (row, col) cell index -> normalized histogram (or None if the cell
+    has too little gradient energy to be meaningful).
+    """
+    height, width = mask.shape
+    cell_h, cell_w = height // cells, width // cells
+    image = mask.astype(np.float32)
+    gx = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=3)
+    magnitude = np.hypot(gx, gy)
+    angle = np.mod(np.arctan2(gy, gx), np.pi)
+
+    histograms = {}
+    for row in range(cells):
+        for col in range(cells):
+            y0, y1 = row * cell_h, (row + 1) * cell_h
+            x0, x1 = col * cell_w, (col + 1) * cell_w
+            mag_cell = magnitude[y0:y1, x0:x1]
+            valid = mag_cell > 0.25
+            if valid.sum() < 5:
+                histograms[(row, col)] = None
+                continue
+            hist, _ = np.histogram(angle[y0:y1, x0:x1][valid], bins=bins, range=(0, np.pi), weights=mag_cell[valid])
+            total = hist.sum()
+            histograms[(row, col)] = hist / total if total > 0 else None
+    return histograms
+
+
+def orientation_similarity(mask_a, mask_b, cells=8, bins=12):
+    """Mean per-cell orientation-histogram intersection between two masks
+    (GF-HOG-inspired; see `orientation_histogram_grid`). Compares local
+    stroke *direction* statistics rather than point position, so it does
+    not saturate under ink density the way chamfer/tolerance-F1 do, and is
+    specifically aimed at catching content-independent repeating texture
+    (e.g. a hallucinated crosshatch overlay): such texture has a narrow,
+    near-constant per-cell orientation histogram, unlike genuine varied
+    linework's content-driven, more heterogeneous one. Cells with too
+    little gradient energy in either image are skipped (not penalized).
+    Returns 0.0 if no comparable cell pair exists.
+    """
+    hist_a = orientation_histogram_grid(mask_a, cells, bins)
+    hist_b = orientation_histogram_grid(mask_b, cells, bins)
+    intersections = []
+    for key, ha in hist_a.items():
+        hb = hist_b.get(key)
+        if ha is None or hb is None:
+            continue
+        intersections.append(float(np.minimum(ha, hb).sum()))
+    return float(np.mean(intersections)) if intersections else 0.0
 
 
 def line_width_stats(ink_mask):

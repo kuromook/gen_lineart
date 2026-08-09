@@ -185,9 +185,102 @@ def border_candidate_mask(gray, ink_thresh, min_h_len, min_v_len, close_px, max_
     return border > 0
 
 
+def _best_span_run(coverage, min_span_frac, edge_margin):
+    """Find the strongest divider position in a 1-D coverage profile.
+
+    `coverage[i]` is the fraction of border-candidate pixels along the line
+    perpendicular to the axis being tested (a row, for a horizontal divider;
+    a column, for a vertical one). A real full-span divider produces a short
+    run of indices near 1.0 at the line's thickness. Indices within
+    `edge_margin` of either end are zeroed first so the region's own
+    already-established boundary (from the parent split, or the page edge)
+    is never re-detected as a fresh internal divider. Returns the (start,
+    end) index range of the strongest qualifying run, or None.
+    """
+    coverage = coverage.copy()
+    if edge_margin > 0:
+        coverage[:edge_margin] = 0
+        coverage[-edge_margin:] = 0
+    above = coverage >= min_span_frac
+    if not above.any():
+        return None
+    # Group consecutive above-threshold indices into runs; keep the run with
+    # the highest mean coverage (thickest/cleanest single divider line).
+    runs = []
+    start = None
+    for i, flag in enumerate(above):
+        if flag and start is None:
+            start = i
+        elif not flag and start is not None:
+            runs.append((start, i))
+            start = None
+    if start is not None:
+        runs.append((start, len(above)))
+    best = max(runs, key=lambda r: coverage[r[0]:r[1]].mean())
+    return best
+
+
+def recursive_xy_split(border, min_span_frac, min_region_frac, min_region_px, max_depth, _depth=0):
+    """Recursively partition `border` (a detect-scale bool mask, True where a
+    border-candidate line pixel was detected) into leaf panel cells.
+
+    Unlike enclosed-free-space-island detection (which requires a divider to
+    form a fully closed loop on all four sides), this only requires a single
+    divider line that spans most of the *current region's* width or height --
+    so it correctly splits grids whose outer frame is undrawn (content
+    bleeds to the page trim, or the artist never ruled an enclosing
+    rectangle around an internal cross-divider) as long as the internal
+    dividers themselves are long enough. This mirrors the recursive X-Y cut
+    / binary space partition used for general document layout segmentation,
+    and also naturally handles staircase (non-uniform-grid) layouts because
+    each half is split independently after a cut, rather than assuming one
+    global grid across the whole page.
+
+    Returns a list of (y0, y1, x0, x1) leaf boxes in the input array's local
+    coordinate system.
+    """
+    h, w = border.shape
+    if _depth >= max_depth or h < min_region_px or w < min_region_px:
+        return [(0, h, 0, w)]
+
+    row_margin = max(1, int(round(h * 0.015)))
+    col_margin = max(1, int(round(w * 0.015)))
+    row_cov = border.mean(axis=1)
+    col_cov = border.mean(axis=0)
+    best_row = _best_span_run(row_cov, min_span_frac, row_margin) if h >= 2 * row_margin + 1 else None
+    best_col = _best_span_run(col_cov, min_span_frac, col_margin) if w >= 2 * col_margin + 1 else None
+
+    candidates = []
+    if best_row is not None:
+        candidates.append(("h", best_row, row_cov[best_row[0]:best_row[1]].mean()))
+    if best_col is not None:
+        candidates.append(("v", best_col, col_cov[best_col[0]:best_col[1]].mean()))
+    if not candidates:
+        return [(0, h, 0, w)]
+
+    axis, (s, e), _score = max(candidates, key=lambda c: c[2])
+    mid = (s + e) // 2
+
+    if axis == "h":
+        if mid < h * min_region_frac or (h - mid) < h * min_region_frac:
+            return [(0, h, 0, w)]
+        top = recursive_xy_split(border[:mid], min_span_frac, min_region_frac, min_region_px, max_depth, _depth + 1)
+        bot = recursive_xy_split(border[mid:], min_span_frac, min_region_frac, min_region_px, max_depth, _depth + 1)
+        bot = [(y0 + mid, y1 + mid, x0, x1) for (y0, y1, x0, x1) in bot]
+        return top + bot
+    else:
+        if mid < w * min_region_frac or (w - mid) < w * min_region_frac:
+            return [(0, h, 0, w)]
+        left = recursive_xy_split(border[:, :mid], min_span_frac, min_region_frac, min_region_px, max_depth, _depth + 1)
+        right = recursive_xy_split(border[:, mid:], min_span_frac, min_region_frac, min_region_px, max_depth, _depth + 1)
+        right = [(y0, y1, x0 + mid, x1 + mid) for (y0, y1, x0, x1) in right]
+        return left + right
+
+
 def detect_panels(gray, args):
-    """Panel interiors = enclosed (non-page-edge-touching) connected free-space
-    components bounded by the detected border mask. Returns (panels, border_mask,
+    """Panel interiors via recursive X-Y cut on detected divider lines (see
+    `recursive_xy_split` docstring for why this replaced the earlier
+    enclosed-free-space-island approach). Returns (panels, border_mask,
     detect_scale); panel bboxes are in native page pixel coordinates.
     """
     height, width = gray.shape
@@ -213,48 +306,25 @@ def detect_panels(gray, args):
     # depending on native page resolution and was measurably worse.
     border = border_candidate_mask(small, args.ink_thresh, min_h_len, min_v_len, args.border_close_px, args.max_border_thickness_radius)
 
-    free = ~border
-    labels, _ = ndimage.label(free, structure=np.ones((3, 3), dtype=np.uint8))
+    min_region_px = max(9, int(round(min(sh, sw) * args.min_panel_dim_frac)))
+    leaves = recursive_xy_split(border, args.min_divider_span_frac, args.min_panel_dim_frac, min_region_px, args.max_split_depth)
+
     page_area = sh * sw
+    inv = 1.0 / detect_scale
     panels = []
-    for index, sl in enumerate(ndimage.find_objects(labels), start=1):
-        if sl is None:
-            continue
-        ys, xs = sl
-        # Reject only components that wrap around most of the page perimeter
-        # (the true outer background/margin). A component touching just 1-2
-        # edges is kept as a candidate: many pages in this source have no
-        # printed border on the page's own physical edge at all (content
-        # bleeds straight to the trim), so a full-width horizontal panel
-        # *strip* legitimately touches the left and right page edges while
-        # still being separated from its neighbour strips by real horizontal
-        # divider lines. Requiring "touches zero edges" (as the koma-layer
-        # pipeline's `detect_panels()` does, where a real margin exists
-        # around the content) silently drops most real panels on this
-        # source's edge-to-edge layouts. Full free-page-edge-on-all-sides
-        # bleed panels (no divider at all) are still not recoverable this
-        # way and remain a known, documented limitation.
-        edges_touched = int(ys.start == 0) + int(xs.start == 0) + int(ys.stop == sh) + int(xs.stop == sw)
-        if edges_touched >= args.max_touched_edges + 1:
-            continue
-        comp_mask = labels[sl] == index
-        area = int(comp_mask.sum())
-        ratio = area / page_area
+    for y0, y1, x0, x1 in leaves:
+        bbox_h, bbox_w = y1 - y0, x1 - x0
+        ratio = (bbox_h * bbox_w) / page_area
         if ratio < args.min_panel_area_ratio:
             continue
-        bbox_h, bbox_w = ys.stop - ys.start, xs.stop - xs.start
         if bbox_w < sw * args.min_panel_dim_frac or bbox_h < sh * args.min_panel_dim_frac:
             continue
-        fill_ratio = area / (bbox_w * bbox_h)
-        if fill_ratio < args.min_fill_ratio:
-            continue
-        inv = 1.0 / detect_scale
-        x0, y0 = int(round(xs.start * inv)), int(round(ys.start * inv))
-        x1, y1 = int(round(xs.stop * inv)), int(round(ys.stop * inv))
-        x1, y1 = min(x1, width), min(y1, height)
+        nx0, ny0 = int(round(x0 * inv)), int(round(y0 * inv))
+        nx1, ny1 = int(round(x1 * inv)), int(round(y1 * inv))
+        nx1, ny1 = min(nx1, width), min(ny1, height)
         panels.append({
-            "x0": x0, "y0": y0, "x1": x1, "y1": y1,
-            "area_ratio": round(ratio, 5), "fill_ratio": round(fill_ratio, 4),
+            "x0": nx0, "y0": ny0, "x1": nx1, "y1": ny1,
+            "area_ratio": round(ratio, 5), "fill_ratio": 1.0,
         })
     panels.sort(key=lambda p: (p["y0"], p["x0"]))
     return panels, border, detect_scale
@@ -370,12 +440,12 @@ def main():
     parser.add_argument("--detect-long-side", type=int, default=1600, help="downscale long side for border detection")
     parser.add_argument("--ink-thresh", type=int, default=190)
     parser.add_argument("--min-line-length-frac", type=float, default=0.06, help="min straight-run length as a fraction of (downscaled) page width/height")
-    parser.add_argument("--border-close-px", type=int, default=4, help="gap-bridging closure, at detect resolution")
+    parser.add_argument("--border-close-px", type=int, default=8, help="gap-bridging closure, at detect resolution")
     parser.add_argument("--max-border-thickness-radius", type=float, default=4.0, help="detect-resolution stroke-thickness-radius cap for the border-candidate pre-filter (excludes solid fills/hair masses, see border_candidate_mask docstring); 0 disables the filter")
-    parser.add_argument("--max-touched-edges", type=int, default=2, help="a free-space component touching more page edges than this is treated as background/margin and rejected; <=2 keeps edge-to-edge bleed panel strips")
+    parser.add_argument("--min-divider-span-frac", type=float, default=0.7, help="recursive X-Y cut: a row/column is treated as a divider only if this fraction of it is border-candidate pixels (see recursive_xy_split)")
+    parser.add_argument("--max-split-depth", type=int, default=6, help="recursive X-Y cut: max recursion depth (caps panel count at 2**depth)")
     parser.add_argument("--min-panel-area-ratio", type=float, default=0.01)
     parser.add_argument("--min-panel-dim-frac", type=float, default=0.06)
-    parser.add_argument("--min-fill-ratio", type=float, default=0.55)
 
     # sub-region ink-island proposal (reused from split_koma_panel_subregions.py)
     parser.add_argument("--line-threshold", type=int, default=192)
@@ -419,9 +489,14 @@ def main():
         overlay_items = []
         tile_qc_items = []
         n_multi, n_single = 0, 0
+        missing_pages = []
 
         for page in pages:
-            gray = load_gray(zf, args.zip_root, page["file"])
+            try:
+                gray = load_gray(zf, args.zip_root, page["file"])
+            except KeyError:
+                missing_pages.append(page["page_id"])
+                continue
             height, width = gray.shape
             panels, _border, _scale = detect_panels(gray, args)
             is_multi = len(panels) >= 2
@@ -484,7 +559,9 @@ def main():
                             img = Image.fromarray(tile_crop).convert("RGB")
                             tile_qc_items.append((img, f"{page['page_id'][:14]} p{panel_index}s{sub_index}t{tile_index} ink={ink:.3f}"))
 
-    print(f"page classification: multi-panel={n_multi} single/no-panel={n_single} (of {len(pages)} pages processed)")
+    if missing_pages:
+        print(f"warning: {len(missing_pages)} page(s) in manifest have no resolvable zip member, skipped: {missing_pages}")
+    print(f"page classification: multi-panel={n_multi} single/no-panel={n_single} (of {len(pages) - len(missing_pages)} pages processed)")
     print(f"panels detected (incl. whole-page fallbacks): {len(panel_rows)}")
     print(f"tiles: {len(tile_rows)}")
 

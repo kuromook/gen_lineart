@@ -2903,3 +2903,403 @@ Freed ~14GB (root FS 25G -> 39G free). Also removed Agent A's leftover
 worktree (`.claude/worktrees/agent-aca7212d7faf25055/`) and its throwaway
 branch after confirming its one untracked file was byte-identical to the
 already-salvaged copy in the main tree.
+
+## 2026-08-09 (later): Panel-Detection Recall Fixed -- Recursive X-Y Cut Replaces Enclosed-Island Detection
+
+Root-caused the panel-detection recall gap flagged in the prior entry.
+`0195_15_line`: a panel's top border is undrawn (bleeds to the page trim)
+and its side dividers start ~10px short of the physical top edge at detect
+resolution -- enough of a gap for the free-space flood-fill to leak around
+and merge the panel into the page's outer background component.
+`0032_05_line` (previously-known false negative, ~3 visible panels): the
+internal cross-shaped divider between panels is detected fine, but no
+outer frame line encloses the whole grid, so all four quadrants leak into
+one shared margin component. Confirmed both cases by rendering the
+detect-resolution border-candidate mask directly and inspecting labeled
+free-space components pixel-by-pixel -- the underlying enclosed-free-
+space-island algorithm requires a fully closed loop on all four sides,
+which this source frequently does not draw.
+
+Bumping `--border-close-px` (4->8) alone fixed the small-gap case but not
+the missing-outer-frame case (`0032_05` stayed 0 panels even at
+close_px=25). Replaced the detector's core with **recursive X-Y cut**
+(`recursive_xy_split` in `extract_psd_line_koma_regions.py`): starting
+from the whole page, find the strongest row/column whose border-candidate
+coverage exceeds `--min-divider-span-frac` (default 0.7) of the current
+region's width/height, split there, and recurse into each half
+independently. This only requires a single divider that spans most of the
+*current region*, not a closed loop -- so it handles edge-bleed panels and
+missing outer frames for free (each half's own edges become the new
+implicit boundary for the next split), and handles staircase/irregular
+grids correctly since each half is split independently rather than
+assuming one global grid.
+
+Threshold sweep on ~20 known-problem pages: 0.7 was the sweet spot
+(0.8 lost the `0032_05` case again, 0.9 collapsed nearly everything back
+to n=1). Visual check of the resulting overlay QC
+(`results/psd_line_koma_extraction_20260809_recut_sample/
+panel_detection_overlay_qc.png`, 30-page random sample) found no false-
+positive over-splits -- single-panel illustrations with busy backgrounds
+(`0357_01`, `0435_12`, sidewalk/scenery linework) stayed correctly
+undivided.
+
+Also fixed a latent crash: 15/290 pages in `manifest.json` reference an
+`outputs.line` filename that does not actually exist in
+`dataset_psd_line_v2.zip` (e.g. `0002_完成_line.png`) -- now skipped with
+a warning instead of raising `KeyError` and aborting the whole run.
+
+**Full 290-page before/after** (both dry runs, `--overlay-qc-count 0
+--tile-qc-count 0`; 275 pages actually resolve after the 15 missing-file
+skips):
+| | multi-panel pages | panels (incl. fallbacks) | tiles |
+|---|---|---|---|
+| old (enclosed-island, close_px=4) | 86/275 (31%) | 463 | 1113 |
+| new (recursive X-Y cut, close_px=8, span_frac=0.7) | 198/275 (72%) | 933 | 2022 |
+
+Results: `results/psd_line_koma_extraction_20260809_recheck/` (old
+baseline) vs `results/psd_line_koma_extraction_20260809_recut_full/`
+(new). Content-density tiling gap flagged in the prior entry turned out to
+be mostly a downstream symptom of the recall gap -- with panels now
+correctly and tightly bounded, the existing (already-reused-from-koma-
+pipeline) subregion ink-density split + tile ink-ratio gate produces
+mostly content-dense tiles without any separate content-density mechanism
+needed; spot-checked via `results/
+psd_line_koma_extraction_20260809_recut_sample/tile_qc.png`.
+
+**Status**: panel detection is now in much better shape (72% multi-panel
+recall on a real-world sample, no observed false-positive over-splits).
+Not yet run with `--save` to materialize tiles to disk, and no rough
+counterpart exists for this source yet (line-only, per prior entries) so
+this still cannot feed ControlNet training directly -- only the
+domain-LoRA-relevant line-only pool benefits for now.
+
+## 2026-08-09 (later still): Workstream C -- Eval-Metric Investigation Found A Bad Reference Pair, Not (Only) A Bad Metric
+
+Picked up workstream C (chamfer-to-GT has repeatedly failed to
+discriminate visually-different ControlNet outputs, per multiple 2026-08-08
+entries). Used the clearest documented case as a calibration pair:
+`results/public_controlnet_lineart_anime_preprocessed_20260808`
+("bad_hallucination", our line-domain LoRA stacked on public ControlNet,
+produces a content-independent plaid/crosshatch texture) vs `results/
+public_controlnet_noLora_full_20260808` ("good_structural", plain base +
+public ControlNet, praised in the 2026-08-08 entry for "the first clear
+input-specific correspondence seen in any ControlNet variant tried").
+
+Tried three independent metric designs on the standard 10-tile diagnostic
+set, all against this pair:
+1. Chamfer-to-GT with truncate reduced 20px->6px (cheap parameter fix).
+2. A new conditioning-roundtrip fidelity metric
+   (`tools/evaluation/condition_roundtrip_fidelity.py`): re-run the
+   `lineart_anime` ControlNet preprocessor on the model's own output and
+   compare the recovered conditioning map to the original conditioning
+   map derived from the rough tile, sidestepping GT entirely.
+3. Gaussian-blurred density-field normalized cross-correlation (robust to
+   exact-point misalignment by construction).
+
+All three -- despite being methodologically unrelated -- agreed with each
+other and **disagreed with the "good_structural wins" label**, scoring
+bad_hallucination equal or better on average across the 10 tiles.
+Suspecting a harness bug, did a manual tile-by-tile visual re-review of
+all 10 rows in the comparison montage instead of trusting the prior
+session's holistic impression. Found the "good_structural" label does not
+hold up per-tile: e.g. the dagger tile the 2026-08-08 entry specifically
+cited as the success case actually shows bad_hallucination reproducing the
+dagger silhouette *more* cleanly (good_structural's version is partly
+obscured by its own crosshatch overlay); the housei_011 tile shows
+good_structural replacing a simple rough curve with a fully unrelated
+horned-creature illustration, while bad_hallucination at least preserves
+the curve's rough direction under its texture overlay.
+
+**Conclusion**: the 2026-08-08 "good_structural is the best result this
+branch has produced" judgment was a holistic/best-case impression (likely
+anchored on one standout tile plus general rendering polish), not a
+claim that held at the per-tile average this 10-tile set was being used
+to test. The three new metrics may not have been wrong -- they were being
+validated against a reference label that does not actually hold up.
+**Do not use this pair as a calibration reference for any future metric
+work** without a proper from-scratch per-tile human fidelity ranking
+first; the existing holistic write-ups in this log are not a substitute.
+
+**Status**: paused here pending user direction -- next step, if
+continued, is building a small human-labeled per-tile fidelity ranking
+(not a holistic "which is better overall" judgment) before trying to
+calibrate any metric against it again.
+
+## 2026-08-09 (later still): Workstream C Resolved -- Conditioning-Roundtrip Metric Validated Against A Hand-Built Fidelity Ranking
+
+Followed up on the prior entry (calibration pair turned out unreliable). Built
+the missing piece: a manual tile-by-tile fidelity ranking (`results/
+eval_metric_calibration_20260809/tile_fidelity_ranking.csv`) over the same
+10-tile diagnostic set, judged strictly on "does the output's line structure
+correspond to the rough's structure," independent of rendering polish.
+Verdict: bad_hallucination (LoRA-stacked) more faithful on 6/10 tiles, tied on
+4/10, good_structural (adopted 2026-08-08 variant) more faithful on 0/10.
+
+Checked all three candidate metrics from the prior entry against this ranking
+on the 6 decisive tiles: chamfer-to-GT (truncate=6px) agreed on only 1/6 --
+confirming it answers a different question ("does this resemble finished
+GT-style line art in general") than conditioning adherence. The
+conditioning-roundtrip metric agreed on 5/6; blurred density-field
+correlation agreed on 4/6. Full table: `results/
+eval_metric_calibration_20260809/metric_agreement_summary.md`.
+
+**Decision**: adopt `tools/evaluation/condition_roundtrip_fidelity.py` as the
+primary diagnostic whenever the question is conditioning adherence /
+hallucination detection (this is exactly the question that started workstream
+C). Keep chamfer-to-GT for what it actually measures well -- general
+resemblance to finished line art -- stop treating it as a conditioning-
+fidelity proxy.
+
+**Open implication, not acted on**: under this criterion, the LoRA-stacked
+variant was structurally more faithful to input than the variant the
+2026-08-08 entry adopted, on this 10-tile set. Not a simple "the LoRA variant
+is better" call -- it still has the content-independent crosshatch artifact
+that motivated dropping it -- so this is a genuine fidelity-vs-cleanliness
+trade-off, not one variant dominating. Flagged for the user; the adoption
+decision itself was not revisited this session.
+
+## 2026-08-09 (later still): Eval Metric Inventory
+
+User: with real paired data still ~3 weeks out, now is a good time for a
+full metric stocktake, not just the ControlNet-specific fix from the prior
+two entries. Read through every script in `tools/evaluation/` plus the
+`chamfer()` usages in `tools/pair_extraction/` and classified each by what
+comparison it actually performs, not just its filename. Written up as
+`doc/eval_metric_inventory.md`.
+
+Key groupings that came out of this:
+- **Point-distance-to-GT family** (`evaluate_fixed_outputs.py`): the one
+  implicated by today's finding. Also found a second, independent problem
+  while inventorying it: its ink extraction uses a raw grayscale
+  threshold<128, which on diffusion outputs (soft/antialiased, unlike clean
+  scans) inflated ink_ratio to 60-165x GT in one measured case -- a real bug
+  on top of the truncate-radius issue, not yet fixed.
+- **Point-distance-to-conditioning family** (`condition_roundtrip_fidelity.py`):
+  today's validated fix, the right tool for "did the model follow input"
+  questions.
+- **No-reference structural-profile family** (`measure_lineart_profile.py`,
+  `evaluate_stroke_stability.py`): mechanically different -- no nearest-
+  point search at all, just per-image statistics compared as distributions.
+  Not exposed to the density-saturation failure mode by construction. This
+  is already the correct, unaffected basis for the domain-LoRA fidelity-
+  budget work ([[project_diffusion_fidelity_budget]]).
+- **Distance-banded intensity family** (`evaluate_halo_outputs.py`): also
+  mechanically different (ring-averaged density, not nearest-point), built
+  for a GAN-era artifact not currently active on the diffusion branch. Not
+  re-verified against a hand ranking this session.
+- **Real-vs-real alignment-gating family** (chamfer inside
+  `tools/pair_extraction/*.py`, `score_pair_agreement.py`): different
+  question (are two real scans aligned, no hallucination risk since neither
+  side is generated) and already has an extensive independent calibration
+  history in this log. Not re-examined this session; flagged as an
+  assumption (lower hallucination-confound risk) rather than a verified one.
+
+No code changes made beyond the inventory doc itself; the ink-extraction bug
+in `evaluate_fixed_outputs.py` is logged as an open follow-up, not fixed.
+
+## 2026-08-09 (later still): Fixed `evaluate_fixed_outputs.py`'s Ink-Extraction Bug
+
+First item off the eval-metric-inventory follow-up list. Switched ink
+extraction from a raw grayscale threshold (`gray < 128`) to the same
+Canny-edge extraction (`edge_map`) already validated for
+`condition_roundtrip_fidelity.py`, and dropped the default chamfer truncate
+radius 20px->8px (both CLI-overridable: `--extraction threshold|edge`,
+`--truncate-px`). `--extraction threshold` reproduces the exact old numbers
+for anyone needing historical comparability -- verified byte-for-byte
+against the pre-fix run (ink_ratio 60.66/165.19, chamfer 11.30/9.32,
+matching the inventory doc's measured values exactly).
+
+With the fix (edge extraction, truncate=8), ink_ratio on the same
+bad_hallucination/good_structural pair dropped to a sane 9.2/21.8 (was
+60.7/165.2) and chamfer to 4.77/4.23 (was 11.30/9.32). Self-comparison smoke
+test (target vs. itself) gives chamfer=0, F1=1.0 as expected.
+
+**Important negative result, worth being explicit about**: re-checked the
+fixed metric against the hand-built fidelity ranking
+(`results/eval_metric_calibration_20260809/tile_fidelity_ranking.csv|
+metric_agreement_summary.md`) -- still only 1/6 agreement on the decisive
+tiles, same as before the fix. This confirms the ink-extraction bug and the
+conditioning-fidelity blind spot are two *separate* problems: fixing ink
+extraction makes `evaluate_fixed_outputs.py` correct for the question it's
+actually built to answer ("how close does this land to GT"), but does not
+and cannot turn it into a conditioning-fidelity metric -- that job stays
+with `condition_roundtrip_fidelity.py`. Updated `doc/eval_metric_inventory.md`
+to mark this follow-up done and record the negative result so nobody
+mistakes "ink extraction fixed" for "discrimination problem fixed."
+
+## 2026-08-09 (later still): Purged Unreferenced `results/` Entries (Full History)
+
+Followed up on the session-close cleanup habit noted earlier today. Cross-
+referenced every top-level entry in `results/` (259 total) against every
+`doc/**/*.md` file plus `README.md` by exact filename string match. 127
+entries (1.78GB) had no exact-match reference anywhere in the docs.
+
+Manually spot-checked a handful of the "unreferenced" candidates first
+(`router_feature_probe_current_oracle_choices_with_features.csv`, the
+per-source `*_koma_tiles_480_dense_20260801*` QC bundles) and found some of
+them ARE topically covered by doc prose just not by exact filename -- so
+this match is a blunt instrument, not a precise "genuinely unused" signal.
+User's call after hearing this caveat: audit metrics are about to become an
+active, ongoing workstream (today's eval-metric inventory), old artifacts
+from months-old, already-superseded experiment lines are unlikely to be
+worth manually re-reviewing one by one, and disk space is no longer tight
+(new SSD, 1.6TB free) so this wasn't about reclaiming space -- decided to
+delete the full unreferenced set rather than hand-review each one.
+
+Deleted all 127 entries. `results/` went from 259 items / 2.6GB to 132
+items / 726MB. Full pre-deletion candidate list is not preserved separately
+-- it was exactly "every top-level `results/` entry as of 2026-08-09 whose
+filename does not appear verbatim in any `doc/**/*.md` or `README.md`",
+reproducible by the same grep-based cross-reference if ever needed again.
+Everything currently referenced by exact path in the docs (132 remaining
+entries, including all of today's own new outputs -- see the surrounding
+2026-08-09 entries in this log) was left untouched.
+
+## 2026-08-09 (later still): Eval-Metric Literature Survey -- Our Finding Is Known, Not Novel
+
+User asked whether an established literature exists for illustration/
+line-art comparison metrics that might reveal a flaw in our approach or
+framing. Ran a background research agent against this exact question.
+Full writeup: `doc/eval_metric_literature_survey_20260809.md`.
+
+Headline: the chamfer/tolerance-F1 density-saturation problem found earlier
+today is a known, decades-old phenomenon in boundary detection -- Pratt's
+Figure of Merit (1978, Chamfer-like) was replaced by BSDS's one-to-one
+bipartite-matched precision-recall protocol for exactly this reason, and
+it's still active research territory in 2026 (MatchED, CVPR 2026, for
+learned edge detectors specifically). Also found that today's
+`condition_roundtrip_fidelity.py` framework independently converged on the
+same design as ControlNet's own segmentation-IoU eval and ControlNet++'s
+formalized "controllability" consistency reward -- but ControlNet++'s
+established comparison function for edge/line-art conditions specifically
+is SSIM, not Chamfer, meaning our roundtrip metric likely fixed *what* gets
+compared but not the underlying comparison mechanism's weakness.
+
+Also surfaced a documentation gap: `evaluate_fixed_outputs.py`'s
+`f1_2px`/`precision_2px`/`recall_2px` are named like BSDS-family
+edge-detection F-scores but use a materially weaker many-to-one distance-
+threshold match rather than BSDS's bipartite one-to-one match -- worth a
+caveat so nobody imports BSDS-equivalent intuition from these numbers.
+
+New prioritized prototype list (detail in the survey doc): BSDS-style
+bipartite matching via `scipy.optimize.linear_sum_assignment`; swap/add
+SSIM inside the roundtrip metric; a GF-HOG-inspired gradient-orientation
+descriptor targeting repeating-texture hallucination specifically;
+re-validate the roundtrip metric at higher ink density (today's 5/6 result
+may reflect comparing similar-density content, not a fixed mechanism).
+Confirmed no action needed on `measure_lineart_profile.py` -- its
+no-reference hand-designed-statistics approach is validated as the more
+defensible choice for domain/style-fidelity questions, given documented
+FID/LPIPS domain-mismatch problems on non-photographic content.
+
+Not yet implemented -- this is a literature-grounded backlog for the next
+metric-audit pass, not code changes.
+
+## 2026-08-09 (later still): Prototyped and Validated the 3 Literature-Suggested Metrics -- BSDS Matching Reaches 6/6
+
+Implemented and validated all three candidates from the literature survey
+against the same 10-tile hand fidelity ranking used throughout today.
+
+1. **BSDS-style one-to-one bipartite-matched F1**
+   (`tools/pair_extraction/tile_region_manifest_480.bipartite_match_f1`):
+   candidate pairs within tolerance found via KD-tree, then maximum-
+   cardinality bipartite matching (`scipy.sparse.csgraph.
+   maximum_bipartite_matching`) -- a documented simplification of BSDS's
+   exact min-cost LP formulation, not a faithful reimplementation. Smoke
+   test: self-match gives F1=1.0; dense unrelated random noise (5x GT
+   density) drops recall from the old many-to-one metric's inflated 0.90 to
+   a more honest 0.65 under one-to-one matching, precision stays
+   correctly low (~0.13) either way. Added as `bsds_f1`/`bsds_precision`/
+   `bsds_recall` in `evaluate_fixed_outputs.py`, alongside (not replacing)
+   the existing `f1_2px` family. **Result: 6/6 agreement with the hand
+   ranking on the 6 decisive tiles -- the best of any metric tried today,
+   and the cheapest (no roundtrip/preprocessor model needed, just the
+   corrected matching rule applied directly to output-vs-GT).**
+
+2. **SSIM inside the roundtrip metric**
+   (`tools/evaluation/condition_roundtrip_fidelity.py`, new
+   `roundtrip_ssim` column, `skimage.metrics.structural_similarity` on the
+   raw grayscale conditioning maps before binarization -- SSIM wants
+   continuous tone, not a binary mask). Matches ControlNet++'s established
+   per-condition-type controllability metric for edge/line-art conditions.
+   **6/6.** Also added `roundtrip_bsds_f1` (same bipartite matcher, on the
+   binarized conditioning maps) alongside -- **also 6/6.** Original
+   `roundtrip_chamfer` kept for continuity, still 5/6.
+
+3. **GF-HOG-inspired orientation-histogram similarity**
+   (`tile_region_manifest_480.orientation_similarity`): per-cell (8x8 grid)
+   gradient-orientation histograms, compared via histogram intersection,
+   averaged over cells with gradient energy in both images. Computed
+   directly between rough input and model output (no GT, no preprocessor
+   needed). **5/6.** Not yet wired into a CLI script -- available as a
+   function for now, meant as a mechanistically-different secondary check
+   (orientation-distribution regularity) for repeating-texture
+   hallucination specifically, not a primary metric.
+
+Updated the visual-check montage (`tools/compare/
+make_multi_model_eval_compare.py --annotate-metrics`) to also print
+`bsds_f1` per tile (font tripled per user request earlier today, band
+height increased 150->196px for the extra line). Regenerated: `results/
+eval_metric_calibration_20260809/metric_fix_visual_check_montage.png`.
+
+Full updated agreement table across all 8 metric variants tried today:
+`results/eval_metric_calibration_20260809/metric_agreement_summary.md`.
+Updated recommendation: use `bsds_f1` as the default "did the output
+structurally correspond" check when GT exists (cheapest, best result);
+use `roundtrip_ssim`/`roundtrip_bsds_f1` when it doesn't (e.g. judging a
+ControlNet against its own conditioning before real paired data arrives).
+
+## 2026-08-09 (later still): `dataset_psd_line_v2.zip` Materialized -- 2022 Tiles Saved
+
+`--save` run completed (`results/psd_line_koma_extraction_20260809_save/`,
+`dataset/psd_line_koma_extraction_20260809/line/`). 2022 tiles, matching
+the prior dry-run exactly (same params). Visual QC (`panel_detection_
+overlay_qc.png`, `tile_qc.png`): panel splits track real gutters/borders
+cleanly across a wide sample, no obvious false-split artifacts.
+
+**Minor caveat found during QC, not blocking**: a handful of source pages
+(seen: 0001, 0003, 0020, 0021) have a faint gray calibration/reference
+strip near one edge (tick-mark scale + "NAN060"-style label text, likely a
+scanning color/greyscale reference chart) baked into the flattened raster.
+It's faint enough to barely clear the tile ink-ratio floor
+(`--tile-ink-min 0.010`), so it mainly affects tiles that would otherwise
+be near-blank -- these are already low-value tiles, so impact is small, but
+worth knowing about if this source ever needs a stricter content-density
+filter or the strip needs explicit masking. Not acted on this session.
+
+This source is still line-only (no rough counterpart), so per prior
+entries it feeds domain-LoRA-relevant line pools only -- not usable for
+ControlNet training until a paired rough extraction exists for it.
+
+## 2026-08-09 (later still): Retroactive Audit -- GAN-Era Adoption Ranking Unaffected
+
+User asked whether today's metric findings should change any past
+training/inference decision. Reasoned through it first: the failure mode
+found today (dense output masking lack of structural correspondence) is
+architecturally tied to conditional generation where an adapter/LoRA can
+override its conditioning signal (ControlNet+LoRA); the GAN-era direct-
+regression models (`cleanup-refiner` branch) map input to output
+deterministically, a different and much less hallucination-prone failure
+surface. Also, `doc/architecture_decisions.md` and `doc/model_results_
+summary.md` already establish (and were created specifically because of
+past cases of) "never trust F1/chamfer alone, montage review is the real
+adoption gate" -- so GAN-era decisions were never purely metric-driven to
+begin with.
+
+Ran one concrete spot check to confirm rather than just reason about it:
+re-scored the 8 surviving `combined_koma_*_20260731`/`_20260730` family
+output sets (the standard 8-tile clean eval set, `eval_clean_lineart004_8.
+txt`) with the new `bsds_f1` alongside the original `f1_2px`. **Ranking
+order was identical across all 8 models for both metrics** (lucy_mild_msgan
+> dualhead_v2 > cleanupdark > lucy_mild_noadv > attn > hed_v3 > dualhead >
+hed). ink_ratio for this family also stayed in a bounded, sane range
+(0.07-2.1x), unlike the 60-165x blowup found for diffusion-model output --
+consistent with GAN-era outputs already being closer to cleanly binarized,
+not soft/antialiased.
+
+**Conclusion**: no GAN-era adoption decision needs revisiting based on
+today's metric findings. The one item that *does* need revisiting when
+real paired data arrives is already flagged (2026-08-08 ControlNet
+LoRA-drop decision, see the "Workstream C Resolved" entry) -- that is
+specifically a conditional-diffusion/ControlNet-adapter case, the exact
+architecture class where today's failure mode applies.
