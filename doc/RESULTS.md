@@ -1,100 +1,83 @@
 # Results Layout
 
-Updated: 2026-07-29 JST
+Updated: 2026-08-26 JST
 
-`results/` now keeps metrics, manifests, CSV/JSON outputs, and only a small set
-of currently referenced montage images.
+## Policy (revised 2026-08-26)
 
-Large resolved image outputs were deleted during the 2026-07-25 cleanup.
-Per-sample output images and old QC panels should be regenerated from scripts,
-manifests, and checkpoints when needed.
+**Old policy** (2026-07-25 through 2026-08-09): keep anything referenced
+by exact filename from a current doc, on the theory that even a settled
+experiment's image evidence might have residual value later.
 
-Use `config/results_manifest.json` as the current lightweight index. It has
-been pruned to paths that still exist after cleanup.
+**New policy, in effect now**: that theory was wrong in practice. By
+2026-08-26 `results/` had grown to 166 top-level items / 1.6GB, browsing
+it to find anything current cost real time, and the overwhelming majority
+of the bulk was visual evidence for *already-settled, already-written-down*
+findings from architecture-survey work (the GAN-era Direction 5/6/8/9
+family, badrough/halo/router ablations, the old Direction 4 from-scratch
+ControlNet attempts, superseded domain-LoRA isolation-chain intermediates,
+etc.) that nobody was going back to re-examine visually. The written
+conclusion in `doc/architecture_decisions.md` / `doc/model_directions.md`
+/ `doc/model_results_summary.md` / `doc/work_log.md` is what actually
+carries forward; the image/checkpoint evidence behind a *settled* finding
+does not need to be kept "just in case."
 
-## Per-Source Folders (2026-07-29)
+**Current rule**: once a finding is settled and written down, delete its
+supporting `results/` artifacts (montages, per-sample outputs, metric
+CSVs) rather than preserving them by default. Do not wait for a
+scheduled cleanup pass -- delete at the point the verdict is reached, in
+the same session. Exceptions, kept deliberately:
 
-Raw-manuscript-source-specific koma panel-detection/tile-extraction outputs
-(`ako5ver2`, `hamlabi`, `fitness`, `gakuen`, `housei`, `fighting`) live under
-`results/<source>/` instead of as flat top-level files. Each folder holds only
-the latest accepted panels manifest + overlays and the final materialize/
-subregion/tile-extraction outputs; earlier dated/versioned iterations and
-pre-koma legacy approaches (region matches, native_strict tiles, keep281/
-varregion/strict88 experiments, etc.) were deleted as superseded — see
-`doc/work_log.md` 2026-07-29 entry for the before/after counts. New per-source
-pipeline runs should write directly into `results/<source>/` going forward.
+- artifacts that are still a **functional dependency** of an active
+  training/eval script (e.g. a caption CSV a runner script's
+  `--caption-csv` argument points at) -- these aren't "evidence," they're
+  inputs;
+- the sample/reference output for the **currently-adopted** config of
+  each active model family (so "what does the adopted model actually
+  produce" stays checkable without a rerun);
+- calibration data a still-used *methodology* depends on (e.g. the hand-
+  built fidelity ranking behind the `bsds_f1` metric's validation);
+- raw dataset provenance records (manifest/tile CSVs -- small, and the
+  only record of exactly which files are in a training pool) for
+  already-extracted, already-in-use raw sources.
 
-Everything else (cross-source model/architecture-comparison experiments —
-`halo_*`, `haze_uncertainty_*`, `router_*`, `line_refiner_*`,
-`fixed_output_metrics_*`, `pair_dataset_integrity_*` not tied to one source,
-`combined_20260726_*`, `dataset_gate_*`, etc.) was left in place at the
-top level; it isn't organized "per source" and wasn't reviewed for deletion
-in this pass.
+A 2026-08-26 pass applying this rule took `results/` from 166 items/1.6GB
+to 43 items/79MB. See `doc/work_log.md`'s 2026-08-26 entry for the exact
+deletion list and rationale per category.
 
-## `results/lessons/` (2026-08-04)
+`config/results_manifest.json` (an unmaintained lightweight index that had
+not tracked most of `results/`'s actual contents for some time) was
+deleted rather than revived -- keeping a second, hand-maintained index of
+`results/` in sync was itself part of the clutter problem, not a solution
+to it. There is no results-manifest tooling to update going forward.
 
-Curated, small folder for outputs that carry a specific documented lesson
-forward -- distinct from `results/archive/` (old/historical, kept for
-audit only, not actively cited) and from the general top-level clutter
-(regenerable per-run outputs). Something belongs in `lessons/` only if a
-current doc (`doc/architecture_decisions.md`, `doc/work_log.md`) explicitly
-cites it as evidence for a stated finding, not just because it was a
-notable run. Named `lessons/` rather than `artifacts/` deliberately --
-everything under `results/` is technically an "artifact," so that name
-would not distinguish this folder's curated intent.
+## What's Currently There
 
-Current contents: the direct-regression (`unet`/`unet_skip0`) epoch-
-trajectory lineage that grounds the ongoing stroke-continuity work --
-3-epoch smoke test, 100-epoch/200-epoch/dense-28-epoch comparisons, the
-epoch-trajectory montages, and the rough-fidelity-vs-binarization crop
-comparison. See `doc/architecture_decisions.md`'s "単段直接回帰" section
-for what each one demonstrates. When a doc reference to a `results/`-root
-path is moved into `lessons/`, update the citing doc's path in the same
-edit -- do not leave dangling references.
+- **Active `diffusion`-branch work** (2026-08-04 onward): the domain-LoRA
+  adopted-config reference samples
+  (`domain_lora_{line,rough}_sd15base_sksv2_20260807_scale14/`), the
+  `bsds_f1` calibration basis (`eval_metric_calibration_20260809/`), and
+  everything from the current `clip_pairs` koma-pipeline run and the
+  real-pairs ControlNet LoRA fine-tune (`clip_pairs_koma_*`,
+  `controlnet_lora_realpairs_20260824*`).
+- **Per-source raw-dataset provenance** (`results/<source>/` for
+  `ako5ver2`/`fitness`/`hamlabi`/`gakuen`/`housei`/`fighting`): trimmed to
+  just the manifest/tile CSVs (which tiles are in the training pool) --
+  all QC/overlay images deleted 2026-08-26, the review they supported is
+  long since concluded.
+- `results/lessons/`: trimmed to its CSVs only (2026-08-26) -- the
+  stroke-continuity direct-regression finding it supports is fully
+  written up in `doc/architecture_decisions.md`'s "単段直接回帰" section;
+  the montage images that made the case visually are no longer kept.
+- `results/archive/`: old/historical, audit-only, untouched by this pass
+  -- see `doc/README.md` for the standing rule not to read it without
+  being asked.
+- `lineart_profile_*.csv`: kept per the exception above -- these are the
+  quantitative trail behind the domain-LoRA fidelity-budget decisions in
+  `doc/diffusion_fidelity_budget_policy.md`.
 
-## Current Kept Images
+## Going Forward
 
-Remaining top-level image files under `results/`:
-
-- `results/compare_badrough_lucy_thin_threshold_e3.png`
-- `results/compare_clean_baselines_lineart004.png`
-- `results/compare_exp1_moredupes_epoch020_lineart004.png`
-- `results/compare_linefield_initial_e2.png`
-- `results/compare_shape1_std15_clean_split_moredupes_bce_epoch020_lineart004.png`
-
-Now under its source folder:
-
-- `results/hamlabi/hamlabi_filtered398_unet480_epoch040_compare.png`
-
-Current ako5ver2 review image is outside `results/`:
-
-- `dataset/regions_ako5ver2_varregion_20260725_postalign12_masked_line_conservative/valid_mask_qc.png`
-
-## What To Keep
-
-Keep:
-
-- active montage images explicitly referenced by current docs
-- metrics CSVs
-- review CSVs
-- candidate manifests
-- integrity audit summaries/findings
-- lightweight JSON route/manifest outputs
-
-Delete after resolution:
-
-- per-sample inference image directories
-- old smoke-test images
-- old QC sheets once review decisions are recorded
-- archived/leak-era images that are not needed for active docs
-
-## Cleanup Policy
-
-1. Search active docs for direct `results/*.png|jpg|jpeg` references.
-2. Protect only those current references.
-3. Delete unreferenced `results/` image files.
-4. Keep non-image metrics/manifests unless a separate cleanup asks to remove
-   them.
-5. Update `config/results_manifest.json` after deletion so it contains only
-   existing paths.
-6. Record major cleanup counts in `doc/work_log.md`.
+When a `results/` artifact's finding gets written down as settled (adopted,
+rejected, shelved -- any final verdict), delete the artifact in the same
+edit that records the verdict, unless it matches one of the four
+exceptions above. Do not defer this to a later cleanup pass.

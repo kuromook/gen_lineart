@@ -61,6 +61,10 @@ working on extraction/tiling/panel-matching.
 - `doc/preprocess/region_search_loop.md`: region-search iteration loop notes.
 - `doc/preprocess/dataset_status.md`: current usable manifests, review targets, held-out
   rows, and dataset next actions.
+- `doc/preprocess/clip_pairs_extraction_feedback_20260821.md`: external-facing
+  feedback report for the `extract_line_and_sketch`/`clip_pairs` auto-extraction
+  tool -- failure patterns found with concrete examples, meant to be handed off
+  to whoever maintains that tool, not just internal reference.
 
 ## Historical Or Noisy
 

@@ -238,6 +238,14 @@ caption接尾辞は`"sks style, pencil rough sketch, monochrome"`(ドメイン�
 attn-only。両ドメインでユーザー確認済み。次は
 SDEdit系変換の再開検討(`doc/work_log.md`のNext Actions参照)。
 
+**2026-08-21試行(不採用)**: line domainの学習プールに、未使用だった
+`psd_line`抽出タイル2022枚を追加(1489→3511枚、同一レシピ)して再学習した
+ところ、`background_ratio`/`long_component_ratio`/`components_per_1k_ink_px`
+/`grid_ink_cv`/`blank_cell_fraction`など主要な構造指標がほぼ全て悪化し、
+目視でも縦方向のハッチング/ストライプへの重度崩壊を確認(2026-08-05/06の
+rough domain「平行ハッチ崩壊」と同系統)。**上記の採用構成のまま変更なし**。
+詳細: `doc/work_log.md`(2026-08-21後半のエントリ)。
+
 ## 関連
 
 - `doc/architecture_decisions.md`: `measure_lineart_profile.py`の指標グロッサリ

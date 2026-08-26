@@ -619,3 +619,54 @@ Before any reviewed raw dataset becomes a training source:
 5. Integrity audit passes when using fixed pair-list training.
 6. Training command records manifest, mask key, image size, fit mode, and any
    line-dir overrides.
+
+## clip_pairs (koma) -- added 2026-08-24 JST
+
+New large paired source, `dataset/raw_zips/dataset_clip_pairs_v2.zip` (the
+extraction tool's koma-layer + QC-enhanced delivery -- full background:
+`doc/preprocess/raw_dataset_storage_policy.md`'s `dataset_clip_pairs_v2.zip`
+entry, `doc/work_log.md`'s 2026-08-20 through 2026-08-24 entries). Ran the
+same koma panel -> sub-region -> mask -> tile pipeline as the 5 existing
+koma sources (ako5ver2/fitness/gakuen/hamlabi/housei), via new
+`clip_pairs`-aware driver scripts
+(`tools/pair_extraction/match_clip_pairs_koma_panels.py`,
+`materialize_clip_pairs_koma_panels.py` -- both reuse the existing
+`match_koma_panels.py`/`split_koma_panel_subregions.py`/
+`build_region_valid_masks.py`/`tile_region_manifest_480.py` functions
+unchanged, adapted only for `clip_pairs`' multi-work-id zip structure).
+
+Pipeline funnel: 1272 starting pairs (`pair_quality=ok` + `is_primary` +
+koma present, per the extraction tool's own recommendation) -> 4848
+aligned panels -> 4750 materialized (chamfer<=45 pre-filter) -> 9210
+sub-regions -> 119,216 raw tile candidates -> 7383 accepted -> **6978
+final** after removing 405 cross-slug duplicate tiles found by the
+integrity audit (whole-page dedup upstream doesn't catch partial-overlap
+pages that still crop to identical tiles -- see `doc/work_log.md`
+2026-08-24 entry for the root-cause trace).
+
+Current artifacts:
+
+- list: `dataset/pairs_480/valid_train_clip_pairs_koma_20260823.txt`
+  (6978 rows; `.predup` backup has the pre-dedup 7383)
+- line dir: `dataset/pairs_480/train/line_clip_pairs_koma_20260823/`
+- rough dir: shared `dataset/pairs_480/train/rough/` (tiles prefixed
+  `clippairskoma_`, no collision risk with other sources)
+- tiles CSV: `results/clip_pairs_koma_tiles_480_20260823.csv`
+- QC: `results/clip_pairs_koma_tiles_480_20260823_qc*.png`
+  (head/tail/evenly-spaced-sample)
+- integrity audit: 0 findings (post-dedup)
+  (`results/pair_dataset_integrity_summary_clip_pairs_koma_20260823.csv`)
+
+Status: reviewed (visual QC on sample + tail, native resolution -- top/mid
+ranks clean, tail sparse/faint but not mismatched, same pattern as the 5
+existing sources), integrity-audited, ready as a training source. **Not
+yet trained on or mixed into `combined_koma_20260729`** -- per this
+project's standing rule, do not concatenate into another source's list
+without a deliberate experiment design.
+
+Excluded from this pool by the upstream `qc=ok` filter (do not
+re-include without a specific reason): `066_2024_housei` (worse than the
+existing `dataset_housei.zip`), `037_2020_ako9`/`039_2020b_ako10`/
+`akogoods`-family/`ako4` (confirmed higher real failure rates even within
+`qc=ok`, per `doc/preprocess/raw_dataset_storage_policy.md`'s
+`ako*`-family inventory).

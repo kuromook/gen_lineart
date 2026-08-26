@@ -28,3 +28,7 @@ results/**
 
 # Local notification secrets / endpoints.
 config/autoloop_notify.env
+
+# Local file-exchange with the extraction-tool session (Windows machine).
+inbox/
+outbox/
