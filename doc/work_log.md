@@ -3303,3 +3303,1388 @@ real paired data arrives is already flagged (2026-08-08 ControlNet
 LoRA-drop decision, see the "Workstream C Resolved" entry) -- that is
 specifically a conditional-diffusion/ControlNet-adapter case, the exact
 architecture class where today's failure mode applies.
+
+## 2026-08-19/20: Real Paired Data Arrived -- `dataset_clip_pairs.zip`, Plus Two Unpaired Line-Only Batches
+
+Four new raw archives appeared at the repo root (not yet placed). Identified
+and sorted each by inspecting its internal manifest/structure before moving
+anything, per this project's standing storage policy
+(`doc/preprocess/raw_dataset_storage_policy.md`).
+
+- **`dataset_clip_pairs.zip` (8.0GB, 3590 entries) -- real paired rough/line
+  data**, the item this project has been blocked on since the 2026-08-08
+  ControlNet-LoRA-drop decision (estimated ~2026-08-31, arrived ~2 weeks
+  early). Auto-extracted by the user's own tooling from CLIP STUDIO `.clip`
+  files across 74 project folders (2015-2024), each with a `manifest.json`
+  giving per-page `line`/`sketch` filenames plus built-in alignment
+  diagnostics (bbox/centroid/`normalized_centroid_distance`/
+  `block_density_correlation`/`aligned`). Several subproject names overlap
+  known sources (`ako5`/`ako6`/`ako7`/`ako3B`/`ako4`/`housei`/`fitness`/
+  `hamlabi`) -- **not yet confirmed whether these duplicate the existing
+  koma-pipeline extracts or are a distinct scan**; needs a dedup/overlap
+  check before use. Moved to `dataset/raw_zips/dataset_clip_pairs.zip`.
+- **`dataset_comicstudio_line.zip` (4.9GB, 3214 entries) -- unpaired,
+  line-only** (88 project folders, 2008-2014+pending; manifests confirm
+  `"aligned_pair": false` throughout). Same extraction-tool family as
+  `clip_pairs` but for CLIP STUDIO sources where only a line layer was
+  classified. Moved to `dataset/raw_zips/dataset_comicstudio_line.zip`.
+- **`dataset_psd_line.zip` (280MB, root) -- a new/larger PSD-source line-only
+  batch**, not a re-encoding of the existing `_v2`: 735 documents scanned
+  (was 731) yielding 317 line-only outputs (was 275), confirmed by hash and
+  content diff. Renamed on arrival to `dataset_psd_line_v3.zip` per the
+  storage policy's versioning rule (never overwrite an existing archive
+  name) and moved to `dataset/raw_zips/`.
+- **`dataset_4th.zip` (165MB, root) -- confirmed duplicate**, not new data
+  (matching the user's own suspicion going in). Per-file CRC check against
+  `dataset/raw_zips/dataset_4th_koma.zip`: 99/100 members byte-identical
+  (only `manifest.json` differed) -- this source was already archived and
+  already fully processed through the koma pipeline on 2026-08-01
+  (`dataset/pairs_480/valid_train_4th_koma_20260801.txt`). Deleted from the
+  repo root after user confirmation; no data lost, the real archive is
+  `dataset/raw_zips/dataset_4th_koma.zip`.
+
+Full per-file detail and manifest schema notes:
+`doc/preprocess/raw_dataset_storage_policy.md`.
+
+### Next Actions
+
+1. `dataset_clip_pairs.zip` is the priority: inventory per-project page
+   counts, check its `ako5`/`ako6`/`ako7`/`ako3B`/`ako4`/`housei`/`fitness`/
+   `hamlabi`-named subprojects for overlap against the already-extracted
+   koma-pipeline sources before assuming any of it is net-new content.
+2. Spot-check the extraction tool's own built-in alignment diagnostics
+   (`normalized_centroid_distance`/`block_density_correlation`/`aligned`)
+   against a manual sample, to decide whether they can be trusted directly
+   or still need this project's own chamfer-based gate
+   (`ALIGNMENT_*` in `tile_region_manifest_480.py`) before promoting any
+   pairs to training.
+3. Once paired data is confirmed usable, this is the trigger for the
+   2026-08-08 decision: fine-tune the public `control_v11p_sd15s2_
+   lineart_anime` checkpoint via LoRA (confirmed safer than full fine-tune)
+   on real pairs, with per-tile WD14 captions from the start.
+4. `dataset_comicstudio_line.zip` / `dataset_psd_line_v3.zip` are lower
+   priority -- both are line-only, useful only as more line-domain-LoRA
+   training material, not for the paired ControlNet fine-tune.
+
+## 2026-08-20 (later): clip_pairs Name-Collision Investigation -- ako5 Is New, housei Is Degraded, fitness/hamlabi Are Fine
+
+Followed up on Next Action #1/#2 above for the four `clip_pairs` folders
+whose names matched known sources, per explicit user hypotheses going in
+("ako5 は同名フォルダで別の中身かもしれない、housei/fitness/hamlabi は同じ内容
+で機械抽出なぶん精度が低い可能性がある"). Ran two independent forked
+investigations in parallel (per [[feedback_pair_extraction_parallel_agents]])
+rather than assuming either hypothesis was correct — both were checked
+against actual page content and byte-level comparison, not just folder
+names. Results, condensed (full detail:
+`doc/preprocess/raw_dataset_storage_policy.md`):
+
+- **`011_2017_ako5`**: user's suspicion confirmed -- a different manuscript
+  (bikini pin-up illustration set, 6543x7016 canvas) from the known
+  `ako5ver2` source (4961x7016, standard multi-panel manga), despite the
+  name match. 66 pages, new material, catalogue separately.
+- **`066_2024_housei\kazenagare`**: user's suspicion confirmed and worse than
+  expected -- not just lower machine-extraction confidence, actually
+  missing 8 of 18 known pages and picking the wrong/an incomplete layer on
+  at least one checked page (near-blank output vs. the known archive's full
+  page). **Do not use as a training source without full manual review; the
+  existing `housei_koma_subregion_refined` extraction stays the production
+  source.** Also found clip_pairs' page numbering does not line up 1:1 with
+  the known archive's index for this source -- any future per-page diff
+  needs re-indexing first.
+- **`069_2024b_fitness\kurip`**: user's suspicion *not* confirmed -- same
+  manuscript, quality comparable to the existing extraction (several
+  `sketch` files byte-identical to the known archive). No evidence of
+  degradation.
+- **`070_2024b_hamlabi\works`**: same manuscript, one checked page
+  byte-identical (MD5) to the known archive -- effectively a re-export, not
+  degraded, but also not new content.
+- **`063_2023b_hamlabi\works`** (a second hamlabi-named folder the user had
+  not explicitly flagged): turned out to be byte-identical to
+  `070_2024b_hamlabi\works` itself -- the same content duplicated under two
+  year-tags *inside* `clip_pairs`, not a second distinct hamlabi work.
+
+All four folders confirmed to carry genuine per-page `line`+`sketch`
+pairing with alignment diagnostics, unlike `psd_line`/`comicstudio_line`.
+
+Also surfaced during this pass: `clip_pairs` contains ~15 more `ako*`-family
+folders (`ako6` through `ako10`, `akogoods`, `akokate`, `akocult`, `ako3`/
+`ako3B`/`ako4`, several with multiple year-tagged entries) with no name
+match against any existing source -- per the `ako5` finding above, these are
+very likely genuinely new, previously-uncatalogued manuscripts from the same
+recurring-character naming convention, not overlap candidates. Not
+inventoried yet.
+
+### Next Actions
+
+1. `ako5` (`011_2017_ako5`) and `fitness` (`069_2024b_fitness`) are
+   confirmed usable/new -- both are candidates for this project's own
+   review/tiling pipeline whenever paired-data work resumes.
+2. `housei` and `hamlabi` from `clip_pairs` add no new usable content over
+   what's already extracted -- do not route either through the pipeline as
+   a primary source; `hamlabi` could still serve as a redundant integrity
+   cross-check if ever useful, `housei` should not be used without a full
+   manual per-page review given the confirmed layer-selection failure.
+3. The ~15 unmatched `ako*`-family folders are the largest unexplored
+   opportunity in `clip_pairs` -- a full per-project page-count/content
+   inventory pass is the natural next step, not yet started.
+4. Original Next Action #3 (LoRA fine-tune of the public ControlNet
+   checkpoint on real pairs) remains the eventual goal once a first usable
+   paired subset (starting with `ako5`/`fitness` above, or a broader
+   `clip_pairs` inventory) is assembled and reviewed.
+
+## 2026-08-21: clip_pairs `ako*`-Family Inventory -- 21 Folders Collapse To 12 Distinct Works, `aligned:true` Is A Reliable Quality Filter
+
+Continued the `clip_pairs` investigation onto the ~15-21 previously-unmatched
+`ako*`-family folders flagged in the prior entry. Three passes, first two
+mechanical/direct (no forking needed), third split into two parallel forks
+(per [[feedback_pair_extraction_parallel_agents]]) for the visual
+spot-checking:
+
+1. **CRC-based dedup pass** (cheap, exact-byte, done directly): 21 raw
+   folders collapse to ~12 distinct works. Several are wholesale or
+   near-wholesale duplicates re-exported under different year tags inside
+   `clip_pairs` itself -- same pattern as the `hamlabi` 2023/2024 duplicate
+   found in the prior entry (`ako7` x2 identical, `ako10` x2 identical,
+   `akogoods` x2 identical +1 near-dup, `akocult`'s smaller entry is a full
+   subset of its larger one, `ako3`/`ako3B`/`ako4` each have a smaller
+   subset entry superseded by a fuller one). Full table with representative
+   folder/subproject per work: `doc/preprocess/raw_dataset_storage_policy.md`.
+2. **Manifest summary pass** (direct): confirmed every subproject has
+   `pairs == n` (true rough+line pairing throughout), but `aligned_true`
+   fraction varies wildly per work (35/38 for `ako7` down to 3/12 for
+   `ako10`).
+3. **Visual spot-check** (2 parallel forks, 6 works each): confirmed all 12
+   are genuine sequential multi-panel manga, not single illustrations like
+   `011_2017_ako5` turned out to be (`akokate` samples even carry real
+   published volume/page annotations). But found the low-`aligned_true`
+   works have real, severe extraction failures, not just conservative
+   alignment scoring: `ako9`/`ako10` sampled `line` outputs were nearly
+   blank against fully-drawn sketches; `akogoods` (despite the
+   merchandise-sounding name -- content is normal sequential manga)
+   extracted solid-black-fill/shadow fragments with no actual linework;
+   `ako4` had sketch/line reversed in production stage (blank sketch,
+   finished screentone-heavy line). `akokate`'s own `aligned:false` sample
+   showed a genuine partial-extraction failure (only a background panel
+   captured, not the page's real content) -- confirming the manifest's
+   `alignment.aligned` field is a meaningful, checkable quality signal, not
+   noise.
+
+**Standing rule for any future `clip_pairs` use**: filter to
+`alignment.aligned == true` at minimum, then still spot-check per-source
+before bulk training use (per both `housei`'s page-numbering mismatch and
+`akokate`'s own `aligned:false` failure case above -- `aligned:true` is
+necessary but not sufficient).
+
+**Usable-as-is** (aligned:true pairs, confirmed clean on samples): `ako5`
+(new, prior entry), `ako7`, `ako8`, `akokate`, `akocult`, `akocultB`,
+`ako3`, `ako3B`, `fitness` (prior entry).
+**Needs manual review before use, higher failure rate than `aligned:true`
+filtering alone would catch**: `ako9`, `ako10`, `akogoods`, `ako4`,
+`housei` (prior entry).
+**No new content, skip**: `hamlabi` (both entries, prior entry), and every
+superseded/duplicate entry in the dedup table above.
+**Not yet inventoried**: `ako6` (confirmed usable content type, but not
+deeply spot-checked beyond one page that happened to be a failure case --
+treat as unverified pending a proper look, not yet in either bucket above).
+
+### Next Actions
+
+1. When paired-data work resumes, start from the confirmed "usable-as-is"
+   list above (`ako5`/`ako7`/`ako8`/`akokate`/`akocult`/`akocultB`/`ako3`/
+   `ako3B`/`fitness`), filtered to `alignment.aligned == true`, run through
+   this project's own review/tiling pipeline (do not skip this project's
+   own alignment gate just because `clip_pairs` provides one -- treat its
+   diagnostic as a pre-filter, not a replacement, per the housei/akokate
+   findings).
+2. `ako9`/`ako10`/`akogoods`/`ako4` need a root-cause look at *why* the
+   auto-extractor is failing so often on these specific works before
+   deciding whether they're worth manually recovering or should be
+   written off -- not started.
+3. `ako6` needs one more proper spot-check pass (only one, unrepresentative
+   failing sample seen so far).
+4. This closes out the `clip_pairs` name-collision/inventory investigation
+   for now. The full remaining ~62 non-`ako`/`housei`/`fitness`/`hamlabi`
+   `clip_pairs` project folders (other artists' works / other series names
+   entirely, never cross-checked at all) are still uninventoried --
+   lower priority since none had a name collision to investigate, but
+   represent the largest remaining unknown quantity in this archive.
+
+## 2026-08-21 (later): External Feedback Report For The `clip_pairs` Extraction Tool
+
+Per explicit user direction: this investigation's failure-pattern findings
+were never expected to beat this project's own already-reviewed extractions
+(mechanical auto-extraction, as expected) -- but sharing the specific
+failure patterns with whoever runs the `extract_line_and_sketch`/`clip_pairs`
+extraction tool could plausibly improve *its* output quality going forward.
+Wrote `doc/preprocess/clip_pairs_extraction_feedback_20260821.md`, an
+external-facing report (Japanese, matching the user's own working language)
+distinct from this log's internal record: catalogs the 5 concrete failure
+patterns found across both investigation passes (near-blank line layer
+despite full sketch -- `ako9`/`ako10`; solid-fill/shadow layer picked
+instead of linework -- `akogoods`; sketch/line production-stage mismatch --
+`ako4`; partial single-panel extraction -- `akokate`'s `aligned:false`
+sample; cross-export page-number/content mismatch -- `housei`), each with
+exact zip paths as reproducible examples, plus concrete tool-side
+improvement suggestions (ink-ratio-based blank-layer detection, line-vs-fill
+layer discrimination, sketch/line ink-ratio-divergence sanity check,
+page-coverage-area validation, stable cross-export page identifiers) and a
+short list of what worked well as a positive baseline. Added to
+`doc/README.md`'s preprocess index, flagged there as external-facing (not
+just internal reference like the rest of that section).
+
+**Delivered 2026-08-21 (later still)**: the user opened a Claude Code
+session on the Windows extraction-tool machine specifically to receive
+this. Checked cross-machine Remote Control messaging first (`ListAgents`,
+then a `claude-code-guide` agent lookup of the exact setup steps) --
+confirmed unusable here: Claude Code's cross-session messaging does not
+work on native Windows (only WSL2), and the user's Windows session is
+native. Fell back to SCP in the pull direction instead (Windows machine
+fetching from this machine, avoiding any need for an SSH server or
+credentials on the Windows side): confirmed this machine's `sshd` active
+on port 22, LAN IP `192.168.1.34`, gave the user the exact `scp
+sh1@192.168.1.34:/home/sh1/deepl/lineart/doc/preprocess/
+clip_pairs_extraction_feedback_20260821.md <dest>` command to run from
+Windows. User confirmed receipt. This closes out the delivery step; no
+further action needed on this specific report unless the extraction tool
+maintainer responds with follow-up questions.
+
+## 2026-08-21 (later still): clip_pairs Full Inventory Completed -- 48 Remaining Folders, `aligned:true` Downgraded From "Reliable" To "Useful But Insufficient"
+
+User asked to continue with the uninvestigated remainder of `clip_pairs`
+(the 48 folders with no name collision against a known source). Same
+methodology as the `ako*`-family pass: mechanical CRC dedup first, then
+manifest pair/aligned-fraction stats, then parallelized visual spot-checks
+(3 forks this time, ~10 works each, lighter-weight one-sample-per-work
+given the generally healthier aligned-fraction stats than the `ako*`
+family showed).
+
+**`4th` name-collision resolved** (3 folders: `047_2022_4th`/
+`051_2022b_4th`/`059_2023b_4th`): same manuscript as the already-processed
+`dataset_4th_koma.zip`, not new content. Per-page CRC check against the
+known 36-page archive found several pages (21/22/26/27/31/32 for the two
+larger folders) have non-matching bytes at the same page number; direct
+visual comparison of `page0021`'s `line` output confirmed the
+`housei`-style severe-degradation failure -- the known archive's page0021
+is a full hospital-room dialogue page, `clip_pairs`' version is almost
+entirely blank (only a bed-frame outline and a prosthetic-leg object
+survive). Do not use these; existing `dataset_4th_koma.zip` stays
+production.
+
+**`skima` name-collision resolved** (`022_2018_skima10`/
+`035_2019b_skima2`, 10 pages combined): unrelated to the known 626-page
+`unpaired_rough/skima` pool (rough-only by design, no line ever produced)
+-- these two are a much smaller, different source that happens to share
+the nickname and does have real pairs. Negligible size, not pursued
+further.
+
+**Remaining 43 folders inventoried, collapsing to ~29 distinct works**
+after CRC dedup (`gakusai3`+`gakusai1-3DL`, `comics4`'s 3-work internal
+compilation with one sub-work duplicating standalone `underworld`,
+`toramusume1`+`toramusume2`, `UNI`+`UNI_ml` -- partial-overlap siblings,
+not pure duplicates, confirmed same series with at least one duplicated
+title/cover page across both exports -- and a 3-way `nurse` export
+cluster). Visual spot-check across all ~29 (3 parallel forks): confirmed
+varied genuine content, ~40% sequential multi-panel manga and the rest
+single illustrations/reference sheets/design sheets -- no `ako5`-style
+content-type surprise.
+
+**Important revision to the `aligned:true` reliability finding from the
+`ako*`-family pass**: this round found the first confirmed
+counterexamples. `014_2017_kacho`'s `aligned:true` sample has both
+sketch and line showing unfinished white-void patches (wrong production
+stage on both sides). `029_2019_fringe3`'s `aligned:true` sample pairs a
+hospital/dialogue manga page (`sketch`) with an entirely unrelated *color
+instruction sheet* (`line`) -- a new failure pattern beyond the ones
+already catalogued (blank layer / wrong-layer-type / partial-page):
+**completely unrelated documents mispaired**, undetected by the alignment
+diagnostic. `043_2021_hero`'s `aligned:true` `page0006` has a full sketch
+but an almost-blank line (the familiar near-blank pattern, this time on an
+`aligned:true` entry); its `aligned:false` `page0002` was worse still --
+sketch and line show *completely unrelated scenes*, looking like a
+page-index mixup rather than a layer-selection failure. `073_2024c_mayer`
+also showed a debatable/loosely-stylized `aligned:true` correspondence.
+**Revised rule**: `alignment.aligned == true` is a useful coarse filter
+(removes most broken pairs) but confirmed **not sufficient on its own** --
+false positives are real and recur across multiple unrelated works, not
+isolated noise. Any bulk `clip_pairs` use still needs per-page or at least
+per-source-sampled verification beyond the manifest's own flag.
+
+This closes the full 74-folder `clip_pairs` inventory. Full per-work
+disposition table (usable / needs-review / no-new-content) recorded in
+`doc/preprocess/raw_dataset_storage_policy.md`.
+
+### Next Actions
+
+1. Update `doc/preprocess/clip_pairs_extraction_feedback_20260821.md` with
+   the new "unrelated document mispaired" failure pattern and the revised
+   `aligned:true`-insufficiency finding before next sending it (or a
+   follow-up) to the extraction tool's maintainer -- done, see the
+   following entry.
+2. When paired-data pipeline work actually resumes, the practical starting
+   set is the confirmed-clean-sample works across both the `ako*` pass and
+   this pass; still budget for a per-source review pass, not a blind bulk
+   ingest, given the `aligned:true` insufficiency finding above.
+3. No further `clip_pairs` inventory work is planned -- the archive is now
+   fully catalogued at the folder level.
+
+## 2026-08-21 (later still): Feedback Report Updated -- Requested The Extraction Tool Add A Koma-Layer Export
+
+Discussed the pair-creation outlook from the current `clip_pairs` +
+existing-sources dataset: rough order-of-magnitude estimate of ~600-900
+usable pages across the confirmed-decent works (undercounted for a few
+multi-subproject folders not fully tallied, e.g. `gakusai1-3DL`'s other 2
+subprojects, `ako6`'s other 9 subfolders), versus the existing
+1489-tile `combined_koma_20260729` pool -- plausibly a 1.5-2x tile-count
+uplift if pipeline yield tracks `housei`'s ~4.7 tiles/page ratio, but
+tempered by the `aligned:true`-insufficiency finding (real usable rate
+likely lower) and by a real pipeline gap: unlike the 5 existing
+koma-pipeline sources, `clip_pairs` pages carry no dedicated koma
+(panel-border) layer, so `match_koma_panels.py`'s per-panel
+translation+scale alignment search can't be applied directly -- would need
+either adapting `psd_line`'s flattened-raster `recursive_xy_split` panel
+detector (a strictly weaker fallback, dependent on panel borders actually
+being drawn in the flattened image) or falling back to whole-page matching
+(already known from this project's own history to underperform per-panel
+matching).
+
+User's read: the koma-layer gap is significant given how central it was to
+fixing this project's own "residual misalignment" root cause on the 5
+existing sources (2026-07-26/27-29 entries above) -- and improving the
+extraction tool to provide it could meaningfully raise `clip_pairs`' (and
+any future export's) realized quality, not just this project's own
+downstream handling of it. Updated
+`doc/preprocess/clip_pairs_extraction_feedback_20260821.md` with a new
+top-priority section (above the existing 6 failure-pattern-driven
+suggestions) explaining the causal link established in this project's own
+history (per-panel scale/translation alignment fixed a real production-
+stage geometric transform that whole-page matching couldn't correct;
+naive flattened-raster panel-border detection failed on a real page,
+misidentifying character hair as a border) and formally requesting the
+`extract_line_and_sketch` tool also export a koma/panel-border layer
+alongside sketch/line, using the same auto-selection-by-name-pattern
+convention already used for sketch/line layer selection.
+
+### Next Actions
+
+1. Not yet done: re-sending the updated report to the Windows-side session
+   -- same SCP pull command as before (`doc/work_log.md`'s 2026-08-21
+   delivery entry) would work if the user wants to resend now that it's
+   been revised twice since first delivery.
+2. If the koma-layer export request is implemented on the tool side, this
+   project's next step would be adapting `match_koma_panels.py` (or a
+   generalized version of it) to consume clip_pairs-style koma layers
+   directly, following the same pattern already proven on the 5 existing
+   sources -- not started, blocked on the tool-side change.
+
+## 2026-08-21 (later still): Line-Domain LoRA Pool Expansion With `psd_line` Tiles -- Rejected, Severe Texture Collapse
+
+With paired-data work deferred to re-extraction (pending the koma-layer
+request above), picked up the "unpaired data" follow-up discussed
+separately this session: the already-extracted but never-used 2022
+`dataset/psd_line_koma_extraction_20260809/line` tiles (saved 2026-08-09,
+sitting idle since) were merged into the line-domain LoRA's training pool
+alongside the existing 1489-tile `line_combined_koma_20260729` (3511 total,
+2.36x the original pool), to test whether more/varied line-domain data
+improves fidelity to the real reference distribution.
+
+**Pipeline**: `experiments/run_domain_lora_line_sd15base_sksv2_expanded_psdline_20260821.sh`
+(new) -- WD14-tagged the 2022 untagged psd_line tiles with the same
+`sks style, monochrome line art, manga panel, black and white` caption
+suffix as the adopted config (`--caption-suffix` flag on `tag_wd14.py`, no
+new tooling needed), merged with the existing `tags_sksv2.csv`, smoke-
+tested (6 steps), then trained the exact same recipe as the adopted
+`domain_lora_line_sd15base_sksv2_20260807` (rank16 attn-only, SD1.5 base,
+10 epochs) with only the data pool changed -- isolating "more/varied data"
+as the one variable, per this project's isolation-experiment methodology.
+Ran detached (`nohup ... & disown`, verified `PPID=1`), ~7h total (4380
+steps at ~3.87s/step for training alone).
+
+**Result: rejected, both by metric and by direct visual comparison.** Ran
+`measure_lineart_profile.py` with all three sources in one invocation for a
+rigorous same-run comparison (`koma_ref` / `adopted_sksv2_original`
+[samples from the still-on-disk original checkpoint] /
+`expanded_psdline`), not just comparing against remembered numbers from a
+different session:
+
+| metric (median) | koma_ref | adopted (original) | expanded (+psd_line) |
+|---|---:|---:|---:|
+| background_ratio | 0.945 | 0.786 (17% dev) | 0.548 (**42% dev, worse**) |
+| long_component_ratio | 0.819 | 0.751 (8% dev) | 0.447 (**45% dev, much worse**) |
+| components_per_1k_ink_px | 10.91 | 8.33 (24% dev) | 22.64 (**108% dev, much worse**) |
+| grid_ink_cv | 1.878 | 1.285 (32% dev) | 0.670 (**64% dev, worse**) |
+| blank_cell_fraction | 0.688 | 0.281 (59% dev) | 0.063 (**91% dev, worse**) |
+| faint_near_ink_ratio | 0.903 | 0.782 (13% dev) | 0.964 (7% dev, better) |
+| line_width_p50 | 3.82 | 5.73 (50% dev) | 5.73 (50% dev, identical) |
+
+Most macro-structure axes got substantially worse, not better; only 2 of
+14 axes improved. `line_width_p50`'s median landing on the exact same
+value (5.7300) in both independent runs was checked for a caching/reuse
+bug (different training runs, different checkpoint dirs, different
+samples, same script otherwise) -- looks like a real coincidence /
+recipe-level attractor rather than a bug, not investigated further since
+it doesn't change the overall verdict.
+
+Direct visual comparison of both scale1.4 contact sheets (per this
+project's standing rule to never trust metrics alone) confirmed the
+regression is severe, not borderline: the original adopted checkpoint
+still produces recognizable anime faces/figures with clean linework; the
+expanded checkpoint has **collapsed into a dense vertical-hatching/striping
+texture** across nearly every one of the 16 tiles, with little to no
+recognizable face/figure content remaining -- the same qualitative failure
+mode as the original (pre-isolation-chain) rough-domain LoRA's
+"parallel-hatch collapse" (2026-08-05/06 entries above), just now
+appearing on the line domain instead.
+
+**Root-cause spot check**: sampled raw `psd_line` tiles directly (not LoRA
+output) and found several do contain long near-vertical parallel-line
+content -- hair strands, crosshatch shading -- plus at least one confirmed
+instance of the faint gray calibration-strip artifact already flagged as a
+known caveat for this source (2026-08-09 entry above, "0023"-prefixed
+page). Plausible mechanism: this content pattern, still a minority of the
+pool, was enough to shift the LoRA's learned distribution toward a
+repeating-stripe attractor when trained from scratch on the pooled data
+(not incrementally fine-tuned), similar in kind to the earlier
+data-composition-skew story on the rough domain (2026-08-06 entry,
+`ako*`/`housei*`/`komadense` prefixes dominating 74% of that pool).
+
+**Decision**: do not adopt. `domain_lora_line_sd15base_sksv2_20260807`
+remains the production line-domain checkpoint, unchanged. The expanded
+checkpoint/samples are kept on disk as a negative-result reference (not
+deleted), per this project's policy of preserving failure-mode evidence.
+
+### Next Actions
+
+1. ~~Not pursued this session: filtering `psd_line` tiles~~ -- done, see
+   the following entry.
+2. `dataset_comicstudio_line.zip` (the larger, ~3104-page unpaired line
+   pool discussed earlier this session) should not be added to the
+   line-domain pool naively given this result -- if pursued, needs the
+   same kind of composition/content-density scrutiny that fixed the rough
+   domain's earlier collapse, not a blind merge.
+3. `domain_lora_line_sd15base_sksv2_20260807` stays the reference for any
+   downstream use (e.g. a future ControlNet-adjacent style adapter) --
+   unaffected by this rejected experiment.
+
+## 2026-08-21 (later still): Filtered-Pool Retry -- Partial Improvement, Still Not Adopted
+
+User's hypothesis after seeing the rejected expansion's visual collapse:
+the vertical-hatch texture looked like the LoRA was "over-optimizing some
+metric." Clarified the actual mechanism (no adversarial/reward loss exists
+in `train_domain_lora.py` -- plain diffusion denoising MSE on real images,
+this project's evaluation metrics are never fed back into the training
+objective) but verified the substance of the intuition directly: computed
+per-tile `measure_lineart_profile.py` stats for the raw `psd_line` pool vs
+the original `line_combined_koma_20260729` pool (500-sample comparison,
+`results/lineart_profile_orig_vs_psdline_raw_pools_20260821.csv`). Found a
+real, large structural skew -- `psd_line`'s `components_per_1k_ink_px`
+median (34.2) is over 3x the original pool's (10.9), `long_line_ratio`
+median 0.89 vs 0.78, `faint_of_drawn_ratio` median 0.000 vs 0.383 (psd_line
+is almost purely binary ink, no soft/faint pixels at all). Mechanism:
+plain MSE denoising loss is inherently easier/lower-loss to fit on
+repetitive, low-entropy content (parallel hatching) than complex unique
+content (faces/figures) -- pooling a source skewed toward the former can
+pull a capacity-limited LoRA's learned distribution toward that "cheap"
+mode, the same class of failure as the original rough-domain "parallel-
+hatch collapse" (2026-08-05/06 entries), different specific trigger
+(content-composition skew here vs. missing-caption-signal there, since
+this run already had per-image WD14 captions).
+
+**Filtered retry**: computed full-pool per-tile stats
+(`results/lineart_profile_psdline_full_20260821.csv`, all 2022 tiles) and
+kept only tiles falling within the original pool's own p90/p10 bands on
+`long_line_ratio`/`long_component_ratio`/`components_per_1k_ink_px` --
+**510 of 2022 (25.2%) passed**, revealing this isn't a minority-outlier
+problem but a whole-source structural skew (median of the full psd_line
+pool already exceeds the original pool's own p75-p90 range on the
+fragmentation axis). Symlinked the passing 510 into
+`dataset/psd_line_koma_extraction_20260809/line_filtered_20260821/`,
+built a merged caption CSV (1489 + 510 = 1999 rows,
+`results/domain_lora_line_captiontags_20260807/tags_sksv2_filtered_psdline_20260821.csv`),
+and reran the exact same recipe via
+`experiments/run_domain_lora_line_sd15base_sksv2_filtered_psdline_20260821.sh`
+(+34% pool size instead of the rejected attempt's +136%).
+
+**Result: real but partial improvement, still not adopted.** Metrics vs
+`koma_ref` (median deviation, filtered vs. the two prior variants):
+
+| metric | adopted (original) | rejected (full expansion) | this filtered retry |
+|---|---:|---:|---:|
+| long_component_ratio | 8.4% | 45.4% | **1.8% (fixed)** |
+| components_per_1k_ink_px | 23.6% | 107.6% | **14.9% (fixed)** |
+| line_width_p50 | 50.0% | 50.0% | **21.7% (fixed)** |
+| faint_near_ink_ratio | 13.4% | 6.9% | **3.4% (fixed)** |
+| background_ratio | 16.9% | 42.0% | 26.6% (still worse than original) |
+| grid_ink_cv | 31.6% | 64.3% | 64.0% (unfixed) |
+| blank_cell_fraction | 59.1% | 90.9% | 90.9% (unfixed) |
+
+The two axes most implicated in the original collapse
+(`long_component_ratio`, `components_per_1k_ink_px`) came back to
+near-parity with the adopted checkpoint or better -- confirms the
+composition-skew diagnosis was the right mechanism. But
+`grid_ink_cv`/`blank_cell_fraction` stayed exactly as bad as the rejected
+full-expansion attempt.
+
+**Visual check** (`results/domain_lora_line_sd15base_sksv2_filtered_psdline_20260821_scale14/`)
+confirmed the mixed numeric picture directly: roughly 5-6 of 16 tiles
+still show the vertical-stripe/barcode collapse (plus one grid/lattice
+artifact), the rest show recognizable faces/hair/shoulders -- a real
+reduction from the rejected attempt's near-total collapse, but not a fix.
+This matches the `grid_ink_cv`/`blank_cell_fraction` axes staying poor:
+those measure exactly "is the canvas filled edge-to-edge with a repeating
+texture," which a persisting minority of striped tiles keeps failing.
+
+**Decision**: do not adopt. Diminishing-returns judgment call: a stricter
+filter threshold would likely reduce the collapse rate further but shrink
+the usable psd_line subset well below 510 tiles, at which point the
+addition stops being a meaningful pool expansion. `domain_lora_line_sd15base_sksv2_20260807`
+(1489-tile, unmodified) remains production. Not pursuing a third,
+stricter-filter iteration this session.
+
+### Next Actions
+
+1. Not pursued: a stricter filter pass (e.g. p75 bands instead of p90) to
+   see if the collapse rate keeps falling roughly linearly with pool
+   purity, or whether it plateaus -- would clarify whether this is purely
+   a composition-dose effect or hits a floor.
+2. `dataset_comicstudio_line.zip` still needs the same
+   composition-analysis step (`measure_lineart_profile.py` on its raw
+   tiles vs `koma_ref`) before any pooling attempt, now with a concrete
+   precedent for what a bad structural skew looks like and how partial the
+   fix can be even after filtering.
+3. `domain_lora_line_sd15base_sksv2_20260807` stays the reference line-
+   domain checkpoint; both rejected/partial expansion attempts (checkpoints,
+   samples, profile CSVs) kept on disk as negative/partial-result evidence,
+   per this project's evidence-preservation policy.
+
+## 2026-08-21 (later still): Extraction Tool Reply -- Koma Layers Delivered, Deep QC Pass, 18.6% Cross-Source Duplication Found
+
+The extraction-tool maintainer replied to `doc/preprocess/clip_pairs_extraction_feedback_20260821.md`
+via a new file-drop convention: `inbox/reply_clip_pairs_20260821.md`
+(24KB, very thorough) plus an updated `dataset_clip_pairs.zip` at the repo
+root. Archived the zip as `dataset/raw_zips/dataset_clip_pairs_v2.zip`
+(11.4GB, 5360 entries, confirmed 1644 koma files present via direct
+inspection). This is a substantial, high-quality response -- summarizing
+the key points:
+
+### 1. Koma-layer request: fulfilled, 94.4% coverage
+
+The **top-priority ask from the prior feedback report was implemented**:
+`{prefix}_{page}_koma.jpg` now ships alongside line/sketch, same
+folder/naming/canvas-size convention, for 1644 of 1741 pairs (94.4%).
+Turns out the tool already had koma extraction (used previously for
+`kazenagare`/`ako5`/`kurip`/`hamlabi`/`gakuen`/`4th` -- i.e. exactly this
+project's 6 already-known sources), but applying it to the much larger
+`clip_pairs` set surfaced **two real bugs never caught by the smaller
+prior usage**: (a) folder-type koma layers sometimes carry a baked-in
+composited mip-map that, when rasterized, returns actual panel artwork
+instead of border lines (concrete example: `aljanne2 page0003` measured
+32.7% ink before the fix, 1.2% after -- matching the ~1.3-2.0% range
+measured on other sources); (b) full-bleed panels (edges touching the
+page boundary) were dropped entirely because vertex-clipping to canvas
+bounds destroyed their polygons. Both fixed; re-checked against `4th`'s
+existing koma output with no regressions (32/33 pages identical, 1
+improved by recovering a previously-dropped bleed panel).
+
+Of the 97 pages without koma: 79 genuinely have no koma layer in the
+source file (artist didn't use one), 15 are illustration/single-cut works
+excluded as out-of-scope by design (`fujiko2`/`hitoduma`/`x2`/`udonge`/
+`circlecut08`/`bakugi1H1H4`/`bakugi2H1H4`/`tama`/`toramusume1`, plus
+`skima10`/`UNI_ml` which look like manga but lack a koma layer, still
+under investigation on their side), and only 3 are true gaps (`running`
+x2, `succor` x1 -- a known, understood, deliberately-unfixed edge case:
+a panel vertex sitting at y=0.001 falls through the coordinate filter;
+judged not worth the refactor for 0.17% of pages, will fix if we need it).
+Per-page koma presence is recorded in each folder's `koma_manifest.json`
+(`koma: null` = absent).
+
+### 2. QC block added to every manifest entry (proposal 1, corrected)
+
+Corrected a factual error in the prior feedback report: `manifest.json`
+entries never had an `ink_ratio` feature field -- that was misremembered
+from a different source (`dataset_psd_line`'s `index.tsv`). Built QC
+measurement from scratch instead, appended (not replacing) a `qc` block to
+every entry: `pair_quality` (ok/line_fragment/sketch_fragment),
+`line_ink_ratio`/`sketch_ink_ratio`, `sketch_cell_coverage`/
+`line_cell_coverage` (grid-cell coverage fractions, the primary axis),
+`line_bbox_fraction`/`sketch_bbox_fraction`, `grid_correlation`,
+`content_fingerprint`, `measured_at_max_side` (1024px -- all 1742 pairs
+measured at reduced resolution for tractability; ink ratios read higher
+than full-res measurements would, not directly comparable to this
+project's own full-resolution numbers, but valid for relative
+page/layer comparison). Also exports `config/clip_pairs_qc.csv`, one row
+per pair, with `review_rank` (ascending `grid_correlation`, most
+suspicious first) and dedup fields (below).
+
+**Calibration honesty worth noting**: their first threshold attempt
+(tuned against our 8-good/3-bad work-level labels) failed badly (18% false
+positive on good works, only 54% recall on bad ones) -- but traced this to
+*our* labels being too coarse, not their detector: spot-checking
+low-coverage pages from works we called "clean" (`ako3B`, `hamlabi`) found
+the exact same page-level `line_fragment` failure as our own flagged
+`ako9 page0003` example, with an essentially identical measurement
+signature. **This failure mode is scattered across individual pages
+within otherwise-good works, invisible at work-level granularity** -- 39
+of 69 folders have zero flagged pages, the rest have some. Confirms/refines
+this project's own 2026-08-21 (later) inventory finding that `aligned:true`
+being insufficient wasn't isolated noise -- here it's the same story one
+level down (page-level QC needed, not work-level).
+
+Cross-check against our specific reported examples:
+
+| page | our pattern | their `qc` verdict |
+|---|---|---|
+| `ako9 page0003` | 1 (blank line) | `line_fragment` (caught) |
+| `ako10 page0001` | 1 (blank line) | `line_fragment` (caught) |
+| `housei page0001` | 5 (fragment) | `line_fragment` (caught) |
+| `ako4 page0002` | 3 (sketch blank) | `sketch_fragment` (caught) |
+| `ako9 page0010` | 4 (partial page) | `ok` (**missed** -- background furniture covers 17.7% of sketch cells, statistically continuous with normal sparse pages) |
+| `hero page0002` | 6 (unrelated doc) | `ok` (**missed**, expected -- see below) |
+
+### 3. Decision: flag, don't delete -- and why `aligned:true` alone is the wrong gate
+
+Explicitly did **not** delete or quarantine flagged pairs -- left the
+cutoff decision to us. Counts: `ok` 1646 (94.5%), `line_fragment` 60
+(3.4%), `sketch_fragment` 35 (2.0%). Cross-tabulated against `alignment.
+aligned`: of 1400 `aligned:true` pairs, QC additionally catches 29; of 341
+`aligned:false` pairs, **275 are QC-clean** -- i.e. `aligned` runs too
+strict and would discard a lot of good pages if used as a hard gate on its
+own, consistent with (and now quantified beyond) this project's own
+2026-08-21 finding that `aligned:true` is necessary-but-not-sufficient.
+Their concrete recommendation: **filter on `qc=ok` + dedup + koma-presence
+(not `aligned`) as the starting pool** if we're going to do our own
+koma-based alignment refinement anyway.
+
+Filtering funnel (before/after the 289-page re-extraction fix in section
+5 below):
+
+| condition | before fix | after fix |
+|---|---:|---:|
+| total | 1742 | 1741 |
+| `qc=ok` | 1459 | 1646 |
+| `qc=ok` + unique (deduped) | 1215 | 1343 |
+| `qc=ok` + unique + has koma | 1151 | **1272** |
+| `qc=ok` + unique + `aligned=true` | 1039 | 1149 |
+
+**Note**: their own prose recommendation quotes "1,151ペア" and "1,039"
+as the koma-available/aligned-true starting points, which are the
+*before-fix* column values, not the *after-fix* ones (1272/1149) shown in
+their own table -- likely a stale reference left in from before they
+finalized the re-extraction numbers. Flagged this back to them in the
+outbox reply; treat **1272** (qc=ok + unique + has koma, post-fix) as the
+correct current starting-pool size for this project's own use unless they
+say otherwise.
+
+### 4. Pattern 6 (unrelated-document pairing): confirmed genuinely undetectable automatically
+
+Tested our own suggested fix (coarse low-frequency/perceptual-hash
+correlation) and got the **opposite** of the expected result: bad pairs
+(`kacho` 0.48, `fringe3` 0.44) scored *higher* correlation than several
+good ones (`ako7` 0.44, `akocultB` 0.42, `fitness` 0.29, `hamlabi` 0.14,
+`ako3` 0.09). Root cause: this isn't "line/sketch are different pages" --
+it's "the wrong layer was selected from *within the same `.clip` file*"
+(e.g. a color-instruction sheet or character reference sheet that's a
+separate artwork living inside the same file as the real manga page).
+Same artist, same style, same canvas size, similarly-distributed coarse
+ink density -- nothing a low-frequency/pixel-statistics check can
+separate; it needs semantic content understanding. **Correctly declined to
+oversell a fix that doesn't work**, providing `review_rank` (grid_correlation
+ascending) for manual-review prioritization instead. Confirmed our
+flagged `hero page0002` ranks 240/1742 and `ako9 page0010` ranks 391/1742
+by this ordering -- both within the top ~15% most-suspicious, i.e. the
+ranking is still a real, useful triage signal even though it can't be a
+hard automated filter.
+
+### 5. Root-caused and fixed the `line_fragment` mechanism (not just detected it)
+
+Went beyond the original ask (make existing data usable) into actually
+fixing 3 stacked bugs in the extraction logic itself, then re-ran 289
+pages: `ok` rate 83.8% -> 94.5% (1459 -> 1646), `line_fragment` 14.4% ->
+3.4% (251 -> 60), 3D-render-as-sketch cases 8 -> 0. **Zero regressions**
+(0 pages went `ok` -> flagged).
+
+- **Mechanism 1**: the extractor's layer-compositing logic let a single
+  name-matched layer (literally named "線画") suppress every
+  statistically-detected candidate layer, even a tiny fragment against a
+  much larger correct unnamed layer (`akogoods page0012`: a 0.0072-ink
+  named fragment blocked a 0.1597-ink real layer, 22x larger). Fixed by
+  compositing both name-matched and statistically-matched layers together
+  (with a role-based exclusion list to prevent contamination -- see below).
+- **Mechanism 2**: `black_among_drawn` upper bound (0.88) was excluding
+  genuine 1-bit line art with zero anti-aliasing; relaxed to 0.98 (not
+  1.00 -- fully-1.00 layers are confirmed solid-fill/speech-bubble
+  layers, not line art; empirically 1.00 would have wrongly pulled in 519
+  extra layers across 74% of otherwise-good pages). Also relaxed
+  `white_ratio` floor 0.84 -> 0.80 (the `akogoods` fragment above missed
+  the old floor by 0.001).
+- **Mechanism 3**: 3D-render exclusion previously matched only exact names
+  (`lineart`/`shadow`/`ao`/`base`); missed an entire naming family
+  (`rendering_shadow_back0001` etc.) across 64 pages in 22 works (17 of
+  which had zero exact-name matches, so detection silently did nothing).
+  Real impact found: 8 pairs had a 3D shadow pass delivered as "sketch" --
+  7 corrected to genuine sketch content, 1 pair dropped (no non-3D sketch
+  candidate existed for that page).
+- **Side-effect caught and fixed**: naively compositing statistically-
+  matched layers (mechanism 1's fix) started pulling in shadow/color/AO/
+  koma-border/rough layers on 33 pages -- and this looked like an
+  *improvement* on the QC coverage metric (more ink -> higher coverage),
+  a metric-blind-spot the tool's own author caught by actually reading
+  layer names, not trusting the number. Fixed by excluding role-named
+  layers (`mask`/`color`/`tone`/`shadow`/`bg`/`コマ`/`rough`/`sketch`/`ao`/
+  `base`/`用紙`/`フキダシ`, Japanese included) from the statistical
+  compositing candidate pool while still admitting genuinely-named
+  "線画" layers unconditionally.
+
+Remaining unfixed: 36 `line_fragment` + 35 `sketch_fragment` cases where
+the content genuinely doesn't exist in the source page (not a selection
+bug); pattern 6 (declined, see above); and partial-improvement cases like
+`housei page0012` (coverage 0.004 -> 0.318 but visually only the top half
+of the page has real linework) -- consistent with this project's own
+"housei's clip_pairs version stays worse than our existing archive"
+finding (below).
+
+### 6. `housei` page-numbering "mismatch": explained as a real numbering-scheme difference, not a bug
+
+Our flagged finding (`clip_pairs` `page0001` sketch showing unrelated
+content to the existing `housei_NNN` archive's `page0001`) is expected
+behavior, not corruption: `clip_pairs` page numbers are the literal
+original `.clip` filename; the existing `dataset_housei` archive's
+`housei_NNN` numbers come from a **different, previously-reconciled
+numbering scheme (this project's own prior block-density-correlation
+brute-force matching, which found the old archive's numbers were off by
++1 from the manuscript's own layer numbering)** -- both are internally
+consistent, just on different axes. Added `source_path`/`source_size`
+(absolute path + byte size of the original `.clip` file) to every entry
+per our proposal 5, so future matching can go through the source file
+identity instead of page-number-guessing. Declined full SHA-256 hashing by
+default (1742 files, ~90GB read cost) -- available on request.
+
+**Confirms our original recommendation stands**: `066_2024_housei` in
+`clip_pairs` is 10 pairs, **all 10 flagged `line_fragment` (100%)** --
+worse than initially estimated. The existing manually-reviewed
+`dataset_housei.zip` (18 pairs + 18 koma, fully visually verified, with
+several manual per-page selection overrides this source specifically
+needs) remains the correct source for housei; do not use `clip_pairs`'s
+housei entry.
+
+Comparison table for the other name-collision sources (clip_pairs is
+*not* uniformly worse -- only housei is):
+
+| our existing archive | pairs | `clip_pairs` equivalent | pairs |
+|---|---:|---|---:|
+| `dataset_housei` | 18 | `066_2024_housei` | **10 (worse)** |
+| `dataset_ako5` | 48 | `011_2017_ako5` | 66 |
+| `dataset_hamlabi` | 13 | `063_2023b`/`070_2024b` | 18 each |
+| `dataset_kurip_v4` (fitness) | 38 | `069_2024b_fitness` | 80 |
+| `dataset_4th` | 33 | `047`/`051`/`059` | 10/27/26 |
+| `dataset_gakuen` | 16 | (not in the 74-folder set) | -- |
+
+Offered to send any of these manually-reviewed archives if useful --
+not needed, we already have all 6 (they're this project's own existing
+koma-pipeline sources).
+
+### 7. New finding not in our original report: 18.6% cross-work-id content duplication
+
+Found while building the dedup/QC pipeline, not something we'd flagged:
+**266 duplicate groups covering 324 of 1742 pairs (18.6%)** are
+byte-identical content filed under different `work_id`s -- the same
+source `.clip` files physically duplicated across multiple year-tagged
+folders on their end (F: drive), with the extraction tool assigning a
+fresh `work_id` per folder path rather than per physical file. Affects 9
+work families: `ako7`/`akogoods`/`4th`/`nurse`/`akocult`/`hamlabi`/`ako3`/
+`ako3B`/`ako10` -- directly explaining several of our own earlier
+mechanical CRC-based dedup findings (`070_2024b_hamlabi` matching our
+archive byte-for-byte, the `akogoods`/`ako10`/`ako7` 100%-overlap clusters
+from the 2026-08-21 (earlier) `ako*`-family inventory). `content_fingerprint`/
+`duplicate_group`/`duplicate_count`/`is_primary` added to the QC CSV;
+taking `is_primary`-only collapses to ~1418-1422 unique pairs (exact
+number shifts slightly with the post-fix pair count). Not deduped on
+their end by design -- left the choice of which duplicate to keep to us.
+
+### Decision / Next Actions
+
+1. **Requested (outbox reply, `outbox/reply_clip_pairs_qc_request_20260821.md`)**:
+   send the fully QC-enhanced 1741-pair local version (currently only on
+   the tool maintainer's machine) -- the just-received `_v2` zip has koma
+   layers but not yet the `qc`/`source_path`/`content_fingerprint` fields.
+2. Flagged the 1151/1039 vs. 1272/1149 (before-fix vs. after-fix column)
+   discrepancy in their own reply back to them for confirmation --
+   treating **1272** (qc=ok + unique + has koma, post-fix) as this
+   project's working number for now.
+3. Once the QC-enhanced zip arrives: this is now the concrete unblock for
+   resuming paired-data pipeline work (deferred earlier this session
+   pending exactly this koma-layer delivery) -- next step is adapting
+   `match_koma_panels.py` (or a thin wrapper) to consume `clip_pairs`-style
+   koma layers directly, filtering to `qc=ok` + `is_primary` + has-koma
+   (not `aligned=true`, per their recommendation) as the starting pool
+   (~1272 pairs pre-panel-splitting), following the same per-panel
+   translation+scale alignment approach already proven on the 5 existing
+   koma-pipeline sources.
+4. Confirmed we already hold all 6 of the manually-reviewed archives they
+   offered to resend (ako5ver2/hamlabi/fitness/housei/4th/gakuen) -- no
+   transfer needed there.
+5. `066_2024_housei` in `clip_pairs` should still not be used (100%
+   line_fragment even after their fix) -- keep `dataset_housei.zip` as the
+   production housei source, unchanged from the prior entry's conclusion.
+
+## 2026-08-21/22: `clip_pairs` Koma Panel-Alignment Search -- 1272 Pairs, 4848 Panels, Complete
+
+Built `tools/pair_extraction/match_clip_pairs_koma_panels.py`, a new driver
+that reuses `match_koma_panels.py`'s panel-detection/alignment-search
+functions unchanged (`detect_panels`, `search_panel_alignment`,
+`extract_scaled_roi`, etc., imported directly) but replaces its
+single-`--zip-root` iteration with one driven off the extraction tool's own
+`clip_pairs/clip_pairs_qc.csv` (work_id/slug/page/line/sketch/koma
+filenames already resolved there, no per-folder manifest.json parsing
+needed). Filtered to `pair_quality=ok` + `is_primary=True` + `koma`
+present -- 1272 of 1741 pairs, verified this matches the extraction tool's
+own stated count exactly.
+
+Smoke-tested first (10 pairs, 6m30s, 42 panels, chamfer median
+15.51->15.17, no errors) before committing to the full run. At ~39s/pair
+the full 1272-pair run was estimated ~14h, so chunked into 100-pair
+slices with `--append` (`experiments/run_clip_pairs_koma_panels_20260821.sh`,
+matching this project's established chunking convention for long
+extraction runs). Launched detached (`nohup ... & disown`, verified
+`PPID=1`).
+
+**Result**: completed cleanly in ~16.5h (21:32 2026-08-21 -> 14:01
+2026-08-22), all 13 chunks, zero errors/tracebacks. 4848 panels across 57
+work_ids (of the ~69 in the filtered pool -- some works evidently
+contributed 0 qualifying panels, not investigated further). chamfer
+median 20.04 -> 18.44, mean 23.79 -> 21.18; 32.2% of panels picked a
+non-1.0 scale (confirms the per-panel scale search is doing real work,
+not just translation).
+
+**Script bug found during QC review**: `--qc-out`/`make_qc()` writes to a
+static path every chunk invocation, so only the *last* chunk's first 60
+panels survived in `results/clip_pairs_koma_panels_20260821_qc.png` --
+every earlier chunk's QC montage was silently overwritten. Not a
+correctness bug (the CSV/JSON accumulate correctly via `--append`), but it
+meant the only surviving visual QC sample was from the tail of the list
+(`071_2024b_kids`), not a representative spread. Worth fixing (per-chunk
+QC output path, or a QC-off flag for chunked runs) if this driver pattern
+is reused again.
+
+**Fixed the sampling gap directly** rather than re-running: wrote
+`tools/pair_extraction/sample_clip_pairs_koma_qc.py`, an ad-hoc script
+that re-crops 24 evenly-spread rows from the final accumulated CSV
+directly from the zip (joining back to `clip_pairs_qc.csv` for exact
+filenames, then reusing `crop_page`/`extract_scaled_roi`/`overlay_edges`
+with each row's own recorded scale/dx/dy) --
+`results/clip_pairs_koma_panels_20260821_qc_spread.png`. Visual review
+(project's standing rule: never trust chamfer/F1 alone) confirmed the
+alignment is working correctly across a genuine cross-section of works
+(`gakusai3`/`gal`/`pc`/`suc`/`ako5`/`gakusai1-3DL`/`pink`/`stoptime`/
+`ako6`/`comics4`/`ako7`/`fringe3`/`succor`/`ako8`/`akogoods`/`akokate`/
+`4th`/`hyoui_color`/`akocultB`/`ako3B`/`fitness`/`ako4`/`mayer`) -- most
+rows show tight rough/line edge overlap after alignment. A handful of
+weak cases (`akocultB page0048`, `ako3B page0025`: F1 stuck at 0.01-0.07)
+turned out to be near-blank/text-only panels, not alignment failures; one
+(`ako4 page0009`: chamfer improved 52.6->38.2 but F1 still only 0.33)
+reconfirms the already-known `ako4` sketch/line production-stage mismatch
+persisting even after the extraction tool's QC filtering -- expected,
+matches the earlier finding, not a new problem. Low-content/low-F1 panels
+like these are expected to be caught by the downstream tile-level gates
+(same `ALIGNMENT_*` constants used on the 5 existing sources), not a
+reason to distrust the panel-alignment stage itself.
+
+### Next Actions
+
+1. ~~Sub-region split~~ -- in progress, see the following entry.
+2. Tiling (`tile_region_manifest_480.py`, unchanged gates) is the
+   remaining pipeline stage after sub-region split finishes.
+3. Consider a chamfer/F1 cutoff before sub-region splitting to drop the
+   near-blank/low-content panels seen in the QC spread sample (e.g.
+   `akocultB`/`ako3B`'s F1<0.1 cases) -- not decided yet, may just let the
+   existing downstream tile-level gates handle it as they do for the 5
+   existing sources.
+
+## 2026-08-22 (later still): Materialize + Sub-Region Split Launched
+
+**Materialize** (`tools/pair_extraction/materialize_clip_pairs_koma_panels.py`,
+new -- `materialize_koma_panels.py`'s per-panel crop/align logic reused
+unchanged, adapted for clip_pairs' multi-zip-root manifest by joining back
+to `clip_pairs_qc.csv` for exact filenames per row, same pattern as the
+match-stage driver): dry-run confirmed 4750 of 4848 panels pass the
+existing `--max-chamfer 45` generous pre-filter (98%, matches the 5
+existing sources' typical acceptance rate at this stage). Visual QC on the
+first rows found mostly good matches with a few visibly poor ones in the
+chamfer 27-31 range (`001_2015_gakusai3` page0035's panels) -- expected,
+this stage is a cheap pre-filter, the real gate is `tile_region_manifest_480.py`'s
+fixed `ALIGNMENT_*` constants downstream, unchanged from how the 5
+existing sources work. Ran `--save` for real (~85 min, 9502 files written,
+`dataset/regions_clip_pairs_koma_panels_20260822/manifest.csv`).
+
+Added a `"housei": row["pid"]` alias field to the output manifest so the
+unmodified `split_koma_panel_subregions.py`/`build_region_valid_masks.py`/
+`tile_region_manifest_480.py` (which index `row["housei"]` directly as the
+generic per-page id, a naming holdover from when housei was the only koma
+source) work against this new manifest without any further code changes --
+confirmed no other hardcoded `"housei"` column references exist in the
+mask/tile scripts.
+
+**Sub-region split**: smoke-tested `split_koma_panel_subregions.py`
+directly (already generic, no `clip_pairs`-specific fork needed) on 20
+panels -- 29 sub-regions, chamfer median 15.13 -> 13.97 after refinement,
+5m18s (~16s/panel). Extrapolated to the full 4750 panels: ~21h. Launched
+chunked (200-panel slices via the script's own native
+`--offset-panels`/`--limit-panels`/`--append`,
+`experiments/run_clip_pairs_koma_subregions_20260822.sh`) detached in the
+background (verified `PPID=1`). `--max-chamfer 999` (effectively no
+panel-level filter at this stage, matching the 5 existing sources'
+convention of deferring the real gate to tile extraction).
+
+### Next Actions
+
+1. ~~Wait for the sub-region split~~ -- done, see following entries.
+2. ~~build_region_valid_masks.py / tile_region_manifest_480.py~~ -- done,
+   see following entries.
+3. ~~Visual QC~~ -- done, see following entries.
+
+## 2026-08-22/24: `clip_pairs` Pipeline Completed -- Masks, Tiling, Dedup Cleanup, 6978 Final Tiles
+
+Sub-region split (`experiments/run_clip_pairs_koma_subregions_20260822.sh`,
+launched 2026-08-22) completed cleanly after ~21h (offset chunking held up
+across the full run, zero errors): 9210 sub-regions from the 4750
+materialized panels.
+
+**Masks**: `build_region_valid_masks.py` run unchanged (native settings,
+`--support-px 20 --window 61 --expand-ignore 16 --close-ignore 16`,
+matching the 5 existing sources) -- fast, ~0.36s/row from a 30-row smoke
+test, full 9210-row run completed in ~31 min, all rows processed
+successfully.
+
+**Tiling**: `tile_region_manifest_480.py` run with the same native-strict
+gate recipe as `run_koma_tile_pipeline.sh` uses for the 5 existing sources
+(`--ink-min 0.012 --ink-max 0.08 --max-black-component-ratio 0.025
+--max-thick-ink-ratio 0.015 --max-line-width-p50 6.0 --max-long-line-ratio
+0.25 --max-soft-ink-ratio 0.40` -- the "ako5ver2-derived default" per
+`doc/preprocess/dataset_status.md`, not housei's 0.50 relaxation, since
+`clip_pairs` spans many different artists/styles unlike any single
+existing source). **Process note**: `--limit` only truncates the *output*
+tile count after the full candidate scan runs to completion -- it does
+NOT limit input rows scanned, so an initial "smoke test" with `--limit
+200` was actually running the full 9210-row scan the whole time (caught
+mid-run via the per-50-row progress log, killed at row 900/9210, and
+immediately relaunched for real with no `--limit` and correct production
+output paths -- no time lost, since the expensive part is the scan, not
+the truncation). Full run took ~5h (9210 regions, 119,216 raw candidate
+tiles before dedup) plus the final dedup/save pass.
+
+**Result**: 7383 tiles initially accepted --
+`dataset/pairs_480/valid_train_clip_pairs_koma_20260823.txt`,
+`dataset/pairs_480/train/line_clip_pairs_koma_20260823/`.
+
+**Integrity audit found a new failure mode**: `audit_pair_dataset_integrity.py`
+reported 705 findings (345 exact line-hash + 360 exact rough-hash
+duplicates *within* the training list) -- every prior koma-pipeline source
+reported 0 findings, so this was investigated rather than dismissed.
+Traced example duplicate pairs back to their source pages via the tiles
+CSV's `source_name` column: e.g. `018_2018_ako6/ako6/page0084` vs.
+`018_2018_ako6/done5/ako6-29`, `018_2018_ako6/done/ako6-4` vs.
+`018_2018_ako6/ako6/page0052` -- **different slugs within the same
+work_id producing byte-identical tile crops**, not a pipeline bug. Root
+cause: the extraction tool's `is_primary`/`content_fingerprint` dedup
+(from the 2026-08-21 QC delivery) operates on *whole-page* content hashes,
+so it only catches byte-identical full pages -- it does not catch the
+partial-overlap case already known from the 2026-08-21 `ako*`-family
+inventory (`019_2018_ako7` sharing ~59% of its pages with
+`026_2019_ako7`/`031_2019b_ako7` without being byte-identical overall). An
+unchanged background/margin region within two otherwise-different page
+exports can still crop to an identical tile. Clustering the 705 findings
+(union-find over the pairwise findings) gave 401 duplicate clusters / 806
+tiles involved, spanning multiple works beyond just `ako6`
+(`ako5`/`ako6`/`ako7`(x2 exports)/`kacho` all appeared) -- confirms this
+is a general property of the partial-overlap pattern, not an `ako6`-only
+quirk.
+
+**Fix applied**: kept one representative per duplicate cluster, dropped
+the other 405 tiles from the training list and deleted the corresponding
+rough/line files (original pre-dedup list backed up as
+`dataset/pairs_480/valid_train_clip_pairs_koma_20260823.txt.predup`).
+Re-ran the integrity audit: **0 findings**. Final count: **6978 tiles**
+(vs. the existing 1489-tile `combined_koma_20260729` pool -- roughly a
+4.7x expansion).
+
+**Visual QC** (project's standing rule: never trust an extraction result
+without looking at it): reviewed evenly-spaced-sample and tail montages at
+native resolution. Top/mid ranks (score 5.0-6.4) show tight, clean
+rough/line correspondence (faces, hair, hands) with F1 0.6-0.99 -- as good
+as the 5 existing sources' best tiles. Tail ranks (score ~2.5) show the
+same "sparse/faint but not semantically mismatched" degradation pattern
+already established as normal for this pipeline's low-score tail (housei,
+fitness, etc.) -- no content mismatches or alignment failures observed.
+
+### Next Actions
+
+1. `clip_pairs` koma tiles (6978, `dataset/pairs_480/valid_train_clip_pairs_koma_20260823.txt`)
+   are ready to use -- not yet incorporated into any training run
+   (combined-pool mixing decision, per this project's standing rule of not
+   casually concatenating sources without a stated rationale, is still
+   open).
+2. ~~Report the whole-page-vs-partial-overlap dedup gap~~ -- done.
+   `outbox/note_partial_overlap_dedup_gap_20260824.md` pushed via SCP to
+   the correct destination
+   (`C:\Users\sh1\code\extract_line_and_sketch\inbox\`, confirmed via
+   `dir` -- also confirmed the earlier 2026-08-22 misdelivered note is now
+   present there too, so the user's manual fix-up landed correctly).
+   Framed as FYI/no-action-required (this project's own dedup pass already
+   handles it cleanly), with a tentative suggestion (reuse the existing
+   `grid_correlation` block-based metric for block-level dedup, not just
+   whole-page) offered but not requested.
+3. `housei`/`ako9`/`ako10`/`akogoods`/`ako4` remain excluded from this
+   pool via the upstream `qc=ok` filter (per the 2026-08-21/22 entries) --
+   unaffected by this pipeline run.
+4. Consider whether to also process the ~62 clip_pairs project folders that
+   were part of the 1272-pair filtered pool but not individually
+   deep-inspected in the earlier `ako*`-family-focused visual review --
+   the tiling pipeline already ran against the full filtered pool
+   regardless, so this is really just an open question about how much
+   more manual spot-review is warranted before trusting the pool at scale,
+   not a blocked pipeline step.
+
+## 2026-08-24/25: The Deferred ControlNet LoRA Fine-Tune, Run For Real -- Completed Cleanly, Quality Still Poor
+
+Per user direction, executed the 2026-08-08 decision now that real paired
+data exists: LoRA fine-tune of the public `control_v11p_sd15s2_lineart_anime`
+checkpoint (not a from-scratch `ControlNetModel.from_unet` copy) on real
+pairs, with per-tile WD14 captions and the `lineart_anime` preprocessor
+applied to rough tiles before conditioning -- all three elements of that
+decision, assembled for the first time.
+
+**Data assembly**: combined `combined_koma_20260729` (1489, existing) +
+`clip_pairs_koma_20260823` (6978, this session's new pipeline run) = 8467
+pairs (`dataset/pairs_480/valid_train_combined_all_20260824.txt`, line
+tiles symlinked into `dataset/pairs_480/train/line_combined_all_20260824/`).
+WD14-tagged the 6978 new tiles (`scripts/tag_wd14.py`, same caption suffix
+as the existing captions file for consistency) -- **took ~8.8h**, much
+slower than the earlier ~1.2-1.3s/img clean-machine benchmark (4.55s/img
+observed), consistent with the CPU-thermal-throttling explanation already
+recorded for a similar slow run on 2026-08-01. Merged into
+`dataset/pairs_480/captions_combined_all_20260824_wd14.csv` (8467 rows).
+
+**New preprocessing tool**: `tools/pair_extraction/preprocess_lineart_anime_condition.py`
+-- no such batch tool existed before (the `lineart_anime` detector had only
+ever been invoked ad hoc, e.g. inside `condition_roundtrip_fidelity.py`'s
+eval code and one-off 2026-08-08 diagnostic samples). Reuses the exact
+`LineartAnimeDetector.from_pretrained("lllyasviel/Annotators")` invocation
+already validated there. GPU-accelerated, fast (~0.04s/img once warm; full
+8467-tile pool took 6.3 min) -- confirms the earlier WD14 tagging slowness
+was CPU-specific (onnxruntime CPUExecutionProvider), not a general
+machine-load problem at the time. Output:
+`dataset/pairs_480/train/rough_lineart_anime_20260824/`.
+
+**Training**: `experiments/run_controlnet_lora_realpairs_20260824.sh`
+(new, modeled on the 2026-08-08 pseudo-pair bootstrap script) -- smoke
+test (6 steps) passed, then the full run: rank16 LoRA on
+`control_v11p_sd15s2_lineart_anime`, lr=1e-4, 10 epochs = 10,580 steps
+(1058 steps/epoch, 8467 tiles), ~3.1-3.15s/step, **completed cleanly in
+~9.2h with zero errors**. Final checkpoint:
+`checkpoints/controlnet_lora_realpairs_20260824/final`.
+
+**Eval bug found and fixed same-day**: the script's own eval step invoked
+`infer_controlnet.py` with `--rough-dir dataset/pairs_480/train/rough`
+(raw pencil scans) -- but the model was *trained* on `lineart_anime`-
+preprocessed conditioning, so this eval was testing the wrong input
+distribution entirely. Confirmed `infer_controlnet.py` has no built-in
+preprocessing step (checked its args directly). Fixed by preprocessing the
+10-tile diagnostic set
+(`dataset/pairs_480/diag_controlnet_same_coordinate_10.txt`) with the new
+preprocessing tool and re-running inference
+(`results/controlnet_lora_realpairs_20260824_eval_preprocessed/`) for a
+correctly-matched comparison against the original mismatched-conditioning
+run (`results/controlnet_lora_realpairs_20260824_eval/`).
+
+**Result: quantitatively confirmed the preprocessing fix helps, but the
+underlying quality is still poor.**
+
+`evaluate_fixed_outputs.py` (bsds_f1, this project's best-validated GT
+metric per Workstream C):
+
+| variant | bsds_F1 | ink_ratio |
+|---|---:|---:|
+| correct (`lineart_anime`) conditioning | 0.140 | 7.5x GT |
+| raw (mismatched) conditioning | 0.132 | 20.3x GT |
+
+`condition_roundtrip_fidelity.py` (conditioning-adherence metric):
+
+| variant | roundtrip_ssim | roundtrip_bsds_f1 |
+|---|---:|---:|
+| correct conditioning | 0.408 | 0.074 |
+| raw conditioning | 0.260 | 0.063 |
+
+Correct conditioning wins on every axis in both metric families -- the
+preprocessing bug was real and worth fixing -- but both variants' absolute
+scores are low. **Visual review of the 10-tile comparison montage**
+(rough / `lineart_anime` condition / correct-cond output / mismatched-cond
+output / GT) confirmed the numbers: most tiles show dense, content-
+independent crosshatch/parallel-hatch hallucination overwhelming the
+actual input structure -- the same qualitative failure mode this branch has
+hit repeatedly (rough-domain LoRA's original parallel-hatch collapse
+2026-08-05/06, the line-domain psd_line-expansion collapse 2026-08-21).
+One tile (a recurring dagger/sword shape used as a diagnostic landmark
+since 2026-08-08) is a partial exception -- shape recognizably preserved
+under the correct-conditioning variant, though still textured/noisy.
+
+**Not yet root-caused.** Candidate explanations not yet distinguished:
+possible content-composition skew in the newly-added `clip_pairs` tiles
+(real manga does contain genuine dense-hatching panels, unlike the
+synthetic pseudo-rough case); LoRA rank16 may be too constrained to learn
+nuanced per-content behavior on top of an already-opinionated public
+checkpoint at this data scale; 10 epochs over 8467 tiles may still be
+under-trained for a *fine-tune* (as opposed to the from-scratch case where
+this same step count was already shown insufficient back in Direction 4's
+original longrun test) in a different way. No conclusion drawn -- this
+needs the same kind of isolation-experiment treatment already applied
+successfully to the domain-LoRA collapses, not a single-shot verdict.
+
+Comparison montage (rough / `lineart_anime` condition / correct-cond output
+/ mismatched-cond output / GT, all 10 diagnostic tiles):
+`results/controlnet_lora_realpairs_20260824_compare_montage.png`.
+
+### Next Actions
+
+1. Not decided: whether to pursue root-causing this (composition-skew
+   check on `clip_pairs` tiles via `measure_lineart_profile.py`, same
+   method as the psd_line investigation; a stricter/lower LoRA rank or
+   scale sweep; more/fewer epochs) or pause ControlNet work again --
+   open, needs user discussion given the multi-hour-per-experiment cost.
+2. Checkpoint and both eval variants kept on disk as reference/evidence,
+   per this project's standing policy, regardless of what's decided next.
+3. `infer_controlnet.py` still has no built-in `lineart_anime`
+   preprocessing option -- any future eval run must preprocess the input
+   externally first (via the new `preprocess_lineart_anime_condition.py`)
+   or risk repeating today's mismatched-conditioning bug.
+
+## 2026-08-26: Diagnostic Sample List Found Half-Broken -- Corrected Metrics, Verdict Unchanged
+
+User spotted a real problem by eye: in the compare montage's "lineart_anime
+cond" column, every row except the dagger tile looked essentially solid
+black -- i.e. the conditioning image the model actually saw looked empty
+for most tiles. Investigated rather than dismissed.
+
+**Confirmed and root-caused, not a preprocessing bug**: measured raw pixel
+stats on the *original* (pre-`lineart_anime`) rough tiles referenced by
+`dataset/pairs_480/diag_controlnet_same_coordinate_10.txt`. Sharp bimodal
+split -- 5 of 10 tiles (`housei_002_25_11`/`housei_011_13_03`/
+`housei_018_18_15`/`housei_002_23_15`/`lineart_003_011`) are themselves
+essentially blank source scans (std 4.5-7.7, `dark_ratio(<200)` 0.03-0.5%
+-- e.g. `housei_011_13_03.jpg`: mean=254.1, std=4.5, virtually no pixel
+below 200). The other 5 (including the dagger tile) have genuine content
+(std 20-48, dark_ratio 4.8-9.3%). This diagnostic list predates this
+session (created in the original Direction 4 exploration, 2026-08-08 era)
+and evidently references stale/broken files for half its `housei`-named
+entries -- not a new bug introduced today, but never previously noticed
+because this list hadn't been used with an ink-content sanity check
+before.
+
+**Checked whether this also affects the training pool** (500-tile random
+sample from the full 8467-tile `rough_lineart_anime_20260824` conditioning
+set): only 2.0% near-blank overall, and the `houseikoma`-prefixed tiles
+specifically (the current koma-pipeline's own housei tiles, a *different*
+naming convention from the broken diagnostic list's `housei_NNN_NN_NN`
+files) showed 0% blank in-sample, median ink ratio 0.019 -- normal. **The
+training data itself is not implicated** -- this was specifically an
+eval-diagnostic-list problem, not a training-data problem.
+
+**Recomputed both metric families on just the 5 valid tiles**
+(`dataset/pairs_480/diag_controlnet_same_coordinate_10_valid5.txt`, new,
+saved as a lasting fix so future eval runs on this diagnostic set don't
+repeat the mistake):
+
+| metric | 10 tiles (5 broken) | 5 valid tiles only |
+|---|---:|---:|
+| `bsds_F1` | 0.140 | 0.143 (~unchanged) |
+| `ink_ratio` | 7.5x GT | 4.3x GT (improved) |
+| `roundtrip_ssim` | 0.408 | 0.418 (~unchanged) |
+| `roundtrip_bsds_f1` | 0.074 | 0.140 (~doubled) |
+
+**Verdict**: the broken tiles were a real confound -- they measurably
+inflated over-inking and roundtrip-fidelity failure (a blank conditioning
+input gives the model nothing to follow, so of course it invents content)
+-- but `bsds_F1` against GT barely moved, and visual review of the 5 valid
+tiles still shows the same crosshatch-hallucination pattern on all but
+the dagger tile. **The core "not yet good enough" conclusion from the
+prior entry stands**, now on cleaner evidence rather than confounded by
+half-broken test inputs.
+
+### Next Actions
+
+1. Use `dataset/pairs_480/diag_controlnet_same_coordinate_10_valid5.txt`
+   (not the original 10-tile list) for any future eval on this checkpoint
+   or successors, until/unless the original list's 5 broken entries are
+   individually fixed or replaced.
+2. Original Next Actions (root-cause investigation vs. pause) from the
+   prior entry are unchanged by this correction -- still open, still
+   needs user discussion.
+
+## 2026-08-26 (later): Project Housekeeping -- `results/` Cleanup Policy Reversed, 166→43 Items
+
+User paused the ControlNet root-cause work (explicitly not GPU-cost-averse
+-- "electricity is the only cost on a local machine" -- this was a
+deliberate project-management priority call, not a budget constraint) to
+address two standing friction points directly.
+
+### `results/` cleanup
+
+User: `results/` had grown large enough that finding a needed file cost
+real time (~1 min per search by their estimate), and the overwhelming
+majority of it was "garbage" from settled/rejected experiments kept under
+the old "might have residual value" theory. **Explicitly reversed that
+theory** -- see [[feedback_session_close_cleanup_habit]] (memory,
+rewritten this session) and `doc/RESULTS.md` (rewritten this session,
+full policy statement there).
+
+Executed in tiers: (1) clear-cut settled-failure/debug artifacts deleted
+without discussion (old ControlNet-from-scratch Direction 4 montages,
+rejected psd_line pool-expansion attempts, GAN-era Direction 5/6/8/9
+survey montages+per-sample dirs, old badrough/halo/router/linefield-era
+metric CSVs, a `koma_memtest` scratch dir, stale `region_search_loop`);
+(2) per-source raw-dataset folders
+(`ako5ver2`/`fitness`/`hamlabi`/`gakuen`/`housei`/`fighting`) trimmed to
+just their manifest/tile CSVs (data provenance), all QC/overlay images
+deleted -- the review they supported concluded long ago;
+(3) `results/lessons/` trimmed to CSVs only, montage images dropped (the
+finding is fully written up in `doc/architecture_decisions.md`).
+Explicitly kept: the domain-LoRA adopted-config reference samples
+(`domain_lora_{line,rough}_sd15base_sksv2_20260807_scale14/`), the
+`bsds_f1` calibration basis (`eval_metric_calibration_20260809/`),
+`domain_lora_line_captiontags_20260807/` (a real functional dependency --
+an adopted training script's `--caption-csv` points at it), all
+`lineart_profile_*.csv` (per the project's own long-standing "keep
+unconditionally" rule for these), and everything from today's active
+`clip_pairs`/ControlNet-real-pairs work.
+
+**Result: 166 items / 1.6GB -> 43 items / 79MB.**
+
+Also deleted `config/results_manifest.json` (a hand-maintained lightweight
+index that had drifted out of sync with `results/`'s actual contents for
+some time -- keeping a second manifest in sync was itself part of the
+clutter problem) rather than regenerating it. No tooling depended on it,
+only doc references (now updated). `doc/RESULTS.md` fully rewritten with
+the new policy, the exact category-by-category deletion list, and an
+explicit "delete at verdict time, not later" rule going forward.
+
+### Session/context hygiene
+
+User separately flagged: the accumulated volume of logs/memory/rule
+markdown across sessions in this project is degrading response quality,
+and wants a reset toward leaner, more purpose-scoped sessions going
+forward (not one long-running thread covering many unrelated large
+tasks). Saved as [[feedback_session_context_hygiene]] (new memory).
+Concretely connects to `doc/work_log.md` itself, which had reached 4595
+lines (approaching the existing 5000-line maintenance-policy threshold in
+`doc/documentation_maintenance_policy.md`) -- largely from this single
+session's own very large `clip_pairs` pipeline + ControlNet fine-tune
+work. Not yet compacted as of this entry; see Next Actions.
+
+### `lineart-controlnet-realpairs` Track Spun Off (2026-08-26)
+
+Per the session-hygiene concern above, the user introduced a new
+"track" pattern: a sibling project folder
+(`/home/sh1/deepl/lineart-controlnet-realpairs/`, plain directory, not a
+git worktree) for continuing the ControlNet real-pairs hallucination
+investigation, briefed via a single minimal
+`inbox/initial_notice.md` (mirrors the extraction-tool inbox/outbox
+convention, applied locally). This `lineart` checkout is now the shared
+foundation the track reads code/data from (`../lineart/venv`,
+`../lineart/scripts`, `../lineart/dataset`); the track writes its own new
+experiment output into its own `results/`/`logs/`/`checkpoints/`, not
+back into this folder's `results/` (just cleaned up, see above -- not to
+be re-bloated). See [[feedback_track_folder_pattern]] memory for the
+general pattern.
+
+**The ControlNet hallucination root-cause work itself now continues in
+that track, not here.** This `work_log.md` entry is the handoff marker;
+do not duplicate further ControlNet-realpairs experiment logs in this
+file going forward -- check the track folder's own docs/logs instead.
+
+### Next Actions
+
+1. `doc/work_log.md` is a natural candidate for a compaction pass now
+   (matching `doc/documentation_maintenance_policy.md`'s existing
+   procedure) given both the size threshold and the user's stated
+   session-hygiene concern -- not yet done, open.
+2. Going forward: apply the revised `results/` policy at the point each
+   experiment's verdict is reached (per `doc/RESULTS.md`'s new "Going
+   Forward" section) rather than deferring to periodic sweeps.
+3. ControlNet-hallucination root-cause work continues in
+   `lineart-controlnet-realpairs/` (see above), not in this checkout --
+   the Next Actions listed in the 2026-08-24/25 and earlier 2026-08-26
+   entries are superseded by that track's own `inbox/initial_notice.md`.
+
+## 2026-08-22 (later): SSH-Push Delivery Failure -- Wrong Destination Directory
+
+First SSH-push to the extraction tool side (`note_panel_level_qc_20260822.md`,
+sent to a newly-created `C:\Users\sh1\inbox_from_lineart\`) went
+undelivered -- not a network/auth problem (the file really did land, `dir`
+confirmed it), but the receiving Claude Code session never noticed it
+because that path is outside its own project working directory. Checked
+the Windows filesystem directly over SSH and found the tool's real project
+root: `C:\Users\sh1\code\extract_line_and_sketch\`, which already has its
+own `inbox\`/`outbox\` folders mirroring this project's own convention.
+**Corrected destination for all future pushes**:
+`C:\Users\sh1\code\extract_line_and_sketch\inbox\`, recorded in
+[[feedback_extraction_tool_ssh_push]] memory. User manually surfaced the
+misplaced file to the tool session this time; no resend needed. The
+orphaned `C:\Users\sh1\inbox_from_lineart\` folder is still there,
+unused going forward -- left as-is, cleanup optional.
+
+## 2026-08-21 (later still): QC Version Confirmed Correct -- Our "Missing QC" Read Was A Same-Folder File Mixup
+
+Sent the outbox reply requesting the QC-enhanced version; the tool
+maintainer replied within the hour (`inbox/reply_qc_clarification_20260821.md`)
+with a direct correction, **and it was our mistake, not theirs**: the
+`qc`/`source_path`/`content_fingerprint` fields we checked for were absent
+from `koma_manifest.json` (the per-page koma-only file) because we
+inspected the wrong file in the folder -- the real pair manifest,
+`manifest.json`, had them all along. Verified directly: SHA-256 of our
+already-downloaded `dataset_clip_pairs_v2.zip` matches their quoted
+checksum exactly
+(`ef087dff29d0fa86f75bc2b4b18ecde8e788a60f11a62385d521b4cd250885bc`), and
+`unzip -p ... manifest.json | python3 -c '...'` on the same
+`041_2021_akogoods` example they used confirms the full `qc` block is
+present. **No re-transfer was needed** -- `dataset_clip_pairs_v2.zip` is
+already the final version. Corrected `doc/preprocess/raw_dataset_storage_policy.md`'s
+entry accordingly (removed the incorrect "partial/intermediate version"
+characterization).
+
+Also resolved the numeric discrepancy from the prior entry: confirmed
+**1272** (not 1151) is the correct `qc=ok` + unique + has-koma pair count
+-- the sender's prior reply had left a stale pre-fix number in the prose
+paragraph even after updating the table; both are now corrected on their
+end too. Also traced their own "サーバ上のdataset_clip_pairs.zipは1,697組版
+のまま" line (the thing that made us doubt the zip's completeness in the
+first place) to a literal copy-paste artifact: that sentence was written
+before finalizing the zip, then accidentally shipped bundled inside the
+very zip it was describing as outdated.
+
+**New operationally-relevant fact volunteered in this reply**: the
+delivered zip is a **mixed-vintage extraction** -- only 289 of 2644 total
+pages used the latest (bug-fixed) extraction code; the remaining 1451
+pages are still on the older code. A full 2644-page re-extraction with the
+fixed code is planned for their next free machine window (~Monday from
+2026-08-21); even some already-`ok`-flagged pages may improve further
+(their own example: `066_2024_housei page0007`, coverage 0.208 -> 0.561
+under the newer code despite already being `ok`). Explicitly confirmed:
+**safe to start this project's own panel-pipeline work on the current
+1272-pair pool now**, not blocked on Monday -- `content_fingerprint` will
+let us detect which specific pairs change content in the next delivery.
+They also asked for any panel-alignment-quality or `pair_quality`-accuracy
+feedback from our own pipeline run, to fold into Monday's re-extraction.
+
+### Next Actions
+
+1. `dataset_clip_pairs_v2.zip` is confirmed final and ready to use --
+   extract `clip_pairs/clip_pairs_qc.csv` for filtering
+   (`pair_quality=ok` + `is_primary` + koma present -> ~1272 starting
+   pairs), then begin adapting `match_koma_panels.py` to consume
+   `clip_pairs`-style koma layers, per the prior entry's plan. Not started
+   yet.
+2. After a first pipeline pass, send back any concrete panel-detection or
+   `pair_quality`-accuracy findings (false positives/negatives) so they
+   can fold it into Monday's full re-extraction -- open, depends on step 1
+   actually running first.
+3. Once Monday's re-extraction lands, diff `content_fingerprint` values
+   against this version to identify which of the 1272 pairs changed and
+   need reprocessing -- not yet relevant, no new delivery yet.
