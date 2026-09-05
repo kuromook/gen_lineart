@@ -44,6 +44,20 @@ def parse_args():
     parser.add_argument("--controlnet-conditioning-scale", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", default=None, help="defaults to results/{tag}")
+    parser.add_argument(
+        "--cpu-offload",
+        action="store_true",
+        help="enable_model_cpu_offload(): keep only the module in use on the GPU. "
+        "Required at --resolution 1024 on 12GB -- the fully-resident fp16 pipeline "
+        "(UNet 2.6B + SDXL ControlNet 1.25B + two text encoders + VAE) peaks at 11.1GB "
+        "and OOMs before the first UNet block (verified 2026-09-06).",
+    )
+    parser.add_argument(
+        "--vae-tiling",
+        action="store_true",
+        help="enable_vae_tiling(): decode the 128x128 latent in tiles (the fp16 SDXL VAE "
+        "decode at 1024 is a second, separate memory spike after the denoise loop).",
+    )
     return parser.parse_args()
 
 
@@ -64,7 +78,12 @@ def main():
         args.base_ckpt, controlnet=controlnet, torch_dtype=torch.float16
     )
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
-    pipe.to("cuda")
+    if args.cpu_offload:
+        pipe.enable_model_cpu_offload()
+    else:
+        pipe.to("cuda")
+    if args.vae_tiling:
+        pipe.enable_vae_tiling()
     pipe.set_progress_bar_config(disable=True)
 
     samples = read_sample_list(args.sample_list)
@@ -91,7 +110,12 @@ def main():
         out.save(out_path)
         print(f"[{i + 1}/{len(samples)}] {rough_path} -> {out_path}")
 
-    print(f"[infer_controlnet_sdxl] done, {len(samples)} samples written to {output_dir}")
+    peak = torch.cuda.max_memory_allocated() / 2**30
+    print(
+        f"[infer_controlnet_sdxl] done, {len(samples)} samples written to {output_dir} "
+        f"(resolution={args.resolution}, cs={args.controlnet_conditioning_scale}, "
+        f"peak_vram={peak:.2f}GiB)"
+    )
 
 
 if __name__ == "__main__":

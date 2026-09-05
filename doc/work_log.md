@@ -4688,3 +4688,70 @@ feedback from our own pipeline run, to fold into Monday's re-extraction.
 3. Once Monday's re-extraction lands, diff `content_fingerprint` values
    against this version to identify which of the 1272 pairs changed and
    need reprocessing -- not yet relevant, no new delivery yet.
+
+## Track B (SDXL 条件忠実度) 開始 — 1024学習のVRAM実現性を確定
+   (2026-09-06 07:30頃〜)
+
+`doc/initial_notice.md`の最優先項目「1024で土俵を揃える」に着手。
+前提整備として、前track `../lineart-controlnet-realpairs/` から
+`data/`(996MB、ペア一式)と、比較基準となる512学習済みLoRA
+2本(`controlnet_lora_sdxl_20260829` / `controlnet_lora_sdxl_manga_20260830`、
+各44MB)をこのtreeに`cp -a`で複製した。前trackは終了済みでいずれ
+整理される可能性があるため、参照ではなく複製を選択(briefingが
+ユーザー判断として残していた点)。
+
+### 1024推論: 通る(cpu offload必須)
+
+素の`infer_controlnet_sdxl.py`に`--resolution 1024`を渡すと**OOM**。
+fp16パイプライン全部載せ(UNet 2.6B + SDXL ControlNet 1.25B +
+テキストエンコーダ2本 + VAE)が11.1GBを占め、最初のUNetブロックに
+入る前に落ちる。
+
+`--cpu-offload`(`enable_model_cpu_offload()`)を追加して解決:
+**peak 7.76GiB / 約30秒per画像**。`--vae-tiling`も足したが、
+有無でpeakは7.76GiB同値だった——ピークを決めているのはUNet/ControlNetの
+活性であってVAEデコードではないので、タイリングは不要(スイープでは
+使わない)。
+
+### 1024学習: 通る。ただしfrozen部分のキャッシュ化が必須
+
+`--resolution 1024`で学習を回すと**OOM**。落ちる場所が重要で、
+**fp32 VAEエンコーダの中**——UNetに到達すらしていない。学習ループは
+毎エポック同じ値を再計算するためだけにfrozenモジュールを常駐させていた:
+
+| モジュール | 常駐 | 必要か |
+|---|---:|---|
+| UNet fp16 | ~5.2GB | 必要(勾配が通る) |
+| ControlNet fp16 | ~2.5GB | 必要(学習対象) |
+| VAE fp32 | ~1.3GB | **不要**(frozen、かつ1024encodeがスパイクする) |
+| テキストエンコーダ×2 fp16 | ~1.6GB | **不要**(frozen、キャプションはタイル固定) |
+
+下2つは(タイル, キャプション)の決定的関数なので事前計算できる。
+`scripts/cache_sdxl_conditioning.py`を新規作成し、
+`train_controlnet_sdxl.py`に`--cache-dir`を追加した。キャッシュ側の
+設計で1点こだわった: latentは1サンプルではなく**分布(mean/std)で保存**し、
+学習時に毎エポック引き直す。これによりキャッシュ化しても
+`latent_dist.sample()`相当の確率性を失わない(scaling_factorは線形なので
+mean/std両方に畳み込み済み)。
+
+実測(すべてbatch-size 1 / grad-accum 4、RTX 3060 12GB):
+
+| 構成 | peak VRAM | s/step |
+|---|---:|---:|
+| 素の1024 | **OOM**(fp32 VAEエンコーダ内) | — |
+| 素の512(従来の土俵) | 9.79GiB | 9.85 |
+| **キャッシュ版1024** | **8.05GiB** | **9.35** |
+
+**1024はVRAMでは512より軽く、step時間もほぼ同じ**。frozen部分の削減が
+解像度4倍のコストをちょうど相殺した形。10エポック = 21,168ステップ
+≈ **55時間**で、月〜木の4日枠に収まる。
+
+なお前trackの記録にある「512で24.5s/step」は、同一スクリプト・同一設定を
+今日実測すると9.85s/stepだった。当時の測定条件が違った可能性があるが、
+今回のA/Bは同一条件同士の比較なので判断には影響しない。
+
+キャッシュ実測値: 1タイルあたり約570KB(latent mean/std + prompt_embeds
++ pooled)、8,467タイルで約4.9GB、生成レート約1.4タイル/秒(約100分)。
+キャッシュは`data/line`のlatentとテキスト埋め込みだけを持ち、条件画像
+(coarse / manga_line)には依存しないので、**anime/manga両variantで
+1つのキャッシュを共用できる**。

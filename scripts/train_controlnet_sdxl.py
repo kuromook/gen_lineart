@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
@@ -76,6 +77,50 @@ class ControlNetSDXLTileDataset(Dataset):
         }
 
 
+class ControlNetSDXLCachedDataset(Dataset):
+    """Reads the frozen halves (VAE latent distribution + both text-encoder
+    embeddings) from a `scripts/cache_sdxl_conditioning.py` directory, so the
+    VAE and text encoders never have to be resident on the GPU.
+
+    Only the conditioning image is still decoded per sample -- it is the one
+    input the ControlNet consumes at full pixel resolution, and it is cheap
+    CPU work that the DataLoader workers absorb.
+    """
+
+    def __init__(self, file_list, rough_dir, cache_dir, resolution):
+        with open(file_list) as f:
+            self.files = [line.strip() for line in f if line.strip()]
+        self.rough_dir = rough_dir
+        self.cache_dir = cache_dir
+        missing = [n for n in self.files if not os.path.exists(os.path.join(cache_dir, f"{n}.npz"))]
+        if missing:
+            raise FileNotFoundError(
+                f"{len(missing)} of {len(self.files)} tiles have no cache entry in {cache_dir} "
+                f"(first: {missing[0]}). Run scripts/cache_sdxl_conditioning.py at this resolution."
+            )
+        self.cond_transform = transforms.Compose(
+            [
+                transforms.Resize((resolution, resolution), interpolation=transforms.InterpolationMode.BILINEAR),
+                transforms.ToTensor(),
+            ]
+        )
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        name = self.files[idx]
+        cached = np.load(os.path.join(self.cache_dir, f"{name}.npz"))
+        rough = Image.open(os.path.join(self.rough_dir, name)).convert("RGB")
+        return {
+            "latent_mean": torch.from_numpy(cached["latent_mean"].astype(np.float32)),
+            "latent_std": torch.from_numpy(cached["latent_std"].astype(np.float32)),
+            "prompt_embeds": torch.from_numpy(cached["prompt_embeds"].astype(np.float32)),
+            "pooled_embeds": torch.from_numpy(cached["pooled_embeds"].astype(np.float32)),
+            "conditioning_pixel_values": self.cond_transform(rough),
+        }
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file-list", default="data/train_list.txt")
@@ -99,6 +144,15 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument(
+        "--cache-dir",
+        default=None,
+        help="directory of precomputed .npz from scripts/cache_sdxl_conditioning.py. "
+        "When set, the VAE and both text encoders are never loaded onto the GPU, "
+        "freeing ~2.9GB of resident weights plus the 1024x1024 fp32 VAE encode spike. "
+        "Required to fit --resolution 1024 on a 12GB card (verified 2026-09-06). "
+        "The cache must have been built at the same --resolution.",
+    )
+    parser.add_argument(
         "--resume-from-checkpoint",
         default=None,
         help="output-dir of a previous run to resume from (reads <dir>/resume_state); "
@@ -120,12 +174,21 @@ def main():
         torch.bfloat16 if args.mixed_precision == "bf16" else torch.float32
     )
 
+    use_cache = args.cache_dir is not None
     pipe = StableDiffusionXLPipeline.from_pretrained(args.base_ckpt, torch_dtype=torch.float32)
-    tokenizer_one, tokenizer_two = pipe.tokenizer, pipe.tokenizer_2
-    text_encoder_one, text_encoder_two = pipe.text_encoder, pipe.text_encoder_2
-    vae = pipe.vae
     unet = pipe.unet
     noise_scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
+    if use_cache:
+        # The VAE and text encoders are the frozen halves already baked into
+        # --cache-dir; drop them here so they never reach the GPU.
+        tokenizer_one = tokenizer_two = None
+        text_encoder_one = text_encoder_two = None
+        vae = None
+        del pipe.vae, pipe.text_encoder, pipe.text_encoder_2
+    else:
+        tokenizer_one, tokenizer_two = pipe.tokenizer, pipe.tokenizer_2
+        text_encoder_one, text_encoder_two = pipe.text_encoder, pipe.text_encoder_2
+        vae = pipe.vae
     del pipe
 
     # SDXL's ControlNet mirrors SDXL's much larger UNet (~1.25B params, ~5GB
@@ -140,9 +203,10 @@ def main():
         # noob-sdxl-controlnet-lineart_anime only ships the fp16-variant file
         controlnet = ControlNetModel.from_pretrained(args.controlnet_init, torch_dtype=weight_dtype, variant="fp16")
 
-    vae.requires_grad_(False)
-    text_encoder_one.requires_grad_(False)
-    text_encoder_two.requires_grad_(False)
+    if not use_cache:
+        vae.requires_grad_(False)
+        text_encoder_one.requires_grad_(False)
+        text_encoder_two.requires_grad_(False)
     unet.requires_grad_(False)
 
     controlnet.requires_grad_(False)
@@ -166,9 +230,10 @@ def main():
 
     # SDXL's stock VAE is numerically unstable in fp16 -- keep it fp32 regardless
     # of --mixed-precision (standard SDXL training practice).
-    vae.to(accelerator.device, dtype=torch.float32)
-    text_encoder_one.to(accelerator.device, dtype=weight_dtype)
-    text_encoder_two.to(accelerator.device, dtype=weight_dtype)
+    if not use_cache:
+        vae.to(accelerator.device, dtype=torch.float32)
+        text_encoder_one.to(accelerator.device, dtype=weight_dtype)
+        text_encoder_two.to(accelerator.device, dtype=weight_dtype)
     unet.to(accelerator.device, dtype=weight_dtype)
 
     caption_by_name = {}
@@ -192,9 +257,15 @@ def main():
         prompt_embeds = torch.cat(prompt_embeds_list, dim=-1)
         return prompt_embeds.to(weight_dtype), pooled_prompt_embeds.to(weight_dtype)
 
-    dataset = ControlNetSDXLTileDataset(
-        args.file_list, args.rough_dir, args.line_dir, args.resolution, caption_by_name, args.caption
-    )
+    if use_cache:
+        dataset = ControlNetSDXLCachedDataset(
+            args.file_list, args.rough_dir, args.cache_dir, args.resolution
+        )
+        print(f"[train_controlnet_sdxl] cached mode: latents + text embeds read from {args.cache_dir}")
+    else:
+        dataset = ControlNetSDXLTileDataset(
+            args.file_list, args.rough_dir, args.line_dir, args.resolution, caption_by_name, args.caption
+        )
     dataloader = DataLoader(
         dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.num_workers, drop_last=True,
@@ -244,14 +315,25 @@ def main():
     while not done:
         for batch in dataloader:
             with accelerator.accumulate(controlnet):
-                pixel_values = batch["pixel_values"].to(accelerator.device, dtype=torch.float32)
                 conditioning_pixel_values = batch["conditioning_pixel_values"].to(accelerator.device, dtype=weight_dtype)
-                bsz = pixel_values.shape[0]
+                bsz = conditioning_pixel_values.shape[0]
 
                 with torch.no_grad():
-                    latents = vae.encode(pixel_values).latent_dist.sample()
-                    latents = (latents * vae.config.scaling_factor).to(weight_dtype)
-                    prompt_embeds, pooled_prompt_embeds = encode_prompt(list(batch["caption"]))
+                    if use_cache:
+                        # Re-sample the cached latent distribution each epoch, so
+                        # caching costs no stochasticity relative to calling
+                        # vae.encode(...).latent_dist.sample() here. The scaling
+                        # factor is already folded into the cached mean/std.
+                        mean = batch["latent_mean"].to(accelerator.device, dtype=torch.float32)
+                        std = batch["latent_std"].to(accelerator.device, dtype=torch.float32)
+                        latents = (mean + std * torch.randn_like(std)).to(weight_dtype)
+                        prompt_embeds = batch["prompt_embeds"].to(accelerator.device, dtype=weight_dtype)
+                        pooled_prompt_embeds = batch["pooled_embeds"].to(accelerator.device, dtype=weight_dtype)
+                    else:
+                        pixel_values = batch["pixel_values"].to(accelerator.device, dtype=torch.float32)
+                        latents = vae.encode(pixel_values).latent_dist.sample()
+                        latents = (latents * vae.config.scaling_factor).to(weight_dtype)
+                        prompt_embeds, pooled_prompt_embeds = encode_prompt(list(batch["caption"]))
 
                 add_time_ids = torch.tensor(
                     [[args.resolution, args.resolution, 0, 0, args.resolution, args.resolution]],
@@ -307,7 +389,9 @@ def main():
                     elapsed = time.time() - start_time
                     print(
                         f"step {global_step}/{max_train_steps} loss={loss.item():.4f} "
-                        f"elapsed={elapsed:.0f}s ({elapsed / max(steps_done_this_run, 1):.2f}s/step)"
+                        f"elapsed={elapsed:.0f}s ({elapsed / max(steps_done_this_run, 1):.2f}s/step) "
+                        f"peak_vram={torch.cuda.max_memory_allocated() / 2**30:.2f}GiB",
+                        flush=True,
                     )
                 if global_step % args.save_steps == 0 or global_step >= max_train_steps:
                     save_resume_state(global_step)
