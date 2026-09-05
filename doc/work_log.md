@@ -4688,3 +4688,116 @@ feedback from our own pipeline run, to fold into Monday's re-extraction.
 3. Once Monday's re-extraction lands, diff `content_fingerprint` values
    against this version to identify which of the 1272 pairs changed and
    need reprocessing -- not yet relevant, no new delivery yet.
+
+## 2026-08-26/29: `clip_pairs` v3 (Full Re-Extraction Delivery) -- Pipeline Re-Run, 7309 Final Tiles
+
+The extraction tool delivered `inbox/reply_full_rerun_20260826.md`: a full
+re-extraction of all 2644 pages under one unified code version (the prior
+mixed-version problem is resolved), plus two QC revisions:
+
+- **`sketch_fragment` flag withdrawn**: it was measuring rough-sketch ink
+  darkness (pencil pressure/material), not pipeline-stage content, and the
+  48 pages it had flagged were all genuinely thin-but-complete roughs, not
+  fragments. Any prior exclusion by this flag was likely discarding valid
+  pairs.
+- **`line_fragment` coverage threshold raised 0.10 -> 0.30**: the old
+  threshold was tuned only against the specific bad pages we'd reported, and
+  was never checked against the band above it. A post-rerun visual sample
+  found the 0.10-0.30 coverage band was 9/9 incomplete. 124 pages the v2
+  delivery had marked `ok` are reclassified `line_fragment` under v3.
+
+Net effect on the filtered pool (`pair_quality=ok` + `is_primary` + `koma`
+present): 1272 (v2) -> **1276 (v3)**, similar count but different content
+(107 pages newly qualify, ~103 pages net that were previously `ok` are now
+excluded). The extraction tool explicitly recommended replacing the v2
+delivery with v3.
+
+**Zip placed**: `dataset/raw_zips/dataset_clip_pairs_v3.zip` (12.3GB,
+following the established `_v2`/`_v3` raw-zip naming convention). Verified
+against `reply_full_rerun_20260826.md`'s claimed counts by reading
+`clip_pairs/clip_pairs_qc.csv` directly out of the zip: 1848 total rows,
+1276 in the filtered pool -- matches exactly.
+
+**Pipeline re-run**: same 5-stage koma pipeline as v2 (match panel
+alignment -> materialize -> sub-region split -> masks -> tile), same
+gates/recipe throughout (`--max-soft-ink-ratio 0.40`, native
+`--support-px 20 --window 61 --expand-ignore 16 --close-ignore 16`,
+native-strict tiling gates), chunked and fully backgrounded
+(`experiments/run_clip_pairs_v3_full_pipeline_20260826.sh`, `nohup ... &
+disown`, verified `PPID=1`). Smoke-tested against the v3 zip directly (5
+pairs / 3m2s, ~36s/pair, matching v2's per-pair cost) before the full run.
+Ran ~75h unattended (2026-08-26 20:53 -> 2026-08-29 23:58):
+
+- Stage 1 (panel alignment): 1276 pairs -> 5110 panels detected
+- Stage 2 (materialize): 5018 panels accepted (chamfer<=45)
+- Stage 3 (sub-region split): 5018 panels -> 9222 sub-regions
+- Stage 4 (masks): native settings, unchanged
+- Stage 5 (tiling): 9222 regions, 121302 raw candidate tiles, **7676
+  accepted**
+
+**Integrity audit**: 633 findings (308 exact line-hash + 325 exact
+rough-hash duplicates within the list) -- same partial-overlap
+whole-page-dedup-gap pattern as v2's 705 findings (different slugs within
+one work_id producing byte-identical tile crops in unchanged
+background/margin regions). Applied the same union-find fix: 363 duplicate
+clusters / 730 tiles involved, kept one representative per cluster, dropped
+367 tiles (backup: `dataset/pairs_480/valid_train_clip_pairs_v3_koma_20260826.txt.predup`).
+Re-audited: **0 findings**.
+
+**Final: 7309 tiles** (`dataset/pairs_480/valid_train_clip_pairs_v3_koma_20260826.txt`,
+`dataset/pairs_480/train/line_clip_pairs_v3_koma_20260826/`) -- vs. v2's
+6978, a modest net increase despite ~103 pages being excluded, because the
+107 newly-qualifying pages and higher panel/sub-region yield more than
+offset the loss.
+
+**Visual QC**: reviewed top-score and tail-score montages
+(`results/clip_pairs_v3_koma_tiles_480_20260826_qc_sample.png`,
+`..._qc_tail.png`). Top-score tiles: clean, well-aligned rough/line
+correspondence throughout. Tail (lowest accepted scores near the gate):
+sparse/thin-line tiles (single gesture strokes, hair-strand fragments) as
+expected at the score floor, same profile as the 5 existing sources' and
+v2's own tail montages -- no content mismatches, no koma-frame/color
+contamination observed. Passed.
+
+### Combined Pool, Captions, Conditioning -- Completed 2026-08-30
+
+Built the new combined pool: existing 1489-tile `combined_koma_20260729` +
+this 7309-tile v3 clip_pairs pool = **8798 tiles**
+(`dataset/pairs_480/valid_train_combined_v3_20260830.txt`, line tiles
+symlinked into `dataset/pairs_480/train/line_combined_v3_20260830/`),
+replacing the v2-based 8467-tile `valid_train_combined_all_20260824.txt`.
+
+WD14-tagged the 7309 new tiles only (`scripts/tag_wd14.py`, same
+`--caption-suffix` default as the existing captions file). Took **13h39m**
+(6.72s/img steady-state) -- markedly slower than both the earlier
+1.2-1.3s/img clean-machine benchmark and even the v2 run's already-slow
+4.55s/img, consistent with the CPU-thermal-throttling explanation on
+record getting worse under sustained load, not a one-off. Merged with the
+existing 1489-row captions file into
+`dataset/pairs_480/captions_combined_v3_20260830_wd14.csv` (8798 rows,
+verified 1:1 against the training list with a set-difference check: 0
+missing, 0 extra).
+
+`lineart_anime` conditioning: ran `preprocess_lineart_anime_condition.py`
+on just the 7309 new tiles, writing into the *same* shared
+`dataset/pairs_480/train/rough_lineart_anime_20260824/` directory the v2
+run created (rough tile filenames are globally unique by source prefix, so
+this is a safe incremental add, not a collision) -- 7309/7309 written, 0
+skipped, 17m25s (0.14s/img, GPU). Verified full coverage of the 8798-tile
+combined list against this directory: 0 missing.
+
+**Common-foundation-side v3 migration is now complete and ready to use**:
+pool, captions, and conditioning are all in place. `results/`-retention
+cleanup of the superseded v2 clip_pairs intermediates
+(`dataset/regions_clip_pairs_koma_*_20260822`,
+`line_clip_pairs_koma_20260823/`, the old 6978-tile list) is still
+deferred, not yet actioned.
+
+### Next Actions
+
+1. Superseded v2 `clip_pairs` intermediates are candidates for deletion
+   per the 2026-08-26 `results/` retention policy -- still not actioned.
+2. Per explicit user direction (2026-08-30), **do not** hand this v3 pool
+   to the `lineart-controlnet-realpairs` track -- that track continues
+   independently on its own v2-based local snapshot. Any future retrain
+   using v3 data is a separate, not-yet-requested decision.

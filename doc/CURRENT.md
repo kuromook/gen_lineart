@@ -1,6 +1,7 @@
 # Current Project State
 
-Updated: 2026-07-31 JST (later)
+Updated: 2026-09-06 JST (ControlNet track pointer added; sections below this
+one are from 2026-07-31 and describe the raw-extraction direction)
 
 This file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
@@ -9,6 +10,40 @@ current decisions, and next actions. Chronological details live in
 
 Do not read files under `archive/` directories unless the user explicitly asks
 for archived history or audit material.
+
+## ControlNet Cross-Hatch Track: Closed 2026-09-06
+
+The `lineart-controlnet-realpairs` track (ControlNet LoRA fine-tunes
+hallucinating dense cross-hatch instead of clean line art) met its goal and is
+closed. Successors are two worktrees, each with its own briefing in
+`inbox/initial_notice.md`:
+
+- `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
+  refine from the best config; the remaining gap is gray background/gray lines.
+- `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
+  SDXL does not cross-hatch but diverges from the rough. Note the SDXL runs so
+  far were trained *and* inferred at 512 on a 1024-native base, so that
+  divergence is not yet a fair reading.
+
+Proposal with both directions: `doc/track_proposal_20260906.md`.
+The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
+on branch `controlnet-realpairs` (not present in this working tree).
+
+**Cause, and two lessons that apply project-wide.** The cause was not on the
+training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
+consistency loss, caption vocabulary, a UNet-side LoRA) were each measured and
+rejected. The base UNet is frozen in every ControlNet run, so its hatch prior
+could never be trained away; raising `controlnet_conditioning_scale` to
+overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
+
+1. **Do not compare ControlNet models at `controlnet_conditioning_scale=1.0`
+   alone.** All eleven models bunch at f1 0.13-0.15 there because the
+   hallucination dominates; re-measuring at each model's best scale reshuffled
+   the ranking substantially. Sweep several scales.
+2. **Do not judge on `orientation_entropy` alone.** It cannot separate a hatch
+   mesh from the smooth boundary of a solid fill. Report `line_width_p50`
+   (GT ~3.7) and `ink_ratio` (GT ~0.035) with it -- one model scored f1 0.2101
+   while actually being a solid-fill blob at `line_width_p50` 40.92.
 
 ## Active Goal
 
