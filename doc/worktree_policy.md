@@ -85,15 +85,25 @@ external extraction tool).
 
 ## Schedule Rules
 
-This PC is used for another project from Monday through Thursday daytime.
-Plan line-art GPU-heavy jobs around that constraint.
+Updated 2026-09-06. This supersedes the earlier rule that Monday-Thursday
+daytime was reserved for another project and that long jobs belonged to
+Thursday/Friday/Saturday nights.
 
-- Daytime work: implementation, analysis, short smoke tests, documentation.
-- Long GPU jobs (training runs, multi-model sweeps): treat as night-batch work.
-  Schedule primarily for Thursday, Friday, and Saturday nights, launch before
-  sleep, inspect the next morning, and send only the final completion
-  notification unless explicitly requested.
-- Avoid starting long GPU jobs during Monday-Thursday daytime.
+The user is away from the room for most of the week. Monday through Thursday is
+therefore the **preferred window for long GPU work**, run as one continuous
+multi-day batch rather than a series of overnight runs.
+
+- A job that needs several days of wall-clock time is acceptable. Plan around
+  VRAM, checkpointing, and crash recovery, not around finishing quickly --
+  runtime alone is not a reason to reject an approach or to downscale it.
+- Launch fully detached (`nohup ... & disown`, verify `PPID=1`) so nothing
+  depends on the session staying open, and checkpoint often enough that a crash
+  on day three does not cost the whole run.
+- Smoke-test first. A multi-day batch that fails on a bad argument is the
+  expensive failure mode here.
+- Weekends are the window for interactive work: review, analysis, short
+  experiments, and deciding what the next long batch should be.
+- Send only the final completion notification unless explicitly requested.
 
 ## Commit Rules
 
