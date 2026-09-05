@@ -56,14 +56,23 @@ the same project root.
 
 Each track keeps two documents, and only two:
 
-- `inbox/initial_notice.md` — the briefing. Current state, next moves, and
+- `doc/initial_notice.md` — the briefing. Current state, next moves, and
   operating rules only. Keep it short; do not let it accumulate history.
+  The goal is that a fresh session in that track can resume work from this
+  file alone, without reading the integration tree's `doc/work_log.md`.
 - `doc/work_log.md` (the worktree's own copy) — the chronological experiment
   log. Everything time-ordered goes here.
 
 This split exists because on `controlnet-realpairs` the briefing doubled as the
 work log and grew past 900 lines, at which point it stopped being readable.
 Start every new track with both files.
+
+The briefing lives in `doc/`, not `inbox/`, as of 2026-09-06. It was
+originally placed in `inbox/` by analogy with the extraction-tool
+correspondence, but `inbox/` and `outbox/` are `.gitignore`d — which left the
+one document the whole track pattern depends on unversioned and lost whenever
+a track folder was cleaned up. `inbox/`/`outbox/` are for correspondence with
+the external extraction tool only; project documents go in `doc/`.
 
 Avoid concurrent edits to the integration tree's `doc/work_log.md` from
 multiple worktrees. When a branch produces a meaningful result, summarize it

@@ -19,7 +19,7 @@ for archived history or audit material.
 The `lineart-controlnet-realpairs` track (ControlNet LoRA fine-tunes
 hallucinating dense cross-hatch instead of clean line art) met its goal and is
 closed. Successors are two worktrees, each with its own briefing in
-`inbox/initial_notice.md`:
+`doc/initial_notice.md`:
 
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
   refine from the best config; the remaining gap is gray background/gray lines.
