@@ -1,7 +1,10 @@
 # Current Project State
 
-Updated: 2026-09-06 JST (ControlNet track pointer added; sections below this
-one are from 2026-07-31 and describe the raw-extraction direction)
+Updated: 2026-09-06 JST (ControlNet track pointer, Active Goal, and Next
+Actions rewritten. The descriptive sections in between -- Current Data
+Direction, Current Model Interpretation, Current Extraction Rules, Current
+Data Pipeline Stage, and the dated 2026-07-26/31 entries -- are still from
+the raw-extraction era and have not been re-verified.)
 
 This file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
@@ -47,11 +50,29 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
 
 ## Active Goal
 
-Build a clean, non-leaky rough-to-line training/evaluation path by improving
-raw manuscript pair extraction, review, masking, and dataset-specific filtering.
+Make ControlNet-based rough-to-line conversion actually follow the rough. Work
+happens in the two successor worktrees named above, not here; this tree is the
+common foundation (shared scripts, dataset pipeline, project-level docs).
+
+- SD1.5: close the remaining gray-background/gray-line gap from the cs3.5 best
+  config -- `../lineart-controlnet-sd15-refine`.
+- SDXL: re-baseline at 1024, then re-measure condition fidelity --
+  `../lineart-controlnet-sdxl-fidelity`.
+
+**The raw-extraction goal that stood here through 2026-08 is done.** The
+clip_pairs v3 re-extraction, the 8,798-tile combined pool
+(`dataset/pairs_480/valid_train_combined_v3_20260830.txt`), its WD14 captions,
+and its `lineart_anime` conditioning are all in place and verified 1:1 as of
+2026-08-30. What remains on the data side is cleanup and a few open questions,
+listed under Next Actions -- not an active build-out. The sections below this
+one still describe that era and should be read as reference, not as current
+direction.
 
 Old leak-era `shape1` scores are not adoption targets. Use clean eval metrics
-and montage review only as current references.
+and montage review only as current references. Evaluate line art with the
+BSDS-style one-to-one matching F1 (`gt_bsds_f1`), and always report
+`line_width_p50` and `ink_ratio` alongside it -- see the two lessons at the top
+of this file.
 
 ## Current Data Direction
 
@@ -407,25 +428,42 @@ closed out as of this commit.
 
 ## Next Actions
 
-1. On the new Direction 4 branch: build ControlNet training data (rough
-   tile as conditioning image, GT line art as target image, fixed/simple
-   caption) from `dataset/pairs_480`, then adapt/write a training loop
-   (diffusers' `train_controlnet.py` pattern) sized for the 12GB GPU,
-   starting from `AOM3A1B_orangemixs.safetensors`.
-2. Consider a domain-adaptation pretraining step first (unsupervised
-   diffusion fine-tune on rough-only images, including a larger skima-style
-   pool if the user's ~4x expansion has materialized by then) before full
-   ControlNet training.
-3. The unpaired-rough adversarial-branch idea (continuity-regularizer
+Items 1-2 are the active direction and are carried out in the successor
+worktrees, each of which has its own briefing and work log. Items 3-8 are
+common-foundation housekeeping and open questions, none of them blocking.
+
+1. **SD1.5 refinement** (`../lineart-controlnet-sd15-refine`): sweep the
+   consistency-loss hyperparameters -- only a single point
+   (`consistency_weight=0.1`, `consistency_max_timestep=200`) has been tried,
+   and the effect is confirmed real. Then consider extending it to all
+   timesteps, InnerControl-style (arxiv 2507.02321). Do **not** add a UNet-side
+   LoRA, raise the LoRA rank, or forbid hatching by negative prompt -- all
+   three were measured and are worse; the first also breaks the
+   conditioning-scale lever itself.
+2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): retrain and
+   re-infer at 1024. Every SDXL run so far used the SD1.5-era `--resolution`
+   default of 512 on a 1024-native base, so the "SDXL diverges from the rough"
+   reading is on hold until this is redone. Whether 1024 SDXL ControlNet LoRA
+   fits in 12GB VRAM is itself unverified.
+3. Decide whether either ControlNet track should retrain on the v3 pool. Both
+   currently work from a v2-based snapshot, per the explicit 2026-08-30
+   direction not to hand v3 to the predecessor track. This is a separate,
+   not-yet-requested decision.
+4. Superseded v2 `clip_pairs` intermediates
+   (`dataset/regions_clip_pairs_koma_*_20260822`,
+   `line_clip_pairs_koma_20260823/`, the old 6978-tile list) are deletion
+   candidates under the 2026-08-26 `results/` retention policy. Still not
+   actioned.
+5. The unpaired-rough adversarial-branch idea (continuity-regularizer
    follow-up) is recorded but not currently active; revisit only if
    explicitly picked back up.
-4. Decide whether to rename the remaining `kurip`-named infra scripts, given
+6. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
    the work above.
-5. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+7. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-6. Revisit whether `--max-soft-ink-ratio` needs a per-source
+8. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.
