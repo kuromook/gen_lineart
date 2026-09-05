@@ -32,3 +32,6 @@ config/autoloop_notify.env
 # Local file-exchange with the extraction-tool session (Windows machine).
 inbox/
 outbox/
+
+# Track-local copied pair data (e.g. lineart-controlnet-realpairs/data, ~1GB).
+data/
