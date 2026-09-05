@@ -29,6 +29,11 @@ closed. Successors are two worktrees, each with its own briefing in
   divergence is not yet a fair reading.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
+
+Both tracks stay on the **v2-based** pair snapshot copied into their own
+`data/` (`train_list.txt`, 8,467 rows). User decision 2026-09-06: the
+difference against the newer 8,798-tile v3 pool is not large enough to be
+worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
@@ -429,7 +434,7 @@ closed out as of this commit.
 ## Next Actions
 
 Items 1-2 are the active direction and are carried out in the successor
-worktrees, each of which has its own briefing and work log. Items 3-8 are
+worktrees, each of which has its own briefing and work log. Items 3-6 are
 common-foundation housekeeping and open questions, none of them blocking.
 
 1. **SD1.5 refinement** (`../lineart-controlnet-sd15-refine`): sweep the
@@ -445,25 +450,16 @@ common-foundation housekeeping and open questions, none of them blocking.
    default of 512 on a 1024-native base, so the "SDXL diverges from the rough"
    reading is on hold until this is redone. Whether 1024 SDXL ControlNet LoRA
    fits in 12GB VRAM is itself unverified.
-3. Decide whether either ControlNet track should retrain on the v3 pool. Both
-   currently work from a v2-based snapshot, per the explicit 2026-08-30
-   direction not to hand v3 to the predecessor track. This is a separate,
-   not-yet-requested decision.
-4. Superseded v2 `clip_pairs` intermediates
-   (`dataset/regions_clip_pairs_koma_*_20260822`,
-   `line_clip_pairs_koma_20260823/`, the old 6978-tile list) are deletion
-   candidates under the 2026-08-26 `results/` retention policy. Still not
-   actioned.
-5. The unpaired-rough adversarial-branch idea (continuity-regularizer
+3. The unpaired-rough adversarial-branch idea (continuity-regularizer
    follow-up) is recorded but not currently active; revisit only if
    explicitly picked back up.
-6. Decide whether to rename the remaining `kurip`-named infra scripts, given
+4. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
    the work above.
-7. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+5. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-8. Revisit whether `--max-soft-ink-ratio` needs a per-source
+6. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.

@@ -4801,3 +4801,38 @@ deferred, not yet actioned.
    to the `lineart-controlnet-realpairs` track -- that track continues
    independently on its own v2-based local snapshot. Any future retrain
    using v3 data is a separate, not-yet-requested decision.
+
+## 2026-09-06: v2 `clip_pairs` Intermediates Deleted; Tracks Stay On v2
+
+**Tracks stay on v2** (user decision). Both ControlNet successor tracks work
+from the v2-based pair snapshot copied into their own `data/`
+(`train_list.txt`, 8,467 rows). The newer 8,798-tile v3 pool exists on the
+common foundation, but the difference was judged not large enough to justify
+re-baselining the tracks. Migrating them to v3 needs a fresh decision.
+
+**Deleted** the superseded v2 `clip_pairs` intermediates under the 2026-08-26
+retention policy -- 14GB freed (276G -> 262G used):
+
+- `dataset/regions_clip_pairs_koma_panels_20260822/` (7.1G)
+- `dataset/regions_clip_pairs_koma_subregions_20260822/` (7.0G)
+- `dataset/regions_clip_pairs_koma_subregions_20260822_masked/` (135M)
+- `dataset/pairs_480/train/line_clip_pairs_koma_20260823/` (188M)
+- `dataset/pairs_480/train/line_combined_all_20260824/` (34M, symlink dir
+  pointing into the above)
+- `dataset/pairs_480/valid_train_clip_pairs_koma_20260823.txt` (+`.predup`),
+  `captions_clip_pairs_koma_20260823_wd14.csv`,
+  `valid_train_combined_all_20260824.txt`,
+  `captions_combined_all_20260824_wd14.csv`
+
+Checked before deleting: the active v3 pool
+(`valid_train_combined_v3_20260830.txt`) contains no `20260822`/`20260823`
+path references, and its `line_combined_v3_20260830/` symlinks resolve only
+into v3 and the five original koma sources. Verified after: 8798 rows, 0 broken
+symlinks. The v2 pipeline remains reproducible from
+`dataset/raw_zips/dataset_clip_pairs_v2.zip` (11G), which is kept, and the v2
+train list itself survives as each track's `data/train_list.txt`.
+
+**Not deleted**: `dataset/pairs_480/train/rough_lineart_anime_20260824/`
+(15,776 files) is shared by the v2 and v3 tile sets -- the v3 conditioning run
+added into the same directory. Pruning the v2-only entries out of it was not
+attempted; it is not worth the risk of touching the active pool's conditioning.
