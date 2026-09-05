@@ -450,9 +450,18 @@ common-foundation housekeeping and open questions, none of them blocking.
    default of 512 on a 1024-native base, so the "SDXL diverges from the rough"
    reading is on hold until this is redone. Whether 1024 SDXL ControlNet LoRA
    fits in 12GB VRAM is itself unverified.
-3. The unpaired-rough adversarial-branch idea (continuity-regularizer
-   follow-up) is recorded but not currently active; revisit only if
-   explicitly picked back up.
+3. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
+   up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
+   line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
+   on it would mean returning to an architecture this project moved off. The
+   remaining move, if it is ever resumed, is: add a GT-free
+   continuity/self-consistency regularizer to the unpaired branch, then
+   re-sweep `--unpaired-weight` between 0.003 (no effect) and 0.03
+   (destructive: F1@2px 0.4175 -> 0.2381, as fragmented high-contrast
+   stippling). Note the `skima` rough-only pool itself (626 pages -> 4,917
+   tiles, `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and
+   may be worth using in the ControlNet context instead -- that would be a
+   new idea, not this one.
 4. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
