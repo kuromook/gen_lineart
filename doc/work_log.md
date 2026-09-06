@@ -5009,3 +5009,37 @@ Claude Codeのセッションを閉じても影響しない(確認済み)。
   「各々の最良csでfine-tuneは素のControlNet(0.2582)を超えたか」を明示出力する。
   **超えられなければ「このデータとレシピでは素のControlNetを改善しない」が
   結論**で、それも成果として記録すること
+
+### 共通基盤への一報 (2026-09-06 11:5x)
+
+`outbox/note_sdxl_resolution_findings_20260906.md`を書き、共通基盤
+(`../lineart`、branch `diffusion`)の`inbox/`に配達
+(inbox/outboxはgit管理外の往復書簡)。あわせて共通基盤の恒久記録
+`doc/CURRENT.md`を更新してコミット(`c13e074`)。
+
+CURRENT.mdには**反証済みの前提がそのまま残っていた**ため、2箇所を訂正:
+
+- Track Bのポインタ「SDXL does not cross-hatch but diverges from the rough
+  ... not yet a fair reading」→ 前提が否定されたことと素のControlNetの
+  0.2582を明記
+- Next Actions #2「retrain and re-infer at 1024 ... whether 1024 fits in
+  12GB is itself unverified」→ 推論は完了・学習は投入済み、12GBで通ることと
+  その方法を明記
+
+さらに、前trackが確立した「project-wide lessons」2件に**2件追加**した
+(共通基盤側の恒久記録として):
+
+3. **`gt_bsds_f1`単体でも判断しない** — 紙の白さを見ていない。
+   灰色一色の出力がスイープ最良f1を白3.1%で取り、ほぼ空白のページが
+   0.2121を白87.8%で取った実例つき。`bg_mode`/`near_white_frac`/
+   `midtone_frac`を併記する。`near_white`単体も「きれいだから白い」と
+   「描けていないから白い」を区別できない。
+   **`paper_metrics()`(20行、依存なし)を共通基盤の
+   `tools/evaluation/measure_lineart_profile.py`へ上流化することを提案。
+   Track Aの残課題「背景がグレー・線もグレー寄り」がまさにこの軸**。
+4. **解像度とcsは交互作用する** — 片方だけ振ると効果が見えない。
+   1変数隔離を既定としつつ、交互作用が疑われる軸は格子で当たる。
+
+上流化は共通コードに触るため、本セッションでは提案に留めた(他セッションが
+`diffusion`で作業している可能性があるため)。実施する場合は
+`experiments/score_resolution_sweep_20260906.py`の`paper_metrics()`を移送する。
