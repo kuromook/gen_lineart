@@ -91,6 +91,14 @@ BACKGROUND_THRESHOLD = 220  # standard "confident white" cutoff used elsewhere (
 FAINT_NEAR_PX = 3.0
 GRID_CELLS = 8  # 8x8 grid for structural/macro heterogeneity metrics
 BLANK_CELL_INK_RATIO = 0.01  # a cell counts as "near-blank paper" below this local ink_ratio
+# Paper axis (added 2026-09-06, from the SDXL track's resolution sweep).
+# Deliberately NOT reusing BACKGROUND_THRESHOLD (220): these three came from
+# experiments/score_resolution_sweep_20260906.py::paper_metrics in the
+# lineart-controlnet-sdxl-fidelity track, and keeping the exact cutoffs keeps
+# the numbers comparable with that sweep's published table and its GT anchors
+# (bg_mode 255, near_white_frac 94.8%, midtone_frac 1.8%).
+NEAR_WHITE = 224  # "this pixel is paper"
+MIDTONE_LO, MIDTONE_HI = 64, 192  # neither paper nor ink -- grey wash territory
 
 METRIC_KEYS = [
     "ink_ratio",
@@ -107,6 +115,9 @@ METRIC_KEYS = [
     "orientation_entropy",
     "grid_ink_cv",
     "blank_cell_fraction",
+    "bg_mode",
+    "near_white_frac",
+    "midtone_frac",
 ]
 
 
@@ -131,6 +142,27 @@ def intensity_profile(gray):
         "deep_black_ratio": deep_black,
         "background_ratio": background,
         "faint_of_drawn_ratio": faint_of_drawn,
+    }
+
+
+def paper_profile(gray):
+    """Is there white paper under the ink, or is the whole page a grey wash?
+
+    Added 2026-09-06 from the SDXL track's resolution sweep, which found that
+    `gt_bsds_f1` -- and every stroke axis above -- is blind to this. Two
+    measured examples, both scoring respectably on f1 while not being line art:
+    an output at f1 0.2263 that was a uniform grey field (near_white 3.1%,
+    midtone 84.8%), and one at f1 0.2121 that was a nearly blank page (white
+    87.8%, but the subject simply was not drawn).
+
+    That second example is why `near_white_frac` must never be read alone: it
+    cannot tell "clean white paper" from "nothing was drawn". Always read it
+    together with `ink_ratio` and `line_width_p50`, and confirm visually.
+    """
+    return {
+        "bg_mode": float(np.bincount(gray.astype(np.uint8).ravel(), minlength=256).argmax()),
+        "near_white_frac": float((gray >= NEAR_WHITE).mean()),
+        "midtone_frac": float(((gray > MIDTONE_LO) & (gray < MIDTONE_HI)).mean()),
     }
 
 
@@ -194,6 +226,7 @@ def profile_metrics(path, min_length_fraction=0.08):
 
     result = {"ink_ratio": ink_px / float(IMAGE_SIZE * IMAGE_SIZE)}
     result.update(intensity_profile(gray))
+    result.update(paper_profile(gray))
     result.update(faint_locality(gray))
     result.update(grid_heterogeneity(ink))
 

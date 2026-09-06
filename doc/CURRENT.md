@@ -65,11 +65,14 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    (GT 94.8%) and `midtone_frac` (GT 1.8%) beside it. And `near_white_frac`
    is not self-sufficient either -- it cannot tell "white because it is clean"
    from "white because nothing was drawn", so read it with `line_width_p50`
-   and the montage. Implementation to lift into
-   `tools/evaluation/measure_lineart_profile.py`: `paper_metrics()` in
-   `../lineart-controlnet-sdxl-fidelity/experiments/score_resolution_sweep_20260906.py`
-   (~20 lines, no dependencies). This is directly the axis
-   `../lineart-controlnet-sd15-refine` needs -- its stated residual is
+   and the montage. **Landed here 2026-09-06** as `paper_profile()` in
+   `tools/evaluation/measure_lineart_profile.py` (lifted from
+   `paper_metrics()` in the SDXL track's
+   `experiments/score_resolution_sweep_20260906.py`, thresholds kept
+   identical so the numbers stay comparable with that sweep). Verified on 200
+   GT tiles from the v3 pool: bg_mode 255, near_white_frac 0.951,
+   midtone_frac 0.014 -- matching the GT anchors above. This is directly the
+   axis `../lineart-controlnet-sd15-refine` needs -- its stated residual is
    "grey background, greyish lines".
 4. **Resolution and conditioning scale interact; sweeping one alone can hide
    the effect entirely.** For the bare SDXL ControlNet, going 512 -> 1024 at
