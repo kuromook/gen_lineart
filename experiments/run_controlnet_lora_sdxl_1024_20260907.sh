@@ -32,7 +32,11 @@ PY=/home/sh1/deepl/lineart/venv/bin/python
 
 # anime = noob-sdxl-controlnet-lineart_anime + data/rough_lineart_coarse
 # manga = noob-sdxl-controlnet-manga_line   + data/rough_manga_line
-VARIANT=${VARIANT:?set VARIANT=anime or VARIANT=manga (decided by results/resolution_sweep_20260906)}
+# anime, decided by results/resolution_sweep_20260906 + grey_source_cross_20260906
+# (2026-09-06): lineart_anime is the only ControlNet of the two that tracks the
+# conditioning at all -- manga_line comes out striped and blocky at 512 and
+# 1024 alike, with a near-white page because it draws almost nothing.
+VARIANT=${VARIANT:-anime}
 EPOCHS=${EPOCHS:-10}
 LORA_RANK=${LORA_RANK:-16}
 LR=${LR:-1e-4}
@@ -102,10 +106,16 @@ echo "=== full fine-tune ($EPOCHS epochs) ==="
   --resume-from-checkpoint latest
 
 echo "=== eval: 1024 inference across a cs ladder ==="
-# The briefing forbids judging a model at a single conditioning scale, and
-# SDXL is the family that got worse as cs rose at 512 -- so the ladder runs
-# low as well as high.
-for CS in 0.5 1.0 1.5 2.0 3.0; do
+# Two things this ladder has to respect, both established 2026-09-06:
+#  * "SDXL gets worse as cs rises" was a property of the 512-trained
+#    anime LoRA alone, not of SDXL -- the bare ControlNet climbs to a broad
+#    plateau at cs 2.0-3.0 (f1 0.2568/0.2582/0.2577) and only falls at 4.0.
+#  * paper white appears abruptly between cs1.0 and cs2.0 (near_white 3.0%
+#    -> 81.5%), and that interval is unsampled, hence 1.5.
+# The bare ControlNet is re-run here at the same scales, not just cited from
+# the sweep: it is the baseline this fine-tune has to beat, and running it in
+# the same job removes any doubt that the two were measured differently.
+for CS in 0.5 1.0 1.5 2.0 2.5 3.0; do
   OUT="results/${TAG}_eval/cs${CS}"
   mkdir -p "$OUT"
   "$PY" scripts/infer_controlnet_sdxl.py \
@@ -115,7 +125,22 @@ for CS in 0.5 1.0 1.5 2.0 3.0; do
     --resolution "$RESOLUTION" --controlnet-conditioning-scale "$CS" \
     --cpu-offload --tag "${TAG}_cs${CS}" --output-dir "$OUT"
   touch "$OUT/.complete"
+
+  BASE_OUT="results/${TAG}_eval/base_cs${CS}"
+  if [ ! -f "$BASE_OUT/.complete" ]; then
+    mkdir -p "$BASE_OUT"
+    "$PY" scripts/infer_controlnet_sdxl.py \
+      --sample-list data/diag_valid5.txt --rough-dir "$DIAG_ROUGH" \
+      --controlnet-dir "$CN_INIT" \
+      --base-ckpt "$SDXL_BASE" --caption "$CAPTION" \
+      --resolution "$RESOLUTION" --controlnet-conditioning-scale "$CS" \
+      --cpu-offload --tag "${TAG}_base_cs${CS}" --output-dir "$BASE_OUT"
+    touch "$BASE_OUT/.complete"
+  fi
 done
+
+echo "=== scoring: fine-tuned vs bare, on every axis ==="
+"$PY" experiments/score_sdxl_1024_eval_20260907.py "results/${TAG}_eval" || true
 
 {
   echo "completed_at=$(date --iso-8601=seconds)"
