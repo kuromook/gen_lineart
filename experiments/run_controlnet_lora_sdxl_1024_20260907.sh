@@ -70,6 +70,23 @@ mkdir -p logs checkpoints
 : > "$LOG"
 exec > >(tee -a "$LOG") 2>&1
 
+# This runs unattended for ~55h. Without this trap a failure -- a failed smoke
+# test, an OOM on hour 30, a bad argument -- would exit quietly under
+# `set -e` and send nothing, because the success notification only fires at
+# the very end. Silence would then be indistinguishable from "still training"
+# until someone opened the log days later.
+on_failure() {
+  local code=$?
+  local line=$1
+  echo "[$(date --iso-8601=seconds)] FAILED at line $line (exit $code)"
+  echo "failed_at=$(date --iso-8601=seconds) line=$line exit=$code" > "logs/${TAG}.failed"
+  /home/sh1/deepl/lineart/experiments/send_autoloop_notification.sh \
+    "SDXL 1024 fine-tune FAILED (exit $code)" \
+    "line $line -- see logs/${TAG}.log" || true
+}
+trap 'on_failure $LINENO' ERR
+rm -f "logs/${TAG}.failed"
+
 echo "[$(date --iso-8601=seconds)] SDXL ControlNet LoRA ${RESOLUTION} start"
 echo "variant=$VARIANT controlnet=$CN_INIT rough=$ROUGH_DIR epochs=$EPOCHS rank=$LORA_RANK lr=$LR"
 echo "file count: $(wc -l < "$FILE_LIST")"

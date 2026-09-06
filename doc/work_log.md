@@ -4954,3 +4954,58 @@ cs2.5〜3.0が最良で、cs4.0は黒い滲みが出始める(f1低下と一致)
   「各々の最良csでfine-tuneは素のControlNetを超えたか」を明示出力する。
   超えられなければ「このデータとレシピでは素のControlNetを改善しない」が
   結論で、それも成果として記録される
+
+### セッション終了時点で走っているジョブ (2026-09-06 11:2x〜)
+
+ユーザー判断で、月曜を待たず**日曜のうちに1024学習を投入**する。
+以下はすべて`setsid`済みで**PPID=1・制御端末なし**の独立セッション。
+Claude Codeのセッションを閉じても影響しない(確認済み)。
+
+| ジョブ | 実体 | 状態 |
+|---|---|---|
+| 1024キャッシュ生成 | `/tmp/chain2_20260906.sh` → `scripts/cache_sdxl_conditioning.py` | 進行中、12:55頃完了 |
+| 学習の起動待ち | `/tmp/chain_train_20260906.sh` | キャッシュ完了を待機中 |
+
+起動側は`.done`マーカーだけを信用せず、**`data/cache_sdxl_1024/*.npz`の
+実数が`train_list.txt`の8,467件と一致すること**を確認してから学習を
+起動する(生成が途中でkillされるとマーカーは書かれないまま部分的な
+ディレクトリが残るため)。不一致なら`logs/chain_train_20260906.abort`を
+書いて起動しない。
+
+**無人実行のための失敗通知を追加した。** 55時間の無人ランで、スモークの
+失敗・30時間目のOOM・引数ミスはいずれも`set -e`で静かに終了し、成功時のみ
+発火する既存の通知では**沈黙が「学習中」と区別できない**。
+`run_controlnet_lora_sdxl_1024_20260907.sh`に`trap ... ERR`を入れ、
+失敗行と終了コードを`logs/<TAG>.failed`に書いて通知を送るようにした
+(トラップが実際に発火することは別途検証済み)。
+
+#### 状態確認と停止の方法
+
+    # いま何が走っているか
+    ps -eo pid,ppid,sid,cmd | grep -E "cache_sdxl|chain_|train_controlnet_sdxl"
+
+    # キャッシュの進捗
+    tail -1 logs/cache_sdxl_1024.log
+
+    # 学習が始まったか / 進捗(50ステップごとにpeak_vramとs/stepを記録)
+    tail -5 logs/controlnet_lora_sdxl_anime_1024_20260907.log
+
+    # 失敗していないか(存在すれば失敗)
+    cat logs/controlnet_lora_sdxl_anime_1024_20260907.failed
+
+    # 停止する(PIDを特定してkill。`pkill -f <スクリプト名>`は自分の
+    # シェルのコマンドラインにも一致して自滅するので使わないこと)
+    ps -eo pid,cmd | grep "[t]rain_controlnet_sdxl.py"   # → kill <PID>
+
+学習は中断しても`--resume-from-checkpoint latest`で再開でき、
+`--save-steps 500`(約1.3時間)以内の損失に収まる。
+
+#### 完了後に見るもの
+
+- `results/controlnet_lora_sdxl_anime_1024_20260907_eval/scores.csv` — 全軸
+- `results/controlnet_lora_sdxl_anime_1024_20260907_eval/montage_ft_vs_bare.png`
+  — fine-tune列と素のControlNet列を並べた目視シート
+- 判定は`score_sdxl_1024_eval_20260907.py`が
+  「各々の最良csでfine-tuneは素のControlNet(0.2582)を超えたか」を明示出力する。
+  **超えられなければ「このデータとレシピでは素のControlNetを改善しない」が
+  結論**で、それも成果として記録すること
