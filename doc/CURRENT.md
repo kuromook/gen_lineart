@@ -24,9 +24,11 @@ closed. Successors are two worktrees, each with its own briefing in
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
   refine from the best config; the remaining gap is gray background/gray lines.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
-  SDXL does not cross-hatch but diverges from the rough. Note the SDXL runs so
-  far were trained *and* inferred at 512 on a 1024-native base, so that
-  divergence is not yet a fair reading.
+  **premise refuted 2026-09-06, see below.** "SDXL diverges from the rough"
+  was a property of the 512-trained LoRA, not of SDXL. The bare
+  lineart_anime ControlNet at 1024/cs2.5 reaches gt_bsds_f1 **0.2582**, above
+  every model in the eleven-model table, with no fine-tune at all.
+  Notice: `inbox/note_sdxl_resolution_findings_20260906.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -37,7 +39,9 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and two lessons that apply project-wide.** The cause was not on the
+**Cause, and four lessons that apply project-wide** (lessons 3-4 added
+2026-09-06 from `../lineart-controlnet-sdxl-fidelity`; see
+`inbox/note_sdxl_resolution_findings_20260906.md`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
 consistency loss, caption vocabulary, a UNet-side LoRA) were each measured and
 rejected. The base UNet is frozen in every ControlNet run, so its hatch prior
@@ -52,6 +56,28 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    mesh from the smooth boundary of a solid fill. Report `line_width_p50`
    (GT ~3.7) and `ink_ratio` (GT ~0.035) with it -- one model scored f1 0.2101
    while actually being a solid-fill blob at `line_width_p50` 40.92.
+3. **Do not judge on `gt_bsds_f1` alone either -- it cannot see whether there
+   is white paper under the ink.** It only asks whether strokes land near GT
+   strokes. Two measured cases scored well while not being line art at all: a
+   uniformly grey image took the best f1 of its sweep (0.2263) with 3.1% of
+   pixels near white, and a nearly blank page took 0.2121 with 87.8% near
+   white and no subject drawn. Report `bg_mode` (GT 255), `near_white_frac`
+   (GT 94.8%) and `midtone_frac` (GT 1.8%) beside it. And `near_white_frac`
+   is not self-sufficient either -- it cannot tell "white because it is clean"
+   from "white because nothing was drawn", so read it with `line_width_p50`
+   and the montage. Implementation to lift into
+   `tools/evaluation/measure_lineart_profile.py`: `paper_metrics()` in
+   `../lineart-controlnet-sdxl-fidelity/experiments/score_resolution_sweep_20260906.py`
+   (~20 lines, no dependencies). This is directly the axis
+   `../lineart-controlnet-sd15-refine` needs -- its stated residual is
+   "grey background, greyish lines".
+4. **Resolution and conditioning scale interact; sweeping one alone can hide
+   the effect entirely.** For the bare SDXL ControlNet, going 512 -> 1024 at
+   cs1.0 is flat (0.2263 -> 0.2341), but at cs2.0 it improves monotonically
+   (0.2416 -> 0.2568). Paper white behaves the same way: it appears only where
+   1024 and cs2.0 meet (near_white 3.0% -> 81.5%). Keep isolating one variable
+   at a time as the default, but when an interaction is plausible, run the
+   grid -- "level the field at 1024" alone would have shown nothing here.
 
 ## Active Goal
 
@@ -445,11 +471,17 @@ common-foundation housekeeping and open questions, none of them blocking.
    LoRA, raise the LoRA rank, or forbid hatching by negative prompt -- all
    three were measured and are worse; the first also breaks the
    conditioning-scale lever itself.
-2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): retrain and
-   re-infer at 1024. Every SDXL run so far used the SD1.5-era `--resolution`
-   default of 512 on a 1024-native base, so the "SDXL diverges from the rough"
-   reading is on hold until this is redone. Whether 1024 SDXL ControlNet LoRA
-   fits in 12GB VRAM is itself unverified.
+2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): **done for
+   inference, training in flight** (2026-09-06). 1024 SDXL ControlNet LoRA
+   *does* fit in 12GB -- 8.05GiB peak at 9.35s/step, which is lighter and no
+   slower than the 512 runs, once the VAE and text encoders are precomputed
+   into a cache instead of kept resident (`scripts/cache_sdxl_conditioning.py`
+   in that tree; the naive 1024 run OOMs inside the fp32 VAE encoder before
+   reaching the UNet). The "SDXL diverges from the rough" reading is now
+   refuted rather than on hold: the bare ControlNet at 1024/cs2.5 scores
+   0.2582. A 10-epoch 1024 fine-tune launched 2026-09-06 and lands Wednesday
+   evening; its question is whether fine-tuning can beat that bare baseline at
+   all. Full notice: `inbox/note_sdxl_resolution_findings_20260906.md`.
 3. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
