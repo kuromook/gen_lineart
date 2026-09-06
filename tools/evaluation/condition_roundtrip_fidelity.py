@@ -90,6 +90,31 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample-list", required=True)
     parser.add_argument("--split", default="train", choices=["train", "test"])
+    # The dataset/pairs_480 layout below is the shared-repo one. Track working
+    # trees keep their diag samples in a flat data/ directory instead
+    # (data/diag_rough_raw/<base>.jpg, data/diag_gt_line_<base>.jpg), so both
+    # sides are overridable. Point --rough-dir at the RAW rough, not at a
+    # preprocessed conditioning map: the metric re-runs one detector on both
+    # sides, and feeding it an already-preprocessed map on the left while the
+    # right side is detector(output) would compare across preprocessors.
+    parser.add_argument(
+        "--rough-dir",
+        default=None,
+        help="directory of raw rough tiles named <base>.jpg "
+        "(default: dataset/pairs_480/<split>/rough)",
+    )
+    parser.add_argument(
+        "--line-dir",
+        default=None,
+        help="directory of GT line tiles named <base>.jpg "
+        "(default: dataset/pairs_480/<split>/line)",
+    )
+    parser.add_argument(
+        "--line-prefix",
+        default="",
+        help="filename prefix for GT line tiles, e.g. 'diag_gt_line_' for a "
+        "track tree's flat data/ layout",
+    )
     parser.add_argument("--model", action="append", required=True, help="LABEL=DIR")
     parser.add_argument("--truncate", type=float, default=TRUNCATE_PX)
     parser.add_argument("--output-csv", default="results/condition_roundtrip_fidelity.csv")
@@ -105,8 +130,11 @@ def main():
     detector = get_detector()
 
     rows = []
+    rough_root = args.rough_dir or f"dataset/pairs_480/{args.split}/rough"
+    line_root = args.line_dir or f"dataset/pairs_480/{args.split}/line"
+
     for base in bases:
-        rough_path = f"dataset/pairs_480/{args.split}/rough/{base}.jpg"
+        rough_path = f"{rough_root}/{base}.jpg"
         orig_gray, orig_edge = preprocess_condition(detector, load_rgb(rough_path))
         for label, directory in models:
             out_path = directory / f"{base}_out.png"
@@ -116,7 +144,7 @@ def main():
             roundtrip_chamfer = chamfer(recov_edge, orig_edge, truncate=args.truncate)
             roundtrip_ssim = float(structural_similarity(orig_gray, recov_gray, data_range=255))
             roundtrip_bsds_f1, _, _ = bipartite_match_f1(recov_edge, orig_edge, BSDS_TOLERANCE_PX)
-            gt_edge = edge_map(load_gray_array(f"dataset/pairs_480/{args.split}/line/{base}.jpg"))
+            gt_edge = edge_map(load_gray_array(f"{line_root}/{args.line_prefix}{base}.jpg"))
             gt_chamfer = chamfer(edge_map(load_gray_array(out_path)), gt_edge, truncate=args.truncate)
             rows.append({
                 "sample": base, "model": label,
