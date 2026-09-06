@@ -4836,3 +4836,46 @@ train list itself survives as each track's `data/train_list.txt`.
 (15,776 files) is shared by the v2 and v3 tile sets -- the v3 conditioning run
 added into the same directory. Pruning the v2-only entries out of it was not
 attempted; it is not worth the risk of touching the active pool's conditioning.
+
+## 2026-09-06 (later): SDXL Track Notice Folded Into The Common Foundation
+
+`inbox/note_sdxl_resolution_findings_20260906.md` arrived from
+`lineart-controlnet-sdxl-fidelity`. Its headline is that the Track B premise
+was refuted, not merely put on hold: the divergence from the rough belonged to
+the 512-trained LoRA, and the **bare** `Eugeoter/noob-sdxl-controlnet-lineart_anime`
+at 1024/cs2.5 scores `gt_bsds_f1` **0.2582** with no fine-tuning -- above the
+0.2337 the closed track reached after rejecting six hypotheses. `doc/CURRENT.md`
+was updated by that track directly (commit "Record the SDXL track's refuted
+premise and two more project-wide lessons"), which is the right place for it.
+
+Three things were folded in here rather than left in the notice:
+
+1. **`paper_profile()` lifted into `tools/evaluation/measure_lineart_profile.py`**
+   (`bg_mode`, `near_white_frac`, `midtone_frac`), from `paper_metrics()` in the
+   track's `experiments/score_resolution_sweep_20260906.py`. Thresholds kept
+   identical (224 near-white, 64-192 midtone) rather than folded into the
+   existing `BACKGROUND_THRESHOLD` of 220, so the numbers stay comparable with
+   that sweep's table; the reason is written next to the constants. Verified on
+   200 GT tiles from the v3 pool: bg_mode 255, near_white_frac 0.951,
+   midtone_frac 0.014, against the track's published GT anchors of
+   255 / 94.8% / 1.8%.
+2. **Hand-off written into Track A's briefing**
+   (`../lineart-controlnet-sd15-refine/doc/initial_notice.md`). The
+   consequential half is not the metric but the attribution: on SDXL, a 2x2
+   cross of ControlNet checkpoint against preprocessor showed the grey belongs
+   to the checkpoint (`lineart_anime` stays grey no matter the conditioning
+   image or resolution, near_white 0.031 -> 0.030; `manga_line` is always
+   white). If that holds on SD1.5, Track A has been trying to train away
+   something it does not own. Four inference runs settle it far more cheaply
+   than the planned consistency-loss sweep, so the briefing flags it as worth
+   running first.
+3. The lesson that **resolution and conditioning scale interact** is now
+   lesson 4 in `doc/CURRENT.md`. Worth noting against
+   `feedback_isolation_experiment_methodology`: isolating one variable at a
+   time stays the default, but "level the field at 1024" alone would have shown
+   nothing here -- the effect only appears on the grid.
+
+Still running in that track: the 1024 LoRA retrain (10 epochs, 21,168 steps,
+~55h, launched Sunday afternoon, due Wednesday night). Its question is whether
+retraining at 1024 can beat the bare ControlNet's 0.2582; if it cannot, "this
+data and recipe do not improve on the stock ControlNet" is the recorded result.
