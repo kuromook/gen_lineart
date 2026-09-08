@@ -24,11 +24,15 @@ closed. Successors are two worktrees, each with its own briefing in
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
   refine from the best config; the remaining gap is gray background/gray lines.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
-  **premise refuted 2026-09-06, see below.** "SDXL diverges from the rough"
-  was a property of the 512-trained LoRA, not of SDXL. The bare
-  lineart_anime ControlNet at 1024/cs2.5 reaches gt_bsds_f1 **0.2582**, above
-  every model in the eleven-model table, with no fine-tune at all.
-  Notice: `inbox/note_sdxl_resolution_findings_20260906.md`.
+  **premise refuted 2026-09-06; the 1024 retrain then failed 2026-09-08.**
+  "SDXL diverges from the rough" was a property of the 512-trained LoRA, not
+  of SDXL. The bare lineart_anime ControlNet at 1024/cs2.5 reaches
+  gt_bsds_f1 **0.2582** with no fine-tune at all, and a 50h 1024 fine-tune
+  came in at 0.1602 -- worse on every axis. **Both numbers rest on five
+  tiles**; a 292-tile re-measurement (inference only) runs at the weekend,
+  so do not treat 0.2582 as settled yet. Notices:
+  `inbox/note_sdxl_resolution_findings_20260906.md`,
+  `inbox/note_sdxl_finetune_result_20260908.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -474,17 +478,27 @@ common-foundation housekeeping and open questions, none of them blocking.
    LoRA, raise the LoRA rank, or forbid hatching by negative prompt -- all
    three were measured and are worse; the first also breaks the
    conditioning-scale lever itself.
-2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): **done for
-   inference, training in flight** (2026-09-06). 1024 SDXL ControlNet LoRA
-   *does* fit in 12GB -- 8.05GiB peak at 9.35s/step, which is lighter and no
-   slower than the 512 runs, once the VAE and text encoders are precomputed
-   into a cache instead of kept resident (`scripts/cache_sdxl_conditioning.py`
-   in that tree; the naive 1024 run OOMs inside the fp32 VAE encoder before
-   reaching the UNet). The "SDXL diverges from the rough" reading is now
-   refuted rather than on hold: the bare ControlNet at 1024/cs2.5 scores
-   0.2582. A 10-epoch 1024 fine-tune launched 2026-09-06 and lands Wednesday
-   evening; its question is whether fine-tuning can beat that bare baseline at
-   all. Full notice: `inbox/note_sdxl_resolution_findings_20260906.md`.
+2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): **the
+   re-baseline is done and the retrain failed** (2026-09-08). 1024 SDXL
+   ControlNet LoRA *does* fit in 12GB -- 8.05GiB peak at 9.35s/step, lighter
+   and no slower than the 512 runs, once the VAE and text encoders are
+   precomputed into a cache instead of kept resident
+   (`scripts/cache_sdxl_conditioning.py` in that tree; the naive 1024 run
+   OOMs inside the fp32 VAE encoder before reaching the UNet). The 10-epoch
+   1024 fine-tune completed cleanly -- 21,160 steps over 50.3h, VRAM flat,
+   loss drifting down -- and lost to the bare ControlNet on every axis
+   (gt_bsds_f1 0.1602 vs 0.2582, line_width 13.87 vs 3.06, 13.6% near white
+   vs 77.6%), reproducing the 512 runs' failure mode. So resolution was not
+   what made fine-tuning fail, and **epsilon-MSE fine-tuning does not improve
+   on the bare ControlNet for this pair data** -- three independent runs (512
+   anime, 512 manga, 1024 anime) degrade it the same way while the training
+   objective itself improves. The reachable SDXL configuration is the bare
+   lineart_anime ControlNet at 1024/cs2.5, with no training.
+   **Caveat that gates all of this: it is five tiles.** A 292-tile
+   re-measurement (inference only, two groups scored separately so scale is
+   not confounded with source) is staged and runs at the weekend. Notices:
+   `inbox/note_sdxl_resolution_findings_20260906.md`,
+   `inbox/note_sdxl_finetune_result_20260908.md`.
 3. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
