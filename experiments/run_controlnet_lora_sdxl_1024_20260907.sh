@@ -122,6 +122,13 @@ echo "=== full fine-tune ($EPOCHS epochs) ==="
   --batch-size 1 --grad-accum 4 --save-steps 500 --log-steps 50 \
   --resume-from-checkpoint latest
 
+# The full run finished, so the accelerate resume state (2.5GB of optimizer
+# and RNG state) has no further use -- the 44MB final adapter is what gets
+# loaded from here on. The 512-era script dropped this and it was missed when
+# this one was written.
+rm -rf "$CKPT/resume_state"
+echo "removed $CKPT/resume_state (2.5GB, only needed to resume an interrupted run)"
+
 echo "=== eval: 1024 inference across a cs ladder ==="
 # Two things this ladder has to respect, both established 2026-09-06:
 #  * "SDXL gets worse as cs rises" was a property of the 512-trained
