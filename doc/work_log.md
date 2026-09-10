@@ -5135,3 +5135,42 @@ CURRENT.mdの2箇所(trackポインタ / Next Actions #2)は
    292タイル再検証が週末に走ることを記載
 
 `paper_metrics()`の上流化は前報に続き提案のまま(共通コードに触るため)。
+
+### 共通基盤からの通達を受領 — lesson 5 (2026-09-10 22:29)
+
+`lineart@diffusion` `799a79e` "Fold both tracks' results into CURRENT.md;
+add lesson 5"。ダイジェストを`inbox/digest_foundation_lesson5_20260910.md`
+に格納(通達がファイルではなくコミットで届いたため、出典ハッシュを明記した
+要約として置いた)。
+
+**lesson 5: 「fine-tuningは有効か」は問いの立て方が間違っている。
+学習信号の設計こそが問い。** SDXL(本track)のε-MSE 3ランは素のControlNetを
+悪化させ、SD1.5(Track A)はε-MSEに補助項を足して新最良を出した。差は
+アーキテクチャでも学習の有無でもなく、**何を・何に対して・どのタイムステップで
+比較するか**。
+
+**本trackへの含意(重要)**: 我々の3ランは**すべて補助項なしのε-MSE**で、
+**補助項付きは一度も試していない**。結論の文言は「ε-MSEでのfine-tune」と
+限定してあったが、次の一手には「別の学習信号」としか書いておらず、
+**その具体名が隣のtrackで既に成功していた**。`doc/initial_notice.md`の
+次の一手#2を「SDXLでのconsistency損失」として具体化した。
+
+移植上の注意も記録した: `train_controlnet_consistency.py`はこのtreeにも
+あるがSD1.5用。SDXL版は**`--cache-dir`設計と衝突する** — consistency損失は
+学習中に微分可能なVAEデコードを要求するので、VAEをGPUに戻す必要があり、
+1024でのデコード+逆伝播でVRAMは実測8.05GiBより増える。移植時は必ず実測。
+
+**Track Aからの副次的な確認**: 本trackが申し送った`near_white_frac`が
+なければ、Track Aの今回の改善は**まったく見えなかった**と報告されている
+(f1はスイープ全体で0.21〜0.24の横ばい、near_whiteは0.400→0.779)。
+
+**両路線の公正比較が可能になった**: 我々の292タイルリストは共通基盤にも
+配置済みで、Track Aの数値も5タイル・広い再測定の予定なしと通達に明記
+されている。同じリストで測れば初めて公正に比較できる(#3b)。
+
+### 通達箱を設置 (2026-09-10、ユーザー指示)
+
+`inbox/`(受信)と`outbox/`(発信)を正式に設置。どちらも`.gitignore`対象で
+往復書簡そのものは版管理せず、結論だけを`doc/initial_notice.md`と
+本ファイルに取り込む([[feedback_track_folder_pattern]]の流儀)。
+運用は`inbox/README.md`と`doc/initial_notice.md`の「通達箱の運用」節に記載。
