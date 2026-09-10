@@ -4688,3 +4688,97 @@ feedback from our own pipeline run, to fold into Monday's re-extraction.
 3. Once Monday's re-extraction lands, diff `content_fingerprint` values
    against this version to identify which of the 1272 pairs changed and
    need reprocessing -- not yet relevant, no new delivery yet.
+
+## 2026-09-08/10 (Track A): Grey-Source Cross + `consistency_weight` Sweep -- New Best Config Found
+
+Prepared 2026-09-07/08 while the GPU was occupied by the sibling
+`lineart-controlnet-sdxl-fidelity` track's SDXL training job (code-only, no
+execution -- see `doc/CURRENT.md`-era discipline continued here). Launched
+as a single detached batch (`experiments/run_wednesday_batch_20260908.sh`,
+`nohup ... & disown`, verified reparented to `systemd(1)` via `pstree`) once
+that job's GPU footprint cleared on 2026-09-08 19:26 JST. Completed cleanly
+2026-09-10 15:40 JST, no crashes, no manual intervention needed.
+
+**Phase A -- grey-source cross (SD1.5 adaptation of Track B's SDXL 2x2)**:
+`experiments/run_grey_source_cross_sd15_20260908.sh` /
+`score_grey_source_cross_sd15_20260908.py`. Per
+`../lineart/inbox/note_sdxl_resolution_findings_20260906.md`'s hand-off,
+crossed bare pretrained ControlNet (no LoRA) x conditioning preprocessor to
+isolate whether the grey residual is ControlNet- or preprocessor-attributable.
+SD1.5 constraint (no `manga_line` ControlNet exists for SD1.5, SDXL-only):
+2 ControlNets (`control_v11p_sd15_lineart`, `control_v11p_sd15s2_lineart_anime`)
+x 3 preprocessors (`lineart_anime`/`lineart_coarse`/`manga_line`) = 2x3 grid,
+x cs (1.0/2.5/3.5) in place of the SDXL template's resolution axis (SD1.5 has
+no established >512 resolution path). Full table:
+`results/grey_source_cross_sd15_20260908/scores.csv`, montage:
+`results/grey_source_cross_sd15_20260908/montage_grey_source_sd15.png`.
+
+Finding: `near_white_frac` (GT 0.948) separates mainly by ControlNet row
+(`cnLineart` 0.010-0.041 vs `cnAnime` 0.119-0.252) more than by preprocessor
+column, directionally matching Track B's SDXL finding that the grey/tone
+behavior is ControlNet-checkpoint-attributable. Weaker than SDXL though:
+`cnAnime` still shows real column variation (0.12-0.25 depending on
+preprocessor), and unlike SDXL neither SD1.5 checkpoint gets close to GT
+white even before fine-tuning (both bare checkpoints are heavily over-inked,
+`ink_ratio` 0.30-0.53 vs GT 0.0353, as expected with no domain fine-tune and
+a generic caption). Secondary finding: `cnAnime`'s `bg_mode` collapses toward
+0 (black) as cs rises from 1.0, opposite of the direction wanted.
+
+**Phase B -- `consistency_weight` sweep (priority #1 from
+`doc/initial_notice.md`)**: `experiments/run_consistency_weight_sweep_20260908.sh`
+/ `score_consistency_weight_sweep_20260908.py`. Isolated `consistency_weight`
+alone (`consistency_max_timestep=200` fixed, matching the project's
+one-variable-at-a-time methodology), same file-list/rough-dir/line-dir/
+caption-csv/base-ckpt/controlnet-init/rank16/epochs10/lr1e-4 as the existing
+`controlnet_lora_manga_consistency_20260904` run. New grid
+`WEIGHTS=(0.02 0.05 0.2 0.5)` bracketing the only prior point (0.1) on both
+sides; each run took roughly the same ~11h as the known point, four runs
+chained sequentially over ~44h (2026-09-08 19:44 -> 2026-09-10 15:26). The
+existing 0.1 checkpoint was backfilled with inference-only re-eval at
+cs 1.0/2.5/3.5 (no retraining) so it could be compared fairly against the
+new points, which were always evaluated across the same three cs values (not
+just cs=1.0), per this track's own operating rule against single-cs judging.
+Full table: `results/consistency_weight_sweep_20260908/scores.csv`, montage:
+`results/consistency_weight_sweep_20260908/montage_consistency_weight_sweep.png`.
+
+Numbers (weight x cs, key axes):
+
+| weight | cs | gt_bsds_f1 | near_white_frac (GT 0.948) | ink_ratio (GT 0.0353) | line_width_p50 (GT 3.72) |
+|---|---|---:|---:|---:|---:|
+| 0.1 (prior best) | 2.5 | 0.2336 | 0.633 | 0.106 | 3.55 |
+| **0.2** | **2.5** | **0.2354** | **0.779** | **0.088** | **3.17** |
+| 0.5 | 2.5 | 0.2226 | 0.753 | 0.091 | 3.01 |
+| 0.1 (prior best) | 3.5 | 0.2337 (prior adopted point) | 0.400 | 0.077 | 3.34 |
+
+`gt_bsds_f1` is essentially flat across the whole weight range at cs 2.5/3.5
+(0.21-0.24) -- another axis-blind-to-f1 case like the epoch-count and
+caption-vocabulary sweeps before it. But `near_white_frac` moves a lot:
+`consistency_weight=0.2` jumps the background from 63.3% white to 77.9% at
+cs2.5, without the "clean because nothing was drawn" trap this project has
+been burned by before (`ink_ratio` 0.088 and `line_width_p50` 3.17 both stay
+close to GT, and `gt_bsds_f1` is not depressed -- it's actually the best in
+the table). Secondary finding: `cs=2.5` beats `cs=3.5` on whiteness at every
+weight tested, consistently.
+
+**Verdict (user, visual review of the montage, 2026-09-10): `consistency_weight=0.2`
+at `cs=2.5` confirmed as the new best -- "もっとも線画がちかい" (closest to
+real line art among everything in the montage). Adopted as this track's new
+best configuration**, checkpoint:
+`checkpoints/controlnet_lora_manga_consistency_w0.2_20260908/final`.
+
+### Next Actions
+
+1. Update `doc/initial_notice.md`'s "出発点" (starting-point) section to
+   point at the new best checkpoint/cs and retire the old
+   `w=0.1`/`cs=3.5` entry as superseded, not deleted (open, doing this now).
+2. Remaining gap: even at the new best point, `near_white_frac` 0.779 is
+   still well short of GT 0.948 -- the grey residual is reduced, not solved.
+   `doc/initial_notice.md`'s priority list (InnerControl extension / direct
+   binarization intervention) still applies to what's left.
+3. Consider a second-round sweep centered tighter around 0.2 (e.g.
+   0.1-0.3) now that this round showed the effect is real and non-monotonic
+   (0.5 dips back below 0.2) -- not started, open for a future session to
+   decide against the InnerControl-extension alternative.
+4. `results/` from this batch (both phases' `outputs/` subdirectories, one
+   checkpoint per weight under `checkpoints/`) have not been reviewed for
+   the usual post-verdict cleanup pass yet -- open.

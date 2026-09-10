@@ -11,12 +11,22 @@
 
 ## 出発点
 
-**到達済みの最良構成**:
+**到達済みの最良構成**(2026-09-10更新、`consistency_weight`スイープの結果。
+詳細は`doc/work_log.md`「2026-09-08/10 (Track A)」参照):
 - チェックポイント:
-  `../lineart-controlnet-realpairs/checkpoints/controlnet_lora_manga_consistency_20260904/final`
-- 推論: `--controlnet-conditioning-scale 3.5`
-- 実測: gt_bsds_f1 **0.2337** / ink_ratio **0.0772** / line_width_p50 **3.34**
-  (GT参照: ink_ratio 0.0353 / line_width_p50 3.72)
+  `checkpoints/controlnet_lora_manga_consistency_w0.2_20260908/final`
+  (このworktree自身の`checkpoints/`。`consistency_weight=0.2`、
+  `consistency_max_timestep=200`は旧最良点と同じ)
+- 推論: `--controlnet-conditioning-scale 2.5`
+- 実測: gt_bsds_f1 **0.2354** / near_white_frac **0.779** / ink_ratio **0.088**
+  / line_width_p50 **3.17**
+  (GT参照: near_white_frac 0.948 / ink_ratio 0.0353 / line_width_p50 3.72)
+- ユーザーがモンタージュ目視で確認済み(2026-09-10、「もっとも線画がちかい」)
+
+旧最良点(`consistency_weight=0.1`、`cs=3.5`、gt_bsds_f1 0.2337、
+near_white_frac 0.400)は上位互換で置き換え。チェックポイント自体は
+`../lineart-controlnet-realpairs/checkpoints/controlnet_lora_manga_consistency_20260904/final`
+に残っており削除はしていない。
 
 この構成は`scripts/train_controlnet_consistency.py`(x0推定をVAEデコードして
 GT画像とのSobelエッジ一致度L1損失を補助項に追加)で学習したもの。
@@ -38,9 +48,10 @@ GT画像とのSobelエッジ一致度L1損失を補助項に追加)で学習し�
 
 ## 課題
 
-最良構成でも、GTの白背景・黒線に対し**背景がグレー・線もグレー寄り**。
-cs4.0以上に上げると線自体が薄れて消える(cs5.0で剣がほぼ消失)ため、
-csをさらに上げる方向では埋まらない。
+`consistency_weight=0.2`(cs2.5)への切り替えで背景の白さは大きく改善した
+(near_white_frac 0.400→0.779)が、GT(0.948)にはまだ届いていない — **グレー
+残差は縮小しただけで解決していない**。cs4.0以上に上げると線自体が薄れて
+消える(cs5.0で剣がほぼ消失)ため、csをさらに上げる方向では埋まらない。
 
 ### Track B(SDXL)からの申し送り(2026-09-06)
 
@@ -69,10 +80,13 @@ SDXL側では2×2交差(ControlNet × 前処理)で帰属が確定した:
 `lineart_anime`は条件画像を替えても解像度を変えても灰色のまま
 (near_white 0.031→0.030)、`manga_line`は常に白い。**つまり学習で
 消そうとしていたものが、実はチェックポイントの持ち物だった可能性がある。**
-SD1.5側でも同じ2×2で切り分けられる。雛形:
-`../lineart-controlnet-sdxl-fidelity/experiments/run_grey_source_cross_20260906.sh`。
-consistency損失のスイープに入る前にこれを回す方が、探索の順序として
-安い可能性が高い(学習1本より2×2推論4本の方が圧倒的に速い)。
+
+→ **2026-09-08/10に実施済み**(SD1.5には`manga_line`ControlNetが存在しない
+ため2×3グリッドに変更)。結果: 方向としてはSDXLと同じくControlNet起因寄り
+(`cnLineart`はnear_white 0.010〜0.041、`cnAnime`は0.119〜0.252で行が
+分離)だが、SDXLほど綺麗な分離ではなく前処理の副次効果も残る。加えて
+SD1.5はどちらのControlNetもGT白紙には遠く及ばない(素のControlNetは
+ink_ratioがGTの10倍以上)。詳細は`doc/work_log.md`「2026-09-08/10」参照。
 
 **3. 解像度とcsは交互作用する。** SDXLでは、cs1.0のまま解像度を上げても
 横ばい、cs2.0にして初めて単調改善した。紙の白さも1024かつcs2.0が揃って
@@ -81,9 +95,14 @@ consistency損失のスイープに入る前にこれを回す方が、探索の
 
 ## 次の一手(優先度順)
 
-1. **consistency損失のハイパラスイープ**(最有力)。効果があることは確定
-   したが`consistency_weight=0.1`・`consistency_max_timestep=200`の
-   **1点しか試していない**。
+`consistency_weight`スイープは2026-09-08/10に完了し、`weight=0.2`・`cs=2.5`
+が新最良点として採用済み(詳細: `doc/work_log.md`「2026-09-08/10」、
+上の「出発点」セクション)。ただしnear_white_fracはGTの0.948に対しまだ
+0.779どまりで、グレー残差自体は解決していない。次の一手:
+
+1. **第2段consistency_weightスイープ**(0.2周辺をより密に、例えば
+   0.1〜0.3を刻む)。今回の結果は0.5で一度下がる非単調な挙動を示しており、
+   0.2近傍にもう少し情報がある可能性が高い。前回同様1変数隔離を維持。
 2. **InnerControl方式への拡張**。[arxiv 2507.02321](https://arxiv.org/abs/2507.02321) /
    [github.com/ControlGenAI/InnerControl](https://github.com/ControlGenAI/InnerControl)。
    ControlNet++系の一致度損失が「最終デノイズステップのみ」に適用される
