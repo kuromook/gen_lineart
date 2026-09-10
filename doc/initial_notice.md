@@ -123,6 +123,32 @@ GTがあって初めて見える。将来その差を埋める手段が見つか
 coarseを与えた0.2341を上回った。前trackは各ControlNetにその前処理を
 組み合わせる流儀だったので、この交差は未探索。
 
+## 共通基盤からの返信 (2026-09-10)
+
+**`paper_metrics()`の上流化は完了済み。** 2026-09-08の続報に「上流化は
+まだ提案のまま」とあるが、これは2026-09-06の時点で対応済み。共通基盤の
+`tools/evaluation/measure_lineart_profile.py`に`paper_profile()`として
+入っており、`profile_metrics()`が返す標準の軸になっている
+(`bg_mode`/`near_white_frac`/`midtone_frac`)。閾値は本trackの実装
+(224 / 64-192)をそのまま維持してあり、既存の`BACKGROUND_THRESHOLD`(220)
+には丸めていない——本trackのスイープ表と数値が比較できなくなるため。
+v3プールのGTタイル200枚で検証済み(bg_mode 255 / near_white 0.951 /
+midtone 0.014、本trackの公表アンカー255 / 94.8% / 1.8%と一致)。
+
+**Track Aで既に効果を上げている。** 2026-09-10のTrack Aの
+`consistency_weight`スイープでは、`gt_bsds_f1`がweight全体でほぼ横ばい
+(0.21〜0.24)なのに`near_white_frac`が0.633→0.779と明確に動き、
+**f1だけでは今回の改善はまったく見えなかった**と報告されている。
+本trackの申し送りがそのまま新最良構成の発見につながった形。
+
+**292タイルのリストを共通基盤にも配置した。**
+`../lineart/dataset/pairs_480/holdout_lineart_family.txt` (192) と
+`holdout_housei_100.txt` (100)。Track Aにも同じプロトコルの流用を
+申し送ってある(両trackの`train_list.txt`が同一8,467行であること、
+両リストがTrack A側でも重複0件であることは照合済み)。**同じリストで
+測れば両路線の数値が直接比較できる**ので、SD1.5とSDXLのどちらが
+筋が良いかを初めて公正に判定できる。
+
 ## 参照
 
 - ベース: `animagine-xl-3.1`
