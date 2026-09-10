@@ -63,7 +63,9 @@ def main():
     scales = sorted({float(r["cs"]) for r in rows_csv})
 
     def cond_for(model, sample):
-        family = "manga" if model.startswith("manga") else "anime"
+        # anime_base_condmanga is the anime ControlNet fed the manga_line map,
+        # so the conditioning column follows the suffix, not the prefix.
+        family = "manga" if (model.startswith("manga") or model.endswith("condmanga")) else "anime"
         return TRACK / COND_DIR[family] / f"{sample}.jpg"
 
     # (model, cs) x resolution, on one sample

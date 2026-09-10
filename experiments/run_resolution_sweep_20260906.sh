@@ -54,6 +54,14 @@ MODELS=(
   "manga_lora|$CN_MANGA|checkpoints/controlnet_lora_sdxl_manga_20260830/final|data/diag_rough_manga_line"
   "anime_base|$CN_ANIME|-|data/diag_rough_lineart_coarse"
   "manga_base|$CN_MANGA|-|data/diag_rough_manga_line"
+  # Added 2026-09-10. The 2x2 cross (grey_source_cross_20260906) compared
+  # conditioning maps at cs1.0 ONLY, and at cs1.0 the anime ControlNet is a
+  # grey wash with 3% near-white -- so its "condManga 0.2438 > condCoarse
+  # 0.2341" was a comparison between two grey washes, in exactly the regime
+  # this project's first lesson says not to judge from. This row re-asks the
+  # question at the operating point by changing nothing but the conditioning
+  # map, so it lands in the same table as anime_base.
+  "anime_base_condmanga|$CN_ANIME|-|data/diag_rough_manga_line"
 )
 
 mkdir -p logs "$OUT_ROOT"
