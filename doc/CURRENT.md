@@ -22,7 +22,10 @@ closed. Successors are two worktrees, each with its own briefing in
 `doc/initial_notice.md`:
 
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
-  refine from the best config; the remaining gap is gray background/gray lines.
+  **new best config 2026-09-10**: `consistency_weight=0.2` at cs2.5, gt_bsds_f1
+  0.2354 with near_white_frac 0.400 -> **0.779**. The grey residual is narrowed,
+  not closed (GT is 0.948). Also five tiles. Notice:
+  `inbox/note_sd15_consistency_weight_result_20260910.md`.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
   **premise refuted 2026-09-06; the 1024 retrain then failed 2026-09-08.**
   "SDXL diverges from the rough" was a property of the 512-trained LoRA, not
@@ -43,9 +46,9 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and four lessons that apply project-wide** (lessons 3-4 added
-2026-09-06 from `../lineart-controlnet-sdxl-fidelity`; see
-`inbox/note_sdxl_resolution_findings_20260906.md`). The cause was not on the
+**Cause, and five lessons that apply project-wide** (lessons 3-4 added
+2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
+from both tracks; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
 consistency loss, caption vocabulary, a UNet-side LoRA) were each measured and
 rejected. The base UNet is frozen in every ControlNet run, so its hatch prior
@@ -85,6 +88,19 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    1024 and cs2.0 meet (near_white 3.0% -> 81.5%). Keep isolating one variable
    at a time as the default, but when an interaction is plausible, run the
    grid -- "level the field at 1024" alone would have shown nothing here.
+5. **"Does fine-tuning help?" is the wrong question; the training signal's
+   design is the question.** Read together, the two tracks look contradictory
+   and are not. On SDXL, three epsilon-MSE runs each made the bare ControlNet
+   worse -- fine-tuning is not merely useless there, it is harmful. On SD1.5,
+   fine-tuning with an auxiliary term added on top of epsilon-MSE
+   (`scripts/train_controlnet_consistency.py`: decode the x0 estimate through
+   the VAE, take an L1 on Sobel-edge agreement with the GT image) is what
+   produced the new best config. The difference is not the architecture and
+   not whether one trains, but **what is compared, against what, at which
+   timesteps**. Note also the shape of the SDXL failure: the objective kept
+   improving while the output got worse on every axis a human cares about --
+   the same "optimize one indicator, lose line-art-ness" pattern this project
+   keeps rediscovering, now with a loss curve that looked healthy throughout.
 
 ## Active Goal
 
@@ -470,14 +486,20 @@ Items 1-2 are the active direction and are carried out in the successor
 worktrees, each of which has its own briefing and work log. Items 3-6 are
 common-foundation housekeeping and open questions, none of them blocking.
 
-1. **SD1.5 refinement** (`../lineart-controlnet-sd15-refine`): sweep the
-   consistency-loss hyperparameters -- only a single point
-   (`consistency_weight=0.1`, `consistency_max_timestep=200`) has been tried,
-   and the effect is confirmed real. Then consider extending it to all
-   timesteps, InnerControl-style (arxiv 2507.02321). Do **not** add a UNet-side
-   LoRA, raise the LoRA rank, or forbid hatching by negative prompt -- all
-   three were measured and are worse; the first also breaks the
-   conditioning-scale lever itself.
+1. **SD1.5 refinement** (`../lineart-controlnet-sd15-refine`): the first
+   `consistency_weight` sweep is **done** (2026-09-10) and moved the axis that
+   matters: `weight=0.2` at cs2.5 gives gt_bsds_f1 0.2354 and near_white_frac
+   0.779, up from 0.400 at the old `weight=0.1`/cs3.5 best. `gt_bsds_f1` alone
+   was flat across the whole sweep (0.21-0.24) -- without the paper axis this
+   improvement would have been invisible. A round-2 sweep
+   (`weight=0.15/0.25/0.3/0.4`) is scheduled by systemd timer for
+   2026-09-14 00:00. Still open after that: extending the auxiliary loss to all
+   timesteps, InnerControl-style (arxiv 2507.02321), and closing the rest of
+   the grey gap (0.779 vs GT 0.948). Do **not** add a UNet-side LoRA, raise the
+   LoRA rank, or forbid hatching by negative prompt -- all three were measured
+   and are worse; the first also breaks the conditioning-scale lever itself.
+   **This track's numbers are five tiles too**, and unlike the SDXL track it
+   has no wider re-measurement planned -- see the hand-off in its briefing.
 2. **SDXL re-baseline** (`../lineart-controlnet-sdxl-fidelity`): **the
    re-baseline is done and the retrain failed** (2026-09-08). 1024 SDXL
    ControlNet LoRA *does* fit in 12GB -- 8.05GiB peak at 9.35s/step, lighter

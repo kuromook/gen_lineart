@@ -4879,3 +4879,61 @@ Still running in that track: the 1024 LoRA retrain (10 epochs, 21,168 steps,
 ~55h, launched Sunday afternoon, due Wednesday night). Its question is whether
 retraining at 1024 can beat the bare ControlNet's 0.2582; if it cannot, "this
 data and recipe do not improve on the stock ControlNet" is the recorded result.
+
+## 2026-09-10: Both Tracks Reported; The Two Results Are Not In Conflict
+
+Two notices landed: `inbox/note_sdxl_finetune_result_20260908.md` (Track B)
+and `inbox/note_sd15_consistency_weight_result_20260910.md` (Track A). Read
+together they look contradictory -- one says fine-tuning is harmful, the other
+found its best config by fine-tuning -- and they are not.
+
+**Track B**: the 1024 retrain failed. 21,160 steps over 50.3h, VRAM flat at
+8.20GiB, loss drifting down 0.0341 -> 0.0302, and the result lost to the bare
+ControlNet on every axis (gt_bsds_f1 0.1602 vs 0.2582, line_width 13.87 vs
+3.06, near_white 13.6% vs 77.6%). The track also killed the obvious
+explanation: upscaling 480px targets to 1024 does not soften them
+(near_white 93.9% -> 93.8% on 40 training tiles). Three independent runs (512
+anime, 512 manga, 1024 anime) degrade the same way, so resolution was never
+the cause -- **epsilon-MSE fine-tuning does not improve on the bare
+ControlNet for this pair data**. Reachable config: bare
+`Eugeoter/noob-sdxl-controlnet-lineart_anime` at 1024/cs2.5, no training.
+
+Worth recording separately: that inference reads two off-the-shelf models, one
+rough and a fixed caption, and never touches the GT -- so **the pair data
+contributes nothing to that output**. Its role moved from training data to
+measuring instrument, and as an instrument it is still load-bearing (cs2.5,
+the grey detection, and the failure verdict all needed GT).
+
+**Track A**: the `consistency_weight` sweep produced a new best,
+`weight=0.2` at cs2.5 -- gt_bsds_f1 0.2354, near_white_frac 0.400 -> 0.779
+(GT 0.948), user-confirmed on the montage. `gt_bsds_f1` was flat across the
+entire sweep (0.21-0.24); **the improvement was visible only on the paper
+axis**, which is the axis lifted from Track B on 2026-09-06. Its grey-source
+cross also leaned the same way as SDXL's (ControlNet-attributable) but did not
+separate as cleanly, and SD1.5 has no `manga_line` equivalent, so it cannot
+take SDXL's "just switch to the white checkpoint" escape.
+
+**The reconciliation is lesson 5 in `doc/CURRENT.md`**: what failed on SDXL is
+epsilon-MSE alone; what worked on SD1.5 is epsilon-MSE plus an auxiliary term
+(VAE-decoded x0 vs GT Sobel-edge L1). The question is not whether to fine-tune
+but what is compared against what, at which timesteps.
+
+Actions taken here:
+
+1. `doc/CURRENT.md` -- Track A's new best config in the pointer list, lesson 5
+   added, Next Actions item 1 rewritten (sweep done, round 2 scheduled by
+   systemd timer for 2026-09-14 00:00).
+2. Replied into Track B's briefing: `paper_metrics()` was already upstreamed
+   on 2026-09-06 as `paper_profile()` -- its notice still lists this as an open
+   offer. Also told it the axis has since paid off in Track A.
+3. Handed Track B's 292-tile holdout protocol to Track A, which had said no
+   wider re-measurement was planned. Verified rather than assumed: both tracks'
+   `train_list.txt` are the identical 8,467 rows, and both holdout lists have
+   zero overlap with it on the Track A side too. Lists copied to
+   `dataset/pairs_480/holdout_lineart_family.txt` (192) and
+   `holdout_housei_100.txt` (100) so both tracks score the same tiles and the
+   two routes become directly comparable.
+
+**Every number above rests on five tiles.** Track B says so itself and has the
+292-tile run staged for the weekend; Track A had not planned one. Nothing here
+should be treated as settled until those land.
