@@ -206,11 +206,23 @@ def main():
     montage(labels, groups)
 
 
+# Curated rather than "the first N of each list". The first four housei
+# tiles happened to be background/prop art with no character in them (user
+# observation, 2026-09-11), which misrepresents a group that is 22% solid
+# fill and 38% near-blank tiles. These cover the span: character art with
+# heavy black fills, background, and a near-empty tile.
+MONTAGE_PICKS_B = ["housei_004_18_10.jpg", "housei_004_19_09.jpg",
+                   "housei_009_04_06.jpg", "housei_001_23_02.jpg",
+                   "housei_001_17_18.jpg", "housei_001_04_12.jpg"]
+
+
 def montage(labels, groups):
     """Twelve tiles spanning both groups -- a mean over 292 tiles is exactly
     where a grey wash or a blank page would hide, so the sheet is not
     optional."""
-    picks = groups["A_lineart_family"][:8] + groups["B_housei"][:4]
+    picks_b = [t for t in MONTAGE_PICKS_B if t in groups["B_housei"]]
+    picks_b += [t for t in groups["B_housei"] if t not in picks_b][:max(0, 6 - len(picks_b))]
+    picks = groups["A_lineart_family"][:6] + picks_b
     cell, lab_h = 190, 22
     font = ImageFont.load_default()
     cols = ["cond", "GT"] + labels
