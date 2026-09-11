@@ -4937,3 +4937,54 @@ Actions taken here:
 **Every number above rests on five tiles.** Track B says so itself and has the
 292-tile run staged for the weekend; Track A had not planned one. Nothing here
 should be treated as settled until those land.
+
+## 2026-09-11: Track B Closed; CURRENT.md Realigned To The New Target
+
+Three notices plus a proposal landed from `lineart-controlnet-sdxl-fidelity`,
+which then closed itself. The substance is recorded in `doc/CURRENT.md` (the
+pointer section and lessons were written by that track directly). What was
+fixed here is the parts of this file the track did not reach, which had drifted
+out of agreement with its own new content:
+
+1. **Naming.** The SDXL bullet pointed at "Track C below"; no such label
+   existed -- the successor is the `../lineart-stroke-selection` bullet, now
+   named as such. The section header also still said "successors are two
+   worktrees" when there are three, one of them closed.
+2. **Active Goal.** It still read "make ControlNet-based rough-to-line
+   conversion actually follow the rough", with SDXL listed as an active
+   re-baseline. Both halves are now known to be wrong: fidelity was never the
+   problem (the SDXL stack copies its conditioning at f1 0.88), and the
+   baseline to beat was never another model -- no model this project has
+   trained beats a preprocessor run alone. Rewritten around the measured
+   residual instead, which is two different problems by pool: deletion on the
+   lineart family (oracle 0.7425 vs preprocessor 0.3231) and solid fills on
+   housei/ako5 (preprocessor fill_ratio 0.0% vs GT 24.5%).
+3. **Next Actions.** Item 2 still described the SDXL re-baseline as in
+   progress with the 292-tile validation "staged for the weekend"; it has run,
+   confirmed the fine-tune loss, and overturned the track's own headline.
+   Replaced with the stroke-selection track, carrying two caveats the proposal
+   itself raises: 0.74 is an oracle that consults GT, so it is an upper bound
+   by construction, and its recall is capped at 0.604 because the preprocessor
+   never finds the other 40% of GT's strokes -- which means the preprocessor
+   should be re-chosen on ceiling, not on standalone f1.
+
+Two further edits beyond the three, both correcting this file against itself:
+
+- Item 1 presented Track A's 0.2354 as an advance with no baseline, in the same
+  file that now mandates (lesson 6) reporting the conditioning map's own score.
+  Its conditioning map scores 0.2566 alone, so the new best is 0.021 *below*
+  baseline. The sentence now says that, and says what the sweep does show --
+  f1 rising as the output moves away from the conditioning map, the only case
+  in this project of a trained model contributing anything.
+- "see the two lessons at the top of this file" -> six, and the metric list
+  updated to include `fill_ratio` and the conditioning-map baseline.
+
+Added as Next Actions item 3, previously unlisted anywhere: **whether the
+solid-fill pools are a target at all.** Over 12,000 tiles in `ako5`/`housei`
+have never been trained on and appear in no evaluation set, and an
+edge-detector-plus-selection pipeline cannot reach them by construction.
+Deciding not to target them is a fine answer; leaving it unstated is not,
+because it decides whether stroke selection is the whole plan or half of it.
+
+Not done, pending user decision: whether Track A's round-2 sweep (systemd
+timer, 2026-09-14 00:00) should run as configured.
