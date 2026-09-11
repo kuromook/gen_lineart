@@ -88,7 +88,19 @@ def summarise(rows):
     return out
 
 
-def table(title, per_label, note=""):
+def gt_group_reference(tiles):
+    """GT profile for one group. Group B is a different source, and without
+    its own reference an ink_ratio of 0.0176 cannot be told apart from a
+    source whose GT is simply sparser."""
+    acc = {}
+    for tile in tiles:
+        path = gt_path(tile)
+        for k, v in dict(profile_metrics(path), **paper_metrics(load_gray(path))).items():
+            acc.setdefault(k, []).append(float(v))
+    return {k: float(np.mean(v)) for k, v in acc.items()}
+
+
+def table(title, per_label, note="", gt=None):
     print(f"\n=== {title} ===")
     if note:
         print(f"    {note}")
@@ -99,6 +111,10 @@ def table(title, per_label, note=""):
         print(f"{label:12}{s['n']:5d}{s['gt_bsds_f1']:10.4f}{s['f1_median']:9.4f}"
               f"{s['f1_stdev']:8.4f}{s['ink_ratio']:9.4f}{s['line_width_p50']:9.2f}"
               f"{s['near_white_frac']*100:9.1f}%{s['midtone_frac']*100:8.1f}%")
+    if gt:
+        print(f"{'GT(this group)':12}{'':5}{'':10}{'':9}{'':8}{gt['ink_ratio']:9.4f}"
+              f"{gt['line_width_p50']:9.2f}{gt['near_white_frac']*100:9.1f}%"
+              f"{gt['midtone_frac']*100:8.1f}%")
 
 
 def main():
@@ -143,7 +159,8 @@ def main():
 
     anchor_rows = [r for r in rows if r["tile"] in anchor]
     table("1. ANCHOR: the five diag tiles, re-measured", by_label(anchor_rows),
-          "must land near the historical five-tile values below")
+          "must land near the historical five-tile values below",
+          gt_group_reference(sorted(anchor)))
     print("\n    historical (results/controlnet_lora_sdxl_anime_1024_20260907_eval):")
     for k, v in HISTORICAL.items():
         now = by_label(anchor_rows).get(k, {}).get("gt_bsds_f1")
@@ -152,20 +169,24 @@ def main():
 
     a_rows = [r for r in rows if r["group"] == "A_lineart_family"]
     b_rows = [r for r in rows if r["group"] == "B_housei"]
+    gt_a = gt_group_reference(groups["A_lineart_family"])
+    gt_b = gt_group_reference(groups["B_housei"])
     table("2. GROUP A: 192 tiles, same source family as the diag five",
-          by_label(a_rows), "this is the scale-up -- does the five-tile ranking hold?")
+          by_label(a_rows), "this is the scale-up -- does the five-tile ranking hold?", gt_a)
     table("3. GROUP B: 100 housei tiles, a different source",
-          by_label(b_rows), "generalisation, not a contradiction if it differs")
+          by_label(b_rows), "generalisation, not a contradiction if it differs", gt_b)
 
     for name, subset in (("GROUP A", a_rows), ("GROUP B", b_rows)):
-        best_bare = max((by_label(subset)[l], l) for l in by_label(subset) if l.startswith("bare"))
-        ft = by_label(subset).get("ft_cs2.0")
-        if ft:
-            delta = ft["gt_bsds_f1"] - best_bare[0]["gt_bsds_f1"]
+        summaries = by_label(subset)
+        bare = {l: v for l, v in summaries.items() if l.startswith("bare")}
+        ft = summaries.get("ft_cs2.0")
+        if bare and ft:
+            best_label = max(bare, key=lambda l: bare[l]["gt_bsds_f1"])
+            delta = ft["gt_bsds_f1"] - bare[best_label]["gt_bsds_f1"]
             verdict = ("fine-tuning helps" if delta > 0
                        else "fine-tuning does NOT beat the bare ControlNet")
             print(f"\n{name} verdict: ft_cs2.0 {ft['gt_bsds_f1']:.4f} vs "
-                  f"{best_bare[1]} {best_bare[0]['gt_bsds_f1']:.4f} "
+                  f"{best_label} {bare[best_label]['gt_bsds_f1']:.4f} "
                   f"-> delta {delta:+.4f}, {verdict}")
 
     with open(ROOT / "scores.csv", "w", newline="") as f:
