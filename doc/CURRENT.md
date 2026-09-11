@@ -27,17 +27,27 @@ closed. Successors are two worktrees, each with its own briefing in
   not closed (GT is 0.948). Also five tiles. Notice:
   `inbox/note_sd15_consistency_weight_result_20260910.md`.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
-  **the 0.2582 reported here on 2026-09-06/08 was the preprocessor's score,
-  not a model's (corrected 2026-09-11).** Scoring the conditioning map itself
-  against GT gives 0.3177 on the 192-tile held-out set; the bare ControlNet
-  gives 0.3027, i.e. it makes the preprocessor's output slightly *worse*, and
-  its output matches its own conditioning at f1 0.88. What beat the
-  eleven-model table was `LineartDetector(coarse=True)` run alone. The 50h
-  1024 fine-tune still loses badly (delta -0.1175 over 192 tiles) on axes
-  that are not distance artifacts -- 11.9% near white against GT's 92.4%.
-  Notices: `inbox/note_sdxl_resolution_findings_20260906.md`,
-  `inbox/note_sdxl_finetune_result_20260908.md`,
-  `inbox/note_sdxl_correction_preprocessor_20260911.md`.
+  **CLOSED 2026-09-11.** Its question is answered in the opposite direction
+  from the premise: SDXL does not diverge from the rough, it copies its
+  conditioning at f1 0.88. Fidelity was never the problem. What it established
+  instead: **no model this project has trained beats a preprocessor run
+  alone** (lineart_coarse 0.2639 > SDXL bare 0.2615 > manga_line 0.2566 >
+  SD1.5 consistency 0.2354 > SDXL ft 0.1539, same five tiles), and decomposing
+  that gap shows the residual is **deletion** on the lineart pool (the
+  preprocessor lays 1.4x GT's ink) and **solid fills** on housei (its
+  fill_ratio is 0.0% against GT's 24.5%). A delete-only oracle reaches
+  **0.7425** against the preprocessor's 0.3231. Successor is Track C below.
+  Notices: `inbox/note_sdxl_correction_preprocessor_20260911.md`,
+  `inbox/note_contamination_check_both_tracks_20260911.md`,
+  `inbox/note_track_b_closing_and_selection_proposal_20260911.md`.
+  Pool inventory (every source profiled, with the new fill_ratio):
+  `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
+- `../lineart-stroke-selection` (branch `stroke-selection`) -- **NEW
+  2026-09-11.** Can the deletion be learned? Input is the preprocessor output
+  rather than the raw rough, the label comes straight from the pair data (did
+  this stroke match GT), and the ceiling is 0.74 against a current best near
+  0.30. First move is to look at the oracle before trusting it. Proposal:
+  `doc/track_proposal_stroke_selection_20260911.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
