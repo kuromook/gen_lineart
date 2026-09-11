@@ -27,15 +27,17 @@ closed. Successors are two worktrees, each with its own briefing in
   not closed (GT is 0.948). Also five tiles. Notice:
   `inbox/note_sd15_consistency_weight_result_20260910.md`.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
-  **premise refuted 2026-09-06; the 1024 retrain then failed 2026-09-08.**
-  "SDXL diverges from the rough" was a property of the 512-trained LoRA, not
-  of SDXL. The bare lineart_anime ControlNet at 1024/cs2.5 reaches
-  gt_bsds_f1 **0.2582** with no fine-tune at all, and a 50h 1024 fine-tune
-  came in at 0.1602 -- worse on every axis. **Both numbers rest on five
-  tiles**; a 292-tile re-measurement (inference only) runs at the weekend,
-  so do not treat 0.2582 as settled yet. Notices:
-  `inbox/note_sdxl_resolution_findings_20260906.md`,
-  `inbox/note_sdxl_finetune_result_20260908.md`.
+  **the 0.2582 reported here on 2026-09-06/08 was the preprocessor's score,
+  not a model's (corrected 2026-09-11).** Scoring the conditioning map itself
+  against GT gives 0.3177 on the 192-tile held-out set; the bare ControlNet
+  gives 0.3027, i.e. it makes the preprocessor's output slightly *worse*, and
+  its output matches its own conditioning at f1 0.88. What beat the
+  eleven-model table was `LineartDetector(coarse=True)` run alone. The 50h
+  1024 fine-tune still loses badly (delta -0.1175 over 192 tiles) on axes
+  that are not distance artifacts -- 11.9% near white against GT's 92.4%.
+  Notices: `inbox/note_sdxl_resolution_findings_20260906.md`,
+  `inbox/note_sdxl_finetune_result_20260908.md`,
+  `inbox/note_sdxl_correction_preprocessor_20260911.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -46,9 +48,9 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and five lessons that apply project-wide** (lessons 3-4 added
+**Cause, and six lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
-from both tracks; see the notices in `inbox/`). The cause was not on the
+from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
 consistency loss, caption vocabulary, a UNet-side LoRA) were each measured and
 rejected. The base UNet is frozen in every ControlNet run, so its hatch prior
@@ -101,6 +103,28 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    improving while the output got worse on every axis a human cares about --
    the same "optimize one indicator, lose line-art-ness" pattern this project
    keeps rediscovering, now with a loss curve that looked healthy throughout.
+
+6. **Report `gt_bsds_f1` against the conditioning map's own score, or the
+   number cannot be read.** On a ControlNet conditioned by a line
+   preprocessor, f1-against-GT largely measures how faithfully the output
+   copied that preprocessor -- so a model that does nothing scores best. The
+   SDXL track's headline collapsed on exactly this: the conditioning map
+   alone scores 0.3177 against GT, the bare ControlNet 0.3027, and
+   distance-from-conditioning tracks f1 monotonically (0.88 -> 0.3027, 0.84
+   -> 0.2961, 0.26 -> 0.1820). The baseline is cheap -- no inference, just
+   score the conditioning images you already have. **This contamination has
+   not been checked on the SD1.5 track**, whose 0.2354 is in the same
+   position; it may well survive, since `consistency_weight` moved
+   near_white 0.400 -> 0.779, which copying the conditioning cannot explain,
+   and that would make it the project's first demonstrated case of the model
+   contributing rather than the preprocessor.
+   A second reading rule from the same review: **do not average across the
+   `lineart` and `housei` pools.** They are different tasks, not different
+   sources -- 5.9% vs 21.9% of GT ink is solid fill, 1% vs 38% of tiles are
+   near-blank -- and the failure inverts between them (grey paper on one,
+   an inability to lay solid fills on the other). Score them separately;
+   `dataset/pairs_480/holdout_lineart_family.txt` and
+   `holdout_housei_100.txt` are already split that way.
 
 ## Active Goal
 
@@ -510,7 +534,8 @@ common-foundation housekeeping and open questions, none of them blocking.
    1024 fine-tune completed cleanly -- 21,160 steps over 50.3h, VRAM flat,
    loss drifting down -- and lost to the bare ControlNet on every axis
    (gt_bsds_f1 0.1602 vs 0.2582, line_width 13.87 vs 3.06, 13.6% near white
-   vs 77.6%), reproducing the 512 runs' failure mode. So resolution was not
+   vs 77.6% -- and see lesson 6: that 0.2582 is the preprocessor's score, not
+   the bare model's), reproducing the 512 runs' failure mode. So resolution was not
    what made fine-tuning fail, and **epsilon-MSE fine-tuning does not improve
    on the bare ControlNet for this pair data** -- three independent runs (512
    anime, 512 manga, 1024 anime) degrade it the same way while the training
