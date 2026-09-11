@@ -5543,3 +5543,20 @@ Track Bの問いは「条件忠実度(SDXLは下絵から乖離するか)」だ�
    アーキテクチャで走らせて前処理器に-0.021、第2弾スイープが
    2026-09-14に我々のコストゼロで判定を出す。数日かけて移植する前に
    その結果を見るべき
+
+## ★Track B 終了 (2026-09-11、ユーザー判断)
+
+問い「条件忠実度」は答えが出た(逆だった)ため終了。後継は
+**Track C `../lineart-stroke-selection`**(branch `stroke-selection`)。
+起案を共通基盤の`doc/track_proposal_stroke_selection_20260911.md`に置き、
+通達を共通基盤とTrack Aの両方に配達した
+(`outbox/note_track_b_closing_and_selection_proposal_20260911.md`)。
+
+Track Cのworktreeを作成し、`data/`を複製(996MB。SDXL専用の
+`cache_sdxl_1024` 4.9GBは複製後に削除)。`doc/initial_notice.md`に
+到達点・問い・運用ルールを引き継いだ。
+
+**Track Cの最初の一手は「削除オラクルの目視確認」**とした。天井0.74を
+信じる前に、それが人間に線画として見えるかを確認する。本プロジェクトは
+指標に3回裏切られている(entropy単体/f1単体/near_white単体)ので、
+4回目をやらないための順序。

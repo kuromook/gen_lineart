@@ -1,12 +1,55 @@
-# Track B: SDXL路線 — 下絵との乖離(条件忠実度)
+# Track B: SDXL路線 — 下絵との乖離(条件忠実度) 【終了】
 
-作成: 2026-09-06 JST / 更新: 2026-09-11 / ブランチ: `controlnet-sdxl-fidelity`
+作成: 2026-09-06 JST / 終了: 2026-09-11 / ブランチ: `controlnet-sdxl-fidelity`
 前身: `lineart-controlnet-realpairs`(クロスハッチ脱却を達成して終了)
 起案: `doc/track_proposal_20260906.md`(このtrackにも同梱)
 前身の全経緯: `doc/track_controlnet_realpairs_work_log.md`
 
 このファイルは「現状・次の一手・運用ルール」だけを短く保つ。
 実験の時系列は`doc/work_log.md`に追記すること。
+
+## ★このtrackは終了した (2026-09-11)
+
+**問い「SDXLは下絵から乖離するか(条件忠実度)」は答えが出た。逆だった。**
+乖離どころか**忠実すぎて条件画像を写している**(`vs条件画像` 0.88)。
+**忠実度は最初から問題ではなかった。**
+
+後継: **Track C `../lineart-stroke-selection`**(branch `stroke-selection`)
+起案: `../lineart/doc/track_proposal_stroke_selection_20260911.md`
+
+### 到達点(3つの測定)
+
+1. **学習した全モデルが前処理器単体に負けている**。同一5枚で
+   前処理`lineart_coarse` 0.2639 > SDXL bare 0.2615 > `manga_line` 0.2566 >
+   SD1.5 consistency 0.2354 > SDXL ft 0.1539。
+   **前処理器3種の差の方が、モデル間の差より大きい**
+2. **残差の内訳は群によって正反対**。群A(lineart)は前処理器がGTの1.4倍
+   描いている→**削る**問題。群B(housei)は前処理器のインクがGTの26%・
+   ベタ率0.0%→**塗る**問題
+3. **削るだけで 0.32 → 0.74**(群A、削除オラクル)。全モデルが0.30前後で
+   競っていた横で、削除オラクルは0.74。**残差の圧倒的大部分は選択問題**
+
+### 未着手のまま残すもの
+
+- **SDXLへのconsistency損失移植**。設計メモは下の「移植の設計メモ」節。
+  Track Aが同機構を安いアーキテクチャで走らせて前処理器に-0.021であり、
+  **第2弾スイープ(2026-09-14)の結果を見てから判断すべき**。
+  いま着手する理由はない
+- **群B(ベタ塗り)を目標にするかの判断**。`ako5`と`housei`の計12,000枚超は
+  一度も学習しておらず評価セットにも入っていない(`doc/pool_inventory.md`)
+
+### このtreeに残る資産
+
+- `doc/pool_inventory.md` — 全プールの棚卸し(`fill_ratio`込み)
+- `doc/work_log.md` — 全経緯。特に2026-09-11の残差分解・選択天井
+- `dataset/pairs_480/holdout_*.txt` — ホールドアウト292枚(群A 192/群B 100)
+- `scripts/cache_sdxl_conditioning.py` + `train_controlnet_sdxl.py --cache-dir`
+  — 12GBで1024学習を通す仕組み(8.05GiB/9.35s-step)
+- `tools/evaluation/inventory_pair_pools.py` — プール棚卸しツール
+
+---
+
+以下は終了時点の記録(参照用)。
 
 ## 現状 (2026-09-10 時点)
 
