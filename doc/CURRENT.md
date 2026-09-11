@@ -118,6 +118,16 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    near_white 0.400 -> 0.779, which copying the conditioning cannot explain,
    and that would make it the project's first demonstrated case of the model
    contributing rather than the preprocessor.
+   A companion metric was added for the same reason on 2026-09-11:
+   `profile_metrics` now returns **`fill_ratio`** (share of ink in strokes
+   thicker than 8px) beside `line_width_p50`, because width alone cannot
+   separate a thick stroke from a solid fill -- the confusion that made this
+   project read housei GT's line_width_p50 of 7.59 as "thick deliberate
+   strokes" when it was measuring solid blacks. Calibrated against known
+   cases: coarse_trained, the identified fill-escape model, 91.6%; a clean
+   line-art model 7.1%; GT tiles 3.3%. A fill-excluded "corrected width" was
+   tried and rejected -- it collapsed to ~1.9 everywhere, since what remains
+   after removing fills is their own thin fringes.
    A second reading rule from the same review: **do not average across the
    `lineart` and `housei` pools.** They are different tasks, not different
    sources -- 5.9% vs 21.9% of GT ink is solid fill, 1% vs 38% of tiles are

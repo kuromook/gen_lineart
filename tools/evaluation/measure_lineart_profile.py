@@ -98,6 +98,15 @@ BLANK_CELL_INK_RATIO = 0.01  # a cell counts as "near-blank paper" below this lo
 # the numbers comparable with that sweep's published table and its GT anchors
 # (bg_mode 255, near_white_frac 94.8%, midtone_frac 1.8%).
 NEAR_WHITE = 224  # "this pixel is paper"
+# Ink whose local half-width exceeds this many pixels is counted as solid
+# fill rather than stroke (added 2026-09-11 from
+# ../lineart-controlnet-sdxl-fidelity). line_width_p50 is a distance-transform
+# median over all ink, so a filled area's interior inflates it and a thick
+# stroke cannot be told from a small fill by width alone -- that confusion
+# made this project read housei GT's line_width_p50 of 7.59 as "thick
+# deliberate strokes" when it was measuring solid blacks. fill_ratio is the
+# companion that disambiguates; it is NOT a corrected width.
+FILL_HALF_WIDTH_PX = 4.0
 MIDTONE_LO, MIDTONE_HI = 64, 192  # neither paper nor ink -- grey wash territory
 
 METRIC_KEYS = [
@@ -110,6 +119,7 @@ METRIC_KEYS = [
     "long_component_ratio",
     "components_per_1k_ink_px",
     "line_width_p50",
+    "fill_ratio",
     "width_consistency",
     "long_line_ratio",
     "orientation_entropy",
@@ -219,6 +229,27 @@ def grid_heterogeneity(ink, cells=GRID_CELLS):
     return {"grid_ink_cv": cv, "blank_cell_fraction": blank_fraction}
 
 
+def fill_ratio(ink):
+    """Fraction of ink belonging to strokes thicker than 2*FILL_HALF_WIDTH_PX.
+
+    Read beside line_width_p50, which cannot separate a genuinely thick
+    stroke from a solid fill. Calibrated 2026-09-11 against cases whose
+    answer was already known: coarse_trained, the model this project had
+    identified as escaping into solid fill (line_width_p50 40.92), comes out
+    at 57.5%; GT line-art tiles sit at 3.0%; a bare-ControlNet output that
+    draws no fills at all sits at 1.0%; housei GT, which has real solid
+    blacks in hair and clothing, sits at 17.0%.
+
+    A fill-excluded "corrected width" was tried first and rejected -- it
+    collapsed to ~1.9 for every set measured, because what remains after
+    removing fills is dominated by their own thin fringes.
+    """
+    if ink.sum() < 20:
+        return 0.0
+    distance = cv2.distanceTransform(ink.astype(np.uint8), cv2.DIST_L2, 3)
+    return float((distance[ink] > FILL_HALF_WIDTH_PX).mean())
+
+
 def profile_metrics(path, min_length_fraction=0.08):
     gray = load_gray(path)
     ink = gray < THRESHOLD
@@ -238,6 +269,7 @@ def profile_metrics(path, min_length_fraction=0.08):
                 "component_count": 0,
                 "line_width_p50": 0.0,
                 "line_width_p95": 0.0,
+                "fill_ratio": 0.0,
                 "width_consistency": 0.0,
                 "long_line_ratio": 0.0,
                 "orientation_entropy": 0.0,
@@ -256,6 +288,7 @@ def profile_metrics(path, min_length_fraction=0.08):
             "component_count": comp["component_count"],
             "line_width_p50": width_p50,
             "line_width_p95": width_p95,
+            "fill_ratio": fill_ratio(ink),
             "width_consistency": width_p95 / max(width_p50, 1e-6),
             "long_line_ratio": long_line_ratio(ink, IMAGE_SIZE, min_length_fraction),
             "orientation_entropy": orientation_entropy(edges),
