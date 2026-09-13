@@ -4988,3 +4988,83 @@ because it decides whether stroke selection is the whole plan or half of it.
 
 Not done, pending user decision: whether Track A's round-2 sweep (systemd
 timer, 2026-09-14 00:00) should run as configured.
+
+## 2026-09-13: Track A Closed; Profiler Guarded Against A Non-Terminating Case
+
+`inbox/note_track_a_closing_20260913.md` arrived and closes
+`lineart-controlnet-sd15-refine`. It proposes no successor and folds into
+stroke-selection, which leaves that as the only active track.
+
+**The result.** Re-measured on 192 tiles with Track B's protocol (housei group
+excluded, `lineart_family` only), the gap to the preprocessor is *wider* than
+the five-tile diagnostic had shown: `manga_line` alone scores 0.2847, against
+0.2514 for round 1's best (`w=0.2`) and 0.2524 for round 2's (`w=0.4`) --
+-0.0333 and -0.0323 where five tiles had said -0.021. Second time in a row
+that widening the tile count moved the verdict the same way.
+
+The reinterpretation is the part worth keeping. **The preprocessor already had
+near_white_frac 0.931 against GT's 0.924.** Four consistency_weight sweeps
+spent lifting near_white from 0.400 into the 0.800s were climbing back toward
+what the conditioning map started with, and never overtook it. The grey
+residual was never a gap the model was filling -- it was degradation the model
+introduced. That reframing costs the track its premise, and the track drew the
+conclusion itself rather than defending the work.
+
+Worth separating from the verdict: Track A's *mechanism* did do what it was
+designed to do. Output moved away from the conditioning map while moving toward
+GT (vs-conditioning 0.5009 -> 0.4618 as f1 rose 0.2175 -> 0.2354), the opposite
+of the SDXL stack, which just copied its conditioning at 0.88. A mechanism can
+be real and still not be worth keeping; the evidence is against diffusion
+generation closing this gap, not against that particular loss working.
+
+### Verified the bug report rather than taking it on trust
+
+The notice reports that `measure_lineart_profile.py` hangs on degenerate
+near-uniform images, found after one tile ran 90+ minutes. Reproduced: an
+all-black 480x480 tile times out, an all-white one returns in 0.006s (it hits
+the existing `ink_px < 20` guard).
+
+**The mechanism is worse than "slow", and the notice did not identify it: the
+loop cannot terminate.** `skeletonize()` runs `while countNonZero(m) > 0`,
+eroding with a 3x3 cross, and `cv2.erode`'s default `BORDER_CONSTANT` treats
+pixels outside the image as the maximum value. A mask with no background pixels
+is therefore a *fixed point* of erosion -- nothing is ever peeled, the count
+never drops, and the loop runs forever. Confirmed directly: eroding a saturated
+480x480 mask leaves `countNonZero` at 230400 across iterations, unchanged.
+
+Also confirmed that only true saturation is affected, which set the threshold:
+a single interior background pixel makes skeletonize finish in 0.10s, 20 blank
+pixels in 0.03s, 230 in 0.01s. So the guard is `blank_px < MIN_BACKGROUND_PX`
+(20), mirroring the existing ink-side floor, with a small margin for meaning
+rather than for termination -- a tile with five background pixels has no stroke
+topology worth reporting.
+
+**Deliberately did not widen the low-side guard**, though the notice's proposed
+form (`ink_ratio` outside 0.001..0.999) would have. `ink_px < 20` is a ratio of
+8.7e-5; moving the floor to 0.001 would zero the stroke metrics of any tile
+with 20-230 ink pixels. Those are real sparse line art, not degenerate, and
+changing them would silently break comparability with every historical
+measurement. Verified the fix is inert on real data: 8 tiles from
+`line_combined_v3_20260830`, 20 metrics each, 0 differences before vs. after.
+
+### What was recorded where
+
+- `doc/CURRENT.md`: Track A's pointer bullet becomes CLOSED with the 192-tile
+  numbers and the near_white reinterpretation; the Active Goal paragraph that
+  had it "continuing in parallel" now records the mechanism as a closed
+  finding; Next Actions drops it and promotes stroke selection to item 1,
+  renumbered 1-6.
+- Two sentences in `doc/CURRENT.md` were comparing the 0.7425/0.3231 oracle
+  figures (192-tile group) against Track A's 0.2354 (five tiles) in a single
+  breath. Now stated on the 192-tile scale (0.2514) with the group named.
+- The open question "port the consistency loss to SDXL?" was explicitly gated
+  on this sweep and is now **answered: do not.** Recorded in both CURRENT.md
+  and Track C's briefing, replacing the deferred text rather than appending to
+  it.
+- Track C gains the `manga_line` ceiling it was missing: 0.5143 (recall cap
+  0.3462) against `lineart_coarse`'s 0.7425 (0.604), same 192-tile group, so
+  directly comparable. Flagged there that standalone score and ceiling happened
+  to rank the same way across these two candidates, which does not retire the
+  warning that they are different criteria -- and that `lineart_anime`'s
+  ceiling is still unmeasured and should not be dismissed on its last-place
+  standalone score.

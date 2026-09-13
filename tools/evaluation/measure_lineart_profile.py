@@ -108,6 +108,24 @@ NEAR_WHITE = 224  # "this pixel is paper"
 # companion that disambiguates; it is NOT a corrected width.
 FILL_HALF_WIDTH_PX = 4.0
 MIDTONE_LO, MIDTONE_HI = 64, 192  # neither paper nor ink -- grey wash territory
+# Degenerate-image guard (added 2026-09-13, reported by
+# ../lineart-controlnet-sd15-refine after a single tile hung for 90+ minutes).
+# An image with no background pixels at all does not merely make skeletonize()
+# slow -- it never returns. skeletonize() loops `while countNonZero(m) > 0`,
+# eroding with a 3x3 cross, and cv2.erode's default BORDER_CONSTANT treats
+# outside pixels as the maximum value, so a fully saturated mask is a fixed
+# point of erosion: nothing is ever peeled and the loop cannot terminate.
+# Verified: one interior background pixel is enough to make it finish in 0.10s,
+# while zero background pixels runs forever.
+# How a real run reaches that state: `manga_line` conditioning images use a
+# black-background/white-line convention, so profiling one without correcting
+# polarity first reads the background as ink -- 8,451 of that track's 8,467
+# tiles (99.8%) land above ink_ratio 0.95 that way, and a near-blank rough
+# inverts to a completely uniform image, which is the case that hangs.
+# This guard only stops the hang. It does NOT make polarity-uncorrected
+# numbers meaningful -- invert the image before profiling it.
+MIN_BACKGROUND_PX = 20  # mirrors the MIN_INK_PX floor on the other side
+MIN_INK_PX = 20
 
 METRIC_KEYS = [
     "ink_ratio",
@@ -261,7 +279,7 @@ def profile_metrics(path, min_length_fraction=0.08):
     result.update(faint_locality(gray))
     result.update(grid_heterogeneity(ink))
 
-    if ink_px < 20:
+    if ink_px < MIN_INK_PX or (IMAGE_SIZE * IMAGE_SIZE - ink_px) < MIN_BACKGROUND_PX:
         result.update(
             {
                 "long_component_ratio": 0.0,
