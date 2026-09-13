@@ -22,10 +22,20 @@ closed. Three worktrees have descended from it, each with its own briefing in
 `doc/initial_notice.md` (one of them already closed in turn):
 
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
-  **new best config 2026-09-10**: `consistency_weight=0.2` at cs2.5, gt_bsds_f1
-  0.2354 with near_white_frac 0.400 -> **0.779**. The grey residual is narrowed,
-  not closed (GT is 0.948). Also five tiles. Notice:
-  `inbox/note_sd15_consistency_weight_result_20260910.md`.
+  **CLOSED 2026-09-13**, same verdict as the SDXL track: the diffusion model
+  does not beat the preprocessor. Re-measured on 192 tiles with Track B's
+  protocol, the gap is **wider** than five tiles suggested -- `manga_line`
+  alone scores 0.2847, against 0.2514 for round 1's best (`w=0.2`, -0.0333)
+  and 0.2524 for round 2's (`w=0.4`, -0.0323), where the five-tile read had
+  been -0.021. The reinterpretation is the part worth keeping: **the
+  preprocessor already had near_white_frac 0.931** against GT's 0.924, so four
+  sweeps spent lifting near_white from 0.400 into the 0.800s were climbing
+  back toward what the conditioning map started with and never overtook it.
+  The grey residual was not a gap the model was filling -- it was degradation
+  the model introduced. It proposes no successor and folds into
+  stroke-selection. Notices:
+  `inbox/note_sd15_consistency_weight_result_20260910.md`,
+  `inbox/note_track_a_closing_20260913.md`.
 - `../lineart-controlnet-sdxl-fidelity` (branch `controlnet-sdxl-fidelity`) --
   **CLOSED 2026-09-11.** Its question is answered in the opposite direction
   from the premise: SDXL does not diverge from the rough, it copies its
@@ -164,19 +174,25 @@ question is the residual it leaves.
 That residual is measured, and it is two different problems by pool:
 
 - **Deletion**, on the lineart-family pool: the preprocessor lays 1.4x GT's
-  ink, so strokes must be removed. A delete-only oracle reaches f1 **0.7425**
-  where the preprocessor alone scores 0.3231 and the best trained model 0.2354.
+  ink, so strokes must be removed. On the 192-tile `lineart_family` group, a
+  delete-only oracle reaches f1 **0.7425** where `lineart_coarse` alone scores
+  0.3231 and the best model this project ever trained scores 0.2514.
   This is `../lineart-stroke-selection`, and it is the active direction.
 - **Solid fills**, on the housei/ako5 pools: the preprocessor's `fill_ratio` is
   0.0% against GT's 24.5%, because an edge detector structurally cannot fill.
   Over 12,000 tiles of this type have never been trained on or evaluated.
   **Whether to target this at all is undecided** -- see Next Actions.
 
-`../lineart-controlnet-sd15-refine` continues in parallel as the one case where
-a trained model demonstrably contributes: its consistency loss moves the output
-*away* from the conditioning map while moving it *toward* GT (vs-conditioning
-0.5009 -> 0.4618 as f1 goes 0.2175 -> 0.2354). It is still 0.021 below the
-preprocessor in absolute terms.
+One finding from the now-closed `../lineart-controlnet-sd15-refine` survives
+its closure and is still the only one of its kind here: its consistency loss
+moved the output *away* from the conditioning map while moving it *toward* GT
+(vs-conditioning 0.5009 -> 0.4618 as f1 rose 0.2175 -> 0.2354), the opposite of
+the SDXL stack, which simply copied its conditioning. That mechanism did work.
+It just never carried the output past the preprocessor -- on 192 tiles it
+finished 0.032 short. **A mechanism can be real and still not be worth
+keeping**, and that is the distinction to hold on to: the evidence is against
+diffusion generation closing this gap, not against that particular loss doing
+what it was designed to do.
 
 **The raw-extraction goal that stood here through 2026-08 is done.** The
 clip_pairs v3 re-extraction, the 8,798-tile combined pool
@@ -547,39 +563,17 @@ closed out as of this commit.
 
 ## Next Actions
 
-Items 1-2 are the active direction and are carried out in the successor
-worktrees, each of which has its own briefing and work log. Item 3 is an open
-strategic question; items 4-7 are common-foundation housekeeping, none of them
-blocking.
+Item 1 is the active direction and is carried out in
+`../lineart-stroke-selection`, which has its own briefing and work log. Item 2
+is an open strategic question; items 3-6 are common-foundation housekeeping,
+none of them blocking. Both ControlNet tracks are closed as of 2026-09-13 and
+neither leaves work behind -- see the pointer section above.
 
-1. **SD1.5 refinement** (`../lineart-controlnet-sd15-refine`): the first
-   `consistency_weight` sweep is **done** (2026-09-10) and moved the axis that
-   matters: `weight=0.2` at cs2.5 gives gt_bsds_f1 0.2354 and near_white_frac
-   0.779, up from 0.400 at the old `weight=0.1`/cs3.5 best. `gt_bsds_f1` alone
-   was flat across the whole sweep (0.21-0.24) -- without the paper axis this
-   improvement would have been invisible. A round-2 sweep
-   (`weight=0.15/0.25/0.3/0.4`) is scheduled by systemd timer for
-   2026-09-14 00:00. Still open after that: extending the auxiliary loss to all
-   timesteps, InnerControl-style (arxiv 2507.02321), and closing the rest of
-   the grey gap (0.779 vs GT 0.948). Do **not** add a UNet-side LoRA, raise the
-   LoRA rank, or forbid hatching by negative prompt -- all three were measured
-   and are worse; the first also breaks the conditioning-scale lever itself.
-   **Read that 0.2354 against lesson 6**: the conditioning map this track feeds
-   the model (`manga_line`) scores 0.2566 by itself, so the new best is 0.021
-   *below* its own baseline in absolute terms. What the sweep does show is the
-   mechanism working -- f1 rises as the output moves away from the conditioning
-   map (vs-conditioning 0.5009 -> 0.4618 while f1 goes 0.2175 -> 0.2354), which
-   is the opposite of the SDXL behaviour and makes this the only case here of a
-   trained model contributing anything. So round 2 is worth running, but score
-   it on the sign of "beats the preprocessor" and on that vs-conditioning trend,
-   not on absolute f1. Its delete-only ceiling has not been measured yet and
-   should be -- it is inference-free and takes minutes.
-   **This track's numbers are five tiles too**, and unlike the SDXL track it
-   has no wider re-measurement planned -- see the hand-off in its briefing.
-2. **Stroke selection** (`../lineart-stroke-selection`): learn to delete the
+1. **Stroke selection** (`../lineart-stroke-selection`): learn to delete the
    preprocessor's spurious strokes. Input is the preprocessor output, not the
    raw rough; the label comes straight from the pair data (did this stroke
-   match GT); the ceiling is 0.7425 against a current best of 0.2354. First
+   match GT); on the 192-tile `lineart_family` group the ceiling is 0.7425
+   against a best-ever trained score of 0.2514. First
    move, per its own briefing, is to **look at the oracle output before
    trusting the number** -- this project has been misled by a metric three
    times (orientation_entropy alone, gt_bsds_f1 alone, near_white_frac alone),
@@ -591,16 +585,21 @@ blocking.
    best alone (0.2639) but that is a different criterion.
    Proposal: `doc/track_proposal_stroke_selection_20260911.md`.
 
-   The **SDXL track that preceded it is closed** (2026-09-11), and its result
-   is recorded in the pointer section above: fidelity was never the problem,
-   epsilon-MSE fine-tuning made things worse across three independent runs, and
-   the 292-tile validation it staged did run and confirmed the fine-tune loss
-   (delta -0.1175) while also overturning its own headline -- 0.2582 was the
-   preprocessor's score, not the model's. Left deliberately unstarted there:
-   porting the consistency loss to SDXL (design notes in that tree's briefing;
-   it collides with the `--cache-dir` design and needs a fresh VRAM
-   measurement). Judge that only after Track A's round-2 sweep lands.
-3. **Decide whether solid fills (the housei/ako5 pools) are a target at all.**
+   Both ControlNet tracks that preceded it are closed, and their results are in
+   the pointer section above. One question they left open is now **answered:
+   do not port the consistency loss to SDXL.** That call was explicitly gated
+   on Track A's round-2 sweep, and the sweep came back worse than the figure it
+   was waiting on -- -0.032 to -0.033 on 192 tiles against the -0.021 the five
+   tiles had shown. Porting a loss that finishes below its own conditioning map
+   on the cheaper architecture, onto the one that merely copies its
+   conditioning, has nothing to recommend it.
+
+   Track A also measured a ceiling this track needs: `manga_line`'s delete-only
+   oracle reaches **0.5143** (recall capped at 0.3462) against
+   `lineart_coarse`'s **0.7425** (recall 0.604), on the same `lineart_family`
+   192-tile group, so the two are directly comparable. `manga_line` is the
+   weaker basis for a selection approach.
+2. **Decide whether solid fills (the housei/ako5 pools) are a target at all.**
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
    appear in no evaluation set. They are not a harder version of the current
    task but a different one: GT there is 24.5% solid fill against the lineart
@@ -612,7 +611,7 @@ blocking.
    silent omission, because it determines whether the stroke-selection track is
    the whole plan or half of it. Inventory:
    `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
-4. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
+3. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
    on it would mean returning to an architecture this project moved off. The
@@ -624,13 +623,13 @@ blocking.
    tiles, `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and
    may be worth using in the ControlNet context instead -- that would be a
    new idea, not this one.
-5. Decide whether to rename the remaining `kurip`-named infra scripts, given
+4. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
    the work above.
-6. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+5. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-7. Revisit whether `--max-soft-ink-ratio` needs a per-source
+6. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.
