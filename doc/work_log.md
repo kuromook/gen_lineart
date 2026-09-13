@@ -5068,3 +5068,97 @@ measurement. Verified the fix is inert on real data: 8 tiles from
   warning that they are different criteria -- and that `lineart_anime`'s
   ceiling is still unmeasured and should not be dismissed on its last-place
   standalone score.
+
+## 2026-09-14: Track D Hypothesis 1 Measured -- VAE Ceiling Refuted
+
+`lineart-pair-signal` (Track D) measured whether the VAE's own encode/decode
+roundtrip explains why paired training has never beaten the preprocessor
+(`doc/initial_notice.md` hypothesis 1) -- never measured by any prior track.
+Method: GT line-art tiles run through `vae.encode(...).latent_dist.mean` then
+`vae.decode(...)` (deterministic, no training), scored against the original
+GT with this project's standard `gt_bsds_f1`. New tools: `tools/evaluation/
+vae_roundtrip_generate.py` (CUDA-only) and `vae_roundtrip_score.py` /
+`vae_roundtrip_score_one.py` (CPU-only, see below for why split).
+
+**Result: refuted, decisively.** Both SD1.5 (`AOM3A1B_orangemixs`, fp32,
+512px) and SDXL (`animagine-xl-3.1`, fp32, 1024px) round-trip GT line art far
+above this project's best trained score (~0.25 lineart_family) or its
+delete-only oracle ceiling (0.7425 lineart_family / ~0.33 housei):
+
+| model | pool | n scored (of 192/100) | gt_bsds_f1 | chamfer_px |
+|---|---|---:|---:|---:|
+| sd15 | lineart_family | 157 | 0.9605 | 0.297 |
+| sd15 | housei | 98 | 0.8007 | 1.436 |
+| sdxl | lineart_family | 134 | 0.9806 | 0.159 |
+| sdxl | housei | 97 | 0.8622 | 1.045 |
+
+Full per-tile CSV: `results/vae_roundtrip_20260913/vae_roundtrip_metrics.csv`.
+Montages (GT | SD1.5 roundtrip | SDXL roundtrip, 8 tiles each):
+`results/vae_roundtrip_20260913/montage_lineart_family.png`,
+`results/vae_roundtrip_20260913/montage_housei.png`. Visual read confirms the
+numbers: `lineart_family`'s clean strokes come back near-indistinguishable
+from GT at both resolutions; `housei`'s faint pencil-and-stamp tiles show
+SD1.5 visibly softening/thickening fine strokes that SDXL (1024, finer
+absolute latent resolution) keeps sharp -- the one place VAE choice itself
+shows up in this data, still far short of being the project's bottleneck.
+
+**Conclusion for the track: the VAE is not the ceiling.** Whatever is
+preventing paired training from beating the preprocessor, it is not "the
+target can't survive the VAE roundtrip." Hypothesis 2 (loss-vs-quality
+correlation, no training required) is next; hypothesis 3 (pair alignment
+quality) follows if 2 doesn't explain it. **This also de-risks
+`../lineart-stroke-selection`**: that track's teacher signal is built from
+the same pair data but never passes through a VAE (pixel-space discriminative
+problem), so this ceiling was never a risk to it regardless of the result --
+worth stating plainly now that it's confirmed rather than assumed.
+
+Coverage caveat, stated plainly: 147/584 (model,pool,tile) combinations
+timed out at a 60s per-tile cap and were retried at 600s, recovering 49; the
+remaining 98 (16.8% of 584) are excluded from every mean above. Given the
+observed scores sit 3-4x above the 0.25/0.33 thresholds that would confirm
+hypothesis 1, no plausible bias in which tiles timed out changes the
+conclusion, but the gap was not chased further than 600s/tile -- see below
+for why, and treat any *housei* mean here as the softer of the two pools'
+numbers for that reason too (highest timeout-recovery rate was housei).
+
+### A shared-infrastructure finding, not just this track's: `bipartite_match_f1` can pathologically stall
+
+`tile_region_manifest_480.bipartite_match_f1` (this project's `gt_bsds_f1`,
+used by `evaluate_fixed_outputs.py`, `condition_roundtrip_fidelity.py`, and
+now this track) calls `scipy.sparse.csgraph.maximum_bipartite_matching` over
+a KD-tree-built candidate graph. For specific edge-point configurations --
+**not predictable from image density**: two ~9,000-edge-point tiles
+reproduced it, many denser tiles did not -- this call was observed to take
+from tens of seconds up to **12+ minutes** for a single tile, confirmed
+reproducible (same tile, same slow behavior, standalone and inside the full
+pipeline) and confirmed **not** an artifact of this track's own environment
+churn: not fixed by `cv2.setNumThreads(0)`, not fixed by separating PyTorch/
+CUDA calls into a different process from the scoring calls (both were tried
+and ruled out first, in that order, before landing on the real explanation).
+This is very likely `maximum_bipartite_matching`'s Hopcroft-Karp-family
+worst case for certain augmenting-path structures, not a bug in this
+project's wrapper code -- not something this track modified, since it is a
+shared, validated metric used project-wide and its scoring semantics should
+not change silently.
+
+**Practical mitigation, in the two new tools above**: score each tile in its
+own subprocess (`vae_roundtrip_score_one.py`) dispatched with a hard
+wall-clock timeout via `subprocess.run(timeout=...)`, run N at a time via
+`ThreadPoolExecutor`. A tile that times out gets `bsds_f1`/`chamfer_px` left
+blank (flagged `timed_out=True`) but keeps its `profile_metrics` columns
+(never observed to be slow) filled in, so a bulk `gt_bsds_f1` run degrades
+to partial coverage instead of hanging indefinitely. **Any other track
+running `bipartite_match_f1` over more than a handful of tiles should expect
+this and consider the same per-tile-subprocess-timeout pattern** rather than
+assuming a long-running batch script has hung when it is idle on CPU with
+no progress output -- it may simply be on one slow tile. `../lineart-
+stroke-selection` in particular, if its evaluation loop calls this metric
+in bulk, should be told this directly (see inbox notices below).
+
+### Next
+
+Per `doc/initial_notice.md`'s own instruction, pausing here to report this
+result to the shared foundation and to `lineart-stroke-selection` before
+moving on to hypothesis 2 -- see `inbox/` notices sent from this track's
+`outbox/` to `../lineart/inbox/` and `../lineart-stroke-selection/inbox/`,
+dated 2026-09-14.
