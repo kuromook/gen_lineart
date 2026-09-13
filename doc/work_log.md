@@ -5068,3 +5068,51 @@ measurement. Verified the fix is inert on real data: 8 tiles from
   warning that they are different criteria -- and that `lineart_anime`'s
   ceiling is still unmeasured and should not be dismissed on its last-place
   standalone score.
+
+## 2026-09-13 (later): Group B Deferred, Track D Opened
+
+Three user decisions, recorded so none of them becomes a silent omission.
+
+**Solid fills (group B) are deferred, not dropped.** The question -- whether
+the `ako5`/`housei` pools, 12,000+ tiles that have never been trained on or
+evaluated, are a target at all -- was raised as an explicit open item on
+2026-09-11 and answered "not now" on 2026-09-13. `doc/CURRENT.md` now says so
+in both places it appears, with the natural moment to reopen it named: when
+stroke selection produces a real number on the lineart pool, which is what
+decides whether this is the other half of the plan or a separate project.
+
+**Track C continues.** No change.
+
+**Track D opened**: `../lineart-pair-signal`, branch `pair-signal`. Its
+question is why the 8,467 pairs contributed nothing to any fine-tune. The
+outcome is settled -- three SDXL epsilon-MSE runs degraded the result, four
+SD1.5 consistency sweeps improved mechanically but finished 0.032 short of a
+preprocessor run, and the predecessor track's six hypotheses were all rejected
+-- but nobody has asked why, and the answer decides what the pair data is
+still good for.
+
+The briefing orders five hypotheses by cost. The first has never been measured
+at all: latent diffusion can only express its target through the VAE, and GT
+line art is white paper under 1-3px strokes, which is what a VAE handles
+worst. If the VAE cannot round-trip GT, no amount of training reaches it, and
+that one fact would explain every result above.
+`tools/evaluation/condition_roundtrip_fidelity.py` measures conditioning maps,
+not the VAE, so this needs new code. Second is loss-versus-quality
+correlation, answerable from checkpoints that already exist: Track B watched
+its loss fall the whole way down while every human-relevant axis got worse,
+and whether that is systematic or accidental is unknown.
+
+**Why this is not merely a post-mortem**: Track C's supervision comes from the
+same pairs (did this preprocessor stroke match GT). If the pairs are the
+problem, the deletion work inherits it; if the problem is latent diffusion as
+a vehicle, a pixel-space discriminative model never touches it. So Track D is
+a risk assessment for the track that is actually running, which is why its
+first answer is wanted before Track C trains a baseline. The track is framed
+as diagnosis only -- proposing fixes is explicitly out of its scope until the
+cause is known.
+
+`pair-signal` was branched at `7604afc` and then merged `diffusion` before its
+first session, so it carries the profiler's non-termination guard. Track D
+profiles VAE round-trips and conditioning maps, which is exactly the input
+that hangs the unguarded version; verified in that worktree, both degenerate
+test images return in 0.006s.

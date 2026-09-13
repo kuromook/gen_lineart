@@ -59,6 +59,14 @@ closed. Three worktrees have descended from it, each with its own briefing in
   this stroke match GT), and the ceiling is 0.74 against a current best near
   0.30. First move is to look at the oracle before trusting it. Proposal:
   `doc/track_proposal_stroke_selection_20260911.md`.
+- `../lineart-pair-signal` (branch `pair-signal`) -- **NEW 2026-09-13,
+  diagnostic.** Why did 8,467 pairs contribute nothing to any fine-tune? Five
+  hypotheses ordered by cost; the first and cheapest has never been measured at
+  all -- latent diffusion can only express its target through the VAE, and GT
+  line art is white paper under 1-3px strokes, which is what a VAE handles
+  worst. If the VAE cannot round-trip GT, no amount of training reaches it and
+  that single fact explains every result above. Briefing:
+  `../lineart-pair-signal/doc/initial_notice.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -181,7 +189,7 @@ That residual is measured, and it is two different problems by pool:
 - **Solid fills**, on the housei/ako5 pools: the preprocessor's `fill_ratio` is
   0.0% against GT's 24.5%, because an edge detector structurally cannot fill.
   Over 12,000 tiles of this type have never been trained on or evaluated.
-  **Whether to target this at all is undecided** -- see Next Actions.
+  **Deferred by user decision 2026-09-13** -- not dropped, just not now.
 
 One finding from the now-closed `../lineart-controlnet-sd15-refine` survives
 its closure and is still the only one of its kind here: its consistency loss
@@ -193,6 +201,18 @@ finished 0.032 short. **A mechanism can be real and still not be worth
 keeping**, and that is the distinction to hold on to: the evidence is against
 diffusion generation closing this gap, not against that particular loss doing
 what it was designed to do.
+
+Running alongside the deletion work is a **diagnosis**, not another attempt at
+the gap: `../lineart-pair-signal` (branch `pair-signal`, opened 2026-09-13).
+Every fine-tune this project has run on its 8,467 pairs either degraded the
+result or improved mechanically without beating a preprocessor run. That the
+pairs contributed nothing is settled; **why** has never been investigated, and
+the answer decides what the pair data is still good for. It is not only a
+post-mortem of the closed tracks: **Track C's labels come from the same pairs**
+(did this preprocessor stroke match GT), so if the pairs are the problem, the
+deletion work inherits it -- and if the problem is latent diffusion as a
+vehicle, a pixel-space discriminative model never touches it. Getting at least
+its first answer before Track C trains a baseline is the point.
 
 **The raw-extraction goal that stood here through 2026-08 is done.** The
 clip_pairs v3 re-extraction, the 8,798-tile combined pool
@@ -563,11 +583,12 @@ closed out as of this commit.
 
 ## Next Actions
 
-Item 1 is the active direction and is carried out in
-`../lineart-stroke-selection`, which has its own briefing and work log. Item 2
-is an open strategic question; items 3-6 are common-foundation housekeeping,
-none of them blocking. Both ControlNet tracks are closed as of 2026-09-13 and
-neither leaves work behind -- see the pointer section above.
+Items 1-2 are the active work, each in its own worktree with its own briefing
+and work log: item 1 tries to close the gap, item 2 diagnoses why every attempt
+so far failed to. Item 3 is a deferred strategic question; items 4-7 are
+common-foundation housekeeping, none of them blocking. Both ControlNet tracks
+are closed as of 2026-09-13 and neither leaves work behind -- see the pointer
+section above.
 
 1. **Stroke selection** (`../lineart-stroke-selection`): learn to delete the
    preprocessor's spurious strokes. Input is the preprocessor output, not the
@@ -599,19 +620,36 @@ neither leaves work behind -- see the pointer section above.
    `lineart_coarse`'s **0.7425** (recall 0.604), on the same `lineart_family`
    192-tile group, so the two are directly comparable. `manga_line` is the
    weaker basis for a selection approach.
-2. **Decide whether solid fills (the housei/ako5 pools) are a target at all.**
+2. **Pair-signal diagnosis** (`../lineart-pair-signal`): why did the pair data
+   contribute nothing? Run in this order, and **stop and report after the
+   first** -- it may settle everything. (a) **VAE round-trip ceiling**: encode
+   and decode GT tiles and score the result against the GT they came from, on
+   `gt_bsds_f1` and the paper axes, for both SD1.5 and SDXL. Inference only,
+   minutes. `tools/evaluation/condition_roundtrip_fidelity.py` does not cover
+   this -- it measures conditioning maps, not the VAE -- so it needs new code.
+   If the round-trip scores near the current best of ~0.25, the ceiling was
+   never reachable and nothing else needs explaining. (b) **Loss-versus-quality
+   correlation**, using checkpoints that already exist, no training: Track B
+   watched its loss fall the whole way down while every axis a human cares
+   about got worse; whether that is systematic decorrelation or an accident is
+   unknown. (c) Only then, pair correspondence quality -- which is the
+   hypothesis that would also implicate Track C's labels.
+   Briefing: `../lineart-pair-signal/doc/initial_notice.md`.
+3. **Solid fills (the housei/ako5 pools): deferred, by user decision
+   2026-09-13.** Not dropped -- the question was put and answered "not now".
+   Recorded here so it stays visible rather than becoming a silent omission.
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
    appear in no evaluation set. They are not a harder version of the current
    task but a different one: GT there is 24.5% solid fill against the lineart
    pool's 4.0%, 27-38% of tiles are near-blank, and the preprocessor fills
    nothing at all (fill_ratio 0.0%), so an edge-detector-plus-selection
    pipeline cannot reach it by construction. The delete-only oracle tops out at
-   0.3291 there against 0.7425 on the lineart pool. Deciding *not* to target it
-   is a legitimate answer, but it should be an explicit decision rather than a
-   silent omission, because it determines whether the stroke-selection track is
-   the whole plan or half of it. Inventory:
+   0.3291 there against 0.7425 on the lineart pool. The natural moment to
+   reopen it is when stroke selection has a real number on the lineart pool:
+   that is what decides whether this is the other half of the plan or a
+   separate project. Inventory:
    `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
-3. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
+4. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
    on it would mean returning to an architecture this project moved off. The
@@ -623,13 +661,13 @@ neither leaves work behind -- see the pointer section above.
    tiles, `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and
    may be worth using in the ControlNet context instead -- that would be a
    new idea, not this one.
-4. Decide whether to rename the remaining `kurip`-named infra scripts, given
+5. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
    the work above.
-5. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+6. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-6. Revisit whether `--max-soft-ink-ratio` needs a per-source
+7. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.
