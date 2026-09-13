@@ -4782,3 +4782,454 @@ best configuration**, checkpoint:
 4. `results/` from this batch (both phases' `outputs/` subdirectories, one
    checkpoint per weight under `checkpoints/`) have not been reviewed for
    the usual post-verdict cleanup pass yet -- open.
+
+## 2026-09-10 (later): `consistency_weight` Round 2 Scheduled -- Filling The 0.2-0.5 Gap, Not Narrowing Around 0.2
+
+Round 1's non-monotonic result (weight=0.5 only dipped slightly below
+weight=0.2 on `near_white_frac`, 0.753 vs 0.779, rather than collapsing)
+means the region between 0.2 and 0.5 is still unexplored and may hold a
+better point than 0.2 itself. User's call, after discussing the option
+space (this round's tighter sweep vs. the InnerControl extension vs. a
+direct binarization/contrast loss term -- all three remain open, this
+round picked first as the cheapest lever): fill that gap rather than
+narrow tightly around 0.2 as the original round-1 next-actions note
+above had suggested.
+
+New grid: `WEIGHTS=(0.15 0.25 0.3 0.4)`
+(`experiments/run_consistency_weight_sweep_round2_20260914.sh`,
+`consistency_max_timestep=200` fixed as before). No backfill step needed
+this round -- weight=0.2's cs 1.0/2.5/3.5 eval data already exists from
+round 1 and is reused directly by the merging scorer
+(`experiments/score_consistency_weight_sweep_round2_20260914.py`, which
+combines round 1's 5 already-scored weights with round 2's 4 new ones
+into one 9-point table/montage:
+`results/consistency_weight_sweep_round2_20260914/scores.csv` /
+`montage_consistency_weight_sweep_round2.png`, once it runs). Verified
+round 1's 5 eval directories are intact (5 images each at all 3 cs
+values) before relying on the merge.
+
+Scheduled rather than run immediately: today is Thursday
+2026-09-10, past this track's Mon-Thu unattended-batch window, so this
+launches as a one-shot `systemd-run --user --on-calendar` timer
+(`lineart-consistency-sweep-round2.timer`) for **2026-09-14 00:00 JST**
+(next Monday) instead of running now. Confirmed `loginctl` linger is
+enabled for this user, so the timer fires regardless of login/session
+state. The launch script also carries its own GPU-busy poll guard
+(`nvidia-smi` memory check) as a second layer of defense, independent of
+how it ends up started. Estimated runtime ~44h (4 runs x ~11h, matching
+round 1's per-run wall-clock), comfortably inside Mon-Thu.
+
+Committed (`52a3d39`) but **not pushed yet**, per explicit user
+instruction this session -- push separately when asked.
+
+### Next Actions
+
+1. Nothing to do until the timer fires 2026-09-14 00:00 JST -- check
+   `systemctl --user status lineart-consistency-sweep-round2.timer` or
+   `logs/consistency_weight_sweep_round2_20260914.log` after that.
+2. Round 1's next-actions item 3 above (a tight 0.1-0.3 sweep) is
+   superseded by this wider 0.15-0.4 grid; don't run both.
+3. The InnerControl extension and the direct binarization/contrast-loss
+   idea (`doc/initial_notice.md` priority list) both remain open and were
+   explicitly not dropped -- round 2 was picked first only because it's
+   the cheapest lever, not because the other two were deprioritized.
+
+## 2026-09-13: Round 2 Completed (New Best On Whiteness: w=0.4) + LoRA Style-Contribution Diagnostic
+
+### Round 2 result
+
+Round 2 (`WEIGHTS=(0.15 0.25 0.3 0.4)`, launched early once the weekend GPU
+turned out to be free rather than waiting for the Monday 00:00 timer)
+completed 2026-09-13T11:02:16+09:00, ~44h runtime as estimated. Merged with
+round 1 into a 9-weight x 3-cs table
+(`results/consistency_weight_sweep_round2_20260914/scores.csv`, montage
+`results/consistency_weight_sweep_round2_20260914/montage_consistency_weight_sweep_round2.png`).
+
+**New best on the actual problem axis: `weight=0.4`, `cs=2.5`**,
+`near_white_frac` **0.813** (previous best, `weight=0.2`: 0.779; GT 0.948).
+Confirms round 1's own hypothesis that the true peak sat somewhere in the
+unexplored 0.2-0.5 gap, not at 0.2 itself. Not a blank-page false positive:
+`ink_ratio` 0.084 and `line_width_p50` 3.01 both stay in the same range as
+neighboring weights (GT 0.0353 / 3.72). `gt_bsds_f1` stays essentially flat
+across the whole 9-weight range at cs2.5 (0.208-0.238, nominal peak at
+`weight=0.15`: 0.2377, statistically indistinguishable from most other
+points) -- f1 remains blind to the axis that actually moved, as already
+established.
+
+**Still 0/27 cells beat the condition_only (`manga_line`) preprocessor
+baseline (0.2566)**, per the contamination-check methodology added to the
+scorer 2026-09-11 -- this holds across the full 9-weight range now, not
+just round 1's 5 weights.
+
+**The clean "diverges from condition while approaching GT" story from
+round 1 does not hold across the wider range.** `vs_condition_f1` at cs2.5
+bottoms out around weight 0.2-0.25 (~0.46) then rises back up through 0.3
+(0.470), and jumps back to round-1-low levels by weight 0.4 (0.503) and
+0.5 (0.516) -- roughly back to where weight=0.05 was (0.503). Yet
+`near_white_frac` and `gt_bsds_f1` do not correspondingly worsen at 0.4 --
+both stay good or improve. So weight is not simply sliding along a single
+"copy input <-> generate toward GT" axis; whatever is happening at high
+weight is more structured than that one-dimensional story. Confirmed the
+conditioning image's own `near_white_frac` is 0.004 (near-total black,
+consistent with `manga_line`'s white-line-on-black polarity) via the
+`condition_only` baseline row, which rules out "the background is getting
+whiter because the model is just copying an already-white input" as an
+explanation for the near_white_frac gains at any weight.
+
+### User's visual read of the montage, and the LoRA style-contribution question
+
+User's independent visual review (not just numbers): cross-hatching
+visible at `weight<=0.15` is mostly gone by `weight=0.4`; `weight=0.25/0.4/0.5`
+are visually almost indistinguishable in overall whiteness (matches the
+near-flat 0.795/0.813/0.753 cluster), though a faint overall grey tint is
+still visible at all of them. At `weight=0.5` specifically, some
+pattern/design-area lines disappear and the output looks pulled toward
+"whatever the base diffusion model wants to draw" rather than the actual
+rough sketch. User's framing: the rough sketch may only be acting as a
+loose "direction" for the base diffusion model rather than being reproduced,
+and by extension **the LoRA does not appear to carry the target art style**
+-- prompting the question of how to actually measure whether the LoRA is
+contributing style at all.
+
+**Architecture fact confirmed in support of this reading**
+(`scripts/train_controlnet_consistency.py`): the LoRA is attached only to
+ControlNet's own attention projections (`to_k`/`to_q`/`to_v`/`to_out.0`,
+rank16); the base UNet is fully frozen and is plain
+`v1-5-pruned-emaonly.safetensors` (no anime merge, unlike the earlier
+Direction-4 exploration which used `AOM3A1B_orangemixs.safetensors`).
+**There is structurally no channel in this pipeline for the LoRA to learn
+"style"** -- it can only reshape how strongly/where the rough sketch's
+structure is injected into an otherwise untouched, generic UNet. Adding a
+UNet-side LoRA is a known dead end already (`doc/initial_notice.md`'s
+"やってはいけないこと": breaks the cs lever, worse at every cs) so this
+is not a simple fix.
+
+### Three inference-only diagnostics run to test this (2026-09-13)
+
+`experiments/run_lora_style_diagnostics_20260913.sh` (task 1's generation
+step) + `experiments/score_lora_style_diagnostics_20260913.py` (all three
+analyses). Results: `results/lora_style_diagnostics_20260913/scores.csv`,
+montage (task 1 only): `results/lora_style_diagnostics_20260913/montage_prior_only_ablation.png`.
+
+**Task 1 -- prior-only ablation.** For `weight` in {0.02, 0.2, 0.4, 0.5} at
+cs2.5, generated the same 5 diagnostic samples under blank-white,
+blank-black, and fixed-noise conditioning instead of the real rough sketch
+(same seed), then measured edge-map similarity between the real-rough
+output and each null-condition output:
+
+| weight | null_white | null_black | null_noise |
+|---|---:|---:|---:|
+| 0.02 | 0.2491 | 0.2484 | 0.2652 |
+| 0.2 | 0.2332 | 0.2615 | 0.2391 |
+| 0.4 | 0.2372 | 0.2230 | 0.2489 |
+| 0.5 | 0.2322 | 0.2279 | 0.2673 |
+
+**No monotonic rise with weight** -- values stay in a flat, noisy 0.22-0.27
+band regardless of weight. Does not confirm "conditioning gets
+increasingly ignored as weight rises" as a general trend. A separate,
+more interesting observation this surfaces: these similarities are already
+substantial even at `weight=0.02` -- roughly the same magnitude as
+`gt_bsds_f1` itself (0.21-0.24) -- suggesting the conditioning's grip on
+edge-level structure may never have been very strong at any weight in this
+range, rather than specifically weakening at high weight.
+
+**Task 2 -- cross-sample output diversity vs input diversity.** Pairwise
+edge-similarity across the 5 diagnostic samples' outputs (all 10 pairs),
+compared against the same 5 samples' conditioning-image pairwise
+similarity (mean 0.1601, the floor):
+
+| weight | output_pairwise | delta vs input |
+|---|---:|---:|
+| 0.02 | 0.1610 | +0.0009 |
+| 0.05 | 0.1538 | -0.0063 |
+| 0.1 | 0.1476 | -0.0125 |
+| 0.15 | 0.1370 | -0.0231 |
+| 0.2 | 0.1319 | -0.0281 |
+| 0.25 | 0.1276 | -0.0325 |
+| 0.3 | 0.1273 | -0.0327 (most diverse) |
+| 0.4 | 0.1378 | -0.0222 |
+| 0.5 | 0.1575 | -0.0026 |
+
+**Opposite of a broad mode-collapse story**: outputs get *more* mutually
+diverse than the inputs through `weight<=0.3`, not less. Delta only creeps
+back toward zero (outputs converging back toward input-level diversity) at
+`weight=0.4-0.5` -- a narrow, localized echo of the user's specific
+`weight=0.5` visual call-out, but not a trend across the sweep as a whole.
+
+**Task 3 -- CLIP style-similarity to the GT corpus.** `laion/CLIP-ViT-B-32-laion2B-s34B-b79K`
+(cached locally, loaded offline; `transformers` 5.14.1's
+`CLIPModel.get_image_features` returns a `BaseModelOutputWithPooling` in
+this version rather than a plain tensor -- fixed by reading `.pooler_output`,
+which came out at the expected 512-dim joint-embedding size). Mean cosine
+similarity between each weight's 5 outputs (cs2.5) and an 80-image random
+sample of the real corpus (`data/line/`, seed=0):
+
+| weight | 0.02 | 0.05 | 0.1 | 0.15 | 0.2 | 0.25 | 0.3 | 0.4 | 0.5 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| clip_sim | 0.7122 | 0.7094 | 0.7140 | 0.7070 | 0.6972 | 0.7005 | 0.6989 | 0.7144 | 0.7076 |
+
+**Range across all 9 weights: 0.0172** (min 0.6972, max 0.7144), no visible
+trend with weight. This is the cleanest of the three results and it
+directly supports the diagnosis: style-similarity to the target corpus,
+as CLIP measures it, is essentially flat regardless of `consistency_weight`
+-- consistent with the architecture fact that the LoRA has no path to
+influence style at all.
+
+### Reading across all three
+
+Only task 3 gives a clean, direct confirmation. Tasks 1 and 2 do not show
+the broad monotonic trend the prior-dominance hypothesis would predict
+across the *whole* weight range -- task 1 is flat/noisy throughout, task 2
+actually moves the *opposite* direction through most of the range (more
+diverse, not less) and only shows the predicted convergence right at the
+top (0.4-0.5), matching the user's specific `weight=0.5` visual
+observation but not a broader story. **Honest summary: the architectural
+diagnosis (no style-learning channel exists) is well-supported by task 3;
+the specific "prior increasingly dominates with rising weight" framing is
+only weakly/locally supported (task 2's tail) and not supported by task 1
+at all.** Do not cite tasks 1/2 as confirming a general prior-dominance
+trend without this caveat.
+
+### Next Actions
+
+1. If style reproduction is actually wanted, the LoRA-only-on-ControlNet
+   design cannot deliver it -- adding a UNet LoRA is a known dead end
+   (breaks the cs lever). The only untried lever consistent with existing
+   negative results is swapping the frozen base checkpoint itself from
+   plain `v1-5-pruned-emaonly.safetensors` to an anime-tuned merge (e.g.
+   `AOM3A1B_orangemixs.safetensors`, used in the original Direction-4
+   exploration) -- a checkpoint choice, not a new trainable parameter set,
+   so it does not reintroduce the UNet-LoRA failure mode. Not started.
+2. `data/diag_null_white/`, `data/diag_null_black/`, `data/diag_null_noise/`
+   (5 tiles each, task 1's synthetic conditioning inputs) are left in
+   `data/` for potential reuse -- `data/` is gitignored so this needs no
+   cleanup decision.
+3. `doc/initial_notice.md`'s "出発点" (best-config) section still points at
+   `weight=0.2`/`cs=2.5` -- not yet updated to `weight=0.4` pending the
+   user's visual sign-off on round 2 as a whole (numbers alone are not
+   sufficient per this track's own operating rules).
+4. This entry is saved but **not committed** -- `doc/work_log.md` has been
+   left uncommitted across several turns this session per explicit user
+   instruction; commit only when asked.
+
+## 2026-09-13 (later): Task 4 -- Stacking The Existing UNet-Side Style LoRA Does Move Style, But The Wrong Way
+
+Follow-up to task 3 above, at the coordinator's request. Task 3 confirmed
+the ControlNet-only consistency LoRA cannot move CLIP style-similarity
+(flat, 0.0172 range across the whole 9-weight sweep) because it has no
+path onto the UNet. This asks the complementary question: does an
+*existing* UNet-side style LoRA -- one that does touch the frozen SD1.5
+UNet's attention layers -- actually move style when stacked on top of this
+track's current best ControlNet checkpoint?
+
+**Setup**: style LoRA `../lineart/checkpoints/domain_lora_line_sd15base_sksv2_20260807/final`
+(shared foundation, `doc/diffusion_fidelity_budget_policy.md` "現在の採用
+構成", same `v1-5-pruned-emaonly.safetensors` base, rank16/attn-only,
+adopted scale 1.4, trigger caption `"sks style, monochrome line art, manga
+panel, black and white"`). Stacked via `infer_controlnet.py`'s
+`--lora-dir`/`--lora-scale` on top of this track's new best ControlNet
+checkpoint (`controlnet_lora_manga_consistency_w0.4_20260914`, cs=2.5).
+5 cells: baseline (no style LoRA, reused directly from the existing
+round-2 w=0.4/cs2.5 eval output) x scale {0.7, 1.4} x caption {with,
+without the "sks style," trigger}.
+`experiments/run_domain_lora_overlay_20260913.sh` /
+`score_domain_lora_overlay_20260913.py`. Results:
+`results/domain_lora_overlay_20260913/scores.csv`, montage:
+`results/domain_lora_overlay_20260913/montage_domain_lora_overlay.png`.
+
+| label | gt_bsds_f1 | vs_condition_f1 | near_white_frac | ink_ratio | line_width_p50 | clip_sim_to_gt_corpus |
+|---|---:|---:|---:|---:|---:|---:|
+| baseline (no style LoRA) | 0.2350 | 0.5031 | 0.8128 | 0.0841 | 3.01 | **0.7144** |
+| scale=0.7, no trigger | 0.2230 | 0.4420 | 0.8398 | 0.0746 | 3.01 | 0.6842 |
+| scale=0.7, trigger | 0.2317 | 0.4550 | 0.8666 | 0.0671 | 3.01 | 0.6854 |
+| scale=1.4, no trigger | 0.2193 | 0.4040 | 0.7167 | 0.0870 | 3.94 | 0.6569 |
+| scale=1.4, trigger | 0.2150 | 0.4069 | 0.8200 | 0.0810 | 4.15 | 0.6605 |
+
+**Main finding: `clip_sim_to_gt_corpus` range across these 5 cells is
+0.0576 -- more than 3x task 3's 0.0172 range across the entire 9-weight
+consistency sweep.** This confirms the diagnosis directly: the UNet-side
+style LoRA *does* move CLIP-measured style, unlike the ControlNet-only
+consistency LoRA which structurally cannot. That part of the hypothesis is
+now positively confirmed, not just architecturally inferred.
+
+**But the direction is backwards: every overlay cell scores *lower*
+`clip_sim_to_gt_corpus` than the no-style-LoRA baseline (0.657-0.687 vs
+0.714).** Stacking the style LoRA moves the output *away* from the real
+corpus in CLIP-embedding space, not toward it, at every scale/caption
+combination tried. `gt_bsds_f1` also drops at every overlay cell (0.215-
+0.232 vs baseline 0.235), and at `scale=1.4` the recent near_white_frac
+gain partially reverses (0.7167-0.8200 vs baseline 0.8128, worse at
+no-trigger specifically) while `line_width_p50` drifts up to 3.94-4.15
+(away from GT's 3.72, previously the baseline's outputs were converging on
+3.01, i.e. thinner than GT but at least stable -- the overlay makes width
+control worse, not better, in the no-trigger case at least).
+
+**The trigger phrase's effect is small and inconsistent**: it nudges
+`near_white_frac` and `gt_bsds_f1` up a little at scale=0.7 (0.8398->0.8666,
+0.2230->0.2317) but `gt_bsds_f1` down a little at scale=1.4 (0.2193->0.2150).
+Not large enough in either direction to change the overall verdict.
+
+**Reading**: this is not evidence the style LoRA itself is broken --
+`doc/diffusion_fidelity_budget_policy.md`'s own isolated validation (no
+ControlNet, motif-prompt sampling) found it reproduces style reasonably
+well against a real reference distribution. What this shows is narrower
+and still useful: **simply stacking the two independently-validated LoRAs
+does not compose their benefits** -- at cs=2.5 on top of this specific
+ControlNet checkpoint, the overlay pulls CLIP-style-similarity, f1, and
+(at scale=1.4) paper-whiteness all in the wrong direction simultaneously,
+rather than adding the style LoRA's style contribution on top of the
+consistency LoRA's paper/tone contribution. Visual check via the montage
+still pending (not yet reviewed by the user as of this entry).
+
+### Next Actions
+
+1. User visual review of `montage_domain_lora_overlay.png` needed before
+   drawing further conclusions -- numbers alone (per this track's own
+   operating rules) are not sufficient, especially since the CLIP-embedding
+   direction found here is counter to what stacking was hoped to achieve.
+2. This result argues against simply recommending "add the style LoRA" as
+   a follow-up to the consistency-weight sweep. Any future style-fidelity
+   work would need to investigate *why* the composition fails (LoRA
+   weight interference between the two independently-trained adapters?
+   scale needs retuning specifically for the stacked case rather than
+   reusing each LoRA's independently-tuned scale?) rather than assuming
+   the two contributions simply add.
+3. Feeds the coordinator's separate decision on whether to propose a new
+   style-fidelity track -- this result is a data point against "just stack
+   the existing pieces" as that track's starting design, should it happen.
+4. Not committed, same as the entry above -- commit only when asked.
+
+## 2026-09-13 (later): 192-Tile Holdout Validation -- Confirms And Worsens The 5-Tile Verdict; Track A Closes
+
+Per the shared foundation's "5枚問題は放置しないこと" hand-off
+(`doc/initial_notice.md`「共通基盤からの申し送り」), reran Track B's
+292-tile holdout protocol scoped to Track A: `holdout_lineart_family.txt`
+(192 tiles) only, housei excluded per user decision (2026-09-13, earlier
+same day -- housei is a structurally different pool, type C
+solid-fill/lettering, never trained on).
+
+**Pipeline**: `experiments/run_holdout_lineart_family_20260913.sh` /
+`score_holdout_lineart_family_20260913.py`. Staged 192 raw roughs +
+GT line from the shared `../lineart/dataset/pairs_480/{train,test}/`,
+preprocessed to `manga_line` conditioning via the isolated venv
+(`tools/preprocess_manga_line_extraction_condition.py`, still functional),
+ran inference for round1's leader (w=0.2, cs2.5) and round2's leader
+(w=0.4, cs2.5) against all 192 tiles.
+
+### Bug found and fixed: polarity-inversion hang in the scorer
+
+The first scorer run hung silently for >90 minutes with no progress
+output. ptrace-based profiling (`strace`, `py-spy`, `perf`) was all
+blocked in this sandbox (`ptrace_scope=1` restricts to direct parents
+only, `perf_event_paranoid=4`) -- confirmed via direct experimentation,
+not assumed -- so killing it was the only way to investigate. Added
+per-tile timing instrumentation and reran: isolated the hang to
+`profile_metrics(cond_path)` called directly on the raw `manga_line`
+conditioning image. That file is saved in **inverted**
+black-background/white-line convention (matching
+`control_v11p_sd15s2_lineart_anime`'s pretrained zero-conv embedding --
+see `tools/preprocess_manga_line_extraction_condition.py`'s docstring).
+Read at face value (`ink = gray<128`), ~99% of most condition tiles count
+as "ink" -- and for a tile whose raw rough was nearly blank
+(`lineart_003_011.jpg`: raw rough ink 0.0%, but its manga_line output is
+100.0% "ink" under the wrong polarity), that sent
+`measure_lineart_profile.py`'s skeletonize/component-analysis code down a
+near-fully-filled-mask path that hung indefinitely (everything else for
+that same tile -- both edge_maps, `bipartite_match_f1`,
+`profile_metrics(gt)` -- finished in under 0.05s each). **This is the
+same trap Track B's own work_log already recorded hitting on this same
+preprocessor family** ("最初ink = gray<128のまま測ってベタ率82〜95%とい
+う無意味な値を出した"). Fix: invert the condition image back to
+paper/ink convention before calling `profile_metrics` on it -- confirmed
+both fast (0.014s vs. hanging) and semantically correct
+(`near_white_frac` 0.99 for that nearly-blank-rough tile, matching
+intuition, instead of a meaningless near-zero reading). Rewritten scorer
+completed all 192 tiles in 33s flat, no stalls.
+
+**Caveat for anyone reading round1/round2's own CSVs**
+(`results/consistency_weight_sweep_round2_20260914/scores.csv` etc.):
+their `condition_only` row's paper-tone columns
+(`ink_ratio`/`near_white_frac`/`bg_mode`/`midtone_frac`/`line_width_p50`/
+`orientation_entropy`) carry this same uncorrected-polarity bug and read
+backwards. Not re-run -- every actual verdict in this project was drawn
+from `gt_bsds_f1` (edge-based, polarity-invariant, unaffected) or from the
+model *output* images (already in normal white-paper/black-line
+convention, unaffected), never from that specific row's ink-threshold
+columns, so no prior conclusion changes.
+
+### Headline result: 192 tiles is worse than 5, not just confirmatory
+
+| | gt_bsds_f1 (192) | delta vs. condition_only | near_white_frac |
+|---|---:|---:|---:|
+| condition_only (manga_line) | **0.2847** | -- | **0.931** (GT 0.924) |
+| w=0.2, cs2.5 | 0.2514 | **-0.0333** | 0.837 |
+| w=0.4, cs2.5 | 0.2524 | **-0.0323** | 0.817 |
+
+5-tile anchor (subset of the 192) cross-checked cleanly: `condition_only`
+reproduces the historical 0.2566 exactly. w=0.2/w=0.4's own anchor
+numbers (0.2405/0.2394) sit close to but not identical to the original
+round1/round2 values (0.2354/0.2350) -- expected diffusion-sampling
+nondeterminism across separate process launches even at a fixed seed, not
+a bug (the ranking w=0.2 > w=0.4 replicates).
+
+At 5 tiles the gap to baseline looked like -0.021; at 192 tiles it's
+-0.032/-0.033 -- **worse, not better**. And the `near_white_frac` finding
+reframes the whole track: the bare `manga_line` preprocessor already
+sits at 0.931, essentially GT's own 0.924. **The "grey residual" this
+track was chasing was never a gap the preprocessor left for a model to
+fill -- it is degradation the diffusion generation step introduces on
+top of an already-good input.** Every consistency_weight point this
+track measured (0.4's near_white_frac climbing to 0.813-0.817) was
+clawing back toward the preprocessor's own starting level, never past it.
+
+Track A's own mechanism differs from Track B's (Track A's
+`vs_condition_f1` falls as consistency_weight rises while `gt_bsds_f1`
+rises -- genuine movement toward GT, not copying, unlike Track B's SDXL
+which just copied the condition image at `vs_condition_f1`~0.88). That
+distinction is real but does not change the bottom line: **diffusion
+generation still does not beat doing nothing.**
+
+Full numbers: `results/holdout_lineart_family_20260913/scores_summary.csv`.
+Montage: `results/holdout_lineart_family_20260913/montage_holdout_lineart_family.png`
+(11 of 192 tiles: the 5-tile anchor plus 6 evenly-spaced others).
+
+### Track A closes
+
+Same shape as Track B's closure (2026-09-11): the track's question is
+answered, and the answer is "the diffusion/ControlNet approach does not
+beat the raw preprocessor." Track B already spun up a successor for
+exactly this generalized finding -- **Track C
+(`../lineart-stroke-selection`, branch `stroke-selection`)**, pursuing
+discriminative stroke selection (delete-only oracle ceiling 0.74 on its
+own `lineart_coarse` pool, vs. ~0.30 for every generative model tried so
+far). No new track is warranted here; Track A's findings feed Track C's
+already-open questions instead (see Next Actions).
+
+`doc/initial_notice.md` updated with a "★Track Aの問いは終わった" section
+mirroring Track B's own closing entry style; the old "次の一手" priority
+list (consistency_max_timestep sweep / InnerControl / binarization
+intervention) is frozen, not deleted, in case a future session wants to
+revisit generation-side fixes with new evidence.
+
+### Next Actions
+
+1. Send a closing hand-off note to the shared foundation and Track C
+   (`../lineart/inbox/`), covering: (a) Track A's own closure and this
+   192-tile result, (b) a direct answer to Track C's still-open question
+   "SDXLへのconsistency損失移植は判断保留、Track Aの第2弾スイープ結果を
+   見てから" (`../lineart-stroke-selection/doc/initial_notice.md` "範囲外"
+   section) -- recommend **against** porting, given -0.032/-0.033 at
+   scale, not the smaller -0.021 that note was written against, (c) a new
+   data point for Track C's own open "前処理器の選び直し" question: measured
+   `manga_line`'s own selection-ceiling oracle at 192 tiles (0.5143,
+   recall 0.3462) -- lower than Track C's `lineart_coarse` ceiling (0.7425,
+   recall 0.604), so `manga_line` looks like a worse substrate for
+   selection than `lineart_coarse`, not a promising alternative. Not sent
+   yet -- open.
+2. Consider whether `checkpoints/controlnet_lora_manga_consistency_w*`
+   (9 checkpoints across both rounds) and the associated `results/`
+   `outputs/` subdirectories should be cleaned up now that the track has
+   concluded, or left for reference -- not decided, open.
+3. This worktree (`lineart-controlnet-sd15-refine`) itself: decide whether
+   to archive it (matching how `lineart-controlnet-realpairs` was archived
+   when it closed) once the hand-off note is sent -- not decided, open.
