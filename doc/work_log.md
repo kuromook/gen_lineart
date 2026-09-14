@@ -5162,3 +5162,437 @@ result to the shared foundation and to `lineart-stroke-selection` before
 moving on to hypothesis 2 -- see `inbox/` notices sent from this track's
 `outbox/` to `../lineart/inbox/` and `../lineart-stroke-selection/inbox/`,
 dated 2026-09-14.
+
+## 2026-09-14: Track D Hypothesis 2 -- Premise Was Wrong; Instrumented Rerun Launched
+
+Hypothesis 2 (does training loss correlate with `gt_bsds_f1`?) was written up
+in `doc/initial_notice.md` as free: "existing intermediate checkpoints, Track A
+per weight, Track B per epoch, no training needed." **Checked against disk,
+that is false.** Every ControlNet LoRA run in both tracks kept only
+`checkpoints/<tag>/final/pytorch_lora_weights.safetensors`. The mechanism to
+keep more already exists -- `train_controlnet_consistency.py
+--eval-snapshot-steps` (writes `step_N/` LoRA snapshots) -- but was never
+passed: zero "weights-only eval snapshot" lines in either sweep log, and
+`resume_state` is overwritten each save. Track B's "loss fell 0.0341 -> 0.0302
+while f1 was 0.1602" is a whole loss curve against a single end-of-run quality
+point, not a correlation.
+
+What *was* available for free: the SD1.5 sweep logs record `loss`/`eps`/
+`consistency` separately every 50 steps, so final loss across the 8 weight
+runs could be set against their measured f1. Offered; the user chose the real
+within-run measurement instead, since across-weight points change the
+objective itself and would conflate "which loss" with "how well optimized".
+
+**Launched (user-approved, narrow exception to this track's "no new model
+training" scope -- a diagnostic replication, not a proposed fix):**
+`../lineart-controlnet-sd15-refine/experiments/run_loss_quality_snapshot_probe_20260914.sh`
+
+- recipe identical to round 1/2's w=0.2 (`v1-5-pruned-emaonly` +
+  `control_v11p_sd15s2_lineart_anime` init, rank 16, lr 1e-4, 10 epochs
+  ~10,580 steps, `consistency_max_timestep` 200) plus
+  `--eval-snapshot-steps 1000` -> 10 snapshots + `final`
+- each snapshot inferred on the 192-tile `lineart_family` holdout at fixed
+  cs=2.5 (lesson 1: never cs=1.0 alone; 2.5 is round 1's operating point)
+- scored by `tools/evaluation/score_loss_quality_snapshots.py` (this tree),
+  which averages logged loss over the 200 steps before each snapshot and
+  reports Pearson corr(loss, f1) and corr(eps, f1); per-tile subprocess
+  timeout reused from `vae_roundtrip_score_one.py`
+- new output dir `checkpoints/..._w0.2_snapshot_probe_20260914`; the
+  existing `..._w0.2_20260908` checkpoint is untouched and its reported
+  number serves as a replication check on this run's `final`
+- smoke test (6 steps, snapshot at step 2, snapshot loaded by
+  `infer_controlnet.py` on one tile) passed before the full run started
+- estimated ~10.5h training + 3-6h inference/scoring, started Monday within
+  the Mon-Thu long-batch window
+
+### Another latent shared-tool bug found on the way (not fixed, not used)
+
+`evaluate_fixed_outputs.py --split auto` resolves GT as `"train" if
+name.startswith("housei") else "test"`. For `holdout_lineart_family.txt`
+that points 168 of 192 tiles at `test/line/` when they live in `train/line/`
+(only the 24 `lineart_004_*` are in test). It was never caught because the
+script's own default sample list is drawn entirely from `lineart_004_*`.
+The same wrong assumption cost this track a 48-tile gap in the first VAE
+generation pass. This probe avoids the tool altogether and reads Track A's
+self-contained `data/holdout_lineart_family_gt_line/` copy (192 files,
+names verified identical to the list). Any past 192-tile number produced
+through `evaluate_fixed_outputs.py --split auto` deserves a check -- Track
+A/B's own 192-tile scorers are separate scripts and were not audited here.
+
+### What hypothesis 1 did not clear -- script prepared, not yet run
+
+The roundtrip result clears the latent bottleneck (a latent exists that
+decodes to near-GT) but was measured under the most favourable conditions
+only: posterior mean, fp32, and the encoder's *exact* latent handed to the
+decoder. Two gaps remain:
+
+1. Training encodes with `.sample()` (SD1.5 also fp16). Likely negligible:
+   in a CPU smoke at 128px the SD1.5 posterior std was so small that mean
+   and sample decoded to within 1 grey level (mean |diff| 0.0005) -- but not
+   yet measured at full resolution or in fp16.
+2. **Decoder sensitivity to latent error**, the untested link between
+   latent-space eps-MSE and pixel-space line quality. A UNet never returns
+   the exact latent; if small latent error already breaks 1-3px strokes,
+   loss can fall while line art does not improve.
+
+`tools/evaluation/vae_latent_perturbation_generate.py` adds isotropic noise
+of std sigma in the scaled latent space (default 0, 0.05, 0.1, 0.2, 0.3,
+0.5; one fixed direction per tile, identical across conditions) under each
+model's training-time encoding (sd15: mean-fp32 + sample-fp16; sdxl:
+mean-fp32 + sample-fp32), and writes a manifest that `vae_roundtrip_score.py`
+scores unchanged (label `<model>|<condition>|s<sigma>`). Generation and
+scoring smoke-tested end to end on CPU (128px, 1 tile, fp32 paths only);
+the fp16 path is untested until the GPU is free. **Deferred until the
+hypothesis-2 probe releases the GPU**; a first CPU smoke at 512px with fp16
+took 10+ minutes for one tile and competed with the training dataloader, so
+it was killed.
+
+### Probe status and three scorer fixes made before it reads the log (2026-09-14 evening)
+
+Training finished ~18:58 (10,580 steps, 3.93 s/step average, no errors);
+snapshots `step_1000` ... `step_10000`, `step_10580`, `final` are on disk.
+Inference runs at ~7.0 s/tile, ~22 min per snapshot, 12 snapshot dirs ->
+inference done ~23:30, then scoring. The launcher shell script was **not**
+edited while running (bash reads scripts incrementally); all three fixes
+went into `score_loss_quality_snapshots.py`, which the launcher only invokes
+at the very end:
+
+1. **The launcher's `--loss-window 200` is mostly timestep noise.** Each log
+   line is a single batch at a randomly sampled t, logged every 50 steps, so
+   200 steps = 4 lines. Measured on the real log: loss@200 is 0.027 at step
+   10000 and 0.044 at 10580 -- scatter, not trend. The scorer now also
+   averages every log line since the previous snapshot (`*_span` columns,
+   ~20 lines per 1000 steps) and prints Pearson and Spearman for both, plus
+   corr(training step, f1) as the reference for "quality just follows
+   training time". Read the `_span` rows first.
+2. **Smoke-test lines leaked into the first snapshot's span.** The launcher
+   writes its 6-step smoke run (`step k/6`) into the same log; parsing now
+   keeps only lines with the largest `/max_train_steps` denominator (211 main
+   run lines, first step 50).
+3. **`final` duplicates `step_10580`.** `--eval-snapshot-steps` also fires at
+   max_train_steps; all 112 LoRA tensors are identical (max abs diff 0;
+   file checksums differ only in header bytes). `final` stays in the table
+   as an inference-noise check but is excluded from the correlation fit.
+
+Verified end to end on a synthetic dry run (blurred GT copies as fake
+snapshots, real training log) before the real scoring step; dry-run output
+deleted.
+
+## 2026-09-15: Track D Hypothesis 2 Result -- The Logged Loss Cannot See Quality
+
+The instrumented w=0.2 rerun completed 2026-09-14 23:32 (training 18:58,
+inference 11 snapshots x 192 `lineart_family` tiles at cs 2.5, 0 scoring
+timeouts). **Replication check passed:** its `final` scores 0.2513 against
+0.2514 for the original `..._w0.2_20260908` checkpoint on the same 192 tiles
+and cs -- this run is the same model, not a lucky or unlucky reseed.
+
+| step | gt_bsds_f1 | near_white_frac | fill_ratio | loss (span mean) |
+|---:|---:|---:|---:|---:|
+| 1000 | 0.2270 | 0.132 | 0.119 | 0.0381 |
+| 2000 | 0.2442 | 0.116 | 0.316 | 0.0376 |
+| 3000 | 0.2491 | 0.233 | 0.272 | 0.0314 |
+| 4000 | 0.2546 | 0.111 | 0.421 | 0.0437 |
+| 5000 | 0.2521 | 0.342 | 0.208 | 0.0265 |
+| 6000 | 0.2551 | 0.661 | 0.188 | 0.0305 |
+| **7000** | **0.2715** | 0.705 | 0.152 | 0.0307 |
+| 8000 | 0.2625 | 0.755 | 0.100 | 0.0421 |
+| 9000 | 0.2584 | 0.712 | 0.130 | 0.0218 |
+| 10000 | 0.2643 | 0.812 | 0.068 | 0.0216 |
+| 10580 (= final) | 0.2513 | 0.835 | 0.092 | 0.0411 |
+
+Baseline on the same 192 tiles: preprocessor `manga_line` alone **0.2847**
+(near_white 0.931). Even the f1 peak (step 7000) is -0.0132 below it.
+
+**Quality really moves; the loss does not register it.**
+
+- f1 changes are real, per tile: step 1000 -> 7000 is +0.0446 (154 of 192
+  tiles better, Wilcoxon p=3e-21); 7000 -> 10580 is -0.0202 (136 of 192
+  worse, p=3e-11). A rise, a peak around 7000, then a significant decline.
+- The loss curve is flat within its own noise. Each span mean averages ~20
+  single-batch losses (std 0.035 around a mean 0.033, range 0.002-0.207,
+  because every batch draws a random timestep). The spread of the 11 span
+  means across training (std 0.0079) equals the standard error of one span
+  mean (median 0.0078). First-half vs second-half mean: 0.0340 -> 0.0317 --
+  the same shape as Track B's "0.0341 -> 0.0302 while every axis got worse",
+  which this reframes: that decline was never distinguishable from noise.
+- Correlations across the 11 snapshots: loss_span vs f1 r=-0.34 (p=0.31),
+  eps_span vs f1 r=-0.28; consistency_span r=-0.50 (p=0.12). Training step vs
+  f1 r=+0.70 (p=0.017), vs near_white r=+0.94 (p=2e-5), vs fill_ratio
+  r=-0.62 (p=0.041).
+- **What training actually changes is paper, not structure.** near_white
+  climbs 0.13 -> 0.83 almost monotonically while f1 stays inside 0.227-0.272.
+
+Montage (6 evenly spaced holdout tiles; GT | inverted condition map |
+step 1000 / 4000 / 7000 / 10580, per-tile f1 under each):
+`results/loss_quality_probe_20260914/montage_snapshots.png`. It shows four
+phases the loss is blind to: step 1000 grey ground with dense hatch texture;
+step 4000 large solid black/grey fills and gradients (fill_ratio peak 0.42);
+step 7000 mostly white paper with bold strokes (the f1 peak); step 10580
+strokes thinning and breaking, one tile largely erased, hatch texture
+creeping back into patches. At every step strokes are far heavier than GT's
+and hair strands appear that GT does not have -- the model draws its own
+reading of the rough, while the faint condition map already tracks GT's
+structure.
+
+Per-snapshot outputs and per-tile CSVs:
+`../lineart-controlnet-sd15-refine/results/controlnet_lora_manga_consistency_w0.2_snapshot_probe_20260914/`
+(`loss_quality_summary.csv`, `per_tile/<snapshot>.csv`, `<snapshot>/*_out.png`).
+
+### Verdict and what it does and does not settle
+
+- **Operationally settled:** the training loss this project logs and watches
+  is not a usable signal of line-art quality. Between-snapshot differences
+  are the size of its estimation noise while f1, near_white and fill_ratio
+  move significantly. No run in this project should be judged, stopped, or
+  compared on that loss.
+- **Not settled:** whether the *expected* loss is truly decoupled from
+  quality. A noise-free estimate would need the same held-out tiles, fixed
+  timesteps and fixed noise draws evaluated against every snapshot -- no
+  training required, the 11 snapshots exist. That is the measurement that
+  would turn this from "invisible" into "decoupled" (or not).
+- **Does not rescue the approach:** no snapshot beats the preprocessor --
+  not the f1 peak (7000, +0.020 over the finished run) and not the
+  cleanest-looking one (10000, 0.2643; see the correction below). Hypothesis 2 explains why the project never *noticed*
+  when training helped or hurt, not why it never beat the baseline.
+- For any future training here: always pass `--eval-snapshot-steps`, score
+  a held-out set per snapshot, and launch with `PYTHONUNBUFFERED=1` (this
+  run's log only reached disk in ~1000-step chunks).
+
+### Correction the same night: the f1 peak is not the best-looking snapshot
+
+User's read of the montage: step 10000 looks better as a picture than 7000,
+though its strokes are clearly thinner and less line-art-like. Checked on all
+192 tiles; both halves of that read hold, and they are two different axes:
+
+| | GT | 7000 | 10000 | 10580 |
+|---|---:|---:|---:|---:|
+| gt_bsds_f1 | -- | 0.2715 | 0.2643 | 0.2513 |
+| precision / recall | -- | 0.236 / 0.358 | 0.246 / 0.316 | 0.248 / 0.284 |
+| ink_ratio | 0.045 | 0.144 | 0.090 | 0.074 |
+| line_width_p50 | 2.54 | 4.17 | 3.14 | 3.14 |
+| fill_ratio | 0.059 | 0.152 | 0.069 | 0.092 |
+| deep_black_ratio | 0.023 | 0.101 | 0.055 | 0.040 |
+| near_white_frac | 0.924 | 0.705 | 0.812 | 0.835 |
+| long_component_ratio | 0.816 | 0.730 | 0.609 | 0.558 |
+| components per 1k ink px | 22.0 | 15.8 | 31.6 | 40.2 |
+| faint_near_ink_ratio | 0.817 | 0.770 | 0.727 | 0.702 |
+
+- **Mass and tone move toward GT** from 7000 to 10000 on every such axis
+  (fill down in 185/192 tiles, width down in 146, deep black down in all
+  192), and precision rises (124 tiles up vs 67 down). That is the cleaner
+  picture.
+- **Continuity moves away from GT**: long_component_ratio falls in 171/192
+  tiles, fragments per 1k ink px roughly double (up in 191/192), and faint
+  pixels drift away from ink (faint_near_ink_ratio 0.770 -> 0.727) -- soft,
+  broken strokes. That is the lost line-art-ness, and it is what costs
+  recall (-0.042, down in 152/192 tiles) and therefore f1.
+- 7000 wins f1 only through recall: heavier, more continuous strokes cover
+  more GT edges. One-to-one matching still rewards drawing more, which is
+  why lesson 3 forbids reading gt_bsds_f1 alone.
+- 10000 -> 10580 is worse on nearly everything: recall -0.033, fill +0.024,
+  continuity down again. The last 580 steps did nothing useful.
+
+"The best snapshot is 7000", written above and in the first version of the
+outbound note, was wrong; it is the f1 peak. No snapshot is best on all
+axes: training trades bold, continuous, heavy strokes for light, broken ones
+-- this project's recurring pattern of one axis improving while another
+quietly breaks. Hypothesis 2's verdict is unaffected (the loss sees none of
+this), and no snapshot beats the preprocessor, whose condition map already
+follows GT's structure where every snapshot invents its own (e.g. the
+profile face in `lineart_002_004`, replaced by a different shape at all
+three steps).
+
+Montage (10 tiles, GT | condition map | 7000 | 10000 | 10580, per-tile
+f1/precision/recall under each):
+`results/loss_quality_probe_20260914/montage_7000_10000_10580.png`.
+
+## 2026-09-15: Stroke-Level Churn -- Strokes Are Anchored To The Condition Map, Not Drifting, And Not Learned
+
+User's framing: every stroke in line art carries meaning, like a token, and a
+viewer reads line art through the relations between strokes; every loss and
+metric here sees only per-pixel position, intensity, gradient and width, so
+training may move steadily on those while *which* strokes exist wanders
+without direction. Measured on the snapshot probe's outputs (192
+`lineart_family` tiles x 11 snapshots, no training) with
+`tools/evaluation/stroke_churn.py`.
+
+### The unit was broken first, caught by looking
+
+The project's shared `evaluate_stroke_stability.skeletonize()` (erode/open)
+leaves 2px-thick runs. Splitting its skeleton at junctions made 64% of GT
+skeleton pixels junctions; only 14% of stroke length survived as segments,
+1.7% as segments >= 30px -- the rendered "strokes" were scattered dashes.
+Switched to skimage 1px thinning with crossing-number junctions (and the 3x3
+around each junction removed so arms do not re-merge): junctions 2.0% of
+skeleton, 85.2% of it in segments, 70.4% in segments >= 30px, median segment
+27px. Rendered check: `results/stroke_churn_20260915/segment_check_lineart_002_004.png`.
+The shared function's connected-component metrics (long_component_ratio,
+components per 1k ink px, used in the 7000-vs-10000 correction above) do not
+depend on 1px width and stand; anything junction-based must not use it.
+
+### Result: churn is mostly measurement jitter; the stroke set holds still and does not move toward GT
+
+| presence rule | mean present | churn / 1000 steps | random-redraw churn | persistence | length flipping >= 2x | net first -> last |
+|---|---:|---:|---:|---:|---:|---:|
+| plain <= 3px | 0.259 | 0.154 | 0.387 | 0.603 | 0.446 | -0.046 |
+| plain <= 2px | 0.139 | 0.108 | 0.242 | 0.552 | 0.325 | +0.001 |
+| plain <= 5px | 0.445 | 0.175 | 0.494 | 0.646 | 0.505 | -0.119 |
+| **hysteresis: enter <= 2px, leave > 5px** | 0.252 | **0.058** | 0.378 | **0.847** | **0.172** | -0.026 |
+
+(persistence = 1 - observed / churn expected if each snapshot redrew every
+stroke at random with its own presence rate; 0 = random, 1 = frozen.)
+
+- Noise floor: `step_10580` vs `final` (same tensors, same seeds) churn 0.000
+  -- inference is deterministic, so every change between snapshots is the
+  model.
+- 38% of plain-3px flip length is a stroke that sat 2-5px from GT on both
+  sides of the flip (48% for segments >= 100px): strokes drawn slightly off
+  position crossing the threshold, not appearing or vanishing. Only 28% of
+  flip length is a real appear/disappear (distance jump >= 5px).
+- Long strokes are not exempt under the plain rule (>= 100px: 40.8% flip
+  twice or more vs 51.6% for < 30px), but that is where the jitter
+  concentrates.
+- With jitter removed, persistence is 0.85: **strokes do not drift at
+  random.** But net change is ~0 and only 5.6% of GT stroke length is drawn
+  at every snapshot (58% ever): **the set of strokes does not move toward
+  GT either.** The user's second half holds -- stroke identity is not being
+  learned -- while "aimless drift" does not survive the jitter check.
+
+Per-snapshot and per-pair tables: `results/stroke_churn_20260915/tol3/`,
+`tol2/`; hysteresis and jitter split:
+`results/stroke_churn_20260915/churn_hysteresis.txt`; late-step presence
+strip: `results/stroke_churn_20260915/presence_strip_late_steps.png`.
+
+### Why the set is fixed: the output follows the condition map
+
+Skeleton overlay (black GT, blue condition map, red output):
+`results/stroke_churn_20260915/skeleton_overlay_gt_cond_out.png`. Along long
+contours the condition map runs a few px off GT and the output runs on the
+condition map; where the condition map carries structure GT lacks (hatching
+in a face), the output draws it. Across 192 tiles
+(`displacement_vs_condition.txt`):
+
+- output skeleton px within 3px of the **condition map only: 31.9%** (step
+  7000) / **36.3%** (10000); within 3px of **GT only: 9.6% / 9.4%**. Where
+  the two disagree the output sides with its input 3-4x more often, and
+  training pushes further toward the input, not toward GT.
+- conditional on the condition map: has the GT stroke within 3px -> output
+  draws it 48.6%; has it 3-8px off -> output is 3-8px off 43.9%; lacks it
+  (> 8px) -> output draws it 9.3% and lacks it 71.7%.
+
+### Where the misalignment comes from
+
+GT stroke length by distance from each source's skeleton, matched tile vs a
+deliberately mismatched tile (chance at that source's density;
+`gt_vs_sources.txt`, `gt_vs_sources_chance.txt`):
+
+| source | <= 3px matched | <= 3px chance | 3-8px matched | 3-8px chance | > 8px matched |
+|---|---:|---:|---:|---:|---:|
+| raw rough (gray < 200) | 0.393 | 0.084 | 0.364 | 0.231 | 0.243 |
+| manga_line (this training's condition) | 0.301 | 0.059 | 0.390 | 0.227 | 0.309 |
+| lineart_coarse (Track C's) | **0.599** | 0.192 | 0.241 | 0.229 | 0.160 |
+
+- Real correspondence exists for every source (far above chance).
+- **Part of the offset is in the pair itself.** The raw rough, at a skeleton
+  density close to manga_line's, puts only 39% of GT stroke length within
+  3px and 36% at 3-8px -- about 13 points above chance, i.e. genuinely
+  offset strokes. Long contours are placed worst by every source.
+- **manga_line loses more on top of that** (30% within 3px, +0.24 over
+  chance vs the raw rough's +0.31).
+- **lineart_coarse places the most** (60%, +0.41 over chance, not a density
+  artefact) and its 3-8px band is at chance, so its disagreements are
+  missing strokes rather than offset ones.
+
+### What this says about hypotheses 3 and 4
+
+Pair correspondence is real but imperfect: even the raw rough leaves roughly
+a third of GT stroke length offset by 3-8px and a quarter missing. Given a
+non-deterministic mapping and a per-pixel objective, the generator resolves
+every input/target disagreement in favour of the input -- the stroke set is
+effectively inherited from the condition map and held, while training
+adjusts tone and weight. That is the preprocessor's behaviour plus the
+model's own inventions, which fits "never beats the preprocessor". It does
+not yet separate hypothesis 3 (the mapping is too loose to learn placement
+from) from hypothesis 4 (the objective cannot express selection); a model
+trained on only well-aligned pairs would.
+
+Caveats: skeletons of solid fills (the step 2000-5000 era) inflate presence,
+so late-snapshot numbers are the fairer read; the condition-map ink mask is
+raw > 32; distances are per-segment medians; tolerances 2/3/5px all
+reported.
+
+**For Track C:** a "GT-matched within 2px" label will call correct but
+offset strokes "drop". With lineart_coarse the offset band is at chance
+(0.241 vs 0.229), so that label noise is much smaller than it would be with
+manga_line; its ~16% of GT length with no coarse stroke within 8px matches
+its recall ceiling.
+
+## 2026-09-15: Hypothesis 2 Decided -- The Objective Points The Right Way But Has Almost No Slope Left
+
+`tools/evaluation/fixed_t_validation_loss.py` re-evaluated the training
+objective with every noise source removed: the same 192 holdout tiles, 20
+fixed timesteps (25..975, midpoints of uniform bins), one fixed noise tensor
+per (tile, t), posterior-mean GT latent, and the caption / conditioning /
+base / ControlNet init the training run used -- only the LoRA changes.
+Evaluated the ControlNet init with no LoRA plus the 11 snapshots
+(01:59-03:27). A repeated evaluation of one snapshot reproduced every row
+exactly.
+
+| step | eps (uniform t) | change vs previous (+-SE) | eps t<200 | eps t>=600 | consistency L1 | gt_bsds_f1 |
+|---:|---:|---:|---:|---:|---:|---:|
+| no LoRA | 0.04642 | | 0.09092 | 0.01391 | 0.09973 | -- |
+| 1000 | 0.03185 | **-0.01457** (0.00033) | 0.07445 | 0.00866 | 0.09240 | 0.2270 |
+| 2000 | 0.03165 | -0.00020 (0.00001) | 0.07390 | 0.00856 | 0.09206 | 0.2442 |
+| 3000 | 0.03161 | -0.00005 (0.00001) | 0.07365 | 0.00857 | 0.09183 | 0.2491 |
+| 4000 | 0.03163 | +0.00002 (0.00001) | 0.07350 | 0.00863 | 0.09187 | 0.2546 |
+| 5000 | 0.03156 | -0.00007 (0.00001) | 0.07339 | 0.00854 | 0.09184 | 0.2521 |
+| 6000 | 0.03170 | +0.00014 (0.00001) | 0.07344 | 0.00862 | 0.09182 | 0.2551 |
+| 7000 | 0.03155 | -0.00015 (0.00001) | 0.07335 | 0.00852 | 0.09180 | 0.2715 |
+| 8000 | 0.03156 | +0.00001 (0.00001) | 0.07340 | 0.00852 | 0.09175 | 0.2625 |
+| 9000 | 0.03159 | +0.00003 (0.00001) | 0.07330 | 0.00853 | 0.09177 | 0.2584 |
+| 10000 | 0.03147 | -0.00012 (0.00001) | 0.07324 | 0.00847 | 0.09171 | 0.2643 |
+| 10580 | 0.03154 | +0.00007 (0.00001) | 0.07320 | 0.00850 | 0.09167 | 0.2513 |
+
+(SE = tile bootstrap of the paired difference; paired design makes it ~100x
+smaller than the SE of the level itself, 0.0011.)
+
+1. **Almost all the loss reduction happens in the first 1000 steps**
+   (-0.0146). After that the objective spans 0.00039, 1.2% of its value,
+   while f1 spans 17.6% (0.227-0.272) and near_white 0.13-0.83.
+2. **The loss is not decoupled from f1.**
+   - Differenced between consecutive snapshots (which removes the shared
+     time trend): change in eps vs change in f1, Pearson -0.69 (p=0.028),
+     Spearman -0.73 (p=0.016), n=10.
+   - Within each interval, tiles whose loss fell more gained more f1:
+     Spearman negative in 9 of 10 intervals (sign test p=0.021), mean -0.10,
+     pooled -0.22 (p=1e-22). Consistent, but weak.
+   - The raw snapshot-level r (eps vs f1 -0.81, p=0.003) is inflated by
+     both moving with step: -0.60 (p=0.053) after linear-step detrending,
+     -0.37 (n.s.) after log-step detrending. Do not quote the raw r.
+3. **The consistency term does not track quality changes.** It falls
+   monotonically with step, but has no tile-level coupling to f1 (mean
+   +0.04, negative in 3/10 intervals, pooled -0.03, p=0.26).
+4. **Paper whiteness, the largest visible change, is not tracked:** change
+   in eps vs change in near_white r=+0.24 (n.s.).
+5. **Why the logged loss showed nothing:** the true between-snapshot range
+   (0.00039) is 20x smaller than the logged span's standard error (0.0078).
+   Resolving a 0.0001 difference from single-batch random-t losses would
+   take ~490,000 batches per snapshot.
+
+**Verdict: neither "decoupled" nor "just noise".** The objective points the
+right way, but once the LoRA's first 1000 steps are done it is nearly flat:
+the quality changes that matter (f1 +-18%, paper, fill, continuity) cost
+about 1% of loss, so the gradient carries little information about them
+and a run can move substantially in quality -- up or down -- while its loss
+barely changes. This fits the stroke-level result above: which strokes get
+drawn is inherited from the condition map early and then held, and later
+training reshuffles tone at negligible loss cost.
+
+Caveats: one configuration (SD1.5, w=0.2); 11 snapshots; a fixed t grid;
+posterior-mean latents; snapshot-level partial correlations depend on how
+the time trend is modelled, so the differenced and tile-level results are
+the ones to rely on.
+
+Files: `results/fixed_t_validation_20260915/` (`fixed_t_losses.csv` per tile x
+t x snapshot, `fixed_t_summary.csv`, `fixed_t_correlations.csv`,
+`partial_and_delta.txt`, `run.log`).

@@ -96,13 +96,14 @@ def print_summary(rows):
         by_key.setdefault((row["model"], row["pool"]), []).append(row)
 
     cols = ["bsds_f1", "bsds_precision", "bsds_recall", "chamfer_px", "recon_near_white_frac", "recon_midtone_frac", "recon_fill_ratio", "recon_ink_ratio", "gt_ink_ratio"]
-    header = "model".ljust(8) + "pool".ljust(16) + "n".rjust(5) + "timeout".rjust(9) + "".join(c[:14].rjust(16) for c in cols)
+    model_w = max(8, max(len(m) for m, _ in by_key) + 2)
+    header = "model".ljust(model_w) + "pool".ljust(16) + "n".rjust(5) + "timeout".rjust(9) + "".join(c[:14].rjust(16) for c in cols)
     print(header)
     for (model, pool), group in sorted(by_key.items()):
         scored = [r for r in group if not r["timed_out"]]
         n_timeout = len(group) - len(scored)
         means = {c: (np.mean([float(r[c]) for r in scored]) if (scored and scored[0][c] != "") else float("nan")) for c in cols}
-        line = model.ljust(8) + pool.ljust(16) + str(len(group)).rjust(5) + str(n_timeout).rjust(9) + "".join(f"{means[c]:16.4f}" for c in cols)
+        line = model.ljust(model_w) + pool.ljust(16) + str(len(group)).rjust(5) + str(n_timeout).rjust(9) + "".join(f"{means[c]:16.4f}" for c in cols)
         print(line)
 
 
