@@ -5669,7 +5669,55 @@ counts, seed 20260915; 435 overlap with the aligned list):
 
 GT ink is lower in the aligned set, a possible confound (sparser drawings may
 simply align more easily). 229 steps per epoch at batch 2 x accumulation 4.
-Training design not yet decided (condition preprocessor, control type, length).
+
+### Step (b) design (user decisions, 2026-09-15)
+
+- **Condition: lineart_coarse**, not manga_line (removes the empty-condition
+  confound). Stored training lineart_coarse maps match a fresh
+  `LineartDetector(coarse=True, 480)` run on 5 training roughs (correlation
+  0.996-0.998, identical > 32 fractions, mean |diff| 1-2 grey levels), and the
+  holdout conditions (Track B, 192 tiles) came from the same tool -- no
+  train/holdout preprocessing shift this time.
+- **Control: random, matched on data source x GT-ink quintile**
+  (`list_control_random_matched_sources_gtink.txt`, seed 20260915): GT ink
+  0.0337 vs the aligned arm's 0.0329 (the unmatched control had 0.0395);
+  raw-rough <= 3px 0.387 vs 0.726, lineart_coarse <= 3px 0.684 vs 0.821; 484
+  pairs overlap.
+- **Length: 10 epochs = 2,290 steps**, snapshots every 500. Everything else as
+  the w=0.2 probe (v1-5-pruned-emaonly, control_v11p_sd15s2_lineart_anime
+  init -- the same init Track A's earlier lineart_coarse run used -- rank 16,
+  lr 1e-4, consistency 0.2 below t=200). Per snapshot: 192-tile holdout on
+  lineart_coarse conditions at cs 2.5, scored; after both arms, stroke churn
+  and fixed-t validation loss. Launcher:
+  `experiments/run_h34_alignment_probe_20260915.sh` (reads Track A, writes
+  only here).
+- **Pre-registered extension rule** (user: may continue straight into a
+  ~10,000-step run depending on results). Retrain both arms at 10,580 steps
+  if, at 2,290 steps, the aligned arm beats the control on any of: (i) share
+  of output skeleton within 3px of GT only, by >= 2 points; (ii) hysteresis
+  net gain of GT stroke length >= +0.03 with the control <= 0; (iii)
+  gt_bsds_f1 by >= +0.01 driven by recall -- and that measure is still rising
+  over the last interval. If the arms are indistinguishable and flat, do not
+  extend; that is evidence for hypothesis 4 at this length.
+
+Launched 2026-09-15 07:47 (`setsid`, detached; main log
+`logs/h34_alignment_probe_20260915.log`, per-arm training logs
+`logs/h34_alignment_probe_20260915_{aligned,control}_train.log`). Pre-flight:
+both lists 1,837 pairs with no missing files; holdout lineart_coarse
+conditions complete. Built-in smoke test (6 steps on the aligned list,
+snapshot at step 2, loaded by inference on one holdout tile) passed 07:48:34;
+aligned-arm training started. Snapshots at 500 / 1000 / 1500 / 2000 / 2290.
+Expected: ~2.5h training + ~1.9h inference per arm, then stroke churn and
+fixed-t for both, finishing around 18:00.
+
+Criterion (i) uses a new tool, `tools/evaluation/output_vs_condition_proximity.py`
+(output skeleton within 3px of GT only / condition only / both / neither, and
+GT stroke length drawn where the condition has vs lacks it). Checked against
+the inline analysis on the manga_line probe before use: it reproduces every
+number exactly (step 7000: GT only 0.096, condition only 0.319, both 0.090,
+neither 0.495, GT drawn where the condition has it 0.486; step 10000: 0.094 /
+0.363 / 0.105 / 0.437 / 0.417). Its "condition lacks it" column (0.226 / 0.176)
+merges the inline 3-8px and > 8px classes.
 
 Files: `results/pair_alignment_strata_20260915/` (`per_pair.csv`, `run.log`,
 `by_source_density.txt`, `vs_extraction_metrics.txt`,
