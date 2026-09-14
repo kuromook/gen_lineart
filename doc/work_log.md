@@ -5596,3 +5596,82 @@ the ones to rely on.
 Files: `results/fixed_t_validation_20260915/` (`fixed_t_losses.csv` per tile x
 t x snapshot, `fixed_t_summary.csv`, `fixed_t_correlations.csv`,
 `partial_and_delta.txt`, `run.log`).
+
+## 2026-09-15: Hypotheses 3/4 Step (a) -- Training Pairs Scored; manga_line Conditions Were Mostly Empty
+
+User decision: separate hypothesis 3 (pairs too loosely aligned to learn
+placement from) from hypothesis 4 (a generative objective cannot express
+selection), starting with a no-training stratification of the 8,467 training
+pairs. `tools/evaluation/pair_alignment_strata.py` scores every pair with the
+holdout's stroke-level definition: GT thinned to 1px and split at junctions;
+length-weighted share of GT segments whose median distance to a source's
+skeleton is <= 3px / 3-8px / > 8px, for the raw rough (gray < 200),
+`manga_line` and `lineart_coarse` (> 32, white on black). Each tile's own
+chance level is the same measurement against the source rotated 180 degrees
+(a left-right flip was rejected: panel borders and vertical rules survive it,
+one tile scored 43% by "chance"). 8,467 pairs, 756s on 6 workers under
+thermal throttling. Nothing existed to reuse: `pair_metadata.csv` covers 1,201
+older tiles with zero overlap, and `score_pair_agreement.py` is Canny-pixel
+based.
+
+| source vs GT (training pairs) | <= 3px mean (median) | 3-8px | > 8px mean (median) | chance-corrected | holdout <= 3px |
+|---|---:|---:|---:|---:|---:|
+| raw rough | 0.366 (0.321) | 0.388 | 0.246 (0.210) | 0.319 | 0.393 |
+| **manga_line** (Track A's training condition) | **0.120 (0.062)** | 0.265 | **0.615 (0.641)** | 0.109 | 0.301 |
+| lineart_coarse | 0.660 (0.673) | 0.184 | 0.156 (0.126) | 0.560 | 0.599 |
+
+The scores agree with the extraction-time metrics on the 6,978 clippairs
+tiles in the expected direction (raw-rough aligned vs strict_edge_f1 Spearman
++0.48, vs chamfer -0.46): related, not redundant.
+
+### Finding: on the training pairs, manga_line erased most strokes
+
+- Median manga_line skeleton density on training pairs is 0.0053 against
+  0.0198 on the holdout; relative to each pair's own raw rough it keeps 0.44x
+  the stroke density. **19.0% of training conditions are essentially empty**
+  (density < 0.002; 21.7% for clippairs), and those carry 2.9% of GT stroke
+  length within 3px. Montage (clippairs tiles at rough-alignment quantiles;
+  GT | raw rough | manga_line | lineart_coarse):
+  `results/pair_alignment_strata_20260915/montage_clippairs_by_alignment.png`.
+  A pair whose raw rough matches GT at 0.81 gets a manga_line map with a
+  handful of specks.
+- Not a processing difference: training and holdout manga_line maps came
+  from the same script (`../lineart-controlnet-realpairs/tools/
+  preprocess_manga_line_extraction_condition.py`), the same isolated venv and
+  the same defaults.
+- **Not rough softness** (a guess made on seeing the montage, rejected by
+  measurement): holdout roughs are *softer* than training roughs (mid-grey
+  share of rough ink 0.979 vs 0.85-0.92, mean ink grey 166.6 vs 146-152), and
+  within the training set softness barely tracks erasure (Spearman -0.09).
+  Training roughs carry more ink (clippairs 0.117 vs holdout 0.075); dense,
+  grainy strokes being read as screentone is a remaining, untested candidate.
+  Cause open.
+- **Consequence for Track A:** it trained with conditions carrying about 12%
+  of GT's strokes and evaluated with conditions carrying about 30%. Much of
+  what Track A's model learned from these pairs was to draw line art from
+  nearly empty inputs -- which fits the invented strokes and the "follows its
+  condition where there is one" behaviour. It does not explain Track B's
+  lineart_coarse run (`controlnet_lora_sdxl_anime_1024_20260907`, 66% of GT
+  strokes within 3px), which also failed to beat its preprocessor.
+
+### Candidate lists for step (b)
+
+`results/pair_alignment_strata_20260915/list_aligned_rough_ge0.5.txt` (1,837
+pairs, raw-rough chance-corrected alignment >= 0.5) and
+`list_control_random_matched_sources.txt` (1,837 random pairs, same per-source
+counts, seed 20260915; 435 overlap with the aligned list):
+
+| set | n | rough <= 3px / > 8px | lineart_coarse <= 3px | GT ink |
+|---|---:|---:|---:|---:|
+| all training pairs | 8,467 | 0.366 / 0.246 | 0.660 | 0.0395 |
+| aligned | 1,837 | 0.726 / 0.102 | 0.821 | 0.0329 |
+| control | 1,837 | 0.381 / 0.246 | 0.660 | 0.0395 |
+
+GT ink is lower in the aligned set, a possible confound (sparser drawings may
+simply align more easily). 229 steps per epoch at batch 2 x accumulation 4.
+Training design not yet decided (condition preprocessor, control type, length).
+
+Files: `results/pair_alignment_strata_20260915/` (`per_pair.csv`, `run.log`,
+`by_source_density.txt`, `vs_extraction_metrics.txt`,
+`rough_softness_vs_manga_line.txt`, `candidate_lists.txt`, the two lists,
+montage).
