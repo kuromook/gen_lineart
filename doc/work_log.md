@@ -5719,6 +5719,135 @@ neither 0.495, GT drawn where the condition has it 0.486; step 10000: 0.094 /
 0.363 / 0.105 / 0.437 / 0.417). Its "condition lacks it" column (0.226 / 0.176)
 merges the inline 3-8px and > 8px classes.
 
+### Interim: aligned arm finished (12:01), control arm training
+
+Scored on the 192-tile holdout, lineart_coarse conditions, cs 2.5 (the
+lineart_coarse preprocessor alone scores 0.3231 on these tiles):
+
+| step | gt_bsds_f1 | near_white | fill | out near GT only | cond only | both | neither | GT drawn where cond has it | where cond lacks it |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 500 | 0.2588 | 0.037 | 0.241 | 0.039 | 0.408 | 0.116 | 0.438 | 0.604 | 0.215 |
+| 1000 | 0.2218 | 0.290 | 0.200 | 0.038 | 0.402 | 0.114 | 0.446 | 0.447 | 0.156 |
+| 1500 | 0.2021 | 0.370 | 0.118 | 0.041 | 0.307 | 0.086 | 0.566 | 0.556 | 0.333 |
+| 2000 | 0.2410 | 0.446 | 0.128 | 0.041 | 0.541 | 0.170 | 0.248 | 0.347 | 0.085 |
+| 2290 | 0.2564 | 0.502 | 0.087 | 0.042 | 0.523 | 0.165 | 0.269 | 0.395 | 0.104 |
+
+Montage (GT | lineart_coarse condition | steps 500 / 1000 / 2000 / 2290):
+`results/h34_alignment_probe_20260915/aligned/montage_aligned_snapshots.png`.
+Strokes are bold tracings of the condition map, including construction lines
+GT leaves out; empty regions are filled with scribble noise at 500-1000 and a
+diamond cross-hatch lattice at 2000-2290, which is why paper stays at 0.50 --
+still in the tone phase the manga_line probe only left around step 7000.
+
+Read on its own, the aligned arm does not move toward GT: output near GT only
+stays at ~4% while output on the condition only rises 41% -> 52% and
+invented texture falls 44% -> 27%; even GT strokes the condition contains are
+drawn less often (0.60 -> 0.40). No conclusion is drawn until the control arm
+is in -- the extension rule compares arms.
+
+### Control arm in (16:17) -- extension rule: no criterion met, do not extend
+
+| step | f1 aligned / control | near_white aligned / control | fill aligned / control |
+|---:|---:|---:|---:|
+| 500 | 0.2588 / 0.2411 | 0.037 / 0.014 | 0.241 / 0.441 |
+| 1000 | 0.2218 / 0.2524 | 0.290 / 0.053 | 0.200 / 0.457 |
+| 1500 | 0.2021 / 0.2375 | 0.370 / 0.101 | 0.118 / 0.251 |
+| 2000 | 0.2410 / 0.2384 | 0.446 / 0.055 | 0.128 / 0.163 |
+| 2290 | 0.2564 / 0.2466 | 0.502 / 0.097 | 0.087 / 0.151 |
+
+Paired per tile at step 2290 (aligned - control,
+`results/h34_alignment_probe_20260915/paired_aligned_vs_control.txt`): f1
++0.0098 (115 vs 76 tiles, p=0.002), precision -0.028, **recall +0.119** (162 vs
+29, p=2e-28), near_white +0.405, fill -0.064, width -1.17px. Recall is higher
+for aligned from step 1000 on at lower precision.
+
+The pre-registered rule, evaluated:
+
+| criterion | required | measured at 2290 |
+|---|---|---|
+| (i) output near GT only | aligned >= control + 2pt | 0.042 vs 0.051: **-0.9pt** (aligned at or below control throughout) |
+| (ii) hysteresis net gain of GT stroke length | aligned >= +0.03, control <= 0 | aligned **-0.133** (0.448 -> 0.315), control -0.172 (0.371 -> 0.200) |
+| (iii) gt_bsds_f1 | >= +0.01, recall-driven | **+0.0098**, recall-driven, just under |
+
+**No criterion met: not extended to 10,580 steps.**
+
+What differs between the arms is fidelity to the condition, not learning of GT
+placement (`aligned/` and `control/output_vs_condition_proximity.txt`):
+
+| at 2290 | aligned | control |
+|---|---:|---:|
+| output near condition only | 0.523 | 0.405 |
+| GT strokes drawn where the condition has them | **0.395** | 0.241 |
+| GT strokes drawn where the condition lacks them | 0.104 | 0.113 |
+
+Hypothesis 3 predicted the aligned arm would start drawing GT strokes the
+condition does not contain. It does not: that column is ~10% in both arms. The
+aligned arm only copies the strokes its condition does contain more faithfully
+-- which is what well-aligned pairs teach, since their conditions are closer to
+GT to begin with (lineart_coarse <= 3px 0.821 on the aligned list vs 0.684 on
+the control). The recall gain is that extra copying plus texture: the montage
+(`results/h34_alignment_probe_20260915/montage_aligned_vs_control.png`) shows
+control outputs as grey gradients and black masses with fewer strokes, aligned
+outputs as whiter pages with scribble and diamond cross-hatch, both tracing the
+condition's structure including construction lines GT omits, neither drawing
+GT-specific strokes the other lacks.
+
+**Reading: at this length the evidence favours hypothesis 4** -- better pair
+alignment makes the generator a more faithful copier of its input, not a
+learner of where GT puts strokes beyond it. Caveat: the aligned arm's paper is
+still at 0.50 (the manga_line probe only whitened around step 7000), so a much
+longer run changing the picture is not ruled out; the pre-registered rule does
+not call for it.
+
+### Stroke churn and fixed-t validation loss for both arms (launcher finished 17:35)
+
+Fixed-t validation loss, same 192 holdout tiles x 20 fixed t x fixed noise on
+lineart_coarse conditions
+(`results/h34_alignment_probe_20260915/fixed_t_aligned_vs_control.txt`, per
+arm `{aligned,control}/fixed_t/`):
+
+| step | eps aligned | eps control | aligned - control (+-SE) | tiles lower in aligned |
+|---:|---:|---:|---:|---:|
+| 500 | 0.03212 | 0.03215 | -0.00002 (0.00001) | 107/192 |
+| 1000 | 0.03198 | 0.03202 | -0.00004 (0.00001) | 99/192 |
+| 1500 | 0.03188 | 0.03193 | -0.00005 (0.00001) | 112/192 |
+| 2000 | 0.03178 | 0.03197 | -0.00019 (0.00002) | 149/192 |
+| 2290 | 0.03175 | 0.03195 | -0.00020 (0.00002) | 152/192 |
+
+- The aligned arm ends at a slightly lower objective (0.6%, lower on 152 of
+  192 tiles): its task is easier to fit, and it still draws no more GT strokes
+  beyond its condition.
+- Within each arm the objective does not track f1 (n=5: r +0.07 aligned, +0.11
+  control; pooled over both arms r +0.16, n.s.) but tracks paper whiteness
+  closely (r -0.98 / -0.93; pooled -0.87, p=0.001). Tile level, change in loss
+  vs change in f1 is +0.10 for aligned (p=0.006, the wrong sign) and +0.01 for
+  control. With lineart_coarse conditions the loss follows tone even more
+  exclusively than in the manga_line probe, where differenced loss and f1 at
+  least moved together (r -0.69).
+
+Plain-3px stroke churn (`{aligned,control}/stroke_churn.log`): GT length present
+aligned 0.457 -> 0.285, control 0.384 -> 0.195; last-interval persistence 0.694
+vs 0.579; GT length present at every snapshot 16.0% vs 6.6%. Hysteresis (above):
+aligned 0.448 -> 0.315, control 0.371 -> 0.200. The aligned arm's presence swings
+(0.339 -> 0.479 -> 0.249) coincide with its texture phases, which inflate and
+deflate skeleton coverage.
+
+### Hypotheses 3/4 at this length: the working explanation is hypothesis 4
+
+Neither arm learns stroke placement beyond its condition. Better-aligned pairs
+buy a more faithful copy of the condition and a slightly lower loss, not GT
+placement. Together with hypothesis 1 (the VAE is not the ceiling), hypothesis 2
+(the objective is nearly flat after the first 1000 steps and bound to tone), and
+the stroke-level findings (outputs inherit the condition's strokes), the working
+explanation for "the pairs contribute nothing" is **hypothesis 4**: a generative
+epsilon objective conditioned on a line map converges to reproducing that map
+with adjusted tone, and nothing in it rewards drawing a GT stroke the map lacks
+or omitting one it has. Hypothesis 3's misalignment is real -- about a third of
+GT stroke length sits 3-8px off even in the raw rough -- but fixing it does not
+change what this objective teaches. That argues for investing in selection
+(Track C) rather than in cleaner pairs for generation. Caveat unchanged: 2,290
+steps, with the aligned arm's paper still at 0.50.
+
 Files: `results/pair_alignment_strata_20260915/` (`per_pair.csv`, `run.log`,
 `by_source_density.txt`, `vs_extraction_metrics.txt`,
 `rough_softness_vs_manga_line.txt`, `candidate_lists.txt`, the two lists,
