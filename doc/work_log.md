@@ -6040,3 +6040,34 @@ forgiving, so nothing about the VAE explains any of the gap.
 Files: `results/vae_latent_perturbation_20260916/` (`vae_roundtrip_metrics.csv`
 per tile, `manifest.csv`, `score.log`, `generate.log`,
 `montage_sensitivity.png`).
+
+### Scale curve: two of three arms, and the normalization fixed before the third lands
+
+`tools/evaluation/compare_scale_arms.py` compares arms at matched steps. Written
+and its reading fixed **while the 8,467-pair arm is still running**, so the
+normalization cannot be chosen to suit the result.
+
+**The deciding column needs normalizing.** Within each arm, "GT drawn where cond
+lacks it" rises and falls together with "GT drawn where cond has it" —
+r = 0.868 (460 pairs) and 0.901 (1,837). Both dip and jump on the same
+snapshots. So the raw column largely tracks how much the model draws at all, and
+comparing it raw would confuse a coverage phase with the ability hypothesis 5 is
+about. The ratio (cond lacks ÷ cond has) asks what share of the model's GT
+coverage goes to strokes its condition does not supply.
+
+| step | 460 生値 | 1,837 生値 | 460 正規化 | 1,837 正規化 |
+|---|---:|---:|---:|---:|
+| 500 | 0.180 | 0.210 | 0.396 | 0.438 |
+| 1000 | 0.125 | 0.141 | 0.352 | 0.475 |
+| 1500 | 0.090 | 0.137 | 0.291 | 0.495 |
+| 2000 | 0.131 | 0.071 | 0.421 | 0.282 |
+| 2290 | 0.249 | 0.113 | 0.555 | 0.469 |
+
+Trajectories cross twice; means 0.403 vs 0.432 normalized. And the cleanest
+column of all, the share of the output skeleton lying near GT **only**, is
+identical between arms at every snapshot (0.040/0.039 … 0.052/0.051) — 4x the
+pairs moves it by 0.001.
+
+**Interim: no scale effect across 460 → 1,837 on any of the three readings.**
+The 8,467 arm (4.6x again) is the test that matters; inference began 07:51 and
+lands about 10:20. Nothing is concluded until it is in.
