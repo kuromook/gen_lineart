@@ -5921,3 +5921,66 @@ In flight: a variant grid (original / 240px / autocontrast / both) over 16
 empty and 8 dense clippairs tiles, to see whether a cheap preprocessing fix
 recovers most tiles or only a few. Output and montage go to
 `results/manga_line_emptiness_20260916/`.
+
+### Resolved: a 2-line preprocessing change roughly doubles what manga_line carries
+
+The variant grid (16 empty + 8 dense clippairs tiles, montage
+`results/manga_line_emptiness_20260916/variants_montage.png`, columns
+rough | original | 240px | autocontrast | both):
+
+| group | variant | mean inv>32 | tiles reaching 0.01 |
+|---|---|---:|---:|
+| empty (n=16) | original | 0.0020 | 0.00 |
+| empty | half 240px | 0.0241 | 0.69 |
+| empty | autocontrast | 0.0198 | 0.62 |
+| empty | half + autocontrast | 0.0750 | **1.00** |
+| dense (n=8) | original | 0.0906 | 1.00 |
+| dense | half + autocontrast | 0.2311 | 1.00 |
+
+Density alone would be the wrong thing to trust here -- autocontrast on a faint
+rough amplifies paper grain, which raises ink without adding a single GT
+stroke. Scoring the regenerated maps with the project's own convention
+(`segments(ink_skeleton(gt), 8)` against `source_skeleton(map, "bright", 32)`,
+3px, 180-rotation chance baseline) separates the two, and the pipeline
+validates against the stored values first (regenerated `original` gives 0.010
+and 0.097 against `per_pair.csv`'s 0.010 and 0.089):
+
+| group | variant | GT length carried (<=3px) | chance | aligned | density |
+|---|---|---:|---:|---:|---:|
+| empty | original | 0.010 | 0.001 | 0.009 | 0.0007 |
+| empty | half + autocontrast | **0.185** | 0.014 | **0.171** | 0.0086 |
+| dense | original | 0.097 | 0.035 | 0.062 | 0.0169 |
+| dense | half + autocontrast | **0.184** | 0.050 | 0.134 | 0.0264 |
+
+Grain would have lifted the chance baseline alongside the measurement; it moved
+0.001 -> 0.014 while the measurement moved 0.010 -> 0.185. Visual confirmation
+in `results/manga_line_emptiness_20260916/recovered_vs_gt.png` (rough |
+original map | recovered map | GT): the recovered strokes run along the rough's
+own strokes and land on GT's contours, with visible speckle in the faintest
+tiles.
+
+**What the empty tiles actually are** (from the montage, not from the
+statistics): extreme close-ups of broad, soft graphite. A single stroke spans a
+third of the tile, so the structure the preprocessor looks for -- a thin dark
+line on white -- is not present at that scale. Downscaling restores the scale
+and autocontrast turns grey graphite black. The dense tiles are a different
+instrument entirely: thin, crisp, pen-like strokes.
+
+**Corrections to earlier readings in this log.** The "train-empty 2.24px vs
+train-dense 3.60px" stroke widths are withdrawn; re-measured with an Otsu
+threshold on the rough they are 4.00px and 4.55px, i.e. width does not separate
+the groups either. No single variable found so far accounts for the 19%: the
+two that survive mutual control (`rough_std` +0.292, `source_long_side` -0.187)
+are shallow gradients. The cause is characterised but not reduced to one axis;
+the remedy is settled.
+
+**Implication, and its limit.** Lesson 8 says outputs inherit their conditioning
+map, so raising what the map carries is one of the few levers this track's own
+findings endorse. But it must be applied to the holdout conditioning as well as
+the training pairs, or the train/eval shift merely reverses sign. It lands at
+0.185 against the holdout's untreated 0.30, so it narrows the gap without
+closing it, and it adds grain. This is a Track A / data-side change, proposed
+here and not run.
+
+Files: `results/manga_line_emptiness_20260916/` (`variants_montage.png`,
+`recovered_vs_gt.png`, `maps/{original,half_autocontrast}/`, `maps/tiles.csv`).
