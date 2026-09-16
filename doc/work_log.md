@@ -5852,3 +5852,72 @@ Files: `results/pair_alignment_strata_20260915/` (`per_pair.csv`, `run.log`,
 `by_source_density.txt`, `vs_extraction_metrics.txt`,
 `rough_softness_vs_manga_line.txt`, `candidate_lists.txt`, the two lists,
 montage).
+
+## 2026-09-16 Track D remaining items
+
+### Hypothesis 5 (scale): curve launched
+
+`experiments/run_scale_curve_20260916.sh` (PID 788723, `setsid`, PPID=1),
+log `logs/scale_curve_20260916.log`. Everything is held fixed except the number
+of distinct training pairs, over nested subsets so the curve is not confounded
+by which pairs are in play:
+
+    460  subset of  1,837  subset of  8,467
+
+The 1,837 point already exists -- it is the `control` arm of
+`run_h34_alignment_probe_20260915.sh` (random, matched on source x GT-ink
+quintile), so only the 460 and 8,467 arms are trained here. Same
+lineart_coarse conditions, same 2,290 steps, so the number of updates is
+identical and only the data seen per update differs. Lists are written to
+`results/pair_alignment_strata_20260915/list_scale_{460,8467}.txt`.
+
+**The measure that decides it is not f1**: it is the share of GT stroke length
+drawn where the conditioning map lacks that stroke
+(`output_vs_condition_proximity.py`, column "GT drawn: cond lacks it"), which
+sat at ~0.10 in *both* arms at 1,837 pairs. If it rises with pair count,
+hypothesis 4 weakens; if it stays flat while the model merely copies its
+condition better, hypothesis 4 holds at this scale too. Cost ~9-10h; the script
+polls until the GPU is free (the latent-perturbation job holds it).
+
+### Why manga_line empties out on training pairs: two weak independent axes
+
+Background: manga_line carries 12% of GT stroke length on the training pairs
+(19% of them nearly empty) against 30% on the holdout -- a train/eval
+conditioning shift found while scoring pair alignment. Three explanations have
+now been measured and **all three are wrong**:
+
+- **Soft pencil** (rejected 2026-09-15): the holdout roughs are *softer*, not
+  harder.
+- **Stroke width**: non-monotonic. Sampling empty tiles from clippairs (the
+  pool where 21.7% are empty, rather than the first tiles by name, which are
+  all ako5) gives mean stroke width 2.24px for train-empty against 3.60px
+  train-dense and **1.91px holdout** -- the holdout is the thinnest of the three
+  yet yields the densest output. Ink fraction is likewise non-monotonic
+  (0.138 / 0.213 / 0.057).
+- **Blur**: sharpening does nothing. Unsharp masking raises Laplacian variance
+  ~6x (2648 -> 15101) and the output stays blank (inv>32 0.0002 -> 0.0002).
+- **Upscaling**: `src_per_out` is 1.000 for every clippairs tile. There are no
+  magnified tiles.
+
+The failure is total, not weak: on empty tiles even the darkest 1% of output
+pixels is 254.4 (white). Two interventions do move it -- downscaling to 240px
+(inv>32 0.0001 -> 0.0027..0.0105) and a 2x contrast stretch (-> 0.0062..0.0105).
+
+Correlating manga_line density against the extraction manifest over all 6,978
+clippairs tiles (`results/clip_pairs_koma_tiles_480_20260823.csv` in the shared
+tree) gives two axes that each survive controlling for the other:
+
+| axis | spearman | partial (controlling the other) | empty rate, lowest -> highest quartile |
+|---|---:|---:|---|
+| `rough_std` (tonal spread of the rough) | +0.308 | **+0.292** | 0.306 -> 0.172 |
+| `source_long_side` (source page resolution) | -0.219 | **-0.187** | 0.125 -> 0.284 |
+
+`soft_ink_ratio` is flat (-0.017), `line_width_p50` weak (-0.183), `edge_f1`
+weak (-0.104). So faint roughs and native-scale crops from high-resolution
+pages each independently raise the chance of an empty map, but the gradients
+are shallow and neither alone accounts for 19%.
+
+In flight: a variant grid (original / 240px / autocontrast / both) over 16
+empty and 8 dense clippairs tiles, to see whether a cheap preprocessing fix
+recovers most tiles or only a few. Output and montage go to
+`results/manga_line_emptiness_20260916/`.
