@@ -62,10 +62,12 @@ def main():
     a = p.parse_args()
 
     rows = list(csv.DictReader(open(a.csv)))
-    cols = [c for c in rows[0] if c[:2] in ("a_", "b_")]
+    cols = [c for c in rows[0] if c[:2] in ("a_", "b_", "c_")]
     A = [c for c in cols if c.startswith("a_")]
     B = [c for c in cols if c.startswith("b_")]
-    SETS = {"A (単独)": A, "B (関係)": B, "AB": cols, "ART (副産物のみ)": ["a_curv", "a_len"]}
+    C = [c for c in cols if c.startswith("c_")]
+    SETS = {"A 単独": A, "B 粗い関係": B, "C 鋭い関係": C, "BC": B + C, "ABC": cols,
+            "ART 副産物": ["a_curv", "a_len"]}
 
     tiles = sorted({r["tile"] for r in rows})
     rng = np.random.default_rng(a.seed)
@@ -84,18 +86,18 @@ def main():
         keep = np.ones(len(rows), bool) if not filt else ((kind == "true") | (oo <= a.drop_on_other))
         tag = "全候補" if not filt else f"on_other<={a.drop_on_other} に限定"
         print(f"\n===== {tag} =====")
-        print(f"{'負例の種類':<14}" + "".join(f"{s:>18}" for s in SETS) + f"{'最良の単一特徴':>26}")
+        print(f"{'負例の種類':<12}" + "".join(f"{s:>13}" for s in SETS) + f"{'最良の単一特徴':>26}")
         for k in KINDS:
             sel = keep & ((kind == "true") | (kind == k))
             y = (kind[sel] == "true").astype(float)
             Xs, ts = X[sel], intest[sel]
             mu, sd = Xs[~ts].mean(0), Xs[~ts].std(0) + 1e-9
             Z = (Xs - mu) / sd
-            line = f"{k:<14}"
+            line = f"{k:<12}"
             for name, fs in SETS.items():
                 j = [idx[c] for c in fs]
                 sc = fit(Z[~ts][:, j], y[~ts])(Z[ts][:, j])
-                line += f"{auc(y[ts], sc):>18.3f}"
+                line += f"{auc(y[ts], sc):>13.3f}"
             best = max(((abs(auc(y[ts], Z[ts][:, idx[c]]) - 0.5) + 0.5, c) for c in cols))
             line += f"{best[1] + ' ' + format(best[0], '.3f'):>26}"
             print(line + f"   (n={int(sel.sum())})")

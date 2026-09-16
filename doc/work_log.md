@@ -6261,3 +6261,40 @@ was written to catch.
 Environment note: no sklearn, pandas, lightgbm or xgboost in any venv on this
 machine; the fit is plain numpy + scipy L-BFGS, and nothing was installed into a
 shared environment.
+
+### One feature round: 0.636 → 0.726, still short of 0.80. Track F stops.
+
+Tier C added the specific relations named before the round: endpoint-to-endpoint
+gap and whether the stroke points at and continues into that neighbour; a
+hatching lattice fitted **from the neighbours alone**, so the residual asks
+whether this stroke sits on a rung the others imply; and the 2nd/3rd nearest
+strokes rather than only the nearest.
+
+| 負例 | A 単独 | B 粗い関係 | C 鋭い関係 | BC | ABC | ART 副産物 | 最良の単一特徴 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| ずらし | 0.500 | 0.636 | 0.580 | **0.726** | 0.722 | 0.500 | c_end_gap_near 0.651 |
+| 回転 | 0.737 | 0.787 | 0.789 | 0.845 | 0.871 | 0.678 | a_straight 0.747 |
+| 別タイル | 0.505 | 0.797 | 0.791 | 0.841 | 0.842 | 0.507 | c_end_gap_near 0.765 |
+
+**Gate 1 asked for 0.80 on displaced and got 0.726. By the agreement made before
+the round — one iteration, stop if it fails — this track stops here.**
+
+Worth keeping:
+
+- **B and C are complementary, not redundant.** C alone (0.580) is *weaker* than
+  B alone (0.636), yet BC reaches 0.726. Coarse proximity and specific
+  continuation carry different information.
+- **The endpoint gap was the right instinct**: `c_end_gap_near` alone is 0.651 on
+  displaced and 0.765 on foreign, the best single feature in both.
+- **A adds nothing on displaced** (ABC 0.722 ≤ BC 0.726), exactly as the matched
+  construction predicts, which is what makes the displaced number trustworthy.
+- Label noise is not the limit: filtering `on_other` ≤ 0.5 gives 0.706.
+
+So across two rounds the answer is consistent: **a stroke's fit to its
+neighbours is a real, measurable property, and the measurement is not yet strong
+enough to act on.** That is a different finding from "the hypothesis is wrong",
+and it is the finding this track closes with.
+
+Files: `results/gate1_20260917/candidates.csv` (round 1),
+`candidates_v2.csv` (round 2, with tier C), `tools/stroke/{make_negatives,
+gate1_features,gate1_fit}.py`.
