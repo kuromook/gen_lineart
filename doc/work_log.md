@@ -5984,3 +5984,59 @@ here and not run.
 
 Files: `results/manga_line_emptiness_20260916/` (`variants_montage.png`,
 `recovered_vs_gt.png`, `maps/{original,half_autocontrast}/`, `maps/tiles.csv`).
+
+## 2026-09-17 Decoder sensitivity: the ceiling is high and the approach to it is wide
+
+Hypothesis 1 measured the VAE ceiling. This measures the slope up to it: how
+much error in the latent can the decoder absorb before the line art stops
+being line art? Isotropic Gaussian noise of scale sigma is added in the scaled
+latent space before decoding, with the same noise direction across conditions
+(separate generators), and the result is scored the same way as the roundtrip.
+`tools/evaluation/vae_latent_perturbation_generate.py` +
+`vae_roundtrip_score.py`, 6 sigmas x (192 + 100) tiles x 2 models x 2
+conditions = 7,008 decodes.
+
+**The reported means are not trustworthy on their own**, and checking that was
+the point: 1,074 of 7,008 tiles time out in bipartite matching (>60s), and the
+timeout count falls systematically as sigma rises (sd15/lineart_family: 52 at
+sigma 0 down to 0 at sigma 0.5), so the harder tiles enter the mean only at
+high sigma and the group-mean curve mixes sensitivity with a change of
+composition. Recomputed on the tiles that survive *every* sigma, paired
+within tile:
+
+sd15, lineart_family, common n=86 (latent std 1.296):
+
+| sigma | f1 (common) | paired delta vs sigma 0 | SE | f1 as first reported |
+|---:|---:|---:|---:|---:|
+| 0 | 0.9561 | — | — | 0.9595 |
+| 0.05 | 0.9556 | -0.0006 | 0.0008 | 0.9599 |
+| 0.1 | 0.9530 | -0.0031 | 0.0013 | 0.9555 |
+| 0.2 | 0.9474 | -0.0087 | 0.0016 | 0.9520 |
+| 0.3 | 0.9371 | -0.0191 | 0.0018 | 0.9421 |
+| 0.5 | 0.9079 | -0.0482 | 0.0022 | 0.9153 |
+
+The correction moves the endpoint by 0.007 and leaves the shape intact, so the
+composition bias was real but small. Other pools and models, paired deltas at
+sigma 0.5: sd15/housei -0.0633 (n=90), sdxl/lineart_family -0.0392 (n=54),
+sdxl/housei -0.1196 (n=81). Pools are not averaged together. `mean` vs
+`sample` and fp32 vs fp16 differ by less than their standard errors
+everywhere, so neither the posterior sampling nor the precision is a factor.
+
+**Reading.** Sigma 0.5 is about 40% of the signal's own scale, and it costs
+0.048 f1. The gap between the best trained model (~0.25) and this ceiling
+(0.956) is 0.71 — nothing on this curve reaches it. And the failure mode is
+wrong: `montage_sensitivity.png` (GT | sigma 0 | 0.1 | 0.2 | 0.3 | 0.5, sd15
+mean-fp32, 5 tiles) shows noise costing paper cleanliness and the faintest
+strokes — the fine parallel hatching fades from sigma 0.3, the thin hair
+strands break up at 0.5 — while **every major stroke keeps its identity and its
+position**. The trained models' outputs are grey relief with different strokes
+in different places. That is not a noisy latent; it is a latent pointing at a
+different picture. Same direction as hypothesis 4.
+
+This also answers the question that prompted the probe (what a direct
+encoder-to-decoder path would give): the path is not just clean, it is
+forgiving, so nothing about the VAE explains any of the gap.
+
+Files: `results/vae_latent_perturbation_20260916/` (`vae_roundtrip_metrics.csv`
+per tile, `manifest.csv`, `score.log`, `generate.log`,
+`montage_sensitivity.png`).
