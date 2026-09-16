@@ -6216,3 +6216,48 @@ alone (length, curvature, width, darkness) and its relations (angle and distance
 to meeting strokes, parallel neighbours and their spacing, endpoint proximity,
 local density) — with the tiers ablated against each other. If relations add
 nothing, the feature design is wrong.
+
+## 2026-09-17 Track F gate 1: FAILED at 0.636 (required 0.80), but not empty
+
+`tools/stroke/gate1_features.py` → 4,293 matched sets over 281 tiles (one true +
+displaced + rotated + foreign each, emitted only when all four succeed).
+`tools/stroke/gate1_fit.py`: logistic regression, L-BFGS, split **by tile**.
+
+| 負例 | A (単独) | B (関係) | AB | ART (副産物のみ) | 最良の単一特徴 |
+|---|---:|---:|---:|---:|---|
+| ずらし | 0.500 | **0.636** | 0.633 | 0.500 | b_body_min 0.584 |
+| 回転 | 0.737 | 0.787 | 0.827 | 0.678 | a_straight 0.747 |
+| 別タイル | 0.505 | 0.797 | 0.798 | 0.507 | b_ang_nearest 0.732 |
+
+**Gate 1 asked for AUC ≥ 0.80 on displaced. It scores 0.636. That is a fail**,
+and the pre-registered rule is to stop rather than proceed to gate 2.
+
+What the numbers do say, though, is that the relational claim is not refuted:
+
+- On displaced, the single-stroke features score **exactly 0.500** — by
+  construction, since a displaced stroke is the same pixels moved, so every a_*
+  column is distributionally identical. Everything above chance there is
+  relational, and relations deliver 0.636.
+- On foreign, A is 0.505 and B is 0.797: a stroke lifted from another drawing is
+  strongly detectable from its relations alone, with `b_ang_nearest` worth 0.732
+  by itself.
+- Rotated's A-side 0.737 is the residual generation artifact warned about
+  earlier (ART = a_curv + a_len alone gives 0.678); its numbers are not clean.
+- Filtering candidates that sit on another real stroke (`on_other` ≤ 0.5) moves
+  nothing, so label noise was never the limit.
+
+**Reading.** The relations carry real signal; the feature set is too coarse to
+resolve a 5–12px shift. `b_*` asks about the nearest stroke's distance and how
+many roughly-parallel strokes lie within 40px — quantities a small translation
+barely changes. The relations that would expose it are specific: a stroke that
+should terminate exactly where another begins, hatching whose spacing is regular
+until this one breaks it, a contour whose curvature continues across a gap. None
+of those are expressed yet.
+
+So the honest summary is **failed gate, live hypothesis, underpowered features**
+— which is a different situation from "relations add nothing", the case the gate
+was written to catch.
+
+Environment note: no sklearn, pandas, lightgbm or xgboost in any venv on this
+machine; the fit is plain numpy + scipy L-BFGS, and nothing was installed into a
+shared environment.
