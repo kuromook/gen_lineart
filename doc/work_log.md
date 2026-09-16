@@ -6171,3 +6171,48 @@ Numbers here are per-run; the no-selection recall differs between runs (0.598 on
 Files: `results/unit_granularity_20260917/` (`per_tile.csv`,
 `granularity_sweep.csv`, `granularity_montage.png` = GT | 条件画像の骨格 |
 画素単位オラクル | トークン単位オラクル).
+
+## 2026-09-17 Track F step 2: the negative generator
+
+`tools/stroke/make_negatives.py`. Negatives are built from GT only — the
+preprocessor's skeleton supplies none, since it does not tokenize (above).
+Three kinds, each holding out one real token and putting a candidate in its
+place: **displaced** (shifted 5-12px), **rotated** (15-40° about its centroid),
+**foreign** (a similar-length token from another drawing, centred there).
+
+**Label noise is small.** A displaced or foreign stroke can land on another real
+stroke, which would make it a false negative. Share of candidates with more than
+half their pixels within 3px of some *other* real token (40 tiles, 738 tokens
+≥20px): displaced **3.0%**, foreign 0.1%, rotated 0.0%, true 0.0%. Filterable
+via the `on_other` column.
+
+**Visual verdict: they pass, and for the right reason.**
+`results/negatives_check_20260917/negatives_montage_zoom.png` (candidate's 180px
+neighbourhood at 1.9x; grey = the rest of the drawing, green = real, red = fake;
+columns true | displaced | rotated | foreign; 6 distinct tiles). The fakes sit
+in the right neighbourhood with matched length and curvature, and what they
+break is *relational*: parallelism with neighbouring hatch lines, continuation
+of a contour around a corner, the angle at which strokes meet. A real stroke in
+row 1 runs parallel with the hatching; the rotated fake cuts across it. In row 3
+the real stroke doubles the grey contour; the displaced fake collides with it.
+That is precisely the signal this track claims exists — not separable by a
+single-stroke feature, separable by context.
+
+**Gate 1 is tightened, before any result.** Rotated and foreign are visibly
+easier than displaced, so a pooled AUC would flatter the model. Gate 1 now
+requires **AUC ≥ 0.80 on displaced negatives specifically**, with per-type AUC
+always reported, not a pooled number. Tightening a gate after seeing the data
+but before seeing any model output is the safe direction.
+
+**Two process failures caught here, both mine.** The first montage drew all six
+rows from a single tile, because cases were collected in iteration order — the
+same bias that spoiled the manga_line diagnostic earlier today (first tiles by
+name, all ako5). The second drew the context as 1px light grey downscaled 480→300,
+which made it invisible, so the check it existed for could not be made. Sample
+across tiles; render the context legibly or the montage is decoration.
+
+Next: step 3, the minimal discriminator. Features in two tiers — the stroke
+alone (length, curvature, width, darkness) and its relations (angle and distance
+to meeting strokes, parallel neighbours and their spacing, endpoint proximity,
+local density) — with the tiers ablated against each other. If relations add
+nothing, the feature design is wrong.
