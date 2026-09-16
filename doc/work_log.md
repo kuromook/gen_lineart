@@ -5852,3 +5852,74 @@ Files: `results/pair_alignment_strata_20260915/` (`per_pair.csv`, `run.log`,
 `by_source_density.txt`, `vs_extraction_metrics.txt`,
 `rough_softness_vs_manga_line.txt`, `candidate_lists.txt`, the two lists,
 montage).
+
+## 2026-09-16 Track E starts: the comparison set and the judging UI
+
+### The first pass was a trap, and the numbers caught it
+
+Six candidates were staged for pairwise judging (the instrumented w=0.2 run at
+steps 1000 / 7000 / 10580, the two arms of the alignment probe at 2290, and the
+preprocessor alone). Profiling all 240 staged images with the project's own
+`profile_metrics` showed five of the six separable by paper tone alone:
+
+| variant | near_white | midtone | fill | ink | width |
+|---|---:|---:|---:|---:|---:|
+| preproc | 0.866 | 0.072 | 0.000 | 0.057 | 1.9 |
+| w02_10580 | 0.866 | 0.050 | 0.053 | 0.068 | 2.7 |
+| w02_7000 | 0.801 | 0.048 | 0.135 | 0.143 | 3.8 |
+| aligned | 0.604 | 0.073 | 0.059 | 0.087 | 3.3 |
+| w02_1000 | 0.075 | 0.259 | 0.079 | 0.163 | 3.8 |
+| control | 0.083 | 0.503 | 0.086 | 0.093 | 3.8 |
+
+Eleven of the fifteen within-tile pairings had a median |delta near_white| of
+0.15 to 0.78. Those pairs are decided by tone, which the project already
+computes -- 400 judgements would have bought a preference for white paper and
+taught the scorer that shortcut. The montage said the same thing before the
+statistics did: `aligned`, `control`, `w02_1000` and `w02_7000` do not read as
+line art at all but as grey relief, with white highlights and dark edges.
+
+### The set that was built instead
+
+The three tone-matched candidates only -- `preproc`, `w02_7000`, `w02_10580`
+(median |delta near_white| 0.025 to 0.066, matched on 24-36 of 40 tiles). What
+separates them is which strokes were drawn: the preprocessor traces the rough
+faithfully including its construction lines; the trained snapshots drop the
+scaffolding and commit to bolder strokes, sometimes wrongly (black blobs, grey
+smears). That is this track's question with tone held down.
+
+- 80 tiles, 16 from each GT-ink quintile of the 192-tile holdout
+- 3 pairings per tile = 240 pairs, plus 60 repeats with sides swapped, placed in
+  the back half, for intra-rater consistency = **300 judgements**
+- GT is deliberately not a candidate: it is the answer, and would make pairs
+  trivially decidable
+- The preprocessor's conditioning images are white-on-black and were inverted
+  when staged, so no candidate is identifiable by polarity
+- Honest caveat: `preproc` is still distinguishable from the other two by stroke
+  weight (1.9px vs 2.7-3.8px), so a scorer could learn "bolder is better" as a
+  shortcut. Stroke weight is a real aesthetic axis rather than a pipeline
+  artifact, and the weight-matched `w02_7000` vs `w02_10580` pairing is a third
+  of the set, so this was accepted rather than designed away.
+
+Builder: `tools/build_comparison_pairs.py` (seed 20260916, deterministic).
+Records (untracked, `results/` is gitignored):
+`results/comparison_pairs_20260916/` -- `pairs.csv`, `design.json`,
+`staged_profiles.csv`, `staged_variants_check.png`, `judge_ui.html`.
+
+### The UI
+
+**https://claude.ai/code/artifact/b8f99c23-0980-42a4-b4ab-6e8c7c1ad1fb**
+
+Two panes, labelled only A and B -- the judge is never shown which output is
+which. Left / tie / right by click or arrow keys, one undo. Each tile's three
+variants ship as one 1440x480 sprite (80 files instead of 240, under the
+255-file publish cap) and are positioned with `background-size: 300%`, so the
+images stay lossless and scale to phone width.
+
+Judgements are written to the artifact's `db` (`judgments/<pairId>`, one
+document each: choice, both variant names, tile, reaction time, `repeatOf`),
+which is what lets them be read back here to fit and validate the scorer. The
+page reads existing judgements on load and resumes where it left off.
+
+**Next**: collect the 300, then read them back and check intra-rater
+consistency on the 60 repeats before fitting anything. The pre-registered gate
+stands: hold-out agreement >= intra-rater consistency x 0.85.
