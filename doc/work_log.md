@@ -6074,3 +6074,34 @@ Corpus, 300 random training tiles: 27 strokes per tile median (mean 33.8, p10
 skeleton length captured in tokens (p10 78.7%), junction pixels 1.5% of the
 skeleton. A third of tiles hold fewer than 20 strokes and carry little context;
 they are stratified, not dropped.
+
+### The corpus, measured over all 8,467 tiles (and a correction)
+
+`tools/stroke/tokenize_corpus.py --workers 6` →
+`results/tokenize_corpus_20260917/` (`tokens.csv` one row per token,
+`per_tile.csv`).
+
+| 量 | 全件 8,467枚 | 先の30枚見積もり |
+|---|---|---|
+| 総トークン数 | **277,477** | 約357,000 |
+| 1タイルあたり | 中央値 27 / 平均 32.8 / p10 7 / p90 67 / 最大 181 | 中央値34 / 平均42.2 |
+| 長さ px | 中央値 28 / p10 10 / p90 120 / 最大 854 | 中央値24 / p10 9 / p90 95 |
+| 20本未満のタイル | 36.1% | 30枚中11枚 |
+| 骨格長の捕捉率 | 中央値 0.907 / p10 0.778 | 0.909 / 0.787 |
+| 骨格の2割超がベタのタイル | 27.3% | 27.7% |
+
+**The 30-tile estimate was 22% high on the headline number.** The shape of the
+distribution held (capture rate, fill share, the long tail), but the mean
+strokes-per-tile did not, so the corpus size quoted in this track's opening
+notice was wrong and has been corrected there. Sample-based corpus counts get
+re-measured on the full set before they are used for anything.
+
+Per token, `fill_share` is the fraction of its pixels on ink thicker than 8px.
+**75.0% of tokens touch no fill at all**, 15.8% are more than a fifth on fill
+and 9.7% more than half. Gate 1 will be measured on the **233,735** tokens with
+`fill_share` ≤ 0.2; the rest are kept and tagged, not dropped.
+
+Next: step 2, the negative generator (oracle rejections, strokes from other
+drawings, displaced strokes), with the same rule — look at them before
+believing any number, since a negative that is obviously wrong to the eye
+teaches nothing.
