@@ -6040,3 +6040,37 @@ forgiving, so nothing about the VAE explains any of the gap.
 Files: `results/vae_latent_perturbation_20260916/` (`vae_roundtrip_metrics.csv`
 per tile, `manifest.csv`, `score.log`, `generate.log`,
 `montage_sensitivity.png`).
+
+## 2026-09-17 Track F step 1: the tokenizer works on strokes and breaks on fills
+
+Verified before trusting any number, per this track's own rule. Montages:
+`results/tokenize_check_20260917/tokenization_montage.png` (6 tiles, GT | 1px
+skeleton | tokens coloured one per stroke, black = junction, grey = discarded)
+and `results/tokenize_check_20260917/zoom_centerline_check.png` (4x zoom, three
+tiles ordered thickest to thinnest).
+
+**Centreline, not double edges.** The worry worth killing first was that
+skeletonizing a thick stroke might trace both of its edges, which would make
+"one stroke = one token" false exactly where strokes matter most. It does not.
+Area / (skeleton length x estimated width) is **1.139** median (p10 0.962, p90
+1.479) over 300 tiles, where a centreline gives ~1.0 and both-edge tracing
+~0.5. The zoom confirms it: bold hair and eyebrow strokes each carry a single
+line down the middle, and their tokens are long coherent runs.
+
+**Solid fills produce a tangle, not strokes.** On a filled black mass the
+medial axis is a branching tree, so the tokens come out as short fragments
+joined at many junctions (top row of the zoom montage). Measured: the share of
+skeleton length sitting on ink thicker than 8px is 0.085 median but 0.381 at
+p90, and **27.7% of tiles have more than 20% of their skeleton on fill**.
+
+**Decision: tag, do not delete.** Removing fill regions would also remove the
+*outline* of a black shape, which is a stroke a human drew. Every token carries
+`fill_share` (the fraction of its pixels sitting on ink thicker than 8px) and
+gate 1 is measured on stroke tokens only. Whether a fill's outline should be
+its own token type is left to step 2.
+
+Corpus, 300 random training tiles: 27 strokes per tile median (mean 33.8, p10
+8, p90 64), stroke length 29px median (p10 10, p90 119, max 619), 90.9% of
+skeleton length captured in tokens (p10 78.7%), junction pixels 1.5% of the
+skeleton. A third of tiles hold fewer than 20 strokes and carry little context;
+they are stratified, not dropped.
