@@ -6105,3 +6105,69 @@ Next: step 2, the negative generator (oracle rejections, strokes from other
 drawings, displaced strokes), with the same rule — look at them before
 believing any number, since a negative that is obviously wrong to the eye
 teaches nothing.
+
+### The unit question, and two rounds spent measuring my own binarization
+
+Track C's notice (lines 97-101) already records that a *connected-component*
+delete oracle scored f1 0.24-0.43, below the preprocessor alone, because the
+0.7425 pixel ceiling depends on partial credit -- keeping only the correct part
+of a stroke. Gate 3 as written when this track opened ignored that. The
+crossing-number split is finer than a connected component, so the open question
+was whether the finer unit recovers it. It does not.
+
+**Run 1** (191 holdout tiles, cond binarized `>32`, 3px tolerance):
+
+| 選択 | GT回収 | 正確さ | 条件画像の残存 |
+|---|---:|---:|---:|
+| 選択なし | 0.598 | 0.212 | 1.000 |
+| 画素単位オラクル | 0.598 | 1.000 | 0.212 |
+| トークン単位オラクル | 0.133 | 0.820 | 0.063 |
+
+The pixel oracle's recall equals no-selection: deleting misaligned pixels costs
+nothing, because the aligned parts still carry every GT stroke. Cond has 218
+tokens/tile against GT's 27, and only 41 sit within 3px.
+
+**Run 2, granularity sweep** (same tiles, sub-splitting each token along its
+path): 交点のみ 0.133 → 40px 0.133 → 20px 0.137 → 10px 0.147 → 5px 0.162, while
+tokens per tile went 218 → 912. Cutting to nearly pixel scale recovers almost
+nothing, which did not add up and was the signal to distrust the measurement.
+
+**Run 3, diagnosis** (40 tiles): only **42.3%** of the cond skeleton's length
+lives in components of 8px or more (GT: 90.7%); junction pixels are 11.0% of it
+(GT: 1.5%); component length is 3px at the median with 1,153 components per
+tile. So most of the cond skeleton never becomes a token at all, and the fair
+ceiling for any token method was 0.209, not 0.598.
+
+**Run 4, is that my fault?** Thresholds 16/32/64/128 all give 912-1,607
+components, but closing or smoothing before skeletonizing gives 713/575, median
+component 5.7/6.0px, junctions 0.051, capture 0.621/0.653. **A large part of the
+shattering was my own binarization** -- ragged edges on an anti-aliased line map
+manufacture junctions and 1-3px shards.
+
+**Run 5, rechecked with the better binarization** (60 tiles, both variants in
+one script):
+
+| | raw >32 | >32 + close3 |
+|---|---:|---:|
+| 骨格の捕捉率 | 0.426 | 0.621 |
+| 画素単位(骨格全体) | 0.657 | 0.552 |
+| トークン方式の公平な上限 | 0.193 | 0.301 |
+| トークン単位オラクル | 0.139 | 0.189 |
+
+Fixing the binarization lifts the ceiling and the measurement by about half,
+and closing also *costs* 0.105 of no-selection recall by merging neighbouring
+lines. **The direction survives**: 0.301 against 0.552 at pixel level, with 262
+tokens per tile against GT's 27. The magnitude I first reported did not.
+
+**What this changes.** Gate 1 is untouched -- it lives on GT tokens, which are
+well behaved. Gate 3 is rewritten in the opening notice: selecting among
+skeleton segments of the preprocessor's output cannot reach pixel-level
+selection, so connecting to Track C means *redrawing* (fitting stroke
+primitives to the conditioning ink), not selecting, and that waits behind gate 2.
+
+Numbers here are per-run; the no-selection recall differs between runs (0.598 on
+191 tiles, 0.657 on 60) purely by sample, so only within-run comparisons count.
+
+Files: `results/unit_granularity_20260917/` (`per_tile.csv`,
+`granularity_sweep.csv`, `granularity_montage.png` = GT | 条件画像の骨格 |
+画素単位オラクル | トークン単位オラクル).
