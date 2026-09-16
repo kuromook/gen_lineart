@@ -59,6 +59,24 @@ closed. Three worktrees have descended from it, each with its own briefing in
   this stroke match GT), and the ceiling is 0.74 against a current best near
   0.30. First move is to look at the oracle before trusting it. Proposal:
   `doc/track_proposal_stroke_selection_20260911.md`.
+- `../lineart-pair-signal` (branch `pair-signal`) -- **NEW 2026-09-13,
+  diagnostic; its four hypotheses were measured and it leaves no open
+  experiment as of 2026-09-15.** Question: why did 8,467 pairs never move any
+  model? Answers, in order: the VAE is not the ceiling (GT survives a
+  roundtrip at f1 0.96-0.98); the wiring is not buggy (LoRA/ControlNet audited
+  against upstream); the objective is nearly flat after the first 1,000 steps
+  and tracks paper whiteness rather than f1; outputs inherit their strokes
+  from the conditioning map; and training on the best-aligned 1,837 pairs
+  against a matched control only sharpens that copying (GT strokes the
+  conditioning lacks: 0.104 vs 0.113). Conclusion: the pairs are usable as
+  **selection labels**, not as generation targets. It also found that
+  `manga_line` conditioning carries 12% of GT's strokes on the training pairs
+  against 30% on the holdout (19% of training tiles nearly empty) -- see
+  lessons 7-8. Notices: `inbox/note_vae_ceiling_refuted_20260914.md`,
+  `note_loss_blind_to_quality_20260915.md`,
+  `note_stroke_anchoring_and_pair_offset_20260915.md`,
+  `note_training_pairs_alignment_manga_line_empty_20260915.md`,
+  `note_h34_aligned_pairs_do_not_teach_placement_20260915.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -69,9 +87,10 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and six lessons that apply project-wide** (lessons 3-4 added
+**Cause, and eight lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
-from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
+from both tracks, lesson 6 on 2026-09-11, lessons 7-8 on 2026-09-15 from
+`../lineart-pair-signal`; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
 consistency loss, caption vocabulary, a UNet-side LoRA) were each measured and
 rejected. The base UNet is frozen in every ControlNet run, so its hatch prior
@@ -156,6 +175,36 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    an inability to lay solid fills on the other). Score them separately;
    `dataset/pairs_480/holdout_lineart_family.txt` and
    `holdout_housei_100.txt` are already split that way.
+7. **Training loss is not a progress signal here -- neither the logged one nor
+   a clean one.** (2026-09-15, `../lineart-pair-signal`.) The logged loss is
+   one batch per 50 steps at a random timestep: its spread between snapshots
+   equals its own standard error (0.0079 vs 0.0078), so Track B's "loss fell
+   0.0341 -> 0.0302 while every axis got worse" was never distinguishable from
+   noise. Re-measured without that noise -- same held-out tiles, 20 fixed
+   timesteps, fixed noise per tile, only the LoRA swapped -- the objective
+   points the right way but is nearly flat: almost all of its decline happens
+   in the first 1,000 steps, after which it spans 1.2% of its value while
+   `gt_bsds_f1` spans 18% and `near_white_frac` goes 0.13 -> 0.83. Differenced
+   between snapshots it does track f1 (r -0.69) on `manga_line` conditions; on
+   `lineart_coarse` conditions it tracks only paper whiteness (r -0.98) and
+   not f1 at all. **Never judge, stop or compare runs on the loss.** Pass
+   `--eval-snapshot-steps`, score a held-out set per snapshot, and launch with
+   `PYTHONUNBUFFERED=1` -- these logs otherwise reach disk in ~1,000-step
+   chunks and would be lost in a crash.
+8. **Measure the conditioning map against GT on the *training* pairs, not only
+   on the eval set -- and expect the output to inherit it.** (2026-09-15, same
+   track.) Scored stroke by stroke, `manga_line` carries 12% of GT's stroke
+   length on the 8,467 training pairs and leaves 19% of them nearly empty,
+   against 30% on the holdout: Track A trained and evaluated on different
+   conditioning distributions and nobody noticed. `lineart_coarse` is
+   consistent (66% training / 60% holdout); the raw rough is 37% / 39%. And
+   whatever the conditioning holds is what comes out: output strokes sit
+   within 3px of the conditioning map alone 3-4x more often than of GT alone,
+   and training moves them further onto the conditioning map, never toward GT.
+   Training on well-aligned pairs only sharpens the copy. The tools are in
+   `../lineart-pair-signal/tools/evaluation/`
+   (`pair_alignment_strata.py`, `output_vs_condition_proximity.py`,
+   `stroke_churn.py`, `fixed_t_validation_loss.py`).
 
 ## Active Goal
 
@@ -194,6 +243,24 @@ keeping**, and that is the distinction to hold on to: the evidence is against
 diffusion generation closing this gap, not against that particular loss doing
 what it was designed to do.
 
+**Why the pair data never helped is answered as of 2026-09-15**, by the
+diagnostic track `../lineart-pair-signal` (four hypotheses measured; its
+`doc/work_log.md` and five notices in `inbox/`). Not the VAE: GT line art
+survives an encode/decode roundtrip at f1 0.96-0.98, so the target was always
+representable. Not a bug: the LoRA/ControlNet wiring was audited against
+upstream diffusers and is correct. What is left is the objective. An
+epsilon-MSE conditioned on a line map converges to reproducing that map with
+adjusted tone -- nothing in it rewards drawing a GT stroke the map lacks or
+deleting one it has -- and both halves are measured: output strokes follow the
+conditioning map, and paper whiteness is the only axis the loss tracks. Better
+pairs do not change it. Trained on the best-aligned 1,837 pairs against a
+control matched on source and GT ink, the model copies its conditioning more
+faithfully (GT strokes present in the conditioning drawn 0.395 vs 0.241) while
+drawing GT strokes the conditioning lacks no more often (0.104 vs 0.113).
+**The pairs' remaining value is as labels for selection** -- item 1 below --
+**not as targets for generation.** The one caveat on record: that comparison
+ran to 2,290 steps, where the better arm's paper was still at 0.50.
+
 **The raw-extraction goal that stood here through 2026-08 is done.** The
 clip_pairs v3 re-extraction, the 8,798-tile combined pool
 (`dataset/pairs_480/valid_train_combined_v3_20260830.txt`), its WD14 captions,
@@ -207,7 +274,7 @@ Old leak-era `shape1` scores are not adoption targets. Use clean eval metrics
 and montage review only as current references. Evaluate line art with the
 BSDS-style one-to-one matching F1 (`gt_bsds_f1`), and always report
 `line_width_p50`, `ink_ratio`, `fill_ratio` and the conditioning map's own
-score alongside it -- see the six lessons at the top of this file.
+score alongside it -- see the eight lessons at the top of this file.
 
 ## Current Data Direction
 
@@ -567,7 +634,9 @@ Item 1 is the active direction and is carried out in
 `../lineart-stroke-selection`, which has its own briefing and work log. Item 2
 is an open strategic question; items 3-6 are common-foundation housekeeping,
 none of them blocking. Both ControlNet tracks are closed as of 2026-09-13 and
-neither leaves work behind -- see the pointer section above.
+neither leaves work behind; the diagnostic track `../lineart-pair-signal`
+finished its four hypotheses on 2026-09-15 and leaves no open experiment
+either -- see the pointer section above.
 
 1. **Stroke selection** (`../lineart-stroke-selection`): learn to delete the
    preprocessor's spurious strokes. Input is the preprocessor output, not the
@@ -599,6 +668,18 @@ neither leaves work behind -- see the pointer section above.
    `lineart_coarse`'s **0.7425** (recall 0.604), on the same `lineart_family`
    192-tile group, so the two are directly comparable. `manga_line` is the
    weaker basis for a selection approach.
+
+   `../lineart-pair-signal` **de-risked this track's premise** on 2026-09-15:
+   the reason generation never used the pairs is the objective, not the pairs
+   (lessons 7-8), and this track's teacher signal never passes through a VAE.
+   It hands over two cautions. A "matched to GT within 2px" label calls a
+   correct but 3-8px-offset stroke a delete -- with `lineart_coarse` that band
+   sits at chance (0.241 vs 0.229) so the label noise is small, but with
+   `manga_line` it would not be. And about 16% of GT stroke length has no
+   `lineart_coarse` stroke within 8px at all, which is the same limit the
+   0.604 recall cap measures. Per-pair alignment scores for all 8,467 training
+   pairs, usable for weighting or filtering:
+   `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`.
 2. **Decide whether solid fills (the housei/ako5 pools) are a target at all.**
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
    appear in no evaluation set. They are not a harder version of the current
