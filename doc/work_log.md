@@ -6071,3 +6071,51 @@ pairs moves it by 0.001.
 **Interim: no scale effect across 460 → 1,837 on any of the three readings.**
 The 8,467 arm (4.6x again) is the test that matters; inference began 07:51 and
 lands about 10:20. Nothing is concluded until it is in.
+
+## 2026-09-17 Hypothesis 5 (scale): refuted. 18x the pairs changes nothing.
+
+`experiments/run_scale_curve_20260916.sh` completed 09:43. Three arms, identical
+in everything but the number of distinct training pairs, nested so the curve is
+not confounded by which pairs are in play: 460 ⊂ 1,837 ⊂ 8,467, all at 2,290
+steps on lineart_coarse, scored on the same 192 holdout tiles.
+
+| 測定 | 460 | 1,837 | 8,467 |
+|---|---:|---:|---:|
+| 出力の骨格のうち GTだけの近く(平均) | 0.046 | 0.045 | 0.045 |
+| 条件に無いGTの線(生値・平均) | 0.155 | 0.134 | 0.262 |
+| 同(正規化: ÷ 条件にある線) | 0.403 | 0.432 | 0.593 |
+| 最終step(2290)の生値 | **0.249** | 0.113 | 0.186 |
+
+**`gt_only` does not move**: 0.046 / 0.045 / 0.045 over an eighteen-fold range of
+pair count, flat at every snapshot, not merely on average. And at the matched
+final step the **fewest** pairs score highest on the deciding column, so nothing
+orders by scale.
+
+**The 8,467 arm's higher average is an artifact, and the montage settles it.**
+`results/scale_curve_20260916/montage/scale_8467_spike_check.png`
+(GT | 条件画像 | 8467 step_1000 | step_2000 | step_2290 | 460 step_2290):
+**no snapshot of the 8,467 arm is line art.** The snapshot that scored 0.465 on
+the deciding column, step_1000, is a dither texture covering whole regions —
+woven mesh, speckle, basket-weave. A texture that covers the tile necessarily
+puts ink near GT strokes the condition lacks. That is how it scored.
+
+**Correction to what I said an hour earlier.** I called the spikes "fill phases"
+after reading two rows. Pooled over all 15 snapshots the correlation between the
+deciding column and `fill_ratio` is only **0.115**. What does hold is
+`cond_lacks` vs `gt_bsds_f1` = **-0.269**: the snapshots that score well on the
+deciding measure are the ones whose overall quality is worse. The column rewards
+indiscriminate ink. (`gt_only` vs fill = -0.632, vs near_white = +0.548, so it
+is tone-sensitive too — but it does not order by scale, which is the question.)
+
+**Hypothesis 5 is refuted at this range.** 8,467 pairs is still small against the
+public ControlNets' hundreds of thousands, so this cannot say 100k would fail;
+it says there is no visible slope over 18x, which removes "we just need a few
+more pairs" as an explanation and leaves **hypothesis 4** standing as the answer
+to why the pairs never contributed.
+
+**Track D's diagnostic question is now closed.** VAE ceiling refuted (0.96/0.98
+against a best of 0.25) and its error budget wide (40% isotropic latent noise
+costs 0.048); the objective nearly flat after 1,000 steps and bound to tone;
+outputs inherit their conditioning map's strokes; aligned pairs teach faithful
+copying, not placement; and scale does not move it. The pairs do not contribute
+because a conditioned generative epsilon objective cannot express selection.
