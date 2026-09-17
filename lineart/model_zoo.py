@@ -608,6 +608,13 @@ def build_generator(model_name, in_channels=1):
         return AttentionUNetGenerator(in_channels=in_channels)
     if model_name == "maskcleanup":
         return MaskCleanupGenerator(in_channels=in_channels)
+    if model_name == "strokeselect":
+        # Minimal pixel-level keep/drop classifier (Track C step 2): same flat,
+        # no-downsampling shape as MaskCleanupGenerator, shrunk from its
+        # channels=48/blocks=5 default (~105K params) to channels=24/blocks=3
+        # (~16K params) since this is a deliberately minimal distance-to-ceiling
+        # probe, not a final model. in_channels=1 (conditioning image only).
+        return MaskCleanupGenerator(in_channels=in_channels, out_channels=1, channels=24, blocks=3)
     if model_name == "flowmaskcleanup":
         return FlowMaskCleanupGenerator(in_channels=in_channels)
     if model_name == "flowmaskunet":
