@@ -6298,3 +6298,411 @@ and it is the finding this track closes with.
 Files: `results/gate1_20260917/candidates.csv` (round 1),
 `candidates_v2.csv` (round 2, with tier C), `tools/stroke/{make_negatives,
 gate1_features,gate1_fit}.py`.
+
+## 2026-09-17 Track F restart question: how large an image can stroke tokens handle here?
+
+User's point (after the gate-1 stop): the 480px tile is a U-Net/diffusion size
+limit, and a stroke-token model lives in a different space. Measured before
+redesigning anything. Machine: RTX 3060 12GB, 31GB RAM, i7-4770K (8 threads).
+
+**Training tiles are native-resolution crops.** 8,467 tiles come from 2,840
+panels, at most 4 tiles each, 45% of same-panel tile pairs overlapping;
+`sub_refine_scale` is ~1.0 (0.85-1.15 alignment only). Native panels:
+median ~2,000 x 1,900 (3.7-8.6 MP median by source), p90 ~10-16 MP, max 40.2 MP.
+
+**Tokenizing native panels (CPU)** — `tools/stroke/scale_probe.py`, 40 clip_pairs
+v3 panels spread evenly over size → `results/scale_limits_20260917/panel_tokenize.csv`:
+
+- tokens per MP: median **164**, p90 295, max 473 (tiles: ~140/MP, consistent)
+- 40.2 MP panel: 5,386 tokens, skeleton 62s, split 1.35s, peak RSS 513MB
+- skeleton time is driven by fills (ink 55% at 2.3MP → 4.4s), not only size
+- **`stroke_churn.segments()` is O(components x pixels)**: 8.47s vs 0.06s for a
+  sort-based grouping at 2.1MP. Must be replaced before tokenizing anything
+  larger than a tile. Not a limit otherwise.
+
+**Transformer over stroke tokens (GPU)** — `tools/stroke/gpu_seq_probe.py`, one
+stroke = one token, full train step (fwd+bwd+AdamW), bf16, SDPA, batch 1:
+
+| seq_len | d256 L6 (4.7M) GB / s | d512 L12 (37.8M) GB / s |
+|---:|---:|---:|
+| 4,000 | 0.27 / 0.07 | 1.23 / 0.13 |
+| 16,000 | 0.83 / 0.28 | 3.28 / 1.08 |
+| 32,000 | 1.55 / 0.98 | 6.06 / 3.86 |
+| 64,000 | 3.04 / 3.73 | OOM |
+| 128,000 | 5.98 / 14.75 | — |
+
+Memory grows linearly (SDPA), time quadratically, so **the limit is time, not
+memory**. A median panel is ~600-1,000 tokens; a whole page (~30-50 MP,
+estimated from density, not measured) is ~5k-15k; all fit with a large margin.
+If strokes are instead sequences of points (GPT-style pen coordinates), multiply
+by ~5-10 and the page still fits the small model.
+
+**Decision (user, 2026-09-17): the context unit is the panel (コマ).** A panel is
+one sentence; a page is a bundle of sentences. Relations between panels are
+wanted eventually, but only after the panel unit works. Recorded in the opening
+notice with the other restart points (GT first then rough; tile size was a
+diffusion constraint; the current token is a junction-to-junction span, not a
+drawn stroke).
+
+## 2026-09-17 Track F restart step 1-2: panel skeleton cache and stroke linking
+
+**Unit change.** Tokens are now built per native panel (5,631 panels over 7
+koma_panels sets, `tools/stroke/panel_skeleton.py` →
+`results/panel_skeleton_20260917/`), and junction spans are re-joined into
+strokes (`tools/stroke/strokes.py`): spur pruning, collapsing short bridges
+inside thick crossings, then greedy pairing of arms at each junction by
+straightest continuation (≤35° bend). A T keeps its bar as one stroke.
+
+**`stroke_churn.segments()` replaced** by sort-based grouping (28s → 1.8s per
+panel once `attachments()` was also de-quadratified).
+
+**Montage caught a skeleton-level defect before the full run.**
+`results/stroke_link_check_20260917/zoom4.png` (hatching): few-pixel white holes
+inside merged or thick strokes turned the skeleton into ladders and loops of
+junctions, which then fell apart into dropped fragments; the hair texture in
+`zoom0.png` became a junction net. The first full skeleton run was killed after
+51 panels (kept aside as `results/panel_skeleton_20260917_noholefill_aborted/`)
+and `strokes.ink_mask()` now fills enclosed background holes ≤30px before
+skeletonizing. `zoom{0,4}_holefill30.png`: ladders gone, hair net mostly gone,
+the long contour crossing the hair is one stroke. Known cost: a genuinely
+enclosed white shape ≤30px (about 6x5px at native resolution) is filled.
+
+Remaining visible limits: hatch strokes merged into one ink blob with a larger
+hole still give lens-shaped loops; thick crossings leave a gap of about one ink
+width (bridge spans are not linked); junction pixels belong to no stroke.
+
+Smoke (3 large panels): captured skeleton length is the same for spans ≥8px and
+for linked strokes (0.69-0.94), so linking changes the unit, not coverage.
+Full skeleton run relaunched with hole filling; `tools/stroke/tokenize_panels.py`
+runs on the cache next.
+
+### The panel corpus, all 5,631 panels
+
+`tools/stroke/panel_skeleton.py` (2h04, no failures, 378MB of 1-bit skeletons)
+then `tools/stroke/tokenize_panels.py` (45min) →
+`results/panel_skeleton_20260917/{panels,strokes,panel_strokes}.csv`,
+summarized by `tools/stroke/summarize_panel_strokes.py`.
+
+| source | panels | strokes/panel p10/p50/p90 | len px p10/p50/p90 | ≥2 spans | len share ≥2 spans | captured p50 |
+|---|---:|---|---|---:|---:|---:|
+| clip_pairs_v3 | 5,018 | 93 / 294 / 878 | 10 / 37 / 209 | 26.6% | 56.7% | 0.929 |
+| 4th | 155 | 121 / 372 / 972 | 10 / 41 / 217 | 25.9% | 54.1% | 0.930 |
+| ako5ver2 | 171 | 83 / 249 / 602 | 10 / 32 / 184 | 19.3% | 50.8% | 0.929 |
+| fitness | 109 | 108 / 286 / 563 | 10 / 40 / 280 | 21.9% | 55.4% | 0.949 |
+| gakuen | 46 | 137 / 364 / 620 | 10 / 38 / 253 | 20.1% | 52.0% | 0.952 |
+| hamlabi | 58 | 73 / 188 / 385 | 10 / 36 / 187 | 22.2% | 52.3% | 0.928 |
+| housei | 74 | 58 / 218 / 573 | 9 / 21 / 121 | 21.3% | 50.3% | **0.783** |
+| **ALL** | **5,631** | 93 / 292 / 851 | 10 / 37 / 209 | 26.2% | 56.4% | 0.929 |
+
+**2,316,355 strokes**, against 277,477 junction spans on the 8,467 tiles. Length
+median 37px vs the tile unit's 28px, p90 209 vs 120: **26.2% of strokes absorbed
+two or more junction spans, and those carry 56.4% of all skeleton length**. So
+the linking changes the unit for most of the ink while leaving short detail
+strokes alone. Context per drawing is now 292 strokes at the median instead of
+27 -- a sentence rather than a fragment.
+
+`housei` is the outlier on capture (0.783): its panels are tone and wash rather
+than line, so much of the ink is not strokes at all. It is a different task
+(the standing rule is never to average across `lineart` and `housei` pools) and
+should be excluded or kept separate in the grammar corpus.
+
+**Montage sampling bias, caught and fixed.** The window was chosen as the
+densest 400px square, which is always a fill or a tone area, so the first
+six-panel check showed nothing about plain line regions. `--window typical`
+picks the median-density window instead; both are kept.
+`results/stroke_link_check_20260917/montage_holdout6{,_typical}.png`, 6 panels
+never used for tuning, one per source. `typ_row4.png` is the clearest case:
+crossing speed lines that the old unit chopped at every intersection now run
+through as single strokes.
+
+## 2026-09-18 Gate 1 redone on panels: 0.570, and the old 0.726 was mostly a unit artifact
+
+`tools/stroke/gate1_panel_features.py` (housei excluded per user, 2026-09-18) →
+27,295 matched sets over 2,500 panels, 109,180 rows; `gate1_fit.py --group group`
+splits on the page fingerprint, because panels of one page share content
+(1,263 groups, 378 held out). `results/gate1_panels_20260918/{candidates.csv,fit.out}`.
+
+| 負例 | A 単独 | B 粗い関係 | C 鋭い関係 | BC | ABC | 最良の単一特徴 |
+|---|---:|---:|---:|---:|---:|---|
+| ずらし | 0.500 | 0.573 | 0.521 | **0.570** | 0.567 | b_body_min 0.569 |
+| 回転 | 0.676 | 0.735 | 0.717 | 0.758 | 0.814 | b_ang_nearest 0.693 |
+| 別タイル由来 | 0.666 | 0.768 | 0.740 | 0.786 | 0.839 | b_ang_nearest 0.736 |
+
+**Gate 1 asked for 0.80 on displaced and got 0.570 — worse than the tile unit's
+0.726, on 6x the data with a stricter split.** By the standing agreement the
+track stops again.
+
+**Why it dropped, measured rather than guessed.** Not stroke length: the
+displaced AUC is 0.54-0.57 in every length band from 20px to 250px+. It is the
+unit. A junction span *ends where it touches another stroke*, so its endpoints
+sit at a characteristic small gap from the context (the junction node's pixels
+belong to no token, leaving ~4px), and moving it 5-12px destroys that
+signature. A linked stroke ends at a free end, where no such signature exists:
+
+| | 端点間の隙間 p50 (true) | (displaced) |
+|---|---:|---:|
+| タイル単位(交点で切った区間) | 4.12 | 7.07 |
+| コマ単位(繋いだ線) | 12.81 | 13.60 |
+
+`c_end_gap_near`, the best feature of the previous round (0.651), falls to
+0.543-0.576 here. So **most of gate 1's earlier 0.726 was "does this fragment
+still touch the fragments it was cut from", a property of the tokenizer rather
+than of drawing**. The more honest the unit, the weaker the measured signal.
+
+**What survives.** Relations still detect a stroke that does not belong when it
+is rotated (0.814) or lifted from another drawing (0.839) — and on foreign the
+panel unit is slightly *better* than tiles (0.839 vs 0.842 is within noise, on
+6x the data). What no feature here can see is a real stroke moved a few pixels.
+
+**Reading.** Two rounds of features and one round of units all land in the same
+place: a stroke's fit to its neighbours is measurable when the stroke is wrong
+in kind, and not measurable when it is wrong in position. Gate 1 was written to
+require the second. It has now failed three times (0.636, 0.726, 0.570), and
+the third failure removed the reason to believe the second was progress.
+
+## 2026-09-18 Gate 2 measured: the stroke measure does not beat the pixel axes, and the test material cannot decide it
+
+`tools/stroke/gate2_stroke_profile.py` → `results/gate2_20260918/profiles.csv`
+(4,224 tiles: GT holdout 192 + 21 model snapshots x 192), read by
+`gate2_analyze.py`. Per image: 18 stroke/relation axes on linked strokes, beside
+every axis of `measure_lineart_profile`.
+
+**Separating GT from a broken snapshot is saturated for both families.** Across
+all 21 snapshots the best single pixel axis scores 0.991-1.000
+(`near_white_frac`, `bg_mode`), the best stroke axis 0.82-0.99, fitted families
+0.96-1.00 either way. The gate asked the stroke measure to be *clearly higher*
+than existing single axes; it is lower.
+
+**Why it cannot decide anything: provenance, not quality.** GT tiles have
+`bg_mode` exactly 255; model output has 207 at the median, and **0 of 4,032
+outputs sit inside GT's central range on all five intensity axes at once**.
+The populations differ by how the file was produced, so any measure sensitive
+to background value separates them perfectly without saying anything about
+line art.
+
+**The fairest cut available.** Keep only outputs whose white-paper, ink and
+midtone fractions all sit in GT's central range (408 of 4,032, mostly the
+cnet 9k-10.5k snapshots) and drop the intensity/provenance axes, leaving the
+pixel family its structural axes (component count, long-component ratio, width,
+orientation entropy, grid stats). Split by tile, fitted on half:
+
+| 特徴の組 | AUC |
+|---|---:|
+| 線の軸ぜんぶ | **0.967** |
+| 関係の軸だけ (`r_*`) | 0.771 |
+| 画素の構造軸 | 0.936 |
+| 線 + 画素構造 | 0.973 |
+
+So on the hardest 408 outputs the stroke family is ahead of the structural pixel
+family by 0.031 -- real but not the clear margin gate 2 asked for, and the
+relational axes alone (0.771) are the weakest part again.
+
+**Verdict: gate 2 is not passed**, and the available broken-output corpus cannot
+test it properly. To do so we would need negatives that already match GT on the
+intensity axes -- i.e. outputs that look like line art and are wrong as drawing.
+None exist in this project yet.
+
+## 2026-09-18 The set-Transformer: 0.500 on displaced, and the reason is my input encoding
+
+`tools/stroke/{export_panel_tokens,train_stroke_transformer}.py` →
+`results/panel_tokens_20260918/` (5,345 panels, 163MB of polylines) and
+`results/stroke_transformer_20260918/` (d=256, 6 layers, 4.8M params, 30 epochs,
+62-76s each on the 3060, train 3,982 panels / test 1,305, split by page).
+
+| 負例 | Transformer | 手作り特徴量 | 基準 |
+|---|---:|---:|---:|
+| ずらし | **0.500** | 0.570 | 0.80 |
+| 回転 | 0.662 | 0.814 | — |
+| 別由来 | 0.720 | 0.839 | — |
+
+Loss moved 0.3269 → 0.3045 over 30 epochs; displaced sat at 0.500-0.508 in
+every single epoch, which is not how a weak-but-real signal behaves.
+
+**Measured, not guessed.** For a displaced candidate the token's input vector
+changes by **at most 0.0057**, all of it in the two position columns, whose own
+spread across tokens is **1.5647** -- a ratio of 1:275 -- and the shape columns
+are bit-identical, because the polyline is stored relative to its own centroid
+and position is `centroid / 1000`. The trained model's output for that token
+moves by **0.0000 +- 0.0001**. Rotated changes the input by 0.372 (score
+-0.050) and foreign by 3.12 (score -0.008).
+
+**So this run did not test the hypothesis.** The encoding cannot resolve a 5-12px
+shift at all; the network would have to read a 0.006 difference in a feature
+whose spread is 1.56. This is the same class of mistake as measuring my own
+binarization (2026-09-17) or scoring the tokenizer's own junction artifact
+(gate 1 round 2): the instrument was the thing being measured.
+
+The fix is multi-scale sinusoidal position features (wavelengths ~8 to 1024px),
+so a 5-12px move is a large change in the short-wavelength channels, plus
+letting the shape columns keep absolute scale. That is a bug fix, not the
+architecture search the pre-registration ruled out -- but it needs a new
+agreement, since the standing one says stop after one run.
+
+## 2026-09-18 The Transformer, rerun with the bug fixed: displaced is flat 0.500 again, and this time it counts
+
+Only the input encoding changed (`WAVELENGTHS` 8-1024px sinusoids on the
+centroid, 69 dims instead of 37); architecture, lr, schedule, epochs, split and
+evaluation identical to round 1. The fix is verified on the input itself: a
+displaced candidate now moves its token's features by **1.86** (was 0.0057)
+against an overall spread of 0.874. `results/stroke_transformer_v2_20260918/`.
+
+| 負例 | round 1 (バグ) | round 2 (修正後) | 手作り特徴量 | 基準 |
+|---|---:|---:|---:|---:|
+| ずらし | 0.500 | **0.500** (最良 0.514) | 0.570 | 0.80 |
+| 回転 | 0.662 | 0.626 | 0.814 | — |
+| 別由来 | 0.720 | 0.708 | 0.839 | — |
+
+**Displaced sat at 0.498-0.514 in all 30 epochs while rotated and foreign climbed
+steadily (0.505 → 0.626, 0.557 → 0.708) and the loss fell 0.3261 → 0.2972.**
+That pattern -- other kinds learning, this one not moving -- is what "nothing to
+grab" looks like, as opposed to "too weak a model". The model is weak in general
+(it does not reach the hand features on any kind in one 35-minute run), so this
+is not proof that no network could; it is one honest run of the experiment the
+buggy run failed to make.
+
+**Gate 1 has now failed four times: 0.636, 0.726 (artifact), 0.570, 0.500.**
+Two different discriminators, two units, 27k and 4k-panel scales. The one
+consistent finding across all of them: a stroke that is wrong *in kind* is
+detectable from its neighbours (0.63-0.84), a real stroke moved a few pixels is
+not (0.50-0.57).
+
+**Decision (user, 2026-09-18): stop here and move to (b)** -- the real negatives,
+i.e. the extra strokes that actually exist in the preprocessor's and the models'
+output, rather than the synthetic ones. The user's own reading, stated before
+this run, was that displaced discrimination is probably not needed for the
+purpose; this run agrees with it.
+
+## 2026-09-18 (b) step 1: the preprocessor's output still does not tokenize -- better, but not enough
+
+`tools/stroke/cond_tokenize_recheck.py`, 192 holdout tiles, 3px tolerance, the
+same definitions as 2026-09-17, with the current tokenizer (hole filling, spur
+pruning, junction linking) which did not exist then.
+
+| | 2026-09-17 | base (>32, close3) | close なし | close5/holes80 | GT |
+|---|---:|---:|---:|---:|---:|
+| トークン数/タイル | 262 | 140 | 148 | 118 | 27 |
+| 骨格の捕捉率 | 0.62 | 0.727 | 0.655 | **0.815** | 0.91 |
+| トークン方式の上限(回収) | 0.301 | 0.378 | **0.393** | 0.315 | — |
+| 画素単位オラクル(回収) | 0.552 | 0.702 | 0.700 | 0.705 | — |
+| トークン単位オラクル | 0.189 | 0.229 | 0.254 | 0.189 | — |
+
+**The new tools help and do not change the verdict.** Fragments per tile fell by
+roughly half and capture rose by ~0.1, but the pre-registered criterion --
+capture ≥ 0.85 *and* the token ceiling within 0.1 of pixel-level -- is missed by
+a wide margin: the best ceiling is 0.393 against 0.700, a gap of 0.31. Closing
+harder buys capture and *loses* ceiling, because it merges neighbouring lines.
+
+**The montage says why** (`results/cond_tokenize_20260918/montage.png`, 4 tiles:
+GT | cond ink | tokens | oracle keep/drop). The conditioning image is not a set
+of lines at all: it is a mat of overlapping construction strokes, several px
+thick and fused, and the skeleton of a fused mat traces the *edges and medial
+branches of blobs*, not the lines a person drew. No amount of splitting or
+linking recovers lines that were never separated in the ink.
+
+**So the "select among skeleton segments" route is settled: dead.** (b) has to
+mean redrawing -- fitting stroke primitives to the conditioning ink -- and that
+is a separate design, proposed next.
+
+## 2026-09-18 (b) 案1: real negatives from model output -- the pipeline works, the signal is 0.60
+
+`tools/stroke/{real_negatives,real_negatives_fit}.py` →
+`results/real_negatives_20260918/candidates.csv`. Model output tiles are
+tokenized (they do tokenize: the good snapshots give 68-72 strokes at capture
+0.90 against GT's 37 at 0.900) and every stroke is labelled by how much of it
+lies within 3px of GT ink: **matched** (≥0.7) or **extra** (≤0.1), the middle
+dropped. 21 snapshots x 192 holdout tiles → **74,038 strokes, 12,557 matched /
+61,481 extra**. No synthetic negative anywhere in this experiment.
+
+| 特徴の組 | AUC (全体) |
+|---|---:|
+| 太さ濃さのみ(自明な基準) | 0.529 |
+| A 線そのもの | 0.553 |
+| 関係 BC | 0.580 |
+| ABC | **0.599** |
+
+Best single snapshot 0.709 (h34 aligned step_1000); best single feature
+`b_end_far` 0.562. Relations beat the single-stroke tier, which beats the
+trivial width/darkness baseline, in that order -- the ordering the track
+predicts -- but the level is 0.60, not 0.80.
+
+**Stratified by how well each output lands on GT at all** (an output that is
+globally off makes every stroke "extra" without saying anything about drawing):
+
+| 層 | A 単独 | 関係 BC | ABC | n |
+|---|---:|---:|---:|---:|
+| 本物率 <20% | 0.581 | 0.579 | 0.611 | 44,618 |
+| 20-40% | 0.561 | 0.562 | 0.579 | 22,560 |
+| 40-60% | 0.533 | **0.575** | 0.579 | 6,115 |
+| >60% | 標本不足 | | | 745 |
+
+In the better-aligned stratum the single-stroke tier collapses to 0.533 while
+relations hold at 0.575, so relations carry relatively more there -- but the
+absolute level does not move. **We have almost no well-aligned output to test
+on**: only 745 of 74,038 strokes come from tiles where over 60% of the output's
+strokes land on GT, which is a statement about the trained models, not about
+this measure.
+
+Checked on the way (montage `results/real_negatives_20260918/sample_pair.png`):
+the h34 outputs' file names DO correspond to the GT tiles; the apparent mismatch
+was simply an output that hallucinated a different drawing.
+
+**So four independent ways of asking the same question -- hand features on
+synthetic negatives (0.570), a Transformer on synthetic negatives (0.500), gate
+2 on whole images (no margin over pixel axes), real negatives from model output
+(0.599) -- all land between 0.50 and 0.61, while "wrong in kind" sits at
+0.81-0.84 throughout.**
+
+## 2026-09-18 Track F re-founded: the goal is GENERATION, and the notice was the problem
+
+The user restated the intent, and it is not what the opening notice built:
+
+> 線画を構成する要素の1単位「線」に特徴量を与え、その組み合わせによって「絵」が
+> できているとする。GPTの文章生成になぞらえると線は単語もしくは1文字、絵は文章に
+> あたる。この方式で線画の生成を目指す。
+
+Explicit bans, now in the notice: **no 480px tiles** (too fragmented; the unit of
+a "sentence" is the panel), **no rough / conditioning image** (unclear structure,
+noisy — line art only, at least at first), and discrimination on synthetic
+negatives is no longer the spine of the track. Unpaired line-only data may be
+added (psd_line: 684 sub-regions, currently stored as 2,022 tiles, so it needs
+re-extraction at panel scale).
+
+**Where the divergence came from** (asked for, and found in the notice itself):
+the opening notice converted "線どうしの関係によって見る側が線画と認識する" into
+"この線はこの配置に在るべきか" — a per-stroke binary decision — and then, because
+that needs wrong examples, invented three synthetic negatives and made the
+cleanest of them (displaced) the gate. Four experiments all orbited that gate.
+Worse, the sentence that justified discrimination over generation —「1枚の文脈は
+中央値27本しかない…生成には短すぎる」— was a TILE-unit number; the panel unit
+gives 292, measured on 2026-09-17. The premise was refuted and the design built
+on it was never revisited.
+
+Old notice kept at `doc/archive/initial_notice_discriminative_20260918.md`;
+`doc/initial_notice.md` rewritten around generation, with the design questions
+(vocabulary, canonical order, context length, evaluation without AUC) and a
+first step that starts from round-tripping a panel through strokes and back.
+
+## 2026-09-18 The machine is thermally throttled to 43% of its rated clock
+
+Found while wondering why the v2 export was 10x slower than the v1 passes.
+
+| 実測 | 値 |
+|---|---|
+| CPU | i7-4770K (4C/8T, 定格3.5GHz / 最大3.9GHz) |
+| 実際の動作周波数 | **1,499 MHz**(定格の43%) |
+| その時の温度 | **91〜95℃** |
+| 熱制限の累積 | package 10,619,786 ms(約2.95時間)、core throttle 1,240,414回 |
+| カーネルの対処 | `idle_inject/0..7` が各コアを強制的に休ませ、各ワーカーは47%CPUしか得られない |
+
+**1.5GHzで91℃は異常**(健全な4770Kなら50-60℃)。冷却の劣化——乾いたグリス、埃、
+ファンの劣化——を示している。買い替えの前にまず冷却を見るべき状態。
+
+**この測定は今後の見積もり全部に効く。** 実処理速度は**7.0コマ/分**で、v2の全書き出しは
+約12時間(この track の見積もりは全部この係数で読むこと)。過去の見積もりが軒並み
+甘かった理由でもある(細線化2時間、書き出し45分などは、すべて熱制限下の値だった)。
+
+CPU時間の内訳(実測): 30MPのコマで細線化15.2秒(ヒステリシス有効で29.4秒)、
+分割・連結4.0秒。コーパス全体は約27,000MP、素の見積もりで11 CPU時間相当。
+健全な4コアなら3時間、現状は12時間。
+
+GPUは律速ではない(使用率17%、912MB/12GB)。**いま詰まっているのは冷却されていないCPU。**
