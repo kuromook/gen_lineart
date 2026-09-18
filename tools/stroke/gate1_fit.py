@@ -57,6 +57,10 @@ def main():
     p.add_argument("--csv", default="results/gate1_20260917/candidates.csv")
     p.add_argument("--seed", type=int, default=20260917)
     p.add_argument("--test-frac", type=float, default=0.3)
+    p.add_argument("--group", default="tile",
+                   help="column to split train/test on: 'tile' (one drawing) or 'group' "
+                        "(page fingerprint -- panels of one page share content, so a "
+                        "panel-level split would leak)")
     p.add_argument("--drop-on-other", type=float, default=0.5,
                    help="drop negatives sitting mostly on ANOTHER real stroke (false negatives)")
     a = p.parse_args()
@@ -69,17 +73,18 @@ def main():
     SETS = {"A 単独": A, "B 粗い関係": B, "C 鋭い関係": C, "BC": B + C, "ABC": cols,
             "ART 副産物": ["a_curv", "a_len"]}
 
-    tiles = sorted({r["tile"] for r in rows})
+    gcol = a.group if a.group in rows[0] else "tile"
+    tiles = sorted({r[gcol] for r in rows})
     rng = np.random.default_rng(a.seed)
     rng.shuffle(tiles)
     ntest = int(len(tiles) * a.test_frac)
     test = set(tiles[:ntest])
-    print(f"rows {len(rows)}  tiles {len(tiles)}  (test {len(test)} / train {len(tiles)-len(test)})")
+    print(f"rows {len(rows)}  split on {gcol}: {len(tiles)}  (test {len(test)} / train {len(tiles)-len(test)})")
 
     X = np.array([[float(r[c]) for c in cols] for r in rows])
     kind = np.array([r["kind"] for r in rows])
     oo = np.array([float(r["on_other"]) for r in rows])
-    intest = np.array([r["tile"] in test for r in rows])
+    intest = np.array([r[gcol] in test for r in rows])
     idx = {c: i for i, c in enumerate(cols)}
 
     for filt in (False, True):

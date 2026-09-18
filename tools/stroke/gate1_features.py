@@ -104,7 +104,7 @@ def lattice_residual(offs, spacing_min=2.0):
     return float(min(r, sp - r) / sp), cv, sp
 
 
-def features(pts, wmed, wstd, wfill, ctx_dist, ctx_dirs, ctx_cent, ctx_mask, ctx_ends, ctx_tans, ctx_pix):
+def features(pts, wmed, wstd, wfill, ctx_dist, ctx_dirs, ctx_cent, ctx_mask, ctx_ends, ctx_tans, ctx_pix, shape=(480, 480)):
     path = order_path(pts)
     span = float(np.linalg.norm(path[0] - path[-1])) if len(path) > 1 else 0.0
     d_body = ctx_dist[pts[:, 0], pts[:, 1]]
@@ -180,8 +180,8 @@ def features(pts, wmed, wstd, wfill, ctx_dist, ctx_dirs, ctx_cent, ctx_mask, ctx
         f.update({"c_hatch_n": 0, "c_hatch_residual": 99.0, "c_hatch_cv": 99.0,
                   "c_hatch_spacing": 99.0, "c_d2": 99.0, "c_d3": 99.0, "c_ang2": 99.0})
 
-    y0, y1 = max(0, int(cen[0]) - 40), min(480, int(cen[0]) + 40)
-    x0, x1 = max(0, int(cen[1]) - 40), min(480, int(cen[1]) + 40)
+    y0, y1 = max(0, int(cen[0]) - 40), min(shape[0], int(cen[0]) + 40)
+    x0, x1 = max(0, int(cen[1]) - 40), min(shape[1], int(cen[1]) + 40)
     f["b_density"] = round(float(ctx_mask[y0:y1, x0:x1].mean()), 5)
     return f
 
