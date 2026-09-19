@@ -6933,3 +6933,172 @@ internal TIM (between die and lid) is weak, and a stock cooler running all
 cores sits in the 80s-90s regardless; outside paste cannot fix what is inside
 the lid. Watch `package_throttle_count` during the
 next long job; if it starts climbing again, a larger air cooler is the fix.
+
+## 2026-09-19 Pre-registered before running: the cloze test (B')
+
+External review (`outbox/KIMIからの意見.md`, reply `outbox/KIMIへの返信_20260919.md`)
+sharpened the design; all written here BEFORE any result.
+
+- Scope: a k-NN cluster (resolution 2.0). Mask one stroke; context = the cluster's other members.
+- 5 candidates: the true stroke + 4 distractors, all from ONE stratum per question:
+  ① same panel, other cluster (primary)  ② same work, other panel  ③ other work.
+  Distractors are length-matched (arc within ±20%) and re-centred on the true stroke's centroid,
+  so position alone cannot give them away. Variant with width and curvature also matched reported beside it.
+- Baselines: chance 20%; endpoint gap (re-measured in the current unit -- the tile-era 0.651 was a
+  tokenizer artifact); angle to the nearest mate; the same model WITHOUT the cluster (single-stroke leakage).
+- **Pass**: on strata ① and ②, accuracy beats the best non-learned baseline by >= 10 points AND the
+  no-context model by >= 10 points. Stratum ③ reported separately; if only ③ is high, it is a style detector.
+
+## 2026-09-19 Pre-registered before running: C-3, do clusters recur across drawings?
+
+Written BEFORE any descriptor, neighbour or montage was computed.
+
+Question: if "cluster = word" (user's hypothesis; also the external review's), clusters of
+strokes should reappear in OTHER drawings, and that recurrence must beat a null that keeps the
+strokes but destroys their arrangement. Corpus: the 189,493 clusters of 3-40 strokes (k-NN rule,
+resolution 2.0) in `results/panel_pack_20260919/cluster_labels.npy`.
+
+- Descriptor: centroid-translated, scaled so the bbox long side = 56, strokes rendered 1px into
+  64x64, downsampled to 32x32, reduced to 64 dims by randomized SVD, L2-normalised, cKDTree.
+  **No rotation normalisation** (manga shares an upright frame).
+- Queries: held-out clusters from test groups (groups shuffled with rng(20260918), first 25%).
+  Top-50 neighbours excluding the same group (page fingerprint) and the same panel, re-ranked by
+  symmetric chamfer between the normalised point sets; `d_NN` = best chamfer, normalised units.
+- Nulls: **N2 layout-scramble (primary)** -- the cluster's own strokes, each at a uniformly random
+  position inside the cluster's bbox; N1 shape-scramble -- the layout kept, each stroke replaced by a
+  length-matched (±20%) stroke from another panel.
+- "Close" threshold: **tau_close = 0.5 x the median within-cluster nearest-stroke gap**, in the same
+  normalised units, measured on TRAIN clusters before any query is run.
+- **MO-1**: median d_NN(real) <= 0.60 x median d_NN(N2), paired bootstrap 95% CI of the ratio below
+  1.0; AND >= 25% of held-out clusters have a cross-group neighbour with d_NN <= tau_close.
+- **MO-2 (visual)**: montage of 30 seed clusters, each with its 5 nearest cross-group neighbours;
+  >= 10 of 30 rows show neighbours a person would give the same name. Judged and written here
+  BEFORE the numbers table is computed.
+- Sanity: the same statistics WITHOUT group exclusion (only the same panel excluded). If
+  dramatically better, near-duplicate pages drive the result and MO-1 is void.
+- Style leak: pooled AND split into within-work vs cross-work neighbours. Recurrence only within a
+  work means an artist's vocabulary, not line art's.
+
+C-3 build done (still before any query): 189,493 clusters, 44,938 held-out, descriptors in 27s.
+**tau_close = 0.3246 normalised units** (median within-cluster nearest-stroke gap 0.649 over 20k
+train clusters; bbox long side = 56). Recorded here before the recurrence query runs. Note for
+the reader: this is a strict bar -- strokes inside a k-NN cluster nearly touch, so "close" means
+matching to about half a percent of the cluster's size.
+
+## 2026-09-19 Cloze test (B'): context carries the signal, a one-line rule still wins
+
+`tools/stroke/cloze.py`, criteria pre-registered above. 5 candidates (1 true + 4 real distractors,
+arc-matched ±20%, re-centred on the truth), 24,000 training questions x 12 epochs, 1,500 held-out
+questions per stratum. `results/cloze_20260919/{history_arc,history_strict}.json`.
+
+Length-matched (`arc`):
+
+| 層 | モデル | まとまりを見ない | 端点の隙間 | 最寄りとの角度 |
+|---|---:|---:|---:|---:|
+| ① 同じコマの別の塊 | 0.433 | 0.211 | **0.476** | 0.397 |
+| ② 同じ作品の別のコマ | **0.513** | 0.205 | 0.482 | 0.403 |
+| ③ 別の作品 | **0.529** | 0.201 | 0.461 | 0.376 |
+
+Width and straightness also matched (`strict`):
+
+| 層 | モデル | まとまりを見ない | 端点の隙間 | 最寄りとの角度 |
+|---|---:|---:|---:|---:|
+| ① | 0.349 | 0.209 | 0.400 | **0.403** |
+| ② | 0.395 | 0.219 | **0.435** | 0.389 |
+| ③ | 0.363 | 0.221 | **0.471** | 0.386 |
+
+Chance is 0.200.
+
+**Verdict: the pre-registered criterion FAILS.** It needed +10 points over the best non-learned
+baseline on ① and ②; the model is below the endpoint rule on ① (0.433 vs 0.476) and only +3 on ②.
+Under strict matching it is below a baseline in every stratum.
+
+**What does hold, for the first time in this track, cleanly:**
+- **The cluster carries the answer.** The same model without the cluster sits at chance (0.20-0.22)
+  in every stratum and both variants, so length-matching removed single-stroke leakage completely
+  -- and with the cluster it reaches 0.43-0.53. Context is +22 to +31 points. The earlier
+  infill runs could not show this; their instrument failed first.
+- **Stratum ordering is as the review predicted.** ① is the hardest (which group does this stroke
+  belong to), ②/③ easier. The model's ③ > ② suggests some style detection, and strict matching
+  costs it 8-17 points: part of what it learned was width/straightness agreement, not arrangement.
+
+**Why a one-line rule wins -- and a caveat on it.** "Pick the candidate whose endpoint touches a
+mate's endpoint" gets 0.40-0.48 with no learning. Two readings, both recorded:
+1. The model's input cannot express endpoint contact precisely: strokes are 16 points relative to
+   their own centroid plus sinusoidal position, and contact between two strokes has to be inferred
+   through attention. The same class of limitation as the 2026-09-18 encoding bug, milder.
+2. The rule is partly circular: clusters were built from proximity and endpoint continuation, so
+   the true member touches its mates *by construction* of the cluster. The baseline is strong for a
+   reason that is about the tokenizer's grouping, not only about drawing.
+
+Neither reading says the hypothesis is dead. Both say the next move is to give the model the
+relation the rule uses (endpoint geometry between candidate and mates) and to define clusters in a
+way that does not use the very cue being tested.
+
+### C-3 MO-2, judged BEFORE any MO-1 number was computed
+
+Order held: the run was interrupted by an API rate limit after the montage was written;
+no recurrence query, null or d_NN statistic existed at that point, and none had been read.
+
+`results/motifs_20260919/montage_motifs.png` -- 30 held-out seeds (red), each with its 5
+nearest cross-group neighbours, work and panel under each. Strict count: a row passes only if
+the neighbours are the same NAMEABLE thing as the seed, not merely the same geometry.
+
+**Rows passing: 11 of 30** (bar: >= 10) -- face profile; sleeve/arm ending in a hand; long curve
+with a short parallel stroke (lid and lash); hair lock; dense hatch bundle; contour with a hatch
+fan on one side; vertical contour with hatching at its foot; horizontal edge with a hatched lump;
+curve with hatch shading beneath; head-top outline with hair bumps; curved strand bundle.
+
+Not counted, though visually consistent: 5 rows whose neighbours match only as trivial geometry
+(a vertical straight line, a dashed diagonal, a parallel pair, sparse vertical strands, a
+horizontal wavy line). A lenient count including them would be ~16/30. The remaining ~14 rows
+have neighbours that do not share a name with the seed.
+
+Two observations before the numbers: the good rows are mostly **hatching configurations**
+(contour + hatch fan, hatch under a curve), i.e. the unit that recurs is "a line and the
+shading that belongs to it"; and the matched neighbours come from **many different works**
+(4th, akocult, succor, ako5, gal, fitness...), so visually this is not one artist's vocabulary.
+**MO-2: PASS, narrowly (11/30 strict).**
+
+### C-3 MO-1 results (computed after the MO-2 judgement above)
+
+`tools/stroke/cluster_recurrence.py stats`, 3,000 held-out clusters (3-40 strokes), top-50 by
+descriptor then re-ranked by chamfer; `results/motifs_20260919/per_query.csv`. Units: bbox long
+side = 56; tau_close = 0.3246.
+
+| 条件 | d_NN 中央値 | tau_close 以内 |
+|---|---:|---:|
+| **real**(別グループ・別コマ) | **1.300** | **22.3%** |
+| N2 配置シャッフル(主たる対照) | 2.205 | 0.0% |
+| N1 形シャッフル | 1.879 | 0.0% |
+| sanity: グループ除外なし | 1.290 | 23.2% |
+| 同じ作品の中だけ | 1.786 | 10.7% |
+| 別の作品の中だけ | 1.409 | 12.0% |
+
+- real / N2 = **0.590**, bootstrap 95% CI [0.574, 0.605]; real / N1 = 0.692 [0.676, 0.710]
+- by size: 3-5 strokes 0.634, 6-10 0.572, 11-40 0.587 (all vs N2)
+
+**MO-1: FAIL by the letter, narrowly.** The ratio condition passes (0.590 <= 0.60, CI below 1.0 --
+though its upper end 0.605 straddles the 0.60 line, so even this part is not robust). The
+close-share condition fails: **22.3% against the pre-registered 25%**.
+
+What the numbers do say, without moving the bar:
+- **Arrangement matters, clearly.** Both nulls put 0.0% of clusters within tau_close; real
+  clusters put 22.3%. Destroying the layout of a cluster's own strokes (N2) raises its distance to
+  the nearest other cluster by 70%. The recurrence is in the configuration, not the stroke shapes.
+- **Not near-duplicate pages**: removing group exclusion changes 1.300 -> 1.290. MO-1 is not void.
+- **Not an artist's private vocabulary**: cross-work neighbours (1.409) are closer than
+  within-work ones (1.786). Caveat: the cross-work pool is ~60x larger, so this favours it; the
+  fair reading is "recurrence does not depend on staying inside one work", not "cross-work is
+  better". Visually (MO-2) the matched rows mix 4th, akocult, succor, ako5, gal, fitness.
+- The weak spot is exact recurrence: at a strict "near-identical" threshold only 1 in 4.5
+  clusters has a twin elsewhere; the typical nearest neighbour is ~2% of the cluster size away.
+
+**Reading for "cluster = word"**: clusters recur across drawings far beyond chance arrangement
+and across artists, and ~1/3 of sampled seeds (11/30 strict) find neighbours a person would give
+the same name -- mostly a line together with the shading that belongs to it. But the
+pre-registered bar asked for >= 25% near-exact twins and got 22.3%, so by the rules of this
+track the vocabulary claim is **supported but not established**. Consistent with the review's
+suggestion that the vocabulary lives at cluster level, but it is a fuzzy vocabulary (a family of
+similar shapes), not a discrete one -- which argues for a learned codebook (VQ) over nearest-
+neighbour matching when this is taken further.
