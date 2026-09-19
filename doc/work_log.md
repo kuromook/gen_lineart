@@ -6782,3 +6782,129 @@ and drifted worse after, consistent with an early collapse. A target this
 multimodal wants a distribution, not a point estimate.
 
 Files: `results/infill_eval_20260919/{summary.txt,per_instance.csv,montage_predictions.png}`.
+
+## 2026-09-19 Workstream C: which proximity rule, and is a cluster a usable scope?
+
+`tools/stroke/stroke_graph.py` gained `--tau-rule` with exactly three rules (the
+way to ruin this is to tune until the clusters "look like eyes"):
+
+  width  max(6, 1.5*(w_i+w_j))            the original, ink thickness
+  arc    max(6, 0.35*min(arc_i, arc_j))   the scale of the strokes themselves
+  knn    clip(min(t_i,t_j), 6, 120), t_i = distance to stroke i's 4th nearest
+         other stroke -- local crowding
+
+Candidate pairs now come from a centroid pre-filter plus exact 16x16 point
+distances. The earlier version queried one radius built from the MEDIAN ink
+width and silently dropped pairs involving wide strokes, so `width` here is not
+identical to the 2026-09-19 morning sweep.
+
+**Rule sweep**, 50 dev panels (train groups only, seed 20260919), 6 edge-dropout
+runs, `results/stroke_clusters_20260919/resolution_sweep.csv`:
+
+| rule | res | 塊/コマ | 大きさ中央値 | p90 | 単独 | 3本以上に属す線 | ARI(全) | ARI(塊のみ) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| width | 0.5 | 33 | 1.0 | 17.8 | 53.3% | 88.9% | 0.890 | 0.886 |
+| width | 1.0 | 35 | 1.5 | 17.8 | 50.0% | 88.7% | 0.868 | 0.867 |
+| width | 2.0 | 38 | 2.0 | 15.0 | 44.5% | 88.7% | 0.840 | 0.839 |
+| arc | 0.5 | 34 | 1.0 | 16.5 | 60.4% | 87.4% | 0.809 | 0.805 |
+| arc | 1.0 | 38 | 1.0 | 16.9 | 56.5% | 87.4% | 0.806 | 0.802 |
+| arc | 2.0 | 46 | 1.8 | 13.5 | 49.4% | 87.3% | 0.804 | 0.802 |
+| **knn** | 0.5 | 27 | **6.0** | 19.4 | 21.9% | 96.6% | 0.806 | 0.805 |
+| **knn** | 1.0 | 31 | **6.2** | 15.0 | 19.0% | 96.2% | 0.826 | 0.826 |
+| **knn** | **2.0** | 36 | **6.0** | 12.6 | **15.6%** | **96.3%** | **0.840** | 0.839 |
+
+`ARI(塊のみ)` is ARI over the strokes the reference partition put in a cluster of
+2+, added because a partition that leaves most strokes alone gets ARI for free
+(the degenerate all-singletons partition scores 1.0). It tracks ARI(全) to
+within 0.004 everywhere, **so the stability is not the singletons' doing** --
+worth knowing, since `width` leaves half the strokes alone.
+
+**Against the pre-registered bar** (ARI >= 0.60, size median in [3,40], nameable
+by eye): ARI passes for all three; **the size median is met only by `knn`**
+(6.0-6.2 against 1.0-2.0 for the others). Adopted: **knn at resolution 2.0**,
+the most stable knn setting and the one with fewest singletons.
+
+**Visual** (`results/stroke_clusters_20260919/montage_{width,arc,knn}.png`, same
+6 panels, clusters coloured, singletons grey):
+- `knn` -- a shoulder contour with the hatch fan hanging off it, a fan of short
+  hatch strokes, a second hatch group: nameable, 15% left alone.
+- `width` -- one greedy chain swallows a contour plus most of a hatch fan plus an
+  unrelated long stroke (largest 35 of 443), and 57% of strokes stay orphans.
+- `arc` -- worst: tau grows with stroke length, so long strokes chain across
+  unrelated parts of the drawing into one sprawling cluster, while short ones are
+  orphaned (43-60% singletons).
+
+### Is a cluster a usable scope for the infill question?
+
+300 held-out panels, one masked stroke each, same seeds as `train_infill`'s eval
+(`tools/stroke/cluster_scope.py` → `results/stroke_clusters_20260919/cluster_scope.csv`):
+
+| scope | 塊あり | 仲間3本以上 | 重心の誤差 | 最寄りの仲間 | 広がり |
+|---|---:|---:|---:|---:|---:|
+| width:0.5 | 85% | 78% | 153.2px | 27.3px | 1218px |
+| arc:0.5 | 80% | 75% | 201.3px | 27.5px | 1282px |
+| **knn:2.0** | **97%** | **93%** | **96.5px** | 28.4px | **503px** |
+| 64pxのマス(人工の枠) | — | — | **24.6px** | — | 64px |
+| コマ全体 | 100% | 100% | 1023px | — | 1023px |
+
+**The cluster does not localize the missing stroke better than the artificial
+64px cell, and it was never going to**: a knn cluster is 503px across, so its
+centroid sits 96.5px from any particular member, against 24.6px for a cell that
+is 64px wide. Nearest-mate distance is 28.4px by centroid and 13.9px by ink --
+the cluster reaches the target, but as a region, not as a point.
+
+What `knn` does give: 97% of strokes have a cluster at all, median 10 mates
+(p90 20), and **93% of targets sit in a cluster of 3-40 mates** against 42-46%
+for the other rules -- i.e. a conditioning set of about ten strokes instead of
+the panel's 285, chosen by the drawing rather than by a grid I picked.
+
+**So the honest reading for B**: the cluster is a structural scope, not a
+spatial shortcut. Re-posing infill as "here are this cluster's other members,
+draw the missing one" removes the artificial 19.8px floor, but it makes
+localization the model's job rather than the question's, and the baselines have
+to come from cluster structure (continue the hatch lattice; extend the contour)
+rather than from a cell centre. That is the right question, and it is harder
+than what was asked before.
+
+## 2026-09-19 Where this stands, before the cooler comes off
+
+Stopping point for hardware maintenance (dust + thermal paste). Everything below
+is on disk and backed up; nothing is mid-run.
+
+**Done today**
+
+| | 結果 |
+|---|---|
+| v2トークン(線と接合) | 5,345コマ、3時間12分、線285本/コマ、骨格の帰属0.941、314MB |
+| 往復の忠実度 | 回収0.987 / 描きすぎ0.005(事前基準 0.95 / 0.02 を通過) |
+| psd_line(線画のみ) | 317ページ → 756コマ、取りこぼし疑い73を除いて683コマ |
+| WD14タグ | **全5,345コマ完了**(768pxの縮小版に対して、`results/panel_tags_20260918/tags.csv`) |
+| メモリマップ化 | 216万本を307MBに展開、1エポック636秒 → 95〜99秒 |
+| 1本穴埋め(B) | **不合格**。位置25.2px 対 人工の枠24.6px、形8.9px 対 素朴な基準6.6px |
+| まとまり(C) | k近傍規則・分解能2.0を採用。塊36/コマ、大きさ中央値6.0、孤立15.6%、ARI 0.840 |
+
+**Bが失敗した理由は二重で、どちらも「文脈が効かない」ではない**
+
+1. 問いの範囲を64pxのマスで与えたため、形が完璧でも19.8pxの床ができ、全手法が3.5pxの帯に潰れた。
+2. モデル自体が定数に潰れていた(予測弧長の標準偏差4.5px 対 正解273px)。16点へのHuber回帰は
+   条件付き平均に収束し、あらゆる向きの線の平均は小さな対称の曲がりになる。
+
+**Cの結論: まとまりは空間の範囲としては使えないが、構造の範囲としては使える**
+
+| 範囲 | 重心の誤差 | 広がり | 仲間3本以上 |
+|---|---:|---:|---:|
+| k近傍のまとまり | 96.5px | 503px | 93% |
+| 64pxのマス | 24.6px | 64px | — |
+| コマ全体 | 1023px | 1023px | 100% |
+
+まとまりの重心は抜けた線から96.5px離れるので、位置を絞る力は無い。しかし**93%の線が
+3〜40本(中央値10本)の仲間を持つ**——コマの285本ではなく、絵の側が選んだ10本を条件にできる。
+ARIの水増し検査も通った(孤立線を除いたARIが全体と0.004以内で一致、つまり安定性は本物)。
+
+**次の一手(未着手、ユーザー判断待ち)**: 穴埋めを**選択問題**として測り直す。まとまりから
+1本抜き、本物と、他の塊・他のコマから取った**実在の**候補を並べて当てさせる。偶然水準が明確で、
+平均に潰れようがない。ここで偶然を明確に上回れば「まとまりの中の配置に規則性がある」と言え、
+生成へ進める根拠になる。下回れば、生成させても意味がない。
+
+**機械の状態**: CPUは1,499MHz(定格3.5GHz)・負荷時91〜95℃で熱制限。これから清掃とグリス。
+比較用の基準値は `tools/thermal_check.py` で取る(清掃前の値は本文上部の記録を参照)。
