@@ -7408,3 +7408,33 @@ the 40-epoch 5,000-word run, not for fewer levels on a 20-epoch schedule. No siz
 Fix before rerunning: an explicit anti-collapse term (penalise per-dimension batch spread of the
 pre-rounding value falling below 0.3 in [-1, 1]), applied to ALL sizes including 5,000 so the sweep stays
 like-for-like, and a check that words spread by epoch 1-2 before trusting any run.
+
+## 2026-09-20 Vocabulary sweep, rerun without collapse: no size passes, and the reason is not granularity
+
+`results/vocab_sweep_20260920/` (anti-collapse term on, 20 epochs each, same data and schedule).
+
+| 語彙 | 細部の線で変化 | 最長の線で変化 | D | 使用率 | 上位100語が3作品以上 | 純度 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 125 | **37.1%** | 38.1% | 0.010 | 94% | 100% | 0.640 |
+| 500 | 46.7% | 49.9% | 0.032 | 75% | 100% | 0.609 |
+| 1,000 | 54.0% | 54.1% | 0.001 | 74% | 100% | 0.562 |
+| 1,920 | 53.9% | 55.0% | 0.012 | 73% | 100% | 0.543 |
+| 5,000 | 53.7% | 61.8% | **0.081** | 38% | 100% | 0.572 |
+
+The collapse is gone (73-94% of each vocabulary in use, against 0-4% yesterday) and the cross-work
+constraint holds everywhere, but **every size misses the "minor stroke must not change the word" bar
+of 25%** -- even 125 words, forty times coarser than 5,000, flips 37.1% of the time.
+
+**So the instability is not the grid's granularity; it is what the encoder was trained for.** It is
+trained to reconstruct the cluster, and removing a stroke changes what must be reconstructed, so the
+code moves. Nothing ever told it that a detail stroke should leave the word alone. Word purity
+(same-word vs different-word cluster distance) sits at 0.54-0.64: a word pins the shape down only
+loosely.
+
+**Next experiment, designed but NOT run (handoff point):** teach the invariance directly -- during
+training show the ENCODER a cluster with a random non-longest stroke dropped while the decoder still
+reconstructs the full cluster, plus a consistency penalty between the pre-rounding codes of the full
+and the perturbed cluster. Sizes 125 / 500 / 1,000. Bars unchanged: P(change | minor) <= 25%, then
+maximise D = P(change | longest) - P(change | minor); report purity and the cross-work constraint
+beside them. If invariance training also fails to hold the word steady, the "cluster = word" level
+itself is in question, not just its encoder.
