@@ -50,6 +50,7 @@ class ResidualFSQ(nn.Module):
         """-> (q, word_index). q sums the kept stages; stage k lives on a grid
         (2*half_w)^k times finer than stage 1."""
         b = (torch.tanh(z + self.shift) * self.half_l - self.offset) / self.half_w     # in [-1, 1]
+        self.last_b = b
         q_total = torch.zeros_like(b); r = b; scale = torch.ones_like(self.half_w)
         word = None
         for k in range(self.stages):
@@ -64,15 +65,16 @@ class ResidualFSQ(nn.Module):
 
 
 class Codebook2(nn.Module):
-    def __init__(self, d=256, layers=4, heads=8):
+    def __init__(self, d=256, layers=4, heads=8, levels=LEVELS):
         super().__init__()
+        self.levels = tuple(levels)
         self.inp = nn.Sequential(nn.Linear(35, d), nn.GELU(), nn.Linear(d, d))
         self.cls = nn.Parameter(torch.zeros(1, 1, d))
         self.enc = nn.TransformerEncoder(nn.TransformerEncoderLayer(d, heads, 4 * d, dropout=0.0, batch_first=True, norm_first=True), layers)
         self.pre_q = nn.LayerNorm(d)
-        self.to_z = nn.Linear(d, len(LEVELS)); nn.init.normal_(self.to_z.weight, std=2.0 / np.sqrt(d))
-        self.rfsq = ResidualFSQ()
-        self.from_z = nn.Sequential(nn.Linear(len(LEVELS), d), nn.GELU(), nn.Linear(d, d))
+        self.to_z = nn.Linear(d, len(levels)); nn.init.normal_(self.to_z.weight, std=2.0 / np.sqrt(d))
+        self.rfsq = ResidualFSQ(levels)
+        self.from_z = nn.Sequential(nn.Linear(len(levels), d), nn.GELU(), nn.Linear(d, d))
         self.slots = nn.Parameter(torch.randn(1, SLOTS, d) * 0.02)
         self.dec = nn.TransformerEncoder(nn.TransformerEncoderLayer(d, heads, 4 * d, dropout=0.0, batch_first=True, norm_first=True), layers)
         self.head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, 1 + P * 2 + 1))
@@ -107,6 +109,10 @@ def main():
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--stages", type=int, default=STAGES)
     p.add_argument("--count-weight", type=float, default=0.2)
+    p.add_argument("--levels", default=",".join(str(x) for x in LEVELS))
+    p.add_argument("--spread-weight", type=float, default=0.0,
+                   help="anti-collapse: penalise per-dim batch std of the pre-rounding value below 0.3 "
+                        "(2026-09-20: every size below 5,000 collapsed to one word without it)")
     a = p.parse_args()
     torch.manual_seed(20260919)
     dev = torch.device("cuda")
@@ -114,8 +120,10 @@ def main():
     vp, vw, vm, _ = load(a.data, "test", dev)
     if a.limit:
         tp, tw, tm = tp[:a.limit], tw[:a.limit], tm[:a.limit]; vp, vw, vm = vp[:4096], vw[:4096], vm[:4096]
-    model = Codebook2().to(dev)
+    levels = tuple(int(x) for x in a.levels.split(","))
+    model = Codebook2(levels=levels).to(dev)
     model.rfsq.stages = a.stages
+    n_words = int(np.prod(levels))
     print(f"train {len(tp)}  test {len(vp)}  params {sum(x.numel() for x in model.parameters())/1e6:.1f}M  stages {a.stages} count_w {a.count_weight}", flush=True)
     opt = torch.optim.AdamW(model.parameters(), a.lr, weight_decay=0.01)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, a.lr, total_steps=max(1, a.epochs * (len(tp) // a.batch)), pct_start=0.05)
@@ -132,6 +140,8 @@ def main():
                 ex, pp, pw, cl = model.decode(q)
             loss, pl = match_loss(ex.float(), pp.float(), pw.float(), pts, w, m)
             loss = loss + a.count_weight * nn.functional.cross_entropy(cl.float(), m.sum(1))
+            if a.spread_weight > 0:
+                loss = loss + a.spread_weight * torch.relu(0.3 - model.rfsq.last_b.float().std(0)).mean()
             loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step(); sched.step(); opt.zero_grad(set_to_none=True)
             tot += float(pl); n += 1
@@ -152,7 +162,7 @@ def main():
                     arc_t.append((pts[:, :, 1:] - pts[:, :, :-1]).norm(dim=-1).sum(-1)[m].cpu())
                     n_p.append(keep.sum(1).float().cpu()); n_t.append(m.sum(1).float().cpu()); words.append(word.cpu())
                 ap, at = torch.cat(arc_p), torch.cat(arc_t)
-                wc = torch.bincount(torch.cat(words), minlength=5000).float(); pr = wc / wc.sum()
+                wc = torch.bincount(torch.cat(words), minlength=n_words).float(); pr = wc / wc.sum()
                 res[tag] = {"pts": vl / vn, "arc_std_ratio": float(ap.std() / at.std()),
                             "n_pred": float(torch.cat(n_p).mean()), "n_true": float(torch.cat(n_t).mean()),
                             "words_used": int((wc > 0).sum()), "perplexity": float(torch.exp(-(pr[pr > 0] * pr[pr > 0].log()).sum()))}
@@ -162,7 +172,7 @@ def main():
         print(f"ep {ep:>3} 学習 {row['train_pts']:.3f} | 3段: 評価 {f['pts']:.3f} 弧長比 {f['arc_std_ratio']:.2f} 本数 {f['n_pred']:.1f}/{f['n_true']:.1f} "
               f"| 単語のみ: 評価 {wd['pts']:.3f} 弧長比 {wd['arc_std_ratio']:.2f} 本数 {wd['n_pred']:.1f} | 単語 {f['words_used']} ppl {f['perplexity']:.0f} {row['sec']:.0f}s", flush=True)
         json.dump(hist, open(out / "history.json", "w"), indent=1)
-        torch.save({"model": model.state_dict(), "args": vars(a), "epoch": ep}, out / "codebook2.pt")
+        torch.save({"model": model.state_dict(), "args": vars(a), "epoch": ep, "levels": levels}, out / "codebook2.pt")
 
 
 if __name__ == "__main__":

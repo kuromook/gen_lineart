@@ -7310,3 +7310,101 @@ offers a good stroke two times in three. The bottleneck is a selector that knows
 gap -- trained with candidates that carry their own location, with the empty place as part of the
 question (e.g. a feature for overlap with existing ink, or negatives that duplicate an existing
 stroke). A still matters for generation beyond the training set, but fixing the selector comes first.
+
+## 2026-09-19 Pre-registered before running: a selector that knows WHERE
+
+`tools/stroke/select_placed.py`. Option B failed because cloze2 was trained with every candidate
+re-centred on the truth (it knows which shape fits a place, never where the gap is). Here the
+selector trains on pools exactly like the evaluation's: candidates keep their OWN location
+(retrieved by the codebook word of the remaining strokes, de-normalised into the query frame, own
+panel and group excluded); the positive is the pool member nearest the truth (question skipped unless
+within 16px); hard negatives are copies of the remaining strokes and pool strokes shifted onto
+existing ink; loss is a softmax over the pool. Six location features are added to the candidate
+token (ink overlap at 2px / 4px, log min / median distance to ink, share inside the remaining
+cluster's hull, relative centroid distance); `noloc` is the same model with them zeroed.
+Architecture and optimiser as cloze2 (Scorer d=256, 4 layers, AdamW, one-cycle).
+
+Evaluation: option B's 1,000 held-out questions re-created exactly (same seed, same order of random
+draws, same pools; checked question by question against option B's per_question.csv).
+
+**Pass**: the selector's median chamfer <= 0.70 x random-from-pool AND <= 0.80 x the endpoint rule.
+Reported beside it: the oracle ceiling (10.1px, 67.7% within 16px), shares within 8px / 16px, the
+`noloc` ablation, cloze2, and the share of each method's picks that overlap existing ink (> 50% of
+points within 3px of a remaining stroke) -- the failure mode seen on option B's montage.
+
+## 2026-09-19 The user's hypothesis on which strokes define a word, measured -- and a new bar for the word level
+
+User: removing a short stroke barely changes a cluster's word, long strokes define it; hair may differ.
+`tools/stroke/word_definingness.py`, 31,061 single-stroke removals from ~3,000 held-out clusters,
+codebook v2, stage-1 word:
+
+| 抜いた線 | 単語が変わる率 | 符号の動き |
+|---|---:|---:|
+| 短い / 中 / 長い(絶対長) | 50.5% / 51.5% / 51.6% | 0.316 / 0.326 / 0.319 |
+| まとまり内で最長 | **61.3%** | **0.423** |
+| 2番目 / 3番目 | 57.5% / 55.6% | 0.381 / 0.380 |
+| 4番目以下 | 48.5% | 0.300 |
+
+- Absolute length does nothing, because clusters are scale-normalised before encoding; **relative**
+  length does: the longest stroke of a cluster moves the word most (+40% code movement).
+- Hair is not the exception: in parallel groups (orientation coherence >= 0.8) removing the longest
+  flips the word 65.4% of the time, against 59.0% for contours.
+- **The word is too unstable**: removing a minor (4th-or-lower) stroke flips it 48.5% of the time.
+  5,000 words is too fine a grid for a "word".
+
+New bar for the word level (user agreed): **a word must not change when a detail stroke is removed,
+and must change when a defining stroke is.**
+
+## 2026-09-19 Pre-registered before running: vocabulary size sweep
+
+Sizes via FSQ levels: 125 [5,5,5], 500 [5,5,5,4], 1,000 [8,5,5,5], ~2,000 [8,8,6,5]=1,920, 5,000 [8,5,5,5,5].
+Same data, architecture and schedule (20 epochs); only the levels change.
+- Primary: D = P(word changes | remove the cluster's longest stroke) - P(changes | remove a 4th-or-lower).
+- Constraints: P(changes | minor) <= 25%; each of the top-100 words spans >= 3 works; >= 50% of the
+  vocabulary in use.
+- Choice: the size with the largest D among those meeting the constraints; within 0.02, the smaller.
+- Also reported: word purity (normalised chamfer between same-word clusters, divided by that between
+  different-word clusters; lower = the word pins down shape), and a montage for the chosen size.
+
+## 2026-09-20 Location-aware selector: the failure mode it targeted is fixed, the bar is not met, and long strokes are the whole story
+
+`tools/stroke/select_placed.py` (written by a fork cut off by a rate limit after the evaluation; the
+length stratification was recomputed afterwards by replaying option B's seeded question order,
+`results/select_placed_20260919/per_question_with_arc.csv`). Same 1,000 questions and pools as option B.
+
+| 選び方 | chamfer中央値 | 8px以内 | 16px以内 | 既存の線に重なる選択 |
+|---|---:|---:|---:|---:|
+| 新モデル(場所の特徴あり) | 60.0px | 4.6% | 13.8% | **3.3%** |
+| 同・場所の特徴なし | 60.9px | 3.5% | 11.2% | 17.7% |
+| cloze2(option B) | 60.0px | 2.0% | 9.8% | 25.7% |
+| 端点の規則 | 59.7px | 1.9% | 10.1% | 26.7% |
+| 無作為 | 70.2px | 2.5% | 8.2% | 10.8% |
+| 候補中の最良 | 10.1px | 38.9% | 67.7% | 7.9% |
+
+**Pre-registered bar: FAIL** (0.855x random; not better than the endpoint rule on the pooled median).
+**The targeted failure mode is fixed**: picks lying on existing ink 25.7% -> 3.3%.
+
+By the masked stroke's length (chamfer median / share within 16px):
+
+| 抜いた線 | n | 新モデル | cloze2 | 端点 | 無作為 | 最良 |
+|---|---:|---:|---:|---:|---:|---:|
+| < 40px | 440 | **43 / 19%** | 50 / 14% | 51 / 14% | 59 / 13% | 7 / 83% |
+| 40-120px | 293 | **46 / 17%** | 50 / 11% | 50 / 13% | 61 / 8% | 9 / 77% |
+| > 120px | 267 | 92 / 1% | 85 / 1% | 89 / 0% | 97 / 0% | **22 / 32%** |
+
+For short and mid strokes the selector works (27% and 25% closer than random, ahead of the rule); for
+long strokes **retrieval does not propose a matching stroke at all** (best in pool within 16px only 32%,
+against 83% for short ones). The pooled median never moved because the long stratum pins it. The
+user's hypothesis shows up from the other side: the strokes that define a word are exactly the ones a
+same-word lookup cannot supply. (Chamfer also grows with length, so px across strata are not directly
+comparable; the within-16px share is the fairer reading and says the same.)
+
+## 2026-09-20 Vocabulary sweep INVALID: every size below 5,000 collapsed to one word
+
+`results/vocab_sweep_20260919/`: 125 / 500 / 1,000 / 1,920 words each sat at 1 word from epoch 1 to
+10 (5 words by epoch 20 at best; used share 0-4%). Their low "minor-stroke change" rates mean nothing:
+one word cannot change. The FSQ dead start recorded on 2026-09-19 is back -- the LayerNorm fix held for
+the 40-epoch 5,000-word run, not for fewer levels on a 20-epoch schedule. No size is chosen from this.
+Fix before rerunning: an explicit anti-collapse term (penalise per-dimension batch spread of the
+pre-rounding value falling below 0.3 in [-1, 1]), applied to ALL sizes including 5,000 so the sweep stays
+like-for-like, and a check that words spread by epoch 1-2 before trusting any run.
