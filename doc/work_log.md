@@ -7174,3 +7174,86 @@ question, answered yes at the level of a multiple-choice test.
 **What it does not.** The candidate's location is given (all are re-centred on the truth); the model
 chooses shape and orientation for a place, not the place. And it selects, it does not draw. Both
 are what the codebook (VQ, designed in doc/plan.md) and a generate-and-select loop are for.
+
+## 2026-09-19 Pre-registered before running: the cluster codebook (FSQ)
+
+Design in doc/plan.md. One code per cluster ("word"); clusters of 3-32 strokes (179,436 of 3-40;
+32 covers 98.6%), k-NN rule without endpoint edges, normalised to centroid and bbox long side 56.
+Encoder: set Transformer over strokes -> 5 dims -> FSQ levels [8,5,5,5,5] = 5,000 codes, written
+in-house (tanh bound, round, straight-through). Decoder: 32 slots (exist, 16 points, width) matched
+to the true strokes by the Hungarian algorithm, direction-symmetric point loss.
+
+Bars, fixed now:
+1. **No collapse (the gate)**: std of decoded stroke arc length >= 50% of the true std, on held-out
+   clusters. The first infill run failed exactly here (4.5px against 273px) and was not caught until
+   a montage; this time it is checked first.
+2. **Reconstruction beats an equal-size vocabulary**: chamfer (normalised units) between the decoded
+   and the true cluster, median, below that of a **k-means vocabulary of the same 5,000 words** on the
+   C-3 descriptors (each held-out cluster answered by its cell's medoid). A retrieval baseline over all
+   ~130k training clusters would compare 5,000 words to 130,000, so it is reported but not the bar.
+3. Code usage (perplexity) >= 25% of 5,000 -- **low information under FSQ**, which cannot leave codes
+   behind by construction; recorded, not relied on.
+4. **Across works**: each of the 100 most used codes contains clusters from >= 3 works.
+5. **Visual**: 20 codes x 8 members; >= 10 codes nameable.
+
+## 2026-09-19 Codebook, first design: FAILS the collapse gate (0.25 against 0.50)
+
+`tools/stroke/train_codebook.py`, 134,874 training / 42,013 held-out clusters, 40 epochs x 31s.
+
+| エポック | 使用符号 | perplexity | 弧長の標準偏差比 | 復号した本数/正解 | 評価損失 |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 134 | 69 | 0.11 | 0.9 / 10.4 | 3.555 |
+| 4 | 4,536 | 3,317 | 0.14 | 5.7 / 10.4 | 2.581 |
+| 40 | 4,781 | 3,569 | **0.25** | 5.9 / 10.4 | 2.301 |
+
+The gate (decoded arc-length std >= 50% of the truth) caught the failure on its own, as intended --
+the first infill run's collapse was only found by a montage. The codebook itself is used (4,781 of
+5,000 codes, perplexity 3,569 -- the FSQ usage bar is met and, as noted in advance, says little).
+The DECODER collapses: one code stands for ~30 diverse clusters and a deterministic decoder returns
+their mean, and it decodes 5.9 strokes where there are 10.4 (slot-to-stroke matching shifts between
+steps, so every slot's "exists" probability sits below one half).
+
+Also found on the way: FSQ started dead -- z ~ 0 rounds to the same bin in every dimension, so the
+decoder saw one input and learned the mean. A LayerNorm and a x2 gain before quantisation fixed the
+start (1 code -> 77 after 8 epochs on 20k clusters, 134 -> 4,536 in 4 epochs on the full set).
+Short smoke runs remain unreliable for judging collapse: with few total steps the one-cycle schedule
+ramps the learning rate fast enough to push the encoder back to a single code.
+
+Second design (`tools/stroke/train_codebook2.py`): a count head (keep the top-n slots) and a
+three-stage residual FSQ whose first stage is the word. Both the full decode and the word-only
+decode are measured against the same gate.
+
+## 2026-09-19 Codebook, second design: passes the gate on paper, fails it in the picture
+
+`tools/stroke/train_codebook2.py` (count head + three-stage residual FSQ), 40 epochs, full data.
+Final: arc-length std ratio **0.61** (three stages) / **0.68** (word only) against the 0.50 bar; decoded
+count 10.4 against 10.4; 2,061 words used, perplexity 769.
+
+**The gate was fooled.** `tools/stroke/codebook_diag.py`, 4,096 held-out clusters, stroke arc length
+in the normalised frame:
+
+| | p10 | p25 | p50 | p75 | p90 | p99 | std |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 正解 | 1.0 | 2.3 | 6.0 | **16.3** | **33.0** | 65.1 | 15.0 |
+| 3段 | 2.4 | 3.1 | 4.1 | **5.5** | **7.7** | 53.2 | 8.3 |
+| 単語のみ | 2.0 | 2.7 | 3.9 | **5.5** | **8.0** | 57.1 | 9.8 |
+
+The middle of the distribution is gone: nothing between ~8 and ~50. A handful of long strokes survive
+and inflate the standard deviation enough to pass a std-ratio bar. The montage
+(`results/codebook2_20260919/montage_decode.png`, triples of truth | three-stage | word-only) shows it
+plainly: circles, contours and crossing lines all decode into a small patch of short parallel dashes --
+a hatch fragment. The decoder has collapsed onto one MODE (hatching), not the mean.
+
+**Two lessons, recorded because they will recur:**
+1. **A std ratio is not a collapse test.** A bimodal output -- mostly tiny, a few huge -- passes it. The
+   collapse check must compare quantiles (at least p75 and p90) and must be read beside a montage. The
+   bar was set in good faith and is reported as passed-on-paper; it is not being loosened, it is being
+   replaced by a stricter one for the next design.
+2. **Regressing geometry with L1/L2 fails whenever the target is uncertain.** This is the third time in
+   this track (the infill run's mean squiggle, the first codebook's mean decode, this one's hatch
+   patches). An uncertain long curve is best approximated, under L1, by something short near its
+   middle. The fix is structural, not a tuning: predict coordinates as CATEGORICAL distributions over
+   bins (cross-entropy), whose argmax is a mode and does not shrink; or a genuinely generative decoder.
+
+The encoder side is not the problem: 2,061 words in use, and the word-only decode is only slightly
+worse than three stages -- the words carry which cluster it is; the decoder cannot draw it.
