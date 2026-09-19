@@ -104,7 +104,7 @@ def main():
         cells.append(img)
     grid = np.vstack([np.hstack(cells[i:i + 6]) for i in range(0, 12, 6)])
     cv2.imwrite(str(OUT / "montage_cloze.png"), grid)
-    print("montage ->", OUT / "montage_cloze.png", " (grey=mates, green=true, orange=distractors, red=model pick)")
+    print("montage ->", OUT / "montage_cloze.png", " (grey=mates, green=true, light blue=distractors, red=model pick)")
 
 
 if __name__ == "__main__":

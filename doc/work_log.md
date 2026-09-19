@@ -7161,7 +7161,7 @@ touch other ink by construction. Split by how many of the true stroke's ends tou
 
 **Not a style detector.** ① (same panel, the hardest) is within 2-4 points of ③ (other work).
 
-Visual: `results/cloze2_20260919/montage_cloze.png` (grey = cluster mates, green = truth, orange =
+Visual: `results/cloze2_20260919/montage_cloze.png` (grey = cluster mates, green = truth, light blue =
 distractors, red = model's pick). Correct picks are strokes that follow the local flow -- a
 horizontal among horizontals, a stroke parallel to a fold's hatching. Misses are mostly long strokes
 against long strokes, or text-like marks.
