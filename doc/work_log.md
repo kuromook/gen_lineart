@@ -6926,7 +6926,10 @@ Same test before and after (`tools/thermal_check.py`, 120s, 8 processes of numpy
 The v2 export (3h12m), the skeleton cache (2h04m) and the earlier runs should all
 be ~2.4x faster now.
 
-Remaining margin is thin: 89-94℃ under a full synthetic load, 6-11℃ below the
-100℃ limit. Haswell's internal TIM is weak, so a stock cooler running all cores
-often sits in the 80s-90s regardless. Watch `package_throttle_count` during the
+Both were done: the dust was blown out AND the thermal paste was replaced
+(confirmed by the user). So the remaining 89-94℃ under a full synthetic load --
+6-11℃ below the 100℃ limit -- is not dust or paste any more. Haswell's
+internal TIM (between die and lid) is weak, and a stock cooler running all
+cores sits in the 80s-90s regardless; outside paste cannot fix what is inside
+the lid. Watch `package_throttle_count` during the
 next long job; if it starts climbing again, a larger air cooler is the fix.
