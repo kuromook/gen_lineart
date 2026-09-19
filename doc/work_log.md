@@ -7257,3 +7257,56 @@ a hatch fragment. The decoder has collapsed onto one MODE (hatching), not the me
 
 The encoder side is not the problem: 2,061 words in use, and the word-only decode is only slightly
 worse than three stages -- the words carry which cluster it is; the decoder cannot draw it.
+
+## 2026-09-19 Pre-registered before running: generate-and-select by retrieval (option B)
+
+The codebook's encoder carries cluster identity but its decoder cannot draw, so B bypasses the decoder.
+Per held-out question (test clusters of >= 4 strokes, fixed seed, ~1,000 questions): mask one stroke;
+re-normalise the REMAINING strokes on their own centroid and bbox (so the frame never depends on the
+answer); encode them with codebook v2 -> word (stage 1); retrieve up to 20 training clusters with that
+word (nearest words on the FSQ grid if fewer); map all their strokes into the query frame with the
+query's scale and centroid -> candidate pool. Choose one candidate by (a) the cloze2 model, (b) the
+endpoint rule, (c) random from the pool; report the pool's ORACLE (best candidate) beside them.
+Metrics against the true masked stroke: symmetric chamfer (native px) on 16 points, centroid error,
+share within 8 / 16 px.
+
+**Pass**: the model's pick beats random-from-pool by >= 30% on median chamfer AND beats the endpoint rule.
+
+**Caveat recorded up front**: cloze2 was trained with candidates re-centred on the truth, so scoring
+candidates that carry their own location is outside its training distribution. Stroke meta for the
+model is approximated from the cluster set (width de-normalised; fill share approximated as width > 8).
+
+## 2026-09-19 Generate-and-select by retrieval: the proposals are good, the selector picks the wrong place
+
+`tools/stroke/generate_select.py`, 1,000 held-out questions, pool = all strokes of 20 training clusters
+sharing the query's word (median 160 candidates; the query's word existed in training 99.8% of the time).
+`results/generate_select_20260919/{per_question.csv,summary.json,montage.png}`.
+
+| 選び方 | chamfer中央値 | 8px以内 | 16px以内 | 重心誤差中央値 |
+|---|---:|---:|---:|---:|
+| cloze2モデル | 60.0px | 2.0% | 9.8% | 79.7px |
+| 端点の規則 | 59.7px | 1.9% | 10.1% | 77.4px |
+| 無作為 | 70.2px | 2.5% | 8.2% | 89.9px |
+| **オラクル(候補中の最良)** | **10.1px** | **38.9%** | **67.7%** | 13.7px |
+
+**Verdict: FAILS the pre-registered bar.** Model/random = 0.855 (needed <= 0.70), and the model is no
+better than the endpoint rule (60.0 vs 59.7).
+
+**But the failure is in one place, and it is not the proposal side.** The oracle -- the best stroke the
+retrieval offers -- is 10.1px from the truth at the median, within 8px 38.9% of the time and within
+16px 67.7%. So "propose with vocabulary" works: real strokes from clusters sharing the word usually
+include one that would fill the hole. What fails is choosing it.
+
+**Why the selector fails, from the montage.** The oracle (blue) usually lies on the truth (green). The
+model's pick (red) is usually a stroke that fits the cluster's flow -- parallel to the neighbouring
+contour, along the hatch direction -- but placed on or beside strokes that are already there, often
+hundreds of px from the gap. This is exactly the out-of-distribution caveat recorded in advance:
+cloze2 learned "which shape and orientation belongs at THIS place" with every candidate re-centred on
+the truth. It never had to learn "which place is empty", and a candidate lying along an existing
+stroke has excellent relations (parallel, touching) -- so it wins.
+
+**What it says about A vs B.** The decoder (A) is not the bottleneck for this loop: retrieval already
+offers a good stroke two times in three. The bottleneck is a selector that knows where the drawing has a
+gap -- trained with candidates that carry their own location, with the empty place as part of the
+question (e.g. a feature for overlap with existing ink, or negatives that duplicate an existing
+stroke). A still matters for generation beyond the training set, but fixing the selector comes first.
