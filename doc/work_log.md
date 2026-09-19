@@ -6908,3 +6908,25 @@ ARIの水増し検査も通った(孤立線を除いたARIが全体と0.004以�
 
 **機械の状態**: CPUは1,499MHz(定格3.5GHz)・負荷時91〜95℃で熱制限。これから清掃とグリス。
 比較用の基準値は `tools/thermal_check.py` で取る(清掃前の値は本文上部の記録を参照)。
+
+## 2026-09-19 Cooler cleaned: throttling gone, clock x2.36
+
+The heatsink was packed with dust ("ヒートシンクにごっそりとホコリがたまっていた").
+Same test before and after (`tools/thermal_check.py`, 120s, 8 processes of numpy matmul):
+
+| 項目 | 清掃前 | 清掃後 |
+|---|---:|---:|
+| アイドル時の温度 | 70℃ | **40℃** |
+| 負荷時の温度 | 最大99℃ / 平均97℃ | 最大94℃ / 平均89℃ |
+| 負荷時の周波数 | 1,499MHz | **3,542MHz**(定格3,500) |
+| 熱制限(2分間) | 11,006回 / 9,761ms | **0回** |
+| 負荷解除20秒後 | 84℃ | 53℃ |
+
+**Every CPU estimate in this track before today was made at 43% of rated clock.**
+The v2 export (3h12m), the skeleton cache (2h04m) and the earlier runs should all
+be ~2.4x faster now.
+
+Remaining margin is thin: 89-94℃ under a full synthetic load, 6-11℃ below the
+100℃ limit. Haswell's internal TIM is weak, so a stock cooler running all cores
+often sits in the 80s-90s regardless. Watch `package_throttle_count` during the
+next long job; if it starts climbing again, a larger air cooler is the fix.
