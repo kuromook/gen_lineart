@@ -7102,3 +7102,75 @@ track the vocabulary claim is **supported but not established**. Consistent with
 suggestion that the vocabulary lives at cluster level, but it is a fuzzy vocabulary (a family of
 similar shapes), not a discrete one -- which argues for a learned codebook (VQ) over nearest-
 neighbour matching when this is taken further.
+
+## 2026-09-19 Pre-registered before running: cloze round two
+
+Changes from round one, each aimed at one of its two diagnosed causes (`tools/stroke/cloze2.py`):
+
+1. **Relations as input**: every mate token carries its relation to the candidate (log endpoint gap,
+   log gap from the candidate's ends to the mate's polyline, tangent continuation, |cos| of directions,
+   log centroid distance). Round one's input could not express contact directly.
+2. **No circular context**: training clusters are built WITHOUT the endpoint-continuation edge
+   (`cluster_labels_noend.npy`). Evaluation re-clusters each panel with the target REMOVED and takes
+   the cluster of the remaining stroke nearest the target's centroid; the answer's geometry never
+   chooses its own context.
+
+Runs: arc + relations (primary), arc without relations (attribution), strict + relations.
+**Pass**: unchanged -- on strata (1) and (2), beat the best non-learned baseline by >= 10 points AND
+the no-context model by >= 10 points, on the re-clustered evaluation set.
+
+Seen in the smoke test before the real runs (40 questions per stratum, not a result): the endpoint
+rule still scores ~0.45 on the re-clustered context, so its strength is probably a property of the
+drawings ("strokes end where other strokes are") and not only of my grouping.
+
+## 2026-09-19 Cloze round two PASSES: the first grammar result in this track
+
+`tools/stroke/cloze2.py`, pre-registered above. 4,314 held-out questions (arc) / 4,346 (strict),
+context from the panel RE-CLUSTERED WITHOUT the target, clusters built without endpoint edges.
+`results/cloze2_20260919/`. Chance 0.200.
+
+| 層 | 関係あり | 関係なし | まとまりを見ない | 端点の規則 | 角度の規則 |
+|---|---:|---:|---:|---:|---:|
+| ① 同じコマの別の塊 | **0.662** | 0.445 | 0.208 | 0.425 | 0.380 |
+| ② 同じ作品の別のコマ | **0.688** | 0.469 | 0.206 | 0.415 | 0.399 |
+| ③ 別の作品 | **0.679** | 0.518 | 0.202 | 0.415 | 0.392 |
+
+Width and straightness also matched (strict): ① 0.582 / ② 0.630 / ③ 0.619 against the best
+rule's 0.371-0.408.
+
+**Pre-registered bar (+10 over the best non-learned baseline AND +10 over no-context, on ① and
+②): PASSED**, by +24 and +27 points (arc) and +21 and +22 (strict).
+
+**Attribution**: the same model without the relation features lands at 0.445-0.518, barely above
+the endpoint rule -- round one's result reproduced. Giving the model the relations the rule uses is
+worth +22 points. The re-clustered context removed the circularity without hurting the model.
+
+**Not the gate-1 failure mode.** Strokes are cut and linked at junctions, so a true stroke's end can
+touch other ink by construction. Split by how many of the true stroke's ends touch another stroke
+(within 3px) (`tools/stroke/cloze2_check.py`):
+
+| 層 | 端の接触 | n | モデル | 端点規則 | 角度規則 |
+|---|---:|---:|---:|---:|---:|
+| ① | **0(両端とも宙)** | 1,123 | **0.641** | 0.396 | 0.388 |
+| ① | 1 | 279 | 0.735 | 0.520 | 0.358 |
+| ② | **0** | 1,060 | **0.665** | 0.385 | 0.416 |
+| ③ | **0** | 1,081 | **0.658** | 0.384 | 0.409 |
+
+75.7% of true strokes touch nothing at either end, and there the model still beats the rules by
+~25 points. Contact helps (0.73-0.81 when an end touches), but the result does not live there.
+
+**Not a style detector.** ① (same panel, the hardest) is within 2-4 points of ③ (other work).
+
+Visual: `results/cloze2_20260919/montage_cloze.png` (grey = cluster mates, green = truth, orange =
+distractors, red = model's pick). Correct picks are strokes that follow the local flow -- a
+horizontal among horizontals, a stroke parallel to a fold's hatching. Misses are mostly long strokes
+against long strokes, or text-like marks.
+
+**What this establishes.** Inside a cluster the drawing chose, which of five real, length-matched
+strokes belongs at a given place is decided by its relations to the others, well beyond any single
+rule and without leaning on the tokenizer's junction cuts. This is the "grammar" half of the track's
+question, answered yes at the level of a multiple-choice test.
+
+**What it does not.** The candidate's location is given (all are re-centred on the truth); the model
+chooses shape and orientation for a place, not the place. And it selects, it does not draw. Both
+are what the codebook (VQ, designed in doc/plan.md) and a generate-and-select loop are for.

@@ -118,8 +118,12 @@ def stroke_radius(pts, meta, rule, knn_k=4):
     raise ValueError(rule)
 
 
-def build_edges(pts, meta, rule="width", knn_k=4, max_pairs=400000):
-    """-> dict {(i,j): weight} with i<j."""
+def build_edges(pts, meta, rule="width", knn_k=4, max_pairs=400000, use_end=True):
+    """-> dict {(i,j): weight} with i<j.
+
+    use_end=False drops the endpoint-continuation edge (2026-09-19): the cloze
+    test scores candidates by endpoint contact, and a cluster built FROM that
+    contact makes the test partly circular."""
     n = len(pts)
     if n < 2:
         return {}
@@ -163,7 +167,7 @@ def build_edges(pts, meta, rule="width", knn_k=4, max_pairs=400000):
         wt = W_PROX * float(np.exp(-dm / tu))
         de = np.linalg.norm(ends[i][:, None, :] - ends[j][None, :, :], axis=-1)
         ei, ej = np.unravel_index(int(de.argmin()), de.shape)
-        if de[ei, ej] <= tu:
+        if use_end and de[ei, ej] <= tu:
             cont = float(np.dot(tans[i, ei], -tans[j, ej]))
             if cont >= np.cos(np.deg2rad(40)):
                 wt += W_END

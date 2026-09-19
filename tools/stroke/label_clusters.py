@@ -29,10 +29,10 @@ def work_id(source, name):
 
 
 def job(t):
-    pack, start, n = t
+    pack, start, n, use_end = t
     arr = np.load(Path(pack) / "strokes.npy", mmap_mode="r")
     pts, meta = load_panel(arr, start, n)
-    e = cap_degree(build_edges(pts, meta, rule="knn"), n)
+    e = cap_degree(build_edges(pts, meta, rule="knn", use_end=use_end), n)
     return start, communities(e, n, 2.0, 0)
 
 
@@ -40,6 +40,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--pack", default="results/panel_pack_20260919")
     p.add_argument("--workers", type=int, default=6)
+    p.add_argument("--no-end", action="store_true", help="drop endpoint-continuation edges")
     a = p.parse_args()
     rows = list(csv.DictReader(open(Path(a.pack) / "panels.csv")))
     total = sum(int(r["n"]) for r in rows)
@@ -47,11 +48,11 @@ def main():
     t0 = time.time()
     with Pool(a.workers) as pool:
         for i, (start, lab) in enumerate(pool.imap_unordered(
-                job, [(a.pack, int(r["start"]), int(r["n"])) for r in rows], chunksize=4), 1):
+                job, [(a.pack, int(r["start"]), int(r["n"]), not a.no_end) for r in rows], chunksize=4), 1):
             labels[start:start + len(lab)] = lab
             if i % 500 == 0:
                 print(f"{i}/{len(rows)} {time.time()-t0:.0f}s", flush=True)
-    np.save(Path(a.pack) / "cluster_labels.npy", labels)
+    np.save(Path(a.pack) / ("cluster_labels_noend.npy" if a.no_end else "cluster_labels.npy"), labels)
     with open(Path(a.pack) / "panel_works.csv", "w", newline="") as f:
         w = csv.writer(f); w.writerow(["source", "name", "work"])
         for r in rows:
