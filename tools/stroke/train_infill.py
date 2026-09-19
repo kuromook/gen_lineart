@@ -76,6 +76,28 @@ def query_feat(cell_centre, f_in):
     return q
 
 
+class Packed(torch.utils.data.Dataset):
+    """Same samples as `Panels`, read from the packed memmap.
+
+    The npz path ran at 636s/epoch with the GPU idle; this one slices."""
+
+    def __init__(self, pack, rows, max_strokes, seed, eval_mode=False):
+        self.arr = np.load(Path(pack) / "strokes.npy", mmap_mode="r")
+        self.rows, self.max_strokes, self.seed, self.eval_mode = rows, max_strokes, seed, eval_mode
+        self.f_in = None
+
+    def __len__(self):
+        return len(self.rows)
+
+    def load(self, i):
+        r = self.rows[i]
+        s, n = int(r["start"]), int(r["n"])
+        block = np.asarray(self.arr[s:s + n])
+        return block[:, :POINTS * 2].reshape(n, POINTS, 2), block[:, POINTS * 2:]
+
+    __getitem__ = None  # set below
+
+
 class Panels(torch.utils.data.Dataset):
     def __init__(self, root, rows, max_strokes, seed, per_panel=1, eval_mode=False):
         self.root, self.rows = Path(root), rows
@@ -107,6 +129,9 @@ class Panels(torch.utils.data.Dataset):
             (target - cell).astype(np.float32) / 64.0, \
             np.array([np.log1p(tmeta[3]) / 5.0, tmeta[1] / 10.0, tmeta[2]], np.float32), \
             cell.astype(np.float32), target
+
+
+Packed.__getitem__ = Panels.__getitem__
 
 
 def collate(batch):
@@ -153,6 +178,7 @@ def chamfer(a, b):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--tokens", default="results/panel_tokens_v2_20260918")
+    p.add_argument("--pack", default="", help="packed memmap dir (pack_tokens.py); much faster")
     p.add_argument("--out", default="results/infill_20260918")
     p.add_argument("--context", choices=["full", "none"], default="full")
     p.add_argument("--d", type=int, default=256)
@@ -165,11 +191,16 @@ def main():
     p.add_argument("--eval-panels", type=int, default=300)
     p.add_argument("--test-frac", type=float, default=0.25)
     p.add_argument("--seed", type=int, default=20260918)
+    p.add_argument("--loader-workers", type=int, default=3)
     p.add_argument("--smoke", action="store_true")
     a = p.parse_args()
     torch.manual_seed(a.seed); np.random.seed(a.seed)
-    rows = [r for r in csv.DictReader(open(Path(a.tokens) / "index.csv"))
-            if int(r["strokes"]) >= a.min_strokes]
+    if a.pack:
+        rows = [r for r in csv.DictReader(open(Path(a.pack) / "panels.csv"))
+                if int(r["n"]) >= a.min_strokes]
+    else:
+        rows = [r for r in csv.DictReader(open(Path(a.tokens) / "index.csv"))
+                if int(r["strokes"]) >= a.min_strokes]
     groups = sorted({r["group"] for r in rows})
     rng = np.random.default_rng(a.seed); rng.shuffle(groups)
     test_g = set(groups[: int(len(groups) * a.test_frac)])
@@ -179,11 +210,16 @@ def main():
         tr, te, a.epochs = tr[:40], te[:8], 2
     print(f"panels train {len(tr)}  eval {len(te)}  groups {len(groups)}", flush=True)
     f_in = POINTS * 2 + len(WAVELENGTHS) * 4 + 2 + 3
-    ds_tr = Panels(a.tokens, tr, a.max_strokes, a.seed); ds_tr.f_in = f_in
-    ds_te = Panels(a.tokens, te, a.max_strokes, a.seed + 1, eval_mode=True); ds_te.f_in = f_in
-    dl = torch.utils.data.DataLoader(ds_tr, batch_size=a.batch, shuffle=True, num_workers=3,
+    if a.pack:
+        ds_tr = Packed(a.pack, tr, a.max_strokes, a.seed)
+        ds_te = Packed(a.pack, te, a.max_strokes, a.seed + 1, eval_mode=True)
+    else:
+        ds_tr = Panels(a.tokens, tr, a.max_strokes, a.seed)
+        ds_te = Panels(a.tokens, te, a.max_strokes, a.seed + 1, eval_mode=True)
+    ds_tr.f_in = f_in; ds_te.f_in = f_in
+    dl = torch.utils.data.DataLoader(ds_tr, batch_size=a.batch, shuffle=True, num_workers=a.loader_workers,
                                      collate_fn=collate, drop_last=True, persistent_workers=True)
-    dlte = torch.utils.data.DataLoader(ds_te, batch_size=a.batch, shuffle=False, num_workers=2,
+    dlte = torch.utils.data.DataLoader(ds_te, batch_size=a.batch, shuffle=False, num_workers=max(1, a.loader_workers - 1),
                                        collate_fn=collate)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = Infill(f_in, a.d, a.layers).to(dev)
@@ -234,3 +270,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

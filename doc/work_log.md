@@ -6706,3 +6706,79 @@ CPU時間の内訳(実測): 30MPのコマで細線化15.2秒(ヒステリシス�
 健全な4コアなら3時間、現状は12時間。
 
 GPUは律速ではない(使用率17%、912MB/12GB)。**いま詰まっているのは冷却されていないCPU。**
+
+## 2026-09-19 Infill re-scored: the metric was saturated, and underneath it the model had collapsed
+
+`tools/stroke/infill_eval.py`, the two checkpoints from 2026-09-19
+(`results/infill_20260919/best_{full,none}.pt`, 4.8M params, 20 epochs each),
+the same 300 held-out panels and the same per-instance seeds as training.
+Nothing was retrained.
+
+**Why re-score.** The pooled chamfer `train_infill.py` reports cannot separate
+anything: the query names the 64px cell holding the missing stroke, so a
+prediction with the TRUE shape placed at the cell centre already scores 19.8px,
+while both models sit at 22.4 and the corpus-median baseline at 23.3. A metric
+with a 19.8 floor was being read as if it measured the model. Same class of
+error as the 2026-09-18 encoding bug (input could not carry the question);
+there the instrument was the input, here the metric.
+
+Split into the two questions it confounds:
+
+| POSITION (重心の誤差, px) | 中央値 | ≤8px | ≤16px |
+|---|---:|---:|---:|
+| モデル(全文脈) | 25.2 | 5.7% | 22.7% |
+| モデル(文脈なし) | 24.9 | 5.7% | 23.3% |
+| **問いかけのマスの中心(自明)** | **24.6** | 6.0% | 23.7% |
+
+| SHAPE (重心を合わせたchamfer, px) | 中央値 | ≤8px | ≤16px |
+|---|---:|---:|---:|
+| モデル(全文脈) | 8.9 | 40.3% | 72.7% |
+| モデル(文脈なし) | 7.8 | 51.7% | 73.0% |
+| **コーパス中央値の線(自明)** | **6.6** | 56.3% | 72.7% |
+
+Attributes: median |error| on arc length 36.9px (full) / 25.7px (none) against a
+true median of 51px; on width 3.00 / 4.55px against a true median of 5.60px.
+
+Context effect on position: median(full) - median(none) = **+0.25px**
+[95% CI -0.86, +1.22] over 1,000 panel bootstraps -- zero, with the sign
+against context.
+
+**The model is worse than both trivial baselines on both axes**, which is the
+tell that this is not a measurement of the hypothesis. The montage says why in
+one look: `results/infill_eval_20260919/montage_predictions.png`, 24 instances
+in three length bands, grey = the rest of the panel, green = the missing
+stroke, red = the prediction, blue = the 64px query cell. **The red stroke is
+the same little vertical squiggle in all 24 rows**, against true strokes from
+4px to 519px of arc, in every orientation.
+
+Measured, not eyeballed, over the 300 instances:
+
+| | 予測形状の点ごと標準偏差 | 予測弧長の標準偏差 | 予測重心とマス中心の距離 |
+|---|---:|---:|---:|
+| 全文脈 | 0.76px | 4.5px | 2.58px |
+| 文脈なし | 0.26px | 1.0px | 1.20px |
+| (正解の弧長の標準偏差) | | **273px** | |
+
+The output is a constant. It ignores the query position beyond the cell centre
+and ignores the context entirely.
+
+**Verdict on the pre-registered criterion (plan 2026-09-18: beat B_gap and the
+query-only baseline by 30% on the primary metric): FAILS.** Position is 25.2 vs
+24.6 for the trivial cell centre -- not 30% better, not better at all.
+
+**But the run does not test the track's hypothesis either.** A model whose
+output does not vary with its input cannot answer whether the surrounding
+strokes carry information about where a stroke goes, and the full-vs-none
+comparison inherits that: +0.25px is a statement about a collapsed model, not
+about line art. Saying "context adds nothing" on this evidence would repeat the
+2026-09-18 mistake of reading an instrument failure as a null result.
+
+What the collapse points at (not yet tested): regressing a 16-point polyline
+with Huber against a multimodal target has its optimum at the conditional mean,
+and strokes at a given place point in all directions, so the mean IS a small
+symmetric squiggle. The direction-symmetric loss (min over the target and its
+reverse) pushes the same way. Both checkpoints also peaked at epoch 4-5 of 20
+and drifted worse after, consistent with an early collapse. A target this
+multimodal wants a distribution, not a point estimate.
+
+Files: `results/infill_eval_20260919/{summary.txt,per_instance.csv,montage_predictions.png}`.
