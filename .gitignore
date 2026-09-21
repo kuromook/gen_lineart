@@ -1,0 +1,5 @@
+# results/ is on-disk only (Track F convention): montages/checkpoints are
+# referenced by path from doc/work_log.md but not version-controlled.
+results/**
+__pycache__/
+*.pyc
