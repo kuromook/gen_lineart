@@ -93,6 +93,30 @@ class PosAR(nn.Module):
         return self.hy(h), self.hx(h), self.hs(h)
 
 
+class PosARW(PosAR):
+    """第2段(語条件化、2026-09-23 事前登録「配置の語条件化」):
+
+    現行 PosAR は出力スロット k+1 が「置く語 w_{k+1}」を plan(全語平均→1層)
+    経由しか見ない。こちらはスロット k+1 の入力に wemb(w_{k+1}) を直接加える
+    (g_k = f_k + e_{k+1}。位置は先行のみ=シフト構造維持でターゲット漏れなし)。
+    """
+
+    def encode(self, w, py, px, sc, mask, ctype, ctag):
+        B, S = w.shape
+        pl = (self.wemb(w.clamp(min=0)) * mask.unsqueeze(-1)).sum(1) / mask.sum(1, keepdim=True).clamp(min=1)
+        c = (self.cond + self.temb(ctype).unsqueeze(1) + self.tagin(ctag).unsqueeze(1)
+             + self.plan(pl).unsqueeze(1))
+        e = self.wemb(w.clamp(min=0))
+        f = (e + self.pY(py.clamp(min=0)) + self.pX(px.clamp(min=0))
+             + self.pS(sc.clamp(min=0)) + self.ft.weight.sum(0)
+             + self.step.weight[1:S + 1].unsqueeze(0))
+        g = f[:, :max(S - 1, 0)] + e[:, 1:S]         # 先行まとまり k + 自分の語 w_{k+1}
+        x = torch.cat([c, g], 1)
+        pad = torch.cat([torch.zeros(B, 1, dtype=torch.bool, device=x.device),
+                         ~mask[:, :max(S - 1, 0)]], 1)
+        return self.tr(x, mask=causal(S, x.device), src_key_padding_mask=pad)
+
+
 def masked_ce(logits, target, valid, mean=False):
     if logits.dim() == 3:                        # (B,S,C) -> (B,C,S)
         logits = logits.transpose(1, 2)
@@ -203,6 +227,8 @@ def main():
     p.add_argument("--lr", type=float, default=6e-4)
     p.add_argument("--limit", type=int, default=1024, help="学習コマ数 (0=train 全量)")
     p.add_argument("--seed", type=int, default=20260921)
+    p.add_argument("--posw", action="store_true",
+                   help="stage1 を飛ばし、語条件化 PosAR-W を stage2w として学習")
     a = p.parse_args()
     dev = torch.device("cuda")
     torch.manual_seed(a.seed)
@@ -213,22 +239,25 @@ def main():
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 
     # ---- 第1段: 語列 AR ----
-    m1 = WordAR(n_types=d["n_types"], n_tagf=d["n_tagf"]).to(dev)
+    if not a.posw:
+        m1 = WordAR(n_types=d["n_types"], n_tagf=d["n_tagf"]).to(dev)
 
-    def loss1(m, bt):
-        lw = m.head(m.encode(bt[0], bt[1], bt[4], bt[5]))
-        return masked_ce(lw, bt[2], bt[3], mean=True)[0]
+        def loss1(m, bt):
+            lw = m.head(m.encode(bt[0], bt[1], bt[4], bt[5]))
+            return masked_ce(lw, bt[2], bt[3], mean=True)[0]
 
-    def ev1(m, idx_eval):
-        r = eval_words(m, panels, idx_eval, lab, tg, dev)
-        r["total"] = r["word_bits"]
-        return r
+        def ev1(m, idx_eval):
+            r = eval_words(m, panels, idx_eval, lab, tg, dev)
+            r["total"] = r["word_bits"]
+            return r
 
-    best1 = train_stage("stage1", m1, panels, itr, lab, tg, dev, a, out,
-                        batch_words, lambda m: ev1(m, ite), loss1)
+        best1 = train_stage("stage1", m1, panels, itr, lab, tg, dev, a, out,
+                            batch_words, lambda m: ev1(m, ite), loss1)
 
-    # ---- 第2段: 位置 AR ----
-    m2 = PosAR(n_types=d["n_types"], n_tagf=d["n_tagf"]).to(dev)
+    # ---- 第2段: 位置 AR (PosAR or PosAR-W) ----
+    cls = PosARW if a.posw else PosAR
+    kind = "stage2w" if a.posw else "stage2"
+    m2 = cls(n_types=d["n_types"], n_tagf=d["n_tagf"]).to(dev)
 
     def loss2(m, bt):
         ly, lx, ls = m.heads(m.encode(*bt[:5], bt[9], bt[10]))
@@ -241,14 +270,18 @@ def main():
         r["total"] = r["pos_bits"]
         return r
 
-    best2 = train_stage("stage2", m2, panels, itr, lab, tg, dev, a, out,
+    best2 = train_stage(kind, m2, panels, itr, lab, tg, dev, a, out,
                         batch_pos, lambda m: ev2(m, ite), loss2)
 
-    res = dict(stage1=best1, stage2=best2, unigram_bits=H_uni, pos_marginal_bits=H_pos,
-               word_bits=best1["word_bits"], pos_bits=best2["pos_bits"],
-               scale_bits=best2["scale_bits"],
-               pass_word=bool(best1["word_bits"] <= 7.312),
+    res = dict(unigram_bits=H_uni, pos_marginal_bits=H_pos,
+               pos_bits=best2["pos_bits"], scale_bits=best2["scale_bits"],
                pass_pos=bool(best2["pos_bits"] < H_pos and best2["pos_bits"] <= 6.39))
+    if a.posw:
+        res["stage2w"] = best2
+        res["ref_stage2_pos_bits"] = 6.658          # 2026-09-21 スモーク実測(比較用)
+    else:
+        res.update(stage1=best1, stage2=best2, word_bits=best1["word_bits"],
+                   pass_word=bool(best1["word_bits"] <= 7.312))
     json.dump(res, open(out / "eval.json", "w"), indent=1)
     print(json.dumps(res, indent=1))
 

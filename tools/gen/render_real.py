@@ -25,7 +25,7 @@ from common import (TRACKF, CODEBOOK, CORPUS, N_WORDS, N_BINS, S_BINS, S_LO, S_H
 from train_codebook import load                                        # noqa: E402
 from train_codebook2 import Codebook2                                  # noqa: E402
 from train_set import SetAR                                            # noqa: E402
-from train_2stage import WordAR, PosAR                                 # noqa: E402
+from train_2stage import WordAR, PosAR, PosARW                             # noqa: E402
 from render_gen import sample_set, sample_words, sample_pos            # noqa: E402
 from render_strokes import agreement                                   # noqa: E402
 
@@ -147,6 +147,8 @@ def main():
     ap.add_argument("--set_ckpt", default="results/gen_smoke_20260921/set/gen_best.pt")
     ap.add_argument("--s1_ckpt", default="results/gen_smoke_20260921/twostage/stage1/gen_best.pt")
     ap.add_argument("--s2_ckpt", default="results/gen_smoke_20260921/twostage/stage2/gen_best.pt")
+    ap.add_argument("--s2w_ckpt", default="",
+                    help="PosAR-W(語条件化)ckpt。指定時は B 列の配置にこれを使う")
     ap.add_argument("--out", default="results/real_render_20260923")
     ap.add_argument("--n", type=int, default=12)
     a = ap.parse_args()

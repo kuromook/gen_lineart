@@ -1,0 +1,179 @@
+{
+ "groups": {
+  "ako_2017": [
+   "011_2017_ako5",
+   "regions_ako5ver2_koma_panels_20260729"
+  ],
+  "ako_2018-19": [
+   "018_2018_ako6",
+   "019_2018_ako7",
+   "026_2019_ako7",
+   "032_2019b_ako8"
+  ],
+  "ako_2020-22": [
+   "037_2020_ako9",
+   "039_2020b_ako10",
+   "041_2021_akogoods",
+   "042_2021_akokate",
+   "048_2022_akocult",
+   "049_2022_akogoods",
+   "052_2022b_ako10",
+   "053_2022b_akocult"
+  ],
+  "ako_2023-24": [
+   "060_2023b_ako3",
+   "061_2023b_akocultB",
+   "064_2024_ako3",
+   "065_2024_ako3B",
+   "067_2024b_ako3B",
+   "068_2024b_ako4",
+   "072_2024c_ako"
+  ],
+  "gakusai": [
+   "013_2017_gakusai1-3DL",
+   "001_2015_gakusai3"
+  ],
+  "4th": [
+   "047_2022_4th",
+   "051_2022b_4th",
+   "059_2023b_4th",
+   "regions_4th_koma_panels_20260801"
+  ],
+  "fitness": [
+   "069_2024b_fitness",
+   "regions_fitness_koma_panels_20260729"
+  ],
+  "fringe": [
+   "028_2019_fringe",
+   "029_2019_fringe3"
+  ],
+  "hamlabi": [
+   "063_2023b_hamlabi",
+   "regions_hamlabi_koma_panels_20260729"
+  ],
+  "nurse+nanami": [
+   "040_2020b_nurse",
+   "045_2021_nurse",
+   "044_2021_nanami"
+  ],
+  "succor": [
+   "030_2019_succor"
+  ],
+  "phantom": [
+   "007_2016_phantom"
+  ],
+  "gal": [
+   "004_2016_gal"
+  ],
+  "stoptime": [
+   "017_2017_stoptime"
+  ],
+  "comics4": [
+   "021_2018_comics4"
+  ],
+  "uni": [
+   "036_2020_UNI"
+  ],
+  "mayer": [
+   "073_2024c_mayer"
+  ],
+  "avbu": [
+   "003_2016_avbu"
+  ],
+  "suc": [
+   "010_2016_suc"
+  ],
+  "hero": [
+   "043_2021_hero"
+  ],
+  "hyoui_color": [
+   "056_2022b_hyoui_color"
+  ],
+  "ng": [
+   "005_2016_ng"
+  ],
+  "kacho": [
+   "014_2017_kacho"
+  ],
+  "housei": [
+   "066_2024_housei"
+  ],
+  "aljanne2": [
+   "002_2016_aljanne2"
+  ],
+  "riko": [
+   "009_2016_riko"
+  ],
+  "pink": [
+   "015_2017_pink"
+  ],
+  "running": [
+   "016_2017_running"
+  ],
+  "ben": [
+   "027_2019_ben"
+  ],
+  "kids": [
+   "071_2024b_kids"
+  ],
+  "copy": [
+   "012_2017_copy"
+  ],
+  "china2": [
+   "020_2018_china2"
+  ],
+  "pc": [
+   "006_2016_pc"
+  ],
+  "poolsideidle": [
+   "008_2016_poolsideIdle"
+  ],
+  "skima2": [
+   "035_2019b_skima2"
+  ],
+  "gakuen": [
+   "regions_gakuen_koma_panels_20260729"
+  ]
+ },
+ "half_A": [
+  "ako_2017",
+  "ako_2020-22",
+  "gakusai",
+  "fitness",
+  "fringe",
+  "comics4",
+  "mayer",
+  "kids",
+  "hero",
+  "hamlabi",
+  "running",
+  "china2",
+  "kacho",
+  "stoptime",
+  "pc",
+  "gakuen",
+  "riko",
+  "uni"
+ ],
+ "half_B": [
+  "ako_2018-19",
+  "ako_2023-24",
+  "4th",
+  "succor",
+  "hyoui_color",
+  "ng",
+  "gal",
+  "pink",
+  "ben",
+  "phantom",
+  "aljanne2",
+  "poolsideidle",
+  "copy",
+  "suc",
+  "nurse+nanami",
+  "avbu",
+  "housei",
+  "skima2"
+ ],
+ "note": "2026-09-23 ユーザー確定。gakusai は ako 系だが画風が異なるため別枠。succor/suc、gakuen/gakusai は別物。ako は年代で補助分割し、重複コマのある作品は同じ年代群に統合。nanami と nurse は重複コマ7件のため統合。half は ako 年代を交互に振り、残りをコマ数の少ない側へ大きい順に貪欲割当"
+}

@@ -68,7 +68,29 @@ def sample_words(m1, ctype, ctag, dev, rng, maxs=MAXS):
 
 
 def sample_pos(m2, words, ctype, ctag, dev, rng):
-    """PosAR: 語列固定で (py,px,sc) を AR サンプリング。
+    """PosAR / PosAR-W: 語列固定で (py,px,sc) を AR サンプリング(2026-09-23 修正版)。
+    学習時 (batch_pos) と同じく語列は全長・mask は全 True で渡す → plan = 全語の平均。
+    位置は先行 i 個だけ埋め、スロット i を読む。因果マスクによりスロット i が見るのは
+    [c+plan, f_0..f_{i-1}] のみで、0 埋めの未来位置は漏れない。"""
+    S = len(words)
+    w = torch.tensor([words], dtype=torch.long, device=dev)
+    py = torch.zeros(1, S, dtype=torch.long, device=dev)
+    px = torch.zeros(1, S, dtype=torch.long, device=dev)
+    sc = torch.zeros(1, S, dtype=torch.long, device=dev)
+    mk = torch.ones(1, S, dtype=torch.bool, device=dev)
+    for i in range(S):
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            ly, lx, ls = m2.heads(m2.encode(w, py, px, sc, mk, ctype, ctag))
+        py[0, i] = torch.multinomial(ly[:, i].float().softmax(-1), 1)[0, 0]
+        px[0, i] = torch.multinomial(lx[:, i].float().softmax(-1), 1)[0, 0]
+        sc[0, i] = torch.multinomial(ls[:, i].float().softmax(-1), 1)[0, 0]
+    return py[0].tolist(), px[0].tolist(), sc[0].tolist()
+
+
+def sample_pos_prefix(m2, words, ctype, ctag, dev, rng):
+    """旧 sample_pos(2026-09-23 まで。比較用に中身不変で残す)。
+    **不具合**: 語を i+1 個・mask を先行 i 個だけにしているため plan = 先行語のみの平均
+    (rank0 ではゼロ)となり、学習時の plan(全語平均)と食い違う。
     まとまり i の配置には f_0..f_{i-1} が入力に入る必要があるので、
     テンソル長は i+1 (最後は encode 内で AR シフトにより落ちる)"""
     pys, pxs, scs = [], [], []
