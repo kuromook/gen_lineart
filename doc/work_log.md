@@ -10,3 +10,10 @@ Track G(ブランチ `panel-generation`)の GT 配置分析・単語の信頼性
 - ブランチ `face-words` を `panel-generation`(751eea0)から分岐。Track G の文書は `doc/track_g/` に参照用として移した
   (G の最新は `panel-generation` ブランチ側が正)
 - 実験の事前登録は必ずこのファイルに**結果を見る前に**書く
+
+### 訂正(同日): フォルダを分けた
+- 当初 `lineart-panel-generation` フォルダのままブランチだけ切り替えたが、track ごとにフォルダを分ける
+  運用から外れていた(ユーザー指摘)。git worktree で **`/home/sh1/deepl/lineart-face-words`** を作り、
+  ここを Track H のフォルダとした。`lineart-panel-generation` は `panel-generation`(Track G)に戻した
+- Track G の結果(`results/` は git 管理外)は `../lineart-panel-generation/results/` をパス参照する
+

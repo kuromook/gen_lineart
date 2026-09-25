@@ -1,6 +1,7 @@
 # Track H: 顔パーツ単語の確定 — 戦略ラベルで「読めるカード」を先に揃える
 
-作成: 2026-09-25 JST / ブランチ: `face-words`(`panel-generation` から分岐)
+作成: 2026-09-25 JST / フォルダ: `/home/sh1/deepl/lineart-face-words` / ブランチ: `face-words`
+(`lineart-panel-generation` リポジトリの git worktree。`panel-generation` から分岐)
 起案: `outbox/track_h_face_words_proposal_20260924.md`(2026-09-25 承認)
 上流: Track F `../lineart-stroke-grammar`(語彙)/ 並行: Track G(ブランチ `panel-generation`、このブランチでは `doc/track_g/` に参照用として保存)
 
@@ -82,8 +83,8 @@ G で得た教訓を引き継ぐ:
 |---|---|
 | 単語符号化器(500語) | Track F `results/invariance_20260920/l4_w500/codebook2.pt` |
 | まとまり(pts/width/mask/meta) | Track F `results/cluster_set_20260919/` |
-| 語の信頼性(層1 第2版) | Track G `results/word_reliability_v2_20260924/` |
-| 語の配置の再現性・語ペア相対配置 | Track G `results/placement_gt_20260923/` |
+| 語の信頼性(層1 第2版) | Track G `../lineart-panel-generation/results/word_reliability_v2_20260924/` |
+| 語の配置の再現性・語ペア相対配置 | Track G `../lineart-panel-generation/results/placement_gt_20260923/` |
 | シリーズ対応表・2群分け | Track G `tools/gen/series_groups.json` |
 | 分析コード(読み込み・描画・chamfer 等) | Track G `tools/gen/placement_gt.py`、`word_reliability_v2.py` |
 | 既存の命名(19語、解釈用) | Track F `results/word_semantics_20260920/` |
@@ -111,6 +112,10 @@ G で得た教訓を引き継ぐ:
 
 ## 運用ルール(Track A〜G で確立、継承)
 
+- **track ごとにフォルダを分ける**(2026-09-25 ユーザー指摘): Track H の作業はこのフォルダ
+  (`lineart-face-words`、ブランチ `face-words`)で行う。Track G のフォルダ `../lineart-panel-generation`
+  (ブランチ `panel-generation`)は Track F と同じく**読み専用**として参照し、G の結果は
+  `../lineart-panel-generation/results/` をパス参照する。H の結果はこのフォルダの `results/` に置く
 - **戦略ラベル(2026-09-24 ユーザー決定)**: 戦略上重要な単語(当面は顔パーツ: 目・鼻・口・眉・耳)には、
   人が**戦略ラベル**を割り当ててよい。これは機械の語 ID(`wNNN`)とは**別の名前空間**で管理し、
   戦略に応じて使う・使わないを実験ごとに事前登録で明示する。戦略ラベルは正解データとして
