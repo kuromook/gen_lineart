@@ -1,10 +1,12 @@
 # Current Project State
 
-Updated: 2026-09-06 JST (ControlNet track pointer, Active Goal, and Next
-Actions rewritten. The descriptive sections in between -- Current Data
-Direction, Current Model Interpretation, Current Extraction Rules, Current
-Data Pipeline Stage, and the dated 2026-07-26/31 entries -- are still from
-the raw-extraction era and have not been re-verified.)
+Updated: 2026-09-30 JST. The Track Ledger, Lessons, Known Tool Traps, Active
+Goal and Next Actions are current as of this date; the ledger was rebuilt by
+reading every track's own files after this file had fallen 13 days behind. The
+descriptive sections further down -- Current Data Direction, Current Model
+Interpretation, Current Extraction Rules, Current Data Pipeline Stage, and the
+dated 2026-07-26/31 entries -- are still from the raw-extraction era and have
+not been re-verified.
 
 This file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
@@ -14,14 +16,34 @@ current decisions, and next actions. Chronological details live in
 Do not read files under `archive/` directories unless the user explicitly asks
 for archived history or audit material.
 
-## ControlNet Cross-Hatch Track: Closed 2026-09-06
+## Track Ledger
+
+Reconciled 2026-09-30 by reading every track's own files, after this file had
+fallen 13 days behind. Each track keeps its own briefing in
+`doc/initial_notice.md` and its own `doc/work_log.md`; this ledger records only
+status and where each got to.
+
+**Where the tracks live -- this is why the ledger went stale.** Tracks A-F are
+git worktrees of `/home/sh1/deepl/lineart`, so `git worktree list` finds them.
+Tracks **G and H are not**: `/home/sh1/deepl/lineart-panel-generation` is a
+**separate clone** of the same remote (`gen_lineart`), and
+`/home/sh1/deepl/lineart-face-words` is a worktree of *that* clone. They push
+branches to the same GitHub remote but are invisible to `git worktree list` run
+here. Check `git branch -r` or the sibling directories, not just the worktree
+list.
+
+The lineage forked in two on 2026-09-17, after Track D's diagnosis (lesson 8)
+closed the pixel-matching generative route:
+
+- **the selection line** -- Track C, delete what the preprocessor over-draws;
+- **the words line** -- Tracks F -> G -> H, treat strokes as a vocabulary and
+  build up from representation. This is where all activity since 2026-09-21 is.
+
+### The closed ControlNet lineage
 
 The `lineart-controlnet-realpairs` track (ControlNet LoRA fine-tunes
 hallucinating dense cross-hatch instead of clean line art) met its goal and is
-closed. The worktrees below descended from it, each with its own briefing in
-`doc/initial_notice.md`. **This list is known to be incomplete as of
-2026-09-30** -- notices stop arriving after 2026-09-17 while several further
-tracks kept committing; see the last item under Next Actions.
+closed, as are both of its successors.
 
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
   **CLOSED 2026-09-13**, same verdict as the SDXL track: the diffusion model
@@ -107,6 +129,134 @@ tracks kept committing; see the last item under Next Actions.
   `inbox/note_manga_line_emptiness_scale_and_contrast_20260916.md`,
   `inbox/note_hypothesis5_scale_refuted_20260917.md`.
 
+### The selection line
+
+- `../lineart-stroke-selection` (branch `stroke-selection`, **Track C**) --
+  **active, idle since 2026-09-17.** Not superseded by the words line; it
+  simply has not been picked up since its first real result. Its bullet above
+  under the ControlNet lineage carries the oracle and decomposition findings.
+  **Step 2 completed 2026-09-17**: a 16,201-parameter pixel-level keep/drop
+  classifier, trained 3 epochs on all 8,467 pairs (~9 minutes), scored on the
+  same group-A 192-tile batch as the oracle. f1 **0.3161** against the
+  preprocessor's 0.3164 -- flat -- but the composition is not flat at all:
+  **precision +0.068** (0.2373 -> 0.3057) and **recall -0.169** (0.5255 ->
+  0.3566). It is deleting, and over-deleting; the montage confirms it has
+  stopped simply echoing the conditioning map. Ceiling is 0.6765 on that batch.
+  Named next variables, to be isolated one at a time: the conservative 0.5
+  threshold, epoch count, `pos_weight`. Results:
+  `results/stroke_selection_eval_20260917/` in that tree.
+
+### The words line
+
+Opened by an explicit user redefinition on 2026-09-18: **treat a stroke as a
+word and a panel as a sentence** -- give strokes features, and take the picture
+to be built from their combinations. A framework for this arrived from the user
+on 2026-09-21, the **5P/5C**: ten elements said to govern composition
+(composition, placement, plane, perspective, proportion, pose, counter=line
+quality, character, coodinate=within-work consistency, concept). Three are
+implemented as features (composition, plane, proportion); the rest are future
+work, and the stated expectation is that the pieces make each other easier.
+
+- `../lineart-stroke-grammar` (branch `stroke-grammar`, **Track F**) --
+  **measurement phase closed 2026-09-21, kept readable.** Its result is a clean
+  negative and it is the reason the rest of this line is shaped the way it is:
+  **there is no inter-word grammar inside a panel.** Five measurements agree --
+  autoregressive 6.94 bits/word against a 7.35 unigram (gate 6.85, narrowly
+  failed); bigram 7.40, *worse* than unigram, so adjacency in canonical order
+  carries nothing; set-cloze 7.398, below unigram; conditioning on 12 shot
+  types 7.312 (0.036 bits); conditioning on 40 WD14 tags 7.370 (nothing).
+  What it does have: **words are real** (500-word FSQ codebook, 92% used,
+  23.2% change under detail removal), **their spatial placement has structure**
+  (position prediction beats the 7.56 marginal at 6.31-6.39 under every
+  condition), and panel **scene type** clusters into 12 classes a human can
+  name. Also the finding already folded in as a Known Tool Trap: the
+  preprocessor's output does not decompose into strokes. Notice:
+  `inbox/note_stroke_fit_is_measurable_but_weak_20260917.md`. Its earlier
+  discriminative framing is archived in that tree at
+  `doc/archive/initial_notice_discriminative_20260918.md`.
+- `../lineart-panel-generation` (branch `panel-generation`, **Track G**, and
+  note the separate clone) -- **active, last commit 2026-09-25.** Given a
+  concept, choose words and place them. Approval is recorded in its own
+  briefing and work log ("起案・承認された", 2026-09-21); **the copy of its
+  proposal still says draft/unapproved**, so that copy is stale, not the
+  status. Where it got to, in order:
+  - *2026-09-21, generation smoke*: set-at-once vs two-stage. Word bits
+    **7.078 / 7.094** passed the pre-registered 7.312 gate; position bits
+    6.680 / 6.658 beat the 7.563 marginal but **failed** the 6.388 cloze band,
+    and the gate was not relaxed after the fact. **The visual gate failed**:
+    the output is "prototypes scattered at statistically plausible positions",
+    not a readable scene -- recorded in that tree as 蟻の群れ, an ant swarm.
+    Leak checks and a "too good to be true" audit of the 0.662 scale bits were
+    run and passed. Neither architecture was selected; the 0.022-bit gap is
+    noise.
+  - *2026-09-23, user redirection*: **do not start from placement.** While the
+    words render as an ant swarm, a human cannot judge "does this read as a
+    panel", so word rendering quality comes first. Recorded alongside it, and
+    worth carrying: **bits do not guarantee a visual pass** -- position beats
+    the marginal by 0.9 bits and the montage is still unreadable.
+  - *2026-09-24, word reliability*: of 467 words, **49 reliable / 164
+    borderline / 254 unreliable**, stable across seeds (0 flips). The dominant
+    cause is that a single detail stroke changes the word. A word is a
+    **shape class with scale discarded** -- cluster diameter varies about 6x
+    within one word -- and Track F's names are correspondingly polysemous.
+  - *2026-09-25*: an attempt to measure absolute vs relative position **failed
+    its own instrument check and was halted**, handed to Track H to do first on
+    face parts, where the relations are clear.
+  - Also found here, and a trap for anyone reading that data: in Track F's
+    `cluster_set` meta, **the `cy` column is x and `cx` is y**.
+- `../lineart-face-words` (branch `face-words`, **Track H**, worktree of the
+  Track G clone) -- **active, the current front of this line, opened
+  2026-09-25.** Its proposal records user approval dated 2026-09-25. Pin down
+  the face-part words (eye, nose, mouth, brow, ear) by attaching human
+  *strategy labels* in a namespace separate from the machine word ids, then
+  make a mechanical rule reproduce them. The user's framing is recorded as: the
+  more cards you turn face-up, the easier the rest becomes; ears and mouths
+  should be easiest because one artist does not vary them much. Methodology
+  worth noting -- **held-out labels are assigned mechanically at labelling
+  time**, before any result is seen, split two ways (by panel, and by series to
+  test whether a rule survives a different artist). Progress: step 1's
+  size-stratified montages of the "closed eye" candidates w342/w343/w344 are
+  built and the tool checks passed, including an added negative control after
+  a suspiciously perfect 1.00 overlay score; **awaiting the user's visual
+  judgment.**
+- `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
+  **paused 2026-09-17, for a reason that matters more than the pause.** It set
+  out to score "line-art-ness" against human judgement, so that places where GT
+  and the conditioning map disagree could be settled by preference rather than
+  by either one. The comparison UI was built and 300 pairs prepared; the user
+  used it and reported that **you cannot call something beautiful when it is
+  broken and unreadable** -- that is a broken/uninterpretable axis, not an
+  aesthetic one. The material confirms it: of the three candidate sources, only
+  the preprocessor output is interpretable line art (midtone fraction 0.072
+  against 0.503 and 0.259 for the trained models), so most pairs would have
+  been "clean line art vs broken something". **Re-open condition: when two
+  interpretable outputs can be compared.** Its diagnosis is what points at the
+  words line -- interpretability has to be produced before preference can be
+  measured. UI and pairs are kept at `results/comparison_pairs_20260916/`.
+
+Proposals, now held here rather than only in those trees' gitignored `outbox/`:
+`doc/track_proposal_aesthetic_judge_20260916.md` (E),
+`doc/track_g_generation_proposal_20260921.md` (G),
+`doc/track_h_face_words_proposal_20260924.md` (H).
+
+**External review.** Kimi (Kimi Code) read the project docs at the user's
+request and sent Track F five recommendations on 2026-09-19; four were adopted
+as-is and one was adopted with a correction. Copies:
+`doc/external_review_kimi_20260919.md` and
+`doc/external_review_kimi_reply_20260919.md`. The substantive points, because
+they shaped Track F's design and generalise: negatives in a
+selection-style test must be **stratified and hard** (matched on single-stroke
+features, drawn from the same panel's other clusters, and stratified by *work*
+rather than by corpus, or the model becomes a provenance detector); the
+**endpoint-gap** feature must appear as a baseline; the **vocabulary-existence**
+test is a precondition, not an optional extra; and **masked/orderless**
+modelling suits pictures better than left-to-right autoregression, since
+canonical order has to be invented. The correction is itself a lesson: the
+0.651 endpoint-gap figure Kimi cited turned out to be **an artefact of the
+tokeniser** -- segments cut at junctions end where they touch another stroke,
+creating a characteristic ~4px gap -- and fell to 0.54-0.58 once strokes were
+joined at panel scale. Baselines must be re-measured in the current unit.
+
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
 The ControlNet tracks stay on the **v2-based** pair snapshot copied into their
@@ -116,7 +266,9 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and eight lessons that apply project-wide** (lessons 3-4 added
+## Lessons
+
+**The cross-hatch cause, and eight lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -299,69 +451,86 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
 
 ## Active Goal
 
-**Close the gap between the preprocessor's output and GT.** Work happens in the
-worktrees named above, not here; this tree is the common foundation (shared
-scripts, dataset pipeline, project-level docs).
+**Build a representation of line art that a human can read, then generate from
+it.** Work happens in the tracks listed above, not here; this tree is the common
+foundation (shared scripts, dataset pipeline, project-level docs).
 
-This replaces the goal that stood here until 2026-09-11, "make ControlNet-based
-rough-to-line conversion actually follow the rough". That framing was wrong in
-both halves. Fidelity was never the problem -- the SDXL stack copies its
-conditioning at f1 0.88 -- and the baseline to beat was never another model:
-**no model this project has trained beats running a preprocessor alone.** The
-thing that already solves most of the task is `LineartDetector`, and the open
-question is the residual it leaves.
+This supersedes the goal that stood here from 2026-09-11 to 2026-09-30, "close
+the gap between the preprocessor's output and GT", which was framed entirely
+around deleting the strokes the preprocessor over-draws. **That framing is not
+refuted -- it is no longer the whole project.** Deletion is still live as Track
+C and still has the widest measured headroom of anything here. But every attempt
+to reach GT by matching pixels, whether by generating or by selecting, has
+landed in the same place: at or just above the preprocessor's own score. On
+2026-09-18 the user redefined the problem instead of pushing further on that
+axis, and that redefinition is where the work now is.
 
-That residual is measured, and it is two different problems by pool:
+**What survives unchanged, regardless of route.** These are measurements, not
+strategy:
 
-- **Deletion**, on the lineart-family pool: the preprocessor lays 1.4x GT's
-  ink, so strokes must be removed. On the 192-tile `lineart_family` group, a
-  delete-only oracle reaches f1 **0.7425** where `lineart_coarse` alone scores
-  0.3231 and the best model this project ever trained scores 0.2514.
-  This is `../lineart-stroke-selection`. **Caveat established since**: the
-  oracle's 0.7425 depends on pixel-level partial credit and does not survive
-  being reduced to per-segment keep/drop decisions (see that track's bullet).
-- **Solid fills**, on the housei/ako5 pools: the preprocessor's `fill_ratio` is
-  0.0% against GT's 24.5%, because an edge detector structurally cannot fill.
-  Over 12,000 tiles of this type have never been trained on or evaluated.
-  **Deferred by user decision 2026-09-13** -- not dropped, just not now.
+- **The baseline to beat is a preprocessor run, not another model.** No model
+  this project has trained beats `LineartDetector` alone. Report the
+  conditioning map's own score next to any figure (lesson 6).
+- **The residual it leaves is two different problems by pool.** Deletion on the
+  lineart family -- the preprocessor lays 1.4x GT's ink, and a delete-only
+  oracle reaches f1 **0.7425** against `lineart_coarse`'s 0.3231 on the 192-tile
+  group. Solid fills on housei/ako5 -- its `fill_ratio` is 0.0% against GT's
+  24.5%, because an edge detector structurally cannot fill; over 12,000 tiles of
+  that kind have never been trained on or evaluated, and targeting them is
+  **deferred by user decision 2026-09-13**, not dropped.
+- **Lessons 1-8 and the tool traps below hold for every route.** Lesson 8 in
+  particular is why the generative-pixel-matching route is closed rather than
+  merely unpromising.
 
-One finding from the now-closed `../lineart-controlnet-sd15-refine` survives
-its closure and is still the only one of its kind here: its consistency loss
-moved the output *away* from the conditioning map while moving it *toward* GT
-(vs-conditioning 0.5009 -> 0.4618 as f1 rose 0.2175 -> 0.2354), the opposite of
-the SDXL stack, which simply copied its conditioning. That mechanism did work.
-It just never carried the output past the preprocessor -- on 192 tiles it
-finished 0.032 short. **A mechanism can be real and still not be worth
-keeping**, and that is the distinction to hold on to: the evidence is against
-diffusion generation closing this gap, not against that particular loss doing
-what it was designed to do.
+**The current route, and why it is shaped this way.** Treat a stroke as a word
+and a panel as a sentence. Track F then established a clean negative that
+determines everything downstream: **there is no inter-word grammar inside a
+panel** -- five independent measurements agree, and a bigram model is *worse*
+than unigram. So generation cannot be "a grammar consumes a word sequence".
+What does exist is a real vocabulary and real structure in **where** words sit.
+Hence Track G's shape: the concept is supplied from outside, and the model's job
+is only which words appear and where they go.
 
-The diagnosis that ran alongside it, `../lineart-pair-signal`, **finished on
-2026-09-17 and answered the question it was opened for.** The pairs contribute
-nothing to generative fine-tuning not because of the VAE, not because of loose
-correspondence, and not because of scale, but because **the objective itself
-converges on reproducing the conditioning map** (lesson 8). Two consequences
-follow directly, and they point in opposite directions:
+Track G has already run that and **failed its visual gate** while passing its
+numeric ones -- prototypes land at statistically plausible positions and the
+panel still does not read. The user's redirection from that result is the thing
+to hold on to: **bits do not guarantee a visual pass**, and while the words
+render as an ant swarm no human can judge whether a panel reads at all. So the
+front of the work moved *upstream*, to making the words themselves legible and
+nameable. That is Track H: pin down the face-part words first, because the more
+cards are face-up, the easier the rest becomes.
+
+Two things follow that are worth stating plainly, because they are easy to lose:
+
+- **This route has not yet produced a readable panel.** It is currently
+  building representation, not generating. Track G's one generation attempt is a
+  recorded failure, and 254 of 467 words are unreliable.
+- **Track E is the standing check on all of it.** It tried to score
+  "line-art-ness" against human preference and stopped because nothing
+  interpretable existed to compare -- you cannot ask which of two pictures is
+  better when both are broken. Its re-open condition is the honest success
+  criterion for the words line: **two interpretable outputs to put side by
+  side.**
+
+**The diagnosis that closed the previous route** was `../lineart-pair-signal`,
+finished 2026-09-17. The pairs contribute nothing to generative fine-tuning not
+because of the VAE, not because of loose correspondence, and not because of
+scale, but because the objective converges on reproducing the conditioning map
+(lesson 8). Two consequences, pointing opposite ways:
 
 - **Do not invest in better pairs for generative training.** Better-aligned
-  pairs and 18x more pairs both changed nothing about whether the model draws
-  what the conditioning map lacks.
+  pairs and 18x more pairs both changed nothing.
 - **The pair data is not devalued -- its role is confirmed.** It is supervision
-  for selection, and it is the measuring instrument every verdict in this file
-  rests on. The risk it posed to the deletion work was checked and is absent:
-  a pixel-space discriminative model never passes through the VAE, and Track C's
-  own visual check found the pair correspondence structurally sound on
-  lineart_family.
+  for selection, the source of Track H's strategy labels, and the measuring
+  instrument every verdict in this file rests on.
 
-**What this does not resolve is whether selection alone is enough.** Track C's
-route is now constrained from two independent measurements: the preprocessor's
-output does not decompose into strokes, so segment-level keep/drop cannot reach
-pixel-level selection, and selection by construction cannot add strokes the map
-lacks -- roughly 16% of GT's stroke length on lineart_family, which is what
-caps the oracle's recall at 0.604. **Note that this file is behind on that
-question**: notices stop at 2026-09-17 and at least four further tracks have
-been committing since, including ones whose names suggest a different route
-entirely. See the last Next Actions item.
+One finding from the closed `../lineart-controlnet-sd15-refine` is still the
+only one of its kind here and should not be lost: its consistency loss moved the
+output *away* from the conditioning map while moving it *toward* GT
+(vs-conditioning 0.5009 -> 0.4618 as f1 rose 0.2175 -> 0.2354), unlike the SDXL
+stack, which simply copied. The mechanism worked; it just never carried the
+output past the preprocessor, finishing 0.032 short on 192 tiles. **A mechanism
+can be real and still not be worth keeping.**
 
 **The raw-extraction goal that stood here through 2026-08 is done.** The
 clip_pairs v3 re-extraction, the 8,798-tile combined pool
@@ -733,55 +902,48 @@ closed out as of this commit.
 
 ## Next Actions
 
-Item 1 is the active work of the tracks known to this file; item 2 is two open
-bugs in shared tooling. Item 3 is a deferred strategic question; items 4-6 are
-common-foundation housekeeping, none of them blocking. **Item 7 is the most
-important one**: this file has lost track of the project since 2026-09-17. Both ControlNet tracks
-are closed as of 2026-09-13 and neither leaves work behind -- see the pointer
-section above.
+Items 1-2 are the active fronts, both on the words line; item 3 is the
+selection line, live but idle. Item 4 is two open bugs in shared tooling, item 5
+a deferred strategic question, items 6-9 common-foundation housekeeping, none of
+them blocking. Every ControlNet track is closed and none leaves work behind --
+see the Track Ledger above.
 
-1. **Stroke selection** (`../lineart-stroke-selection`): learn to delete the
-   preprocessor's spurious strokes. Input is the preprocessor output, not the
-   raw rough; the label comes straight from the pair data (did this stroke
-   match GT); on the 192-tile `lineart_family` group the ceiling is 0.7425
-   against a best-ever trained score of 0.2514. First
-   move, per its own briefing, is to **look at the oracle output before
-   trusting the number** -- this project has been misled by a metric three
-   times (orientation_entropy alone, gt_bsds_f1 alone, near_white_frac alone),
-   and 0.74 is an oracle that consults GT, so it is an upper bound by
-   construction, not an achievable score. **That first move is done (2026-09-13)
-   and the oracle passed**, and a minimal pixel-level baseline has since been
-   trained. **What has changed the shape of this item**: 0.7425 is now known to
-   depend on pixel-level partial credit. Reduced to per-segment keep/drop it
-   collapses to 0.301 against a pixel-level 0.552, and cutting the skeleton
-   finer (40/20/10/5px) only recovers to 0.162 -- because the preprocessor's
-   skeleton is short fragments in a dense junction mesh, not strokes. So the
-   unit of decision has to stay at pixel level, or the representation has to
-   change; "cut it finer" is measured and closed. Also note lesson 7 applies
-   here even though this is a discriminative objective: score a holdout at each
-   snapshot rather than watching the loss.
-   Note also that the oracle's recall
-   is capped at 0.604 because the preprocessor never finds the other 40% of
-   GT's strokes, so the choice of preprocessor should be revisited on ceiling
-   (recall) rather than on its own standalone f1 -- `lineart_coarse` scores
-   best alone (0.2639) but that is a different criterion.
-   Proposal: `doc/track_proposal_stroke_selection_20260911.md`.
-
-   Both ControlNet tracks that preceded it are closed, and their results are in
-   the pointer section above. One question they left open is now **answered:
-   do not port the consistency loss to SDXL.** That call was explicitly gated
-   on Track A's round-2 sweep, and the sweep came back worse than the figure it
-   was waiting on -- -0.032 to -0.033 on 192 tiles against the -0.021 the five
-   tiles had shown. Porting a loss that finishes below its own conditioning map
-   on the cheaper architecture, onto the one that merely copies its
-   conditioning, has nothing to recommend it.
-
-   Track A also measured a ceiling this track needs: `manga_line`'s delete-only
-   oracle reaches **0.5143** (recall capped at 0.3462) against
-   `lineart_coarse`'s **0.7425** (recall 0.604), on the same `lineart_family`
-   192-tile group, so the two are directly comparable. `manga_line` is the
-   weaker basis for a selection approach.
-2. **Fix the two tool bugs found in `inbox/` (both still open).**
+1. **Face-part words** (`../lineart-face-words`, Track H -- the current front).
+   Waiting on the user: step 1's size-stratified montages of the closed-eye
+   candidates w342/w343/w344 are built and the tool checks passed, and the
+   **visual judgement has not been given yet**. That judgement gates the rest:
+   whether splitting a word by size separates closed eyes from panel borders and
+   hair. After it, pre-register the labelling procedure and the rule's pass
+   criteria, then run one full loop (label -> rule -> held-out check) on closed
+   eyes before widening to open eyes, brows, nose, mouth, ears. Two
+   methodological commitments already recorded there are worth keeping: labels
+   live in a **namespace separate from the machine word ids**, and the held-out
+   split is **assigned mechanically at labelling time**, before any result is
+   seen, both by panel and by series.
+2. **Panel generation** (`../lineart-panel-generation`, Track G). Blocked
+   upstream by its own choice, and correctly so: it can generate, but the words
+   render as an ant swarm, so no visual judgement is possible and placement
+   measurement was halted after failing an instrument check. Its own next steps
+   are recorded there -- prototype-plus-residual decoding to make words legible
+   first, then re-judge, then placement. **Do not restart from placement**
+   (user, 2026-09-23). When it resumes, the standing warning from its last run
+   is that **bits do not guarantee a visual pass**: position beat the marginal
+   by 0.9 bits while the montage stayed unreadable.
+3. **Stroke selection** (`../lineart-stroke-selection`, Track C -- live but
+   untouched since 2026-09-17). It is not superseded and it still has the widest
+   measured headroom in the project: its minimal classifier sits at f1 0.3161
+   against a 0.6765 ceiling on the same batch. The first result is genuinely
+   informative -- flat f1 but **precision +0.068 and recall -0.169**, i.e. it
+   learned to delete and it over-deletes -- so the named next variables are
+   concrete: the conservative 0.5 threshold, more epochs, `pos_weight`. Isolate
+   one at a time. Two constraints bound the route: per-segment keep/drop cannot
+   reach pixel-level selection (measured twice, cutting finer does not rescue
+   it), and selection can never add the ~16% of GT stroke length the
+   preprocessor never finds, which is what caps oracle recall at 0.604. Lesson 7
+   applies even though the objective is discriminative: score a holdout at each
+   snapshot rather than watching the loss. Proposal:
+   `doc/track_proposal_stroke_selection_20260911.md`.
+4. **Fix the two tool bugs found in `inbox/` (both still open).**
    (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
    192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
    looking for the file rather than by a `housei` prefix test, the way the
@@ -796,7 +958,7 @@ section above.
    plus auto-contrast) is a data-side decision, not a bug fix -- and it must be
    applied to training and holdout together or it inverts the mismatch.
    Details for all three: **Known Tool Traps** above.
-3. **Solid fills (the housei/ako5 pools): deferred, by user decision
+5. **Solid fills (the housei/ako5 pools): deferred, by user decision
    2026-09-13.** Not dropped -- the question was put and answered "not now".
    Recorded here so it stays visible rather than becoming a silent omission.
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
@@ -810,7 +972,7 @@ section above.
    that is what decides whether this is the other half of the plan or a
    separate project. Inventory:
    `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
-4. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
+6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
    on it would mean returning to an architecture this project moved off. The
@@ -822,34 +984,26 @@ section above.
    tiles, `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and
    may be worth using in the ControlNet context instead -- that would be a
    new idea, not this one.
-5. Decide whether to rename the remaining `kurip`-named infra scripts, given
+7. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
    `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
    the work above.
-6. Decide whether umbrella/layer-difference rows (ako5ver2) should be
+8. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-7. **This file is behind the project. Reconcile the track ledger.** Notices
-   stop at 2026-09-17, but as of 2026-09-30 at least four further worktrees
-   have been committing and are registered nowhere here:
-   `../lineart-aesthetic-judge` (last commit 09-17, "pause collection"),
-   `../lineart-stroke-grammar` (09-21, measurement phase closed),
-   `../lineart-panel-generation` (09-25) and `../lineart-face-words` (09-25).
-   Three proposals exist only in those trees' `outbox/` and were never merged
-   into `diffusion`: Track E (`track_proposal_aesthetic_judge_20260916.md`, a
-   judge of "line-art-ness", to arbitrate where GT and the conditioning map
-   disagree), Track G (`track_g_generation_proposal_20260921.md`, panel
-   generation -- authored by Kimi, marked draft/unapproved) and Track H
-   (`track_h_face_words_proposal_20260924.md`, face-part words, marked
-   **approved 2026-09-25**). The names suggest the project has moved from
-   "delete strokes the preprocessor over-draws" toward "treat strokes as words,
-   learn their grammar, then generate" -- if so, **the Active Goal above is
-   describing a superseded route.** Two of those trees also hold an external
-   review exchange (`KIMIからの意見.md`, `KIMIへの返信_20260919.md`) with no
-   record here. Reading those proposals and rewriting the pointer section and
-   Active Goal from them is the next foundation task; it was deliberately not
-   attempted in the 2026-09-30 pass, which only folded in what the ten notices
-   actually said.
-8. Revisit whether `--max-soft-ink-ratio` needs a per-source
+9. **Keep this file from falling behind again.** The 2026-09-30 reconciliation
+   is done -- the Track Ledger above was rebuilt from every track's own files,
+   and the three proposals and the Kimi exchange are now held in `doc/`. What
+   caused the drift is structural and still true: **Tracks G and H live in a
+   separate clone** (`lineart-panel-generation`, with `lineart-face-words` as
+   its worktree), so `git worktree list` run here cannot see them, and neither
+   sent a notice to `inbox/`. Notices stopped on 2026-09-17 while those two did
+   all the work of the following two weeks. When checking project state, list
+   the sibling `lineart-*` directories and `git branch -r`, not just the
+   worktrees. Whether to consolidate that clone back into this repo's worktree
+   set, and whether the words-line tracks should send notices at all, are open
+   questions for the user -- the current arrangement works, it is only invisible
+   from here.
+10. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.

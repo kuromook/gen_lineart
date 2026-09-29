@@ -5202,3 +5202,102 @@ superseded route. Two of those trees also hold an external review exchange with
 Kimi that has no record here. Reconciling the ledger from those proposals is
 Next Actions item 7 and was left for a separate pass, because doing it properly
 means reading them rather than inferring the direction from folder names.
+
+## 2026-09-30 (later): Track Ledger Reconciled — The Project Forked, And This File Had Missed It
+
+Next Actions item 7 from the earlier pass today asked for this: read the four
+unregistered trees and the three unmerged proposals, and make the ledger and
+Active Goal describe the project as it is. Done by reading their files rather
+than inferring from folder names, and the reading corrected the working
+hypothesis in several ways.
+
+**Why the ledger went stale, structurally.** Tracks A-F are worktrees of this
+repo, so `git worktree list` finds them. **Tracks G and H are not.**
+`lineart-panel-generation` is a *separate clone* of the same remote, and
+`lineart-face-words` is a worktree of that clone. They push branches to the same
+GitHub remote but are invisible to `git worktree list` run here, and neither
+sent a notice to `inbox/`. Notices stopped on 2026-09-17; those two trees did
+all the work of the following two weeks.
+
+**The project forked in two on 2026-09-17/18, it did not simply move.** The
+earlier guess -- that the route had shifted wholesale from deletion to
+words-and-grammar -- is half right. Track C (selection) is **not superseded**;
+it is live and merely idle since 2026-09-17, and it still holds the widest
+measured headroom anywhere here. The words line is where all activity since
+09-21 sits.
+
+**Track C's first real result, previously unrecorded here.** A
+16,201-parameter pixel-level keep/drop classifier, 3 epochs over all 8,467
+pairs, scored on the same group-A batch as the oracle: f1 **0.3161** against
+the preprocessor's 0.3164 -- flat -- but **precision +0.068** (0.2373 ->
+0.3057) and **recall -0.169** (0.5255 -> 0.3566). It learned to delete and it
+over-deletes; the montage shows it has stopped echoing the conditioning map.
+Ceiling 0.6765. Named next variables: the 0.5 threshold, epochs, `pos_weight`.
+
+**The words line, and why it is shaped as it is.** Track F closed its
+measurement phase on 09-21 with a clean negative that determines everything
+downstream: **there is no inter-word grammar inside a panel** -- five
+measurements agree, and a bigram model (7.40) is *worse* than unigram (7.35).
+What does exist: a real 500-word vocabulary (92% used), real structure in
+*where* words sit (6.31-6.39 bits against a 7.56 marginal), and 12 human-nameable
+panel scene types. Hence Track G's shape -- concept supplied from outside, the
+model only choosing and placing.
+
+Track G then ran that and **passed its numeric gates while failing its visual
+one**: word bits 7.078/7.094 against a 7.312 gate, position bits beating the
+marginal but failing the 6.388 cloze band (not relaxed after the fact), and a
+montage that is "prototypes scattered at statistically plausible positions" --
+recorded there as an ant swarm. The user's redirection on 09-23 is the load-
+bearing part: **do not start from placement**, because while the words render
+as an ant swarm nobody can judge whether a panel reads. So the front moved
+upstream. Word reliability was then measured: of 467 words, **49 reliable / 164
+borderline / 254 unreliable**, with the dominant cause being that one detail
+stroke changes the word; a word is a shape class with scale discarded (~6x
+diameter spread within a word). A 09-25 attempt to measure absolute vs relative
+position failed its own instrument check and was halted, handed to Track H.
+
+**Track H is the current front**, opened 09-25 with approval recorded in its own
+proposal. Pin down face-part words via human strategy labels in a namespace
+separate from the machine ids, then have a mechanical rule reproduce them. Its
+held-out labels are assigned **mechanically at labelling time**, before any
+result is seen, split both by panel and by series. Step 1's size-stratified
+montages of w342/w343/w344 are built, tool checks passed (including an added
+negative control after a suspiciously perfect 1.00 overlay score), and it is
+**waiting on the user's visual judgement**.
+
+**Track E's pause matters more than the pause.** It stopped on 09-17 not from
+lack of interest but because the material does not exist: the user used the
+comparison UI and reported that **you cannot call something beautiful when it is
+broken and unreadable** -- that is an interpretability axis, not an aesthetic
+one. Of three candidate sources only the preprocessor output is interpretable
+line art (midtone 0.072 vs 0.503 and 0.259). Its re-open condition -- two
+interpretable outputs to compare -- is effectively the honest success criterion
+for the words line, and is now recorded that way.
+
+**Also corrected:** the copy of Track G's proposal still says
+draft/unapproved, but Track G's own briefing and work log record it as approved
+on 2026-09-21 and the track was established that day. The copy is stale, not the
+status.
+
+**Brought into the foundation** so the research record is not held only in other
+trees' gitignored `outbox/`: `doc/track_proposal_aesthetic_judge_20260916.md`,
+`doc/track_g_generation_proposal_20260921.md`,
+`doc/track_h_face_words_proposal_20260924.md`, plus the external review from
+Kimi (`doc/external_review_kimi_20260919.md`) and Track F's reply
+(`doc/external_review_kimi_reply_20260919.md`). The review was substantive --
+five recommendations, four adopted as-is -- and one of its corrections is itself
+a lesson: the endpoint-gap baseline of 0.651 it cited was **an artefact of the
+tokeniser** (segments cut at junctions end where they touch another stroke,
+leaving a characteristic ~4px gap) and fell to 0.54-0.58 once strokes were
+joined at panel scale. Baselines must be re-measured in the current unit.
+
+`doc/CURRENT.md` restructured accordingly: the pointer section became a
+**Track Ledger** with the two lines separated and the separate-clone fact
+recorded at the top, the lessons got their own `## Lessons` heading, the Active
+Goal was rewritten around the current route while explicitly preserving what
+holds regardless of route, and Next Actions now leads with the words line
+(H, then G), keeps C as a live third item, and closes item 7.
+
+**Not touched, and reported instead:** `lineart-face-words` has uncommitted work
+(`doc/work_log.md` modified, `tools/face/` untracked) belonging to that track's
+own session.
