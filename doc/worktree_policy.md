@@ -27,22 +27,44 @@ git worktree add ../lineart-<topic> -b <topic> diffusion
 
 ## Active Worktrees
 
-| directory | branch | role |
+Updated 2026-09-30. `doc/CURRENT.md`'s Track Ledger is the authoritative status
+of each track; this table records only where each one physically lives, because
+**that has stopped being uniform** — see the two exceptions below it.
+
+| directory | branch | note |
 |---|---|---|
 | `lineart` | `diffusion` | integration, shared docs, dataset pipeline |
-| `lineart-controlnet-sd15-refine` | `controlnet-sd15-refine` | SD1.5 ControlNet refinement from the cs3.5 best config |
-| `lineart-controlnet-sdxl-fidelity` | `controlnet-sdxl-fidelity` | SDXL condition fidelity (1024 re-baseline first) |
-| `lineart-cleanup-refiner` | `cleanup-refiner` | dormant |
-| `lineart-halo-loss` | `halo-loss` | dormant |
-| `lineart-router-moe` | `router-moe` | dormant |
+| `lineart-stroke-selection` | `stroke-selection` | worktree of `lineart` |
+| `lineart-pair-signal` | `pair-signal` | worktree of `lineart` |
+| `lineart-stroke-grammar` | `stroke-grammar` | worktree of `lineart` |
+| `lineart-aesthetic-judge` | `aesthetic-judge` | worktree of `lineart` |
+| `lineart-controlnet-sd15-refine` | `controlnet-sd15-refine` | worktree of `lineart` |
+| `lineart-controlnet-sdxl-fidelity` | `controlnet-sdxl-fidelity` | worktree of `lineart` |
+| `lineart-cleanup-refiner` | `cleanup-refiner` | worktree of `lineart`, dormant |
+| `lineart-panel-generation` | `panel-generation` | **separate clone** of the same remote |
+| `lineart-face-words` | `face-words` | worktree **of that clone**, not of `lineart` |
+
+**Two things are not reachable the way this file used to imply:**
+
+- `lineart-panel-generation` and `lineart-face-words` do not appear in
+  `git worktree list` run from `lineart`, because the first is an independent
+  clone and the second hangs off it. Anyone auditing tracks by listing
+  worktrees will miss both. Discovered 2026-09-30.
+- `lineart-halo-loss` and `lineart-router-moe` **no longer exist on disk.**
+  Their registrations have already been pruned; their branches survive both
+  locally and on `origin` at their 2026-07-20 tips, so nothing is lost, but
+  there is no working tree to open. Do not cite those paths.
 
 `lineart-controlnet-realpairs` is **not** a worktree — it was created as a
 plain directory because it needed physical copies of the pair data and
 checkpoints. Its branch `controlnet-realpairs` holds the track's history.
 That track closed 2026-09-06; see `doc/track_proposal_20260906.md`.
 
-Prefer a worktree. Use a plain directory only when a track genuinely needs its
-own physical copy of large data, and say so in the track's briefing.
+Prefer a worktree of `lineart`. Use a plain directory only when a track
+genuinely needs its own physical copy of large data, and say so in the track's
+briefing. **If a track ends up as a separate clone, or as a worktree of one,
+record it here** — otherwise it becomes invisible to anyone auditing from the
+integration tree, which is exactly what happened with the two above.
 
 ## Artifact Rules
 

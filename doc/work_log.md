@@ -5301,3 +5301,43 @@ holds regardless of route, and Next Actions now leads with the words line
 **Not touched, and reported instead:** `lineart-face-words` has uncommitted work
 (`doc/work_log.md` modified, `tools/face/` untracked) belonging to that track's
 own session.
+
+## 2026-09-30 (later): IP-Adapter Surveyed (Never Taken Up), Worktree Map Corrected
+
+**Survey result: ControlNet + IP-Adapter has never been tried here, and was
+never proposed.** The user recalled it as an older idea possibly not taken up;
+the files say something stronger -- it is not an older idea *of this project* at
+all. Zero occurrences across every worktree's `doc/`, `inbox/`, `outbox/`,
+`experiments/`, `scripts/`, `tools/`, all branches' commit messages, the
+Directions 1-9 survey, and the memory directory, searched by concept as well as
+by name (`image_encoder`, `CLIPVision`, T2I-Adapter, reference-only, unCLIP,
+exemplar/参照画像/お手本/画風). The near-misses are all something else: Direction
+3's "learned line-art encoder" is a perceptual-loss extractor, Track E's CLIP
+features feed a judge, and the `cross_attention_kwargs` hits are the LoRA-scale
+API.
+
+It fell off by expiry rather than judgement: `work_log.md` 2026-08-08 Next
+Action 2 deferred *"any form of style adapter"* until the paired fine-tune was
+working, and the paired fine-tune never worked. Recorded in a new
+`## Approaches Never Taken Up` section in `doc/CURRENT.md`, with the assessment
+against lesson 8 (it is a pooled, non-spatial signal against a spatial failure;
+the nearest measured analogue -- a global style prior overriding the ControlNet
+on 2026-08-08 -- points the wrong way; it injects at `attn2`, the layer
+`pnp_line_from_rough.py` deliberately avoided), and with the axis where it
+*would* fit: tone, hence Track E, and a line-to-line framing that does not
+currently exist in this project. Tooling is not a constraint -- diffusers 0.39.0
+has the API in the venv today.
+
+**Worktree map corrected in `doc/worktree_policy.md`.** Two ways the old table
+misled: `lineart-panel-generation` is a **separate clone** and
+`lineart-face-words` is a worktree *of that clone*, so neither appears in
+`git worktree list` from `lineart` and an audit by worktree listing misses both;
+and `lineart-halo-loss` / `lineart-router-moe` **no longer exist on disk**,
+their registrations already pruned, though both branches survive locally and on
+`origin` at their 2026-07-20 tips. The table now records where each track
+physically lives, defers status to the Track Ledger, and instructs that any
+future track living outside the integration tree's worktrees be recorded there
+-- the omission is what made two tracks invisible for two weeks.
+
+An inference-only IP-Adapter probe was launched separately; its result is not in
+this entry.

@@ -449,6 +449,68 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   degrees; horizontal flip was rejected because panel borders survive it and
   inflate the baseline.
 
+## Approaches Never Taken Up
+
+Recorded so they are not re-asked from scratch, and so that "we must have tried
+that" is not assumed.
+
+**ControlNet + IP-Adapter (image-prompt / image-embedding conditioning) has
+never been tried, and was never even proposed.** Surveyed 2026-09-30 across
+every worktree's `doc/`, `inbox/`, `outbox/`, `experiments/`, `scripts/`,
+`tools/`, all branches' commit messages, and the Directions 1-9 survey in
+`doc/model_directions.md`: zero occurrences, of the name or of the concept
+(`image_encoder`, `CLIPVision`, T2I-Adapter, reference-only, unCLIP-style image
+conditioning, exemplar conditioning). Direction 3's "learned line-art encoder if
+available later" is a perceptual-loss feature extractor, not conditioning, and
+Track E's "CLIP features + linear" feeds a judge, not a generator.
+
+**It fell off by expiry, not by judgement.** The one sentence in the corpus that
+would have covered it is `doc/work_log.md` 2026-08-08, Next Action 2: after
+finding that stacking the unconditional line-domain LoRA on the ControlNet was
+actively harmful, it says to *"revisit whether any form of style adapter is safe
+to add only after the paired fine-tune itself is working."* The paired fine-tune
+never started working -- Tracks A and B both closed below the preprocessor
+baseline -- so the revisit never triggered.
+
+**Tooling was never the constraint**: diffusers 0.39.0 with `IPAdapterMixin`,
+and both `StableDiffusionControlNetPipeline.load_ip_adapter` and
+`set_ip_adapter_scale` are available in the venv today, no new dependencies.
+
+**Assessment (2026-09-30), against what is now measured.** It does not address
+the failure in lesson 8, because that failure is *spatial*: where the
+conditioning map lacks a GT stroke the model draws it 9.3% of the time, and
+output skeletons sit near the map (36%) rather than near GT alone (9%). An
+IP-Adapter embedding is pooled and spatially unlocalised -- it carries
+appearance, not where a stroke goes -- so against this project's own
+decomposition it addresses neither half: not which of the preprocessor's
+1.4x-GT strokes to delete, and not the ~16% of GT stroke length the map never
+finds that caps oracle recall at 0.604. The closest analogue this project has
+actually measured points the wrong way: the 2026-08-08 result above, where a
+strong global style prior **overrode** the ControlNet's conditioning.
+Architecturally IP-Adapter sits nearer that failure than a fix -- it injects at
+cross-attention (`attn2`), which is precisely the layer
+`scripts/pnp_line_from_rough.py` deliberately left alone, its docstring naming
+`attn2` as carrying the signal it wanted to keep steering with.
+
+**Where it would fit is a different axis.** The one thing training demonstrably
+moves is tone (near_white 0.13 -> 0.83; fixed-`t` loss correlates with paper
+white at r -0.98 and not with f1), and a reference-image channel is the right
+instrument for tone. That makes it relevant to Track E's question -- aim at the
+base model's own look rather than at GT -- and most natural of all in a
+line-art-to-line-art framing, where spatial content comes from the source and a
+clean exemplar supplies style. **Note that no line-to-line theme exists in this
+project**: `line2line` and equivalents return nothing across `doc/`, and
+`lineart-cleanup-refiner` is the nearest thing and has no reference
+conditioning either.
+
+**If it is tested, the honest first move is inference-only**: public ControlNet
+at its best config (`lineart_coarse`, cs2.5) plus IP-Adapter with a line-art
+tile as image prompt, scored on the usual axes *plus* the conditioning map's own
+baseline (lesson 6) and Track D's `gt_only` / `vs_condition` columns. Using GT
+as the reference leaks, so like the delete oracle it bounds the mechanism rather
+than demonstrating an achievable score -- which is this project's established
+way of starting.
+
 ## Active Goal
 
 **Build a representation of line art that a human can read, then generate from
