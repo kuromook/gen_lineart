@@ -5341,3 +5341,87 @@ future track living outside the integration tree's worktrees be recorded there
 
 An inference-only IP-Adapter probe was launched separately; its result is not in
 this entry.
+
+## 2026-09-30: Track I Opened; Inference-Only IP-Adapter Probe
+
+### Relocation
+
+This probe began in the common foundation's `experiments/` and `results/`,
+which breaks the track pattern's core rule: experiment output does not go in
+the foundation, precisely so it does not bloat again. Moved here mid-run --
+the four scripts, the smoke outputs and the partial probe outputs -- and the
+foundation was left clean (`git status` empty; the scripts had been untracked
+and `results/` is gitignored, so nothing needed un-committing). The inference
+process was stopped before the move rather than having files pulled out from
+under it, and resumed afterwards: every arm skips tiles already written, so the
+interruption cost nothing but the two tiles in flight.
+
+Paths after the move are deliberately mixed and that is correct: outputs and
+scripts are in this tree, while the dataset, the shared evaluation tools and
+the venv are still read from the foundation.
+
+### Data: referenced, not copied
+
+The briefing left this open. Decided to reference rather than duplicate, since
+everything needed is read-only and small:
+
+- conditioning maps (`lineart_coarse`, 292 tiles):
+  `../lineart-controlnet-sdxl-fidelity/results/holdout_validation_20260912/conditioning`
+  -- the same directory the stroke-selection oracle used, so numbers are
+  directly comparable with it
+- GT line art: `../lineart-controlnet-sd15-refine/data/holdout_lineart_family_gt_line`
+  (Track A's self-contained copy; the foundation's `--split auto` is a known
+  trap and is not used)
+- tile lists: `../lineart/dataset/pairs_480/holdout_{lineart_family,housei_100}.txt`
+
+### Anchor: the scoring path reproduces exactly
+
+The conditioning map scored against GT over all 192 group-A tiles gives
+**f1 0.3164, precision 0.2373, recall 0.5255**. The stroke-selection track
+reported 0.3164 / 0.9948 / 0.5255 for this same conditioning directory, so f1
+and recall reproduce to four decimals. (Its precision is the *oracle's*, not
+the map's, so only f1 and recall are comparable.) That single number validates
+the tile set, the GT resolution, the polarity handling and the scoring path at
+once. Track B's 0.3231 was a different regeneration of the same construction,
+which is why 0.3164 rather than 0.3231 is the right target here.
+
+Note this is *not* an inference anchor. There is no recorded 192-tile figure
+for SD1.5 + public `control_v11p_sd15s2_lineart_anime` + `lineart_coarse` at
+cs2.5 -- that combination has never been run on this group -- so the baseline
+arm is itself a new measurement, and the conditioning map is what every arm is
+read against.
+
+### Plumbing check: the adapter is genuinely engaged
+
+Worth doing before trusting any null result, since the briefing's stop
+condition is exactly "the plumbing is broken and nothing is readable". With the
+seed and every other input held fixed, turning the adapter on at scale 0.8
+changes **73% of pixels by more than 2 levels, mean |delta| 12.7-13.4, max
+173**. Inert plumbing would have produced byte-identical images. So a null
+result from this probe is a real null.
+
+### Design correction made mid-run: the exemplar pool confounded two variables
+
+The probe as specified used a housei tile as the "different image" reference.
+Measuring the two pools' GT first showed that is not a clean manipulation:
+
+| pool | fill_ratio | ink_ratio | near_white | line_width_p50 |
+|---|---:|---:|---:|---:|
+| lineart_family (evaluated) | 0.042 | 0.035 | 0.943 | 2.26 |
+| housei (reference pool) | 0.124 | 0.014 | 0.960 | 4.10 |
+
+housei is a different *drawing style* as well as a different image -- three
+times the solid fill, nearly twice the stroke width -- so a change in that arm
+could not be attributed. Added `gt_otherfam`: the reference is a tile from a
+different `lineart_family` **source image**, holding style and sub-task fixed
+and removing only the content overlap. That is the clean form of the use case
+and is the arm to read; the housei arm is kept as a deliberately distant
+exemplar, with its confound recorded. The group has 8 distinct source images
+and every tile draws its reference from a different one, verified, so there is
+no content overlap.
+
+Arms, all sharing conditioning map, caption, scheduler, steps and seed:
+baseline (no adapter), `gt_same` (own GT -- leaks, bounds the mechanism the way
+the delete oracle does), `gt_other` (housei), `gt_otherfam` (different
+lineart_family image), the last three at `set_ip_adapter_scale` 0.4 and 0.8,
+since scale is what decided the analogous 2026-08-08 question.
