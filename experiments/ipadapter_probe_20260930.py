@@ -18,13 +18,19 @@ so that the image-prompt channel is the only difference:
                   the delete oracle it bounds the mechanism, it does not show
                   an achievable score. Run to see the ceiling, never quoted as
                   a result.
-  gt_other_sX     a clean line-art tile from a DIFFERENT image as the prompt.
-                  This is the actual use case -- style from an exemplar,
-                  spatial content from the conditioning map -- and is the arm
-                  that matters. The reference is drawn from a disjoint pool
-                  (the housei holdout group) so it cannot leak this tile's
-                  content, and is fixed per tile by index so every scale sees
-                  the same pairing.
+  gt_other_sX     a line-art tile from the housei holdout group as the prompt.
+                  Disjoint source, so it cannot leak this tile's content.
+                  CAVEAT measured after the fact: housei is a different
+                  drawing style as well as a different image (GT fill_ratio
+                  0.124 vs lineart_family's 0.042, line width 4.10 vs 2.26),
+                  so this arm moves two variables at once.
+  gt_otherfam_sX  a line-art tile from a DIFFERENT lineart_family source image.
+                  Same style and sub-task, only the content differs -- this is
+                  the clean version of the use case, and the arm to read for
+                  "style from an exemplar, spatial content from the map".
+                  Added once the housei confound above was measured.
+
+All references are fixed per tile by index, so scales differ only in scale.
 
 Two `set_ip_adapter_scale` values per reference type, because scale is exactly
 the lever that decided the analogous 2026-08-08 question: a weak global prior
@@ -107,8 +113,8 @@ def parse_args():
     parser.add_argument("--out-root", default="results/ipadapter_probe_20260930")
     parser.add_argument(
         "--arms",
-        default="baseline,gt_same,gt_other",
-        help="comma-separated: baseline, gt_same, gt_other",
+        default="baseline,gt_same,gt_other,gt_otherfam",
+        help="comma-separated: baseline, gt_same, gt_other, gt_otherfam",
     )
     return parser.parse_args()
 
@@ -175,6 +181,23 @@ def main():
     # gt_other arms differ from each other only in scale.
     refs_other = {t: gt_tile_path(ref_pool[i % len(ref_pool)]) for i, t in enumerate(tiles)}
     refs_same = {t: gt_tile_path(t) for t in tiles}
+    # Same-pool reference from a different SOURCE IMAGE: tiles are
+    # lineart_<image>_<tile>.jpg, so stepping to the next distinct <image>
+    # keeps the style fixed and removes only the content overlap.
+    def source_of(tile):
+        return tile.split("_")[1] if "_" in tile else tile
+    by_source = {}
+    for t in tiles:
+        by_source.setdefault(source_of(t), []).append(t)
+    sources = sorted(by_source)
+    refs_otherfam = {}
+    for t in tiles:
+        here = source_of(t)
+        other = sources[(sources.index(here) + 1) % len(sources)]
+        if other == here:  # single-source degenerate case
+            refs_otherfam[t] = gt_tile_path(t)
+        else:
+            refs_otherfam[t] = gt_tile_path(by_source[other][0])
 
     pipe = load_pipe(args)
     ip_loaded = False
@@ -189,7 +212,8 @@ def main():
                 "h94/IP-Adapter", subfolder="models", weight_name="ip-adapter_sd15.safetensors"
             )
             ip_loaded = True
-        refs = refs_same if arm == "gt_same" else refs_other
+        refs = {"gt_same": refs_same, "gt_other": refs_other,
+                "gt_otherfam": refs_otherfam}[arm]
         for scale in ip_scales:
             pipe.set_ip_adapter_scale(scale)
             tag = f"{arm}_s{scale}"
