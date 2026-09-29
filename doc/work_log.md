@@ -5116,3 +5116,89 @@ first session, so it carries the profiler's non-termination guard. Track D
 profiles VAE round-trips and conditioning maps, which is exactly the input
 that hangs the unguarded version; verified in that worktree, both degenerate
 test images return in 0.006s.
+
+## 2026-09-30: Ten Notices Folded In; The Foundation Had Fallen Behind
+
+The foundation had not been checked since 2026-09-13. Ten notices had arrived
+between 09-13 and 09-17, and `doc/CURRENT.md` reflected none of them. This pass
+folded in exactly what those notices said and deliberately stopped there -- see
+the second half of this entry for why that is not enough.
+
+**Track D (`lineart-pair-signal`) closed 2026-09-17 with its question
+answered.** Four of five hypotheses eliminated by measurement:
+
+- VAE ceiling **refuted**: GT round-trips at f1 0.9605 (SD1.5) / 0.9806 (SDXL)
+  on lineart_family, against a best trained model of 0.25. Adding isotropic
+  noise at 40% of signal strength to the latent costs only 0.048, so there is
+  margin as well as headroom.
+- Objective **nearly flat**, and this is sharper than the original claim. The
+  logged loss could not see quality because one batch at a random `t` has a
+  standard error equal to the whole between-checkpoint spread -- Track B's
+  0.0341 -> 0.0302 was noise. But with `t`, noise and latents fixed, the real
+  movement after step 1,000 is 0.00039 while f1 moves 18%. The loss is not
+  unrelated to quality (deltas at Spearman -0.73); it has almost no gradient
+  left along the axes that matter, and what it does track is paper tone
+  (r -0.98) rather than line structure.
+- Loose correspondence **real but not causal**: a third of GT's stroke length
+  is 3-8px off even in the raw rough, but training on the 1,837 best-aligned
+  pairs against a source- and ink-matched random control moved "draws a GT
+  stroke the map lacks" from 0.113 to 0.104 -- i.e. nowhere. Only fidelity to
+  the conditioning map improved.
+- Scale **refuted**: 460 / 1,837 / 8,467 with everything else identical gives
+  `gt_only` 0.046 / 0.045 / 0.045, and the smallest arm scores highest at the
+  final step.
+
+What remains is the objective's expressiveness, now recorded as **lesson 8**: a
+conditioned generative objective converges on reproducing the conditioning map
+and adjusting tone, and cannot be made to add strokes the map lacks or remove
+strokes it has. Output skeletons sit near the map 36% of the time against 9%
+near GT alone, and move toward the map as training proceeds. The planning
+consequence is explicit: **do not invest in better pairs for generative
+training**; the pair data's value is as selection supervision and as the
+measuring instrument.
+
+**Lesson 7** was added from the same track: never use training loss as a proxy
+for quality, logged or clean. Snapshot and score a holdout instead. No run
+before 2026-09-15 had ever used `--eval-snapshot-steps`, which is why
+diagnosing this needed a fresh training run rather than existing checkpoints.
+
+**Track C progress and a new constraint.** Its oracle survived visual review
+(f1 0.6765, precision 0.9948 -- dashed, but the surviving points trace GT's
+lines, so neither an over-aggressive oracle nor misaligned pairs), and a
+minimal pixel-level baseline has been trained. But two independent measurements
+now say the preprocessor's output **does not decompose into strokes**: 262
+tokens per tile against GT's 27, 5.1% junction pixels against 1.5%, and
+per-segment keep/drop tops out at 0.301 against pixel-level 0.552, recovering
+only to 0.162 when cut to 5px. Track C had already found this at
+connected-component granularity. The "cut it finer" route is closed; the unit
+of decision stays at pixel level or the representation changes.
+
+**A new `## Known Tool Traps` section** collects seven findings, each of which
+cost a track real time and two of which are unfixed bugs now sitting in Next
+Actions: `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of
+192 holdout_lineart_family tiles (it tests for a `housei` prefix; only the 24
+`lineart_004_*` tiles are in test, and the default sample list was all of
+those, which is why it went unnoticed), and `bipartite_match_f1` can take 12+
+minutes on a single tile with only a per-track mitigation, not a shared one.
+Also recorded: the shared `skeletonize()` leaves a 2px skeleton that shatters
+into "junctions" when cut into segments; binarisation choices change skeleton
+results by half; `manga_line` is nearly empty on the training pairs (12% of
+GT's stroke length, blank on 19% of tiles, fix known but unapplied and it must
+be applied to train and holdout together); `gt_only` rewards indiscriminate ink
+and correlates with f1 at -0.269; and per-pair alignment scores now exist for
+all 8,467 training pairs.
+
+**The part this pass did not fix, and flagged instead.** Notices stop at
+2026-09-17, but four further worktrees have been committing since and are
+registered nowhere: `lineart-aesthetic-judge` (09-17), `lineart-stroke-grammar`
+(09-21), `lineart-panel-generation` (09-25), `lineart-face-words` (09-25).
+Three proposals exist only in those trees' `outbox/` and were never merged --
+Track E (a judge of "line-art-ness"), Track G (panel generation, authored by
+Kimi, marked draft) and Track H (face-part words, marked **approved
+2026-09-25**). Their names suggest the project has moved from "delete the
+strokes the preprocessor over-draws" toward "treat strokes as words, learn
+their grammar, then generate", which would make this file's Active Goal a
+superseded route. Two of those trees also hold an external review exchange with
+Kimi that has no record here. Reconciling the ledger from those proposals is
+Next Actions item 7 and was left for a separate pass, because doing it properly
+means reading them rather than inferring the direction from folder names.

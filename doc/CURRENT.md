@@ -18,8 +18,10 @@ for archived history or audit material.
 
 The `lineart-controlnet-realpairs` track (ControlNet LoRA fine-tunes
 hallucinating dense cross-hatch instead of clean line art) met its goal and is
-closed. Three worktrees have descended from it, each with its own briefing in
-`doc/initial_notice.md` (one of them already closed in turn):
+closed. The worktrees below descended from it, each with its own briefing in
+`doc/initial_notice.md`. **This list is known to be incomplete as of
+2026-09-30** -- notices stop arriving after 2026-09-17 while several further
+tracks kept committing; see the last item under Next Actions.
 
 - `../lineart-controlnet-sd15-refine` (branch `controlnet-sd15-refine`) --
   **CLOSED 2026-09-13**, same verdict as the SDXL track: the diffusion model
@@ -53,20 +55,57 @@ closed. Three worktrees have descended from it, each with its own briefing in
   `inbox/note_track_b_closing_and_selection_proposal_20260911.md`.
   Pool inventory (every source profiled, with the new fill_ratio):
   `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
-- `../lineart-stroke-selection` (branch `stroke-selection`) -- **NEW
-  2026-09-11, the current active direction.** Can the deletion be learned? Input is the preprocessor output
+- `../lineart-stroke-selection` (branch `stroke-selection`) -- opened
+  2026-09-11. Can the deletion be learned? Input is the preprocessor output
   rather than the raw rough, the label comes straight from the pair data (did
   this stroke match GT), and the ceiling is 0.74 against a current best near
-  0.30. First move is to look at the oracle before trusting it. Proposal:
-  `doc/track_proposal_stroke_selection_20260911.md`.
-- `../lineart-pair-signal` (branch `pair-signal`) -- **NEW 2026-09-13,
-  diagnostic.** Why did 8,467 pairs contribute nothing to any fine-tune? Five
-  hypotheses ordered by cost; the first and cheapest has never been measured at
-  all -- latent diffusion can only express its target through the VAE, and GT
-  line art is white paper under 1-3px strokes, which is what a VAE handles
-  worst. If the VAE cannot round-trip GT, no amount of training reaches it and
-  that single fact explains every result above. Briefing:
-  `../lineart-pair-signal/doc/initial_notice.md`.
+  0.30. Proposal: `doc/track_proposal_stroke_selection_20260911.md`.
+  **Progress as of 2026-09-17**: the oracle survived its visual check (f1
+  0.6765, precision 0.9948 -- dashed, but the surviving points trace GT's
+  lines, so neither an over-aggressive oracle nor misaligned pairs), and a
+  minimal pixel-level keep/drop baseline has been trained and evaluated.
+  **A structural constraint has since been established, twice:** the
+  preprocessor's output does not decompose into strokes. Its skeleton is short
+  fragments joined by a dense junction mesh (262 tokens per tile against GT's
+  27, 5.1% junction pixels against 1.5%), so **deciding keep/drop on cut
+  skeleton segments cannot reach pixel-level selection** -- 0.301 against
+  0.552 in one controlled comparison, and cutting finer (40/20/10/5px) only
+  recovers to 0.162. This track had already found the same thing at
+  connected-component granularity. The "just cut it finer" route is closed.
+  Notices: `inbox/note_oracle_visual_check_pairs_look_sound_20260913.md`,
+  `inbox/note_stroke_fit_is_measurable_but_weak_20260917.md`.
+- `../lineart-pair-signal` (branch `pair-signal`) -- **CLOSED 2026-09-17,
+  diagnosis complete.** Why did 8,467 pairs contribute nothing to any
+  fine-tune? Five hypotheses, four of them eliminated by measurement:
+  - **VAE ceiling: refuted.** GT round-trips at f1 **0.9605** (SD1.5) and
+    **0.9806** (SDXL) on lineart_family, against a best trained model of 0.25
+    and a delete-oracle ceiling of 0.74. The margin for error is wide too --
+    adding isotropic noise at 40% of signal strength to the latent costs only
+    0.048.
+  - **Objective is nearly flat: confirmed, and sharpened.** Almost the whole
+    loss drop happens in the first 1,000 steps; after that it moves 1.2% while
+    f1 moves 18% and paper white goes 0.13 to 0.83. The loss is not unrelated
+    to quality -- deltas correlate at Spearman -0.73 -- it simply has almost
+    no gradient left along the axes that matter. See lesson 7.
+  - **Loose pair correspondence: real but not the cause.** A third of GT's
+    stroke length sits 3-8px off even in the raw rough, but training on the
+    1,837 best-aligned pairs against a matched random control changed nothing
+    that matters: strokes drawn where the conditioning map has none stayed at
+    0.104 vs 0.113. What improved was only fidelity to the conditioning map.
+  - **Scale: refuted.** 460 subset of 1,837 subset of 8,467, everything else
+    identical: `gt_only` reads 0.046 / 0.045 / 0.045, flat across an 18x range,
+    and the smallest arm scores highest at the final step.
+  - **What remains is the objective's expressiveness** -- see lesson 8, which
+    is the finding worth carrying forward from this whole track.
+  Briefing: `../lineart-pair-signal/doc/initial_notice.md`. Notices:
+  `inbox/note_vae_ceiling_refuted_20260914.md`,
+  `inbox/note_loss_blind_to_quality_20260915.md`,
+  `inbox/note_stroke_anchoring_and_pair_offset_20260915.md`,
+  `inbox/note_h2_decided_flat_objective_20260915.md`,
+  `inbox/note_training_pairs_alignment_manga_line_empty_20260915.md`,
+  `inbox/note_h34_aligned_pairs_do_not_teach_placement_20260915.md`,
+  `inbox/note_manga_line_emptiness_scale_and_contrast_20260916.md`,
+  `inbox/note_hypothesis5_scale_refuted_20260917.md`.
 
 Proposal with both directions: `doc/track_proposal_20260906.md`.
 
@@ -77,7 +116,7 @@ worth a re-baseline. Do not migrate them to v3 without a fresh decision.
 The closed track's full work log is `doc/track_controlnet_realpairs_work_log.md`
 on branch `controlnet-realpairs` (not present in this working tree).
 
-**Cause, and six lessons that apply project-wide** (lessons 3-4 added
+**Cause, and eight lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -164,6 +203,99 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    an inability to lay solid fills on the other). Score them separately;
    `dataset/pairs_480/holdout_lineart_family.txt` and
    `holdout_housei_100.txt` are already split that way.
+7. **Never use training loss as a proxy for quality -- not the logged loss,
+   and not a clean one either.** Added 2026-09-15 from
+   `../lineart-pair-signal`, which measured both. The *logged* loss is one
+   batch at a random `t`, and its between-checkpoint spread equals its own
+   standard error, so Track B's "loss fell from 0.0341 to 0.0302" was a change
+   indistinguishable from noise. Fixing the measurement does not rescue the
+   idea: with `t`, noise and latents all held fixed, the true movement after
+   step 1,000 is 0.00039 -- telling 0.0001 apart from single batches would
+   need roughly 490,000 batches per checkpoint. Worse, the little that does
+   move tracks **paper tone, not line structure** (r = -0.98 against paper
+   white in one run; no significant relation to f1). So: **snapshot during
+   training and score a holdout at each snapshot.** Enable
+   `--eval-snapshot-steps` from the start -- no run before 2026-09-15 ever did,
+   which is why diagnosing this needed a fresh training run rather than
+   existing checkpoints. Run with `PYTHONUNBUFFERED=1`; logs were reaching disk
+   only about every 1,000 steps.
+8. **A conditioned generative objective converges on reproducing the
+   conditioning map and adjusting tone. It cannot be made to add strokes the
+   map lacks, or remove strokes the map has.** Added 2026-09-17; this is the
+   central finding of `../lineart-pair-signal` and it explains every negative
+   result above at once. Measured three ways: output skeletons sit near the
+   conditioning map 36% of the time against 9% near GT alone, and move *toward*
+   the map as training proceeds; where the map lacks a GT stroke, the model
+   draws it 9.3% of the time; and neither better-aligned pairs (0.104 vs 0.113)
+   nor 18x more pairs (0.045 / 0.045 / 0.046) shifts that. **Consequence for
+   planning: do not invest in better pairs for generative training.** The pair
+   data's value is as supervision for selection, and as the measuring
+   instrument it has been all along. The one caveat the track states itself:
+   the aligned-pairs arm ran 2,290 steps, so a far longer run cannot be
+   strictly excluded, though its pre-registered criteria did not ask for one.
+
+## Known Tool Traps
+
+Collected 2026-09-13..17 from `inbox/`. Every one of these was hit by a track
+that had no way to know, and several were hit twice. **Two are unfixed bugs**
+-- see Next Actions.
+
+- **`bipartite_match_f1` (the implementation behind `gt_bsds_f1`) can take
+  tens of seconds to 12+ minutes on a single tile.** scipy's
+  `maximum_bipartite_matching` approaches worst case on particular edge-point
+  configurations, and it is not predictable from image density -- similar tiles
+  hit it or do not. 98 of 584 pairs (16.8%) timed out in one run. Environment
+  causes (cv2 thread contention, sharing a process with PyTorch/CUDA) were
+  tested and ruled out. Work around it by dispatching per tile to a subprocess
+  under a hard `timeout` and recording a miss:
+  `tools/evaluation/vae_roundtrip_score.py`. **If a batch evaluation appears
+  hung, suspect one slow tile before suspecting a hang.** The metric itself was
+  left unchanged -- it is shared and validated.
+- **`evaluate_fixed_outputs.py --split auto` resolves GT paths wrongly for
+  168 of the 192 `holdout_lineart_family.txt` tiles.** It decides with
+  `"train" if name.startswith("housei") else "test"`, and only the 24
+  `lineart_004_*` tiles actually live in test. The default sample list was all
+  `lineart_004_*`, which is why nobody noticed. **Unfixed.** Any past 192-tile
+  number produced through `--split auto` should be re-checked; Track A's and
+  Track B's 192-tile scoring used other scripts and was not audited.
+- **The shared `evaluate_stroke_stability.skeletonize()` leaves a 2px-wide
+  skeleton.** Cut it into segments at junctions and 64% of the skeleton
+  classifies as "junction", shattering lines into dots (only 1.7% of segments
+  reach 30px). Use skimage 1px thinning with crossing-number junctions
+  instead (2.0% junctions, 70.4% of segments over 30px). Connected-component
+  metrics such as `long_component_ratio` do not depend on width and are
+  unaffected.
+- **Binarising a conditioning map before skeletonising changes results by
+  half.** A naive `>32` manufactures false junctions and 1-3px fragments from
+  edge jaggies; filling holes first takes skeleton capture from 0.42 to 0.62
+  and a measured ceiling from 0.193 to 0.301.
+- **`manga_line` is nearly empty on the training pairs.** It holds 12% of GT's
+  stroke length there (median 6%) against 30% on holdout, and is essentially
+  blank on 19% of training tiles -- so Track A trained largely on "draw line
+  art from an empty input", which fits its stroke-adding behaviour. Soft
+  pencil, stroke width, blur and upscaling were each measured and eliminated;
+  what the images show is extreme close-ups of thick soft graphite, where the
+  structure the extractor looks for (thin dark lines on white) does not exist
+  at that scale. **A fix is known but not applied**: downscale the rough to
+  240px and auto-contrast before the extractor, taking GT agreement from 0.010
+  to 0.185 on empty tiles (verified against a 180-degree-rotation chance
+  baseline, so it is not amplified paper grain). It does not close the gap to
+  holdout's 0.30, and **it must be applied to training and holdout together or
+  it merely inverts the train/eval mismatch.** `lineart_coarse` does not have
+  this problem (66% on training pairs, 60% on holdout).
+- **Do not read "strokes drawn where the conditioning map has none"
+  (`gt_only`) on its own.** A degenerate output that covers the whole tile in
+  dither scores highest on it; across 15 snapshots it correlates with
+  `gt_bsds_f1` at **-0.269**. It also tracks the "strokes the map does have"
+  column at r 0.75-0.90 within an arm, so report the normalised form too, and
+  always beside f1, `fill_ratio`, `near_white_frac` and a montage.
+- **Per-pair alignment scores now exist for all 8,467 training pairs**:
+  `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
+  (rough / manga_line / lineart_coarse, each with `le3`, `3to8`, `gt8`,
+  `chance_le3`, `aligned`, `density`). Usable for weighting or excluding
+  training data. Chance is measured by rotating each conditioning map 180
+  degrees; horizontal flip was rejected because panel borders survive it and
+  inflate the baseline.
 
 ## Active Goal
 
@@ -185,7 +317,9 @@ That residual is measured, and it is two different problems by pool:
   ink, so strokes must be removed. On the 192-tile `lineart_family` group, a
   delete-only oracle reaches f1 **0.7425** where `lineart_coarse` alone scores
   0.3231 and the best model this project ever trained scores 0.2514.
-  This is `../lineart-stroke-selection`, and it is the active direction.
+  This is `../lineart-stroke-selection`. **Caveat established since**: the
+  oracle's 0.7425 depends on pixel-level partial credit and does not survive
+  being reduced to per-segment keep/drop decisions (see that track's bullet).
 - **Solid fills**, on the housei/ako5 pools: the preprocessor's `fill_ratio` is
   0.0% against GT's 24.5%, because an edge detector structurally cannot fill.
   Over 12,000 tiles of this type have never been trained on or evaluated.
@@ -202,17 +336,32 @@ keeping**, and that is the distinction to hold on to: the evidence is against
 diffusion generation closing this gap, not against that particular loss doing
 what it was designed to do.
 
-Running alongside the deletion work is a **diagnosis**, not another attempt at
-the gap: `../lineart-pair-signal` (branch `pair-signal`, opened 2026-09-13).
-Every fine-tune this project has run on its 8,467 pairs either degraded the
-result or improved mechanically without beating a preprocessor run. That the
-pairs contributed nothing is settled; **why** has never been investigated, and
-the answer decides what the pair data is still good for. It is not only a
-post-mortem of the closed tracks: **Track C's labels come from the same pairs**
-(did this preprocessor stroke match GT), so if the pairs are the problem, the
-deletion work inherits it -- and if the problem is latent diffusion as a
-vehicle, a pixel-space discriminative model never touches it. Getting at least
-its first answer before Track C trains a baseline is the point.
+The diagnosis that ran alongside it, `../lineart-pair-signal`, **finished on
+2026-09-17 and answered the question it was opened for.** The pairs contribute
+nothing to generative fine-tuning not because of the VAE, not because of loose
+correspondence, and not because of scale, but because **the objective itself
+converges on reproducing the conditioning map** (lesson 8). Two consequences
+follow directly, and they point in opposite directions:
+
+- **Do not invest in better pairs for generative training.** Better-aligned
+  pairs and 18x more pairs both changed nothing about whether the model draws
+  what the conditioning map lacks.
+- **The pair data is not devalued -- its role is confirmed.** It is supervision
+  for selection, and it is the measuring instrument every verdict in this file
+  rests on. The risk it posed to the deletion work was checked and is absent:
+  a pixel-space discriminative model never passes through the VAE, and Track C's
+  own visual check found the pair correspondence structurally sound on
+  lineart_family.
+
+**What this does not resolve is whether selection alone is enough.** Track C's
+route is now constrained from two independent measurements: the preprocessor's
+output does not decompose into strokes, so segment-level keep/drop cannot reach
+pixel-level selection, and selection by construction cannot add strokes the map
+lacks -- roughly 16% of GT's stroke length on lineart_family, which is what
+caps the oracle's recall at 0.604. **Note that this file is behind on that
+question**: notices stop at 2026-09-17 and at least four further tracks have
+been committing since, including ones whose names suggest a different route
+entirely. See the last Next Actions item.
 
 **The raw-extraction goal that stood here through 2026-08 is done.** The
 clip_pairs v3 re-extraction, the 8,798-tile combined pool
@@ -227,7 +376,8 @@ Old leak-era `shape1` scores are not adoption targets. Use clean eval metrics
 and montage review only as current references. Evaluate line art with the
 BSDS-style one-to-one matching F1 (`gt_bsds_f1`), and always report
 `line_width_p50`, `ink_ratio`, `fill_ratio` and the conditioning map's own
-score alongside it -- see the six lessons at the top of this file.
+score alongside it -- see the eight lessons at the top of this file, and
+**never the training loss** (lesson 7).
 
 ## Current Data Direction
 
@@ -583,10 +733,10 @@ closed out as of this commit.
 
 ## Next Actions
 
-Items 1-2 are the active work, each in its own worktree with its own briefing
-and work log: item 1 tries to close the gap, item 2 diagnoses why every attempt
-so far failed to. Item 3 is a deferred strategic question; items 4-7 are
-common-foundation housekeeping, none of them blocking. Both ControlNet tracks
+Item 1 is the active work of the tracks known to this file; item 2 is two open
+bugs in shared tooling. Item 3 is a deferred strategic question; items 4-6 are
+common-foundation housekeeping, none of them blocking. **Item 7 is the most
+important one**: this file has lost track of the project since 2026-09-17. Both ControlNet tracks
 are closed as of 2026-09-13 and neither leaves work behind -- see the pointer
 section above.
 
@@ -599,7 +749,18 @@ section above.
    trusting the number** -- this project has been misled by a metric three
    times (orientation_entropy alone, gt_bsds_f1 alone, near_white_frac alone),
    and 0.74 is an oracle that consults GT, so it is an upper bound by
-   construction, not an achievable score. Note also that the oracle's recall
+   construction, not an achievable score. **That first move is done (2026-09-13)
+   and the oracle passed**, and a minimal pixel-level baseline has since been
+   trained. **What has changed the shape of this item**: 0.7425 is now known to
+   depend on pixel-level partial credit. Reduced to per-segment keep/drop it
+   collapses to 0.301 against a pixel-level 0.552, and cutting the skeleton
+   finer (40/20/10/5px) only recovers to 0.162 -- because the preprocessor's
+   skeleton is short fragments in a dense junction mesh, not strokes. So the
+   unit of decision has to stay at pixel level, or the representation has to
+   change; "cut it finer" is measured and closed. Also note lesson 7 applies
+   here even though this is a discriminative objective: score a holdout at each
+   snapshot rather than watching the loss.
+   Note also that the oracle's recall
    is capped at 0.604 because the preprocessor never finds the other 40% of
    GT's strokes, so the choice of preprocessor should be revisited on ceiling
    (recall) rather than on its own standalone f1 -- `lineart_coarse` scores
@@ -620,21 +781,21 @@ section above.
    `lineart_coarse`'s **0.7425** (recall 0.604), on the same `lineart_family`
    192-tile group, so the two are directly comparable. `manga_line` is the
    weaker basis for a selection approach.
-2. **Pair-signal diagnosis** (`../lineart-pair-signal`): why did the pair data
-   contribute nothing? Run in this order, and **stop and report after the
-   first** -- it may settle everything. (a) **VAE round-trip ceiling**: encode
-   and decode GT tiles and score the result against the GT they came from, on
-   `gt_bsds_f1` and the paper axes, for both SD1.5 and SDXL. Inference only,
-   minutes. `tools/evaluation/condition_roundtrip_fidelity.py` does not cover
-   this -- it measures conditioning maps, not the VAE -- so it needs new code.
-   If the round-trip scores near the current best of ~0.25, the ceiling was
-   never reachable and nothing else needs explaining. (b) **Loss-versus-quality
-   correlation**, using checkpoints that already exist, no training: Track B
-   watched its loss fall the whole way down while every axis a human cares
-   about got worse; whether that is systematic decorrelation or an accident is
-   unknown. (c) Only then, pair correspondence quality -- which is the
-   hypothesis that would also implicate Track C's labels.
-   Briefing: `../lineart-pair-signal/doc/initial_notice.md`.
+2. **Fix the two tool bugs found in `inbox/` (both still open).**
+   (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
+   192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
+   looking for the file rather than by a `housei` prefix test, the way the
+   holdout runner already does. Then re-check any past 192-tile number that
+   went through it. (b) `bipartite_match_f1`'s pathological slowness has a
+   working mitigation in one track
+   (`tools/evaluation/vae_roundtrip_score.py`, per-tile subprocess with a hard
+   timeout) but nothing shared -- every track batch-scoring `gt_bsds_f1` needs
+   it. Lifting that into the shared evaluation path is the cheap fix; changing
+   the metric itself is not on the table, it is validated and comparisons
+   depend on it. The unapplied `manga_line` emptiness fix (downscale to 240px
+   plus auto-contrast) is a data-side decision, not a bug fix -- and it must be
+   applied to training and holdout together or it inverts the mismatch.
+   Details for all three: **Known Tool Traps** above.
 3. **Solid fills (the housei/ako5 pools): deferred, by user decision
    2026-09-13.** Not dropped -- the question was put and answered "not now".
    Recorded here so it stays visible rather than becoming a silent omission.
@@ -667,7 +828,28 @@ section above.
    the work above.
 6. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-7. Revisit whether `--max-soft-ink-ratio` needs a per-source
+7. **This file is behind the project. Reconcile the track ledger.** Notices
+   stop at 2026-09-17, but as of 2026-09-30 at least four further worktrees
+   have been committing and are registered nowhere here:
+   `../lineart-aesthetic-judge` (last commit 09-17, "pause collection"),
+   `../lineart-stroke-grammar` (09-21, measurement phase closed),
+   `../lineart-panel-generation` (09-25) and `../lineart-face-words` (09-25).
+   Three proposals exist only in those trees' `outbox/` and were never merged
+   into `diffusion`: Track E (`track_proposal_aesthetic_judge_20260916.md`, a
+   judge of "line-art-ness", to arbitrate where GT and the conditioning map
+   disagree), Track G (`track_g_generation_proposal_20260921.md`, panel
+   generation -- authored by Kimi, marked draft/unapproved) and Track H
+   (`track_h_face_words_proposal_20260924.md`, face-part words, marked
+   **approved 2026-09-25**). The names suggest the project has moved from
+   "delete strokes the preprocessor over-draws" toward "treat strokes as words,
+   learn their grammar, then generate" -- if so, **the Active Goal above is
+   describing a superseded route.** Two of those trees also hold an external
+   review exchange (`KIMIからの意見.md`, `KIMIへの返信_20260919.md`) with no
+   record here. Reading those proposals and rewriting the pointer section and
+   Active Goal from them is the next foundation task; it was deliberately not
+   attempted in the 2026-09-30 pass, which only folded in what the ten notices
+   actually said.
+8. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.
