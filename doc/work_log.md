@@ -5425,3 +5425,58 @@ baseline (no adapter), `gt_same` (own GT -- leaks, bounds the mechanism the way
 the delete oracle does), `gt_other` (housei), `gt_otherfam` (different
 lineart_family image), the last three at `set_ip_adapter_scale` 0.4 and 0.8,
 since scale is what decided the analogous 2026-08-08 question.
+
+## 2026-09-30: 第一回プローブ — 単一csで回して失敗、判定材料にならず
+
+共通基盤セッションから起動した第一回。**完走したが、IP-Adapterの可否を
+判定する材料にはならない。**
+
+### 実行したもの
+
+`experiments/ipadapter_probe_20260930.py`。SD1.5 + 公開
+`control_v11p_sd15s2_lineart_anime` + `LineartDetector(coarse=True)`、
+**cs=2.5固定**、`holdout_lineart_family` 192タイル、8腕
+(条件画像単体 / baseline / gt_same・gt_other・gt_otherfam × scale 0.4・0.8)。
+推論のみ、学習なし。タイムアウト0件。所要は 5s/tile 程度。
+
+| 腕 | gt_bsds_f1 | vs_condition | ink_ratio | fill_ratio | near_white |
+|---|---:|---:|---:|---:|---:|
+| 条件画像 `lineart_coarse` 単体 | **0.3164** | 1.000 | 0.054 | 0.0005 | 0.870 |
+| baseline | 0.2023 | 0.432 | 0.442 | 0.202 | 0.162 |
+| gt_same s0.4 / s0.8 | 0.2029 / 0.2039 | 0.437 / 0.440 | | | 0.196 / 0.193 |
+| gt_other s0.4 / s0.8 | 0.2029 / 0.2047 | 0.434 / 0.439 | | | 0.191 / 0.192 |
+| gt_otherfam s0.4 / s0.8 | 0.2030 / 0.2042 | 0.437 / 0.440 | | | 0.193 / 0.196 |
+
+タイル単位の対応差は +0.0006〜+0.0023(121〜140/192で改善)。符号は一貫するが、
+条件画像との差 **-0.114** に対して無視できる大きさ。
+
+### なぜ判定材料にならないか
+
+**全腕がハッチ支配領域に落ちている。** ink_ratio 0.442 は条件画像の8倍、
+near_white 0.162 は条件画像の0.870に対して大きく低い。モンタージュ
+(`results/ipadapter_probe_20260930/montage_ipadapter_probe.png`)では
+7つの拡散系の腕すべてがタイル全面の灰色ハッチの壁で、**目視で区別できない**。
+`controlnet-realpairs`が診断したハッチ支配の失敗モードそのもの。
+
+原因は**cs=2.5を単一値で固定したこと**。2.5はTrack BのSDXL素ControlNetの値で、
+Track Aの2.5は自前LoRAを載せた構成のもの。**この構成で最適csを確立した
+トラックは無い。** 共通基盤lesson 1(単一csで比較するな、ハッチ支配領域では
+モデル間の差が潰れる)への違反で、まさにその通りの結果になった。
+
+**根本原因は実験の場所**: 文脈の長い共通基盤セッションから回したため、
+過去の数値の帰属を取り違えた。trackパターンが防ぐはずだったもの。
+
+### 残る資産
+
+- **採点配管は健全**: 条件画像単体 0.3164 がTrack Cの前処理器 0.3164 と一致
+- **腕の設計は妥当**: 特に`gt_otherfam`(同プール別タイル参照)は、`gt_other`の
+  housei参照がプールとタスクの2変数を同時に動かす問題を避けるために
+  実行中に追加されたもの。読むべき腕はこちら
+- 生成物は「cs2.5での記録」として保持。IP-Adapterの証拠としては使わない
+
+### 次
+
+`doc/initial_notice.md`の「次の一手」のとおり、**baselineのみでcsスイープ**を
+先に回して健全点を確定させる。その数値自体が
+「公開ControlNet素のSD1.5での最適cs」としてプロジェクトの資産になる。
+IP-Adapterの再測定はその後。
