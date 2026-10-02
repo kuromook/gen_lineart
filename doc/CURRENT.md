@@ -234,6 +234,38 @@ work, and the stated expectation is that the pieces make each other easier.
   words line -- interpretability has to be produced before preference can be
   measured. UI and pairs are kept at `results/comparison_pairs_20260916/`.
 
+### Opened since the reconciliation
+
+- `../lineart-image-prompt` (branch `image-prompt`, **Track I**) -- **opened
+  2026-09-30**, read `## Approaches Never Taken Up` below for why. Does an
+  IP-Adapter image-prompt channel change lesson 8's mechanism, or only add a
+  second thing to copy? **Its first probe is void and the reason is worth
+  carrying**: it ran 8 arms x 192 tiles and measured nothing, because cs was
+  fixed at 2.5 -- a figure borrowed from Track B's *SDXL* bare ControlNet and
+  from Track A's *LoRA-equipped* SD1.5, neither of which is this track's
+  configuration (SD1.5, public ControlNet, no LoRA), for which no cs has ever
+  been established. Every arm landed in the hatch-dominated regime (ink_ratio
+  0.442 against the conditioning map's 0.054, near_white 0.162 against 0.870),
+  where lesson 1 says differences collapse -- and they did: seven diffusion arms
+  visually indistinguishable. **The root cause was that the probe was run from
+  this foundation session**, where a long mixed context lost the binding between
+  a number and the configuration that produced it. The track now leads with a cs
+  sweep on the baseline alone, which also yields a figure this project does not
+  have: the best cs for the bare public ControlNet on SD1.5. What survives from
+  the void run is the plumbing anchor (conditioning map alone 0.3164, matching
+  Track C's 0.3164) and the arm design.
+
+### Not part of either line
+
+- `../lineart-controlnet-realpairs` -- the **closed** cross-hatch track, kept as
+  a plain directory (not a repo) because it holds physical copies of the pair
+  data and checkpoints. Its history is on branch `controlnet-realpairs`. Listed
+  here so an audit does not keep rediscovering it.
+- `../lineart-cleanup-refiner` (branch `cleanup-refiner`) -- **dormant** since
+  2026-08-04, from the CNN+GAN era (clDice topology loss, rough-fidelity
+  metrics). Not part of the current route; see lesson 5 and Next Actions on why
+  that architecture was left.
+
 Proposals, now held here rather than only in those trees' gitignored `outbox/`:
 `doc/track_proposal_aesthetic_judge_20260916.md` (E),
 `doc/track_g_generation_proposal_20260921.md` (G),
@@ -385,6 +417,57 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    instrument it has been all along. The one caveat the track states itself:
    the aligned-pairs arm ran 2,290 steps, so a far longer run cannot be
    strictly excluded, though its pre-registered criteria did not ask for one.
+
+## Working Discipline
+
+Added 2026-10-02 after a session in which the foundation itself produced a void
+experiment. The failure was not forgetting a fact. Every fact needed was present;
+what came loose was the **binding between a number and the configuration that
+produced it** -- `cs=2.5` kept its "best" label and lost its "for SDXL bare, from
+Track B" qualifier. That is what a long mixed-context session does, so the
+mitigation is not to remember harder but to write bindings into artifacts, and to
+let one check run without depending on anyone's attention.
+
+These are deliberately few. This project has already shown that documentation
+past a certain volume degrades rather than helps -- a briefing grew past 900
+lines and stopped working -- so each rule below has to earn its place against an
+incident that actually happened here.
+
+1. **A number is not quotable without its configuration.** Write
+   `cs2.5 (SDXL bare / 1024 / Track B)`, never `cs2.5 (best)`. Lesson 6 already
+   enforces one instance of this (always report the conditioning map's own
+   score); this generalises it. Four incidents trace to a bare number travelling:
+   cs2.5 above; `0.2582` credited to a model when it was the preprocessor's;
+   `line_width_p50 7.59` read as thick strokes when it was solid fill; the
+   `0.651` endpoint-gap that was a tokeniser artefact.
+2. **Every new measurement includes a cell whose value is already known, and if
+   it does not reproduce, nothing else in the run is read.** Already the practice
+   that caught the most: Track B verified its cs=1.0 column against historical
+   values before trusting an eleven-model table; Track D reproduced 0.2514 as
+   0.2513 before believing its snapshots; the void probe's conditioning-map cell
+   matched Track C's 0.3164, which is how we know its plumbing was innocent and
+   only its design was wrong.
+3. **A retraction is a pass, not an entry.** When a number is withdrawn, correct
+   every store that repeated it in the same sitting, and say what replaced it.
+   `0.2582` stayed in memory as "best ever" for weeks after it was retracted.
+   A reader who meets one retraction should be able to see which other numbers
+   came from the same batch.
+4. **Run `tools/audit_track_ledger.py` when picking this file up.** Read-only; it
+   reconciles the ledger against the filesystem, finds tracks that exist but are
+   unlisted and listed tracks that no longer exist, flags separate clones that
+   `git worktree list` cannot see, and reports each track's commits-since-last-
+   notice gap. It exists because the thirteen-day gap of 2026-09-17..30 was
+   mechanically detectable the whole time and nothing was looking.
+5. **The foundation session does not run experiments.** Its job is recording and
+   routing. Theme work belongs in a track, started in a clean session from that
+   track's briefing. This is a role boundary rather than a caution, because the
+   caution failed.
+
+**When you suspect the knowledge has already muddled**, stop producing results
+and run these in order: re-run the anchors (separates a broken tool from a broken
+understanding), reconcile the index against the filesystem, then walk the numbers
+this file currently quotes and check each still carries its configuration and a
+traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
 

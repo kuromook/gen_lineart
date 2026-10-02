@@ -5341,3 +5341,45 @@ future track living outside the integration tree's worktrees be recorded there
 
 An inference-only IP-Adapter probe was launched separately; its result is not in
 this entry.
+
+## 2026-10-02: A Void Experiment, And The Discipline Added Because Of It
+
+The IP-Adapter probe (Track I) completed and measured nothing. It ran 8 arms x
+192 tiles with `cs` fixed at 2.5, and every arm landed in the hatch-dominated
+regime -- ink_ratio 0.442 against the conditioning map's 0.054, near_white 0.162
+against 0.870, seven diffusion arms visually indistinguishable in the montage.
+Lesson 1 says differences collapse there, and they did.
+
+2.5 came from Track B's bare **SDXL** ControlNet and from Track A's
+**LoRA-equipped** SD1.5. Track I's configuration is neither: SD1.5, public
+ControlNet, no LoRA, for which no cs has ever been established. The number kept
+its "best" label and lost its qualifier.
+
+**The user's diagnosis of the root cause is the part worth keeping**: the error
+was not the cs choice but running the experiment from this long common-foundation
+session at all. The knowledge needed was all present in context; what came loose
+was the binding between a number and its configuration. That is the specific
+thing a long mixed-context session does, and it is exactly what the track pattern
+exists to prevent.
+
+Recorded in Track I's briefing (`b114771`) so the next session there starts from
+it, with the first step now a cs sweep on the baseline alone -- which also yields
+a figure this project lacks, the best cs for the bare public ControlNet on SD1.5.
+What survives the void run: the plumbing anchor (conditioning map alone 0.3164,
+matching Track C's 0.3164) and the arm design, including the `gt_otherfam` arm
+added mid-run because the housei reference moves pool and task at once.
+
+**Added `## Working Discipline` to `doc/CURRENT.md`** -- five rules, each tied to
+an incident that happened here, plus a named recovery procedure for when muddle
+is already suspected. Deliberately few: this project has already demonstrated
+that documentation past a certain volume degrades rather than helps.
+
+**Added `tools/audit_track_ledger.py`** -- the one rule in the set that does not
+rely on attention. Read-only. It reconciles the ledger against the filesystem,
+detects separate clones invisible to `git worktree list`, and reports each
+track's commits-since-last-notice gap. First run produced 14 findings, all real;
+after registering the three unlisted tracks (Track I, and the closed realpairs
+and dormant cleanup-refiner directories) it is down to 8, which are uncommitted
+work in other sessions' trees plus two genuine reporting gaps:
+`lineart-panel-generation` has never sent a notice and last committed 6 days ago,
+and `lineart-stroke-selection` has committed 4 days past its last notice.
