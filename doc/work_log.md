@@ -5383,3 +5383,36 @@ and dormant cleanup-refiner directories) it is down to 8, which are uncommitted
 work in other sessions' trees plus two genuine reporting gaps:
 `lineart-panel-generation` has never sent a notice and last committed 6 days ago,
 and `lineart-stroke-selection` has committed 4 days past its last notice.
+
+## 2026-10-02 (later): Re-reading Every f1 Against The Floor
+
+On the user's instruction, immediately after Track I's lesson 9 landed. No new
+measurement -- the figures this file already quotes, with 0.1941 subtracted and
+expressed as a share of the floor-to-oracle span. Written up in
+`doc/CURRENT.md` under `## Every f1 On Record, Read Against The Floor`.
+
+**Nothing changes rank and no past conclusion reverses.** What changes is the
+size of what was being argued about. On `lineart_coarse` the project's entire
+history occupies 1.5% to 23.5% of the span between the floor and the delete-only
+oracle, and the top of that band is the conditioning map doing nothing at all.
+Track C's classifier, the best trained result on record, is 22.2% -- 0.0003 short
+of its own baseline, not meaningfully near it. On `manga_line`, where the oracle
+is lower, Track A's best is 18.2% and Track D's f1 peak 24.2%, both under the
+28.3% of leaving the conditioning map alone.
+
+Two caveats came out of the re-reading and matter more than the table:
+
+1. **The floor is density-dependent, not a constant.** It was measured on a
+   dense degenerate output -- these diffusion outputs run near ink_ratio 0.44
+   against the conditioning map's 0.054. A sparse unrelated image scores lower,
+   so subtracting one number flatters dense outputs and understates the sparse
+   conditioning map, whose true margin over its own floor is wider than +0.1290.
+2. **The five-tile floor has never been measured**, and `diag_valid5` is where
+   the eleven-model table, the cs sweep and both ControlNet tracks' early
+   verdicts were decided. Three figures on record there sit below the 192-tile
+   floor: SDXL ft 1024 at 0.1539, the old cs=1.0 default at 0.1411, and the
+   eleven-model band at cs1.0 around 0.13-0.15. If the five-tile floor is near
+   0.1941, those were comparisons of noise. One degenerate run on five tiles
+   settles it, no training. Until then, five-tile figures under about 0.20 are
+   unranked rather than results. The housei floor is unmeasured too and likely
+   different -- 38% of its tiles are near-blank.

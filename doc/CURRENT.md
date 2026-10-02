@@ -474,6 +474,74 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    here that agrees with what the eye reports ("the picture has not moved off
    the rough") rather than contradicting it.
 
+## Every f1 On Record, Read Against The Floor
+
+Done 2026-10-02 on the user's instruction, immediately after lesson 9 landed.
+This is step 4 of the recovery procedure below -- walk the numbers this file
+quotes and check what each one actually says. Nothing here is a new measurement;
+it is the same figures with `0.1941` subtracted and expressed as a fraction of
+the distance from that floor to the delete-only oracle, which is the real span
+available to a selection approach.
+
+**On `lineart_coarse`, floor 0.1941 to oracle 0.7425 (span 0.5484):**
+
+| | f1 | above floor | share of span |
+|---|---:|---:|---:|
+| delete-only oracle | 0.7425 | +0.5484 | 100% |
+| conditioning map alone (Track B batch) | 0.3231 | +0.1290 | 23.5% |
+| conditioning map alone (Track I batch) | 0.3164 | +0.1223 | 22.3% |
+| Track C pixel classifier (16,201 param) | 0.3161 | +0.1220 | 22.2% |
+| Track D aligned-pairs arm (2,290 steps) | 0.2564 | +0.0623 | 11.4% |
+| Track D control arm | 0.2466 | +0.0525 | 9.6% |
+| IP-Adapter probe, best arm (void run) | 0.2047 | +0.0106 | 1.9% |
+| IP-Adapter probe, baseline (void run) | 0.2023 | +0.0082 | 1.5% |
+
+**On `manga_line`, floor 0.1941 to oracle 0.5143 (span 0.3202):**
+
+| | f1 | above floor | share of span |
+|---|---:|---:|---:|
+| delete-only oracle | 0.5143 | +0.3202 | 100% |
+| conditioning map alone | 0.2847 | +0.0906 | 28.3% |
+| Track D instrumented run, step 7000 (f1 peak) | 0.2715 | +0.0774 | 24.2% |
+| Track A round 2 best (`w=0.4`) | 0.2524 | +0.0583 | 18.2% |
+| Track A round 1 best (`w=0.2`) | 0.2514 | +0.0573 | 17.9% |
+| Track D instrumented run, final | 0.2513 | +0.0572 | 17.9% |
+| Track D instrumented run, step 1000 | 0.2270 | +0.0329 | 10.3% |
+
+**What the re-reading changes.** Nothing moves rank, and the direction of every
+past conclusion holds. What changes is the size of the thing being argued about.
+On `lineart_coarse` the whole history of this project occupies the band from
+1.5% to 23.5% of the available span, and the top of that band is the
+conditioning map doing nothing. The best trained model ever measured here, Track
+C's classifier, is 22.2% -- 0.0003 short of its own baseline rather than
+meaningfully near it. On `manga_line` the picture is slightly kinder because the
+oracle is lower: Track A's best reaches 18.2% and Track D's f1 peak 24.2%, both
+still under the 28.3% of leaving the conditioning map alone.
+
+**Two caveats, both of which matter more than the table.**
+
+1. **The floor is a property of density, not a constant.** It was measured with
+   a *dense* degenerate output (ink_ratio of these diffusion outputs runs near
+   0.44 against the conditioning map's 0.054). A sparse unrelated image would
+   score lower, so each sparse output's own floor is below 0.1941 and each dense
+   one's is at it. Subtracting a single number therefore flatters the dense
+   outputs and understates the sparse conditioning map: the preprocessor's true
+   margin over *its* floor is wider than +0.1290. Do not read the share-of-span
+   column as if one floor applied equally to both.
+2. **The five-tile floor has never been measured, and a large part of this
+   project's history lives there.** `diag_valid5` is where the eleven-model
+   table, the cs sweep, and both ControlNet tracks' early verdicts were decided.
+   Three figures on record there sit *below* the 192-tile floor: SDXL ft 1024 at
+   **0.1539**, the old cs=1.0 default at **0.1411**, and the whole eleven-model
+   band at cs1.0 around **0.13-0.15**. If the five-tile floor is anywhere near
+   0.1941, those configurations were not merely weak -- they were at or below
+   what an image unrelated to the input scores, and comparisons among them were
+   comparisons of noise. **This is cheap to settle**: one degenerate run on five
+   tiles, no training. Until it is settled, treat any five-tile figure under
+   roughly 0.20 as unranked rather than as a result. The housei pool's floor is
+   also unmeasured and is likely different again -- 38% of its tiles are
+   near-blank, so density, and therefore the floor, is not comparable.
+
 ## Working Discipline
 
 Added 2026-10-02 after a session in which the foundation itself produced a void
