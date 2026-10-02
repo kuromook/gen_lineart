@@ -254,6 +254,27 @@ work, and the stated expectation is that the pieces make each other easier.
   have: the best cs for the bare public ControlNet on SD1.5. What survives from
   the void run is the plumbing anchor (conditioning map alone 0.3164, matching
   Track C's 0.3164) and the arm design.
+  **2026-10-02, the sweep ran and the answer is that no cs is healthy in that
+  configuration**, for a reason one layer below the borrowed number: the probe
+  fed `LineartDetector(coarse=True)` maps to `control_v11p_sd15s2_lineart_anime`,
+  a ControlNet trained on a *different* preprocessor, while the matching
+  `control_v11p_sd15_lineart` sat unused in the same checkpoint directory. With
+  the unpaired one, f1 is flat at 0.198-0.211 across cs 0.5-8.0 and
+  `vs_condition_f1` **peaks at cs5.0 and reverses** -- the signature of the
+  image collapsing rather than following; turning ControlNet fully off (cs 0.0)
+  changes f1-against-GT not at all, and so does swapping in a deliberately wrong
+  map. With the paired one, `vs_condition_f1` climbs monotonically to 0.872 and
+  f1 to 0.3115, approaching the conditioning map's 0.3164 **from below without
+  ever passing it** -- lesson 8, as a curve. Note also that cs is a plain
+  multiplier on the ControlNet residuals with **1.0 the magnitude it was trained
+  to emit**, so this project's habitual 2.0-3.5 is out of distribution by
+  construction. The track's own question has an answer for content transfer:
+  rescored with `stroke_decomposition.py` (lesson 9), the probe's arm leaking
+  the tile's **own GT** as the image prompt is indistinguishable from the arm
+  given an unrelated image -- every difference inside one standard error, win
+  rates at chance. Those two arms hold ControlNet fixed and vary only the
+  reference, so **that null belongs to IP-Adapter alone**, whatever state the
+  spatial channel was in. Untested: the tone axis in the paired configuration.
 
 ### Not part of either line
 
@@ -300,7 +321,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and eight lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and nine lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -417,6 +438,41 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    instrument it has been all along. The one caveat the track states itself:
    the aligned-pairs arm ran 2,290 steps, so a far longer run cannot be
    strictly excluded, though its pre-registered criteria did not ask for one.
+9. **`gt_bsds_f1` has a floor, and the thing to measure is low `neither_ink`
+   with high `b_recall` together -- f1 alone cannot be the yardstick.** Added
+   2026-10-02 from `../lineart-image-prompt` (Track I). Measured on 192
+   `holdout_lineart_family` tiles: an image with **no relation to the input at
+   all** (ControlNet residuals multiplied by zero) scores **f1 0.1941** against
+   GT and 0.3498 against the conditioning map, purely by being dense -- a 2px
+   one-to-one match lands somewhere on a hatched field whatever it depicts. So
+   every f1 in this project must be read against **0.1941, not 0**. Rescored
+   that way, the 2026-09-30 IP-Adapter probe's baseline cleared the floor by
+   **+0.008**, and its arms differed from each other by +0.0006 to +0.0023.
+   More importantly f1 cannot separate the two ways of failing, which look
+   identical through it: **(a) the output is still the rough**, and **(b) the
+   output added ink that suits the metric without being line art**. The split
+   that does separate them, implemented as
+   `tools/evaluation/stroke_decomposition.py` (no GPU; it runs on outputs
+   already on disk), partitions strokes by where they are, at the same 2px
+   tolerance:
+   **A shared** (in the conditioning map and the GT), **B GT-only** (must be
+   drawn), **C map-only** (must be deleted); then reports `b_recall`,
+   `c_survival` (lower is better) and `neither_ink` (output ink far from both
+   -- the "filling empty paper with invented imagery" axis). The conditioning
+   map is the trivial baseline at exactly **b_recall 0 / c_survival 1.0 /
+   neither_ink 0**, so anything that does not beat it on the first two is not
+   moving the rough toward the line art, whatever its f1. Across 25 arms
+   measured this way, **no arm achieved low `neither_ink` and high `b_recall`
+   together** -- only a strict trade-off, which is the signature of buying the
+   score with ink. Failure (b) looks like the unpaired-ControlNet config: two
+   thirds of its ink outside both the map and the GT at every scale. Failure
+   (a) looks like the paired one: `neither_ink` falls to 0.057 while
+   `b_recall` falls with it to 0.102 and `c_survival` stays 0.887 -- the
+   conditioning map, copied. Caveat to carry: `b_recall` is a proximity test,
+   so a dense output earns it for free; never read it without `neither_ink`
+   beside it. This is lesson 8 made measurable, and it is the first instrument
+   here that agrees with what the eye reports ("the picture has not moved off
+   the rough") rather than contradicting it.
 
 ## Working Discipline
 
@@ -623,7 +679,7 @@ strategy:
   24.5%, because an edge detector structurally cannot fill; over 12,000 tiles of
   that kind have never been trained on or evaluated, and targeting them is
   **deferred by user decision 2026-09-13**, not dropped.
-- **Lessons 1-8 and the tool traps below hold for every route.** Lesson 8 in
+- **Lessons 1-9 and the tool traps below hold for every route.** Lesson 8 in
   particular is why the generative-pixel-matching route is closed rather than
   merely unpromising.
 
@@ -690,7 +746,7 @@ Old leak-era `shape1` scores are not adoption targets. Use clean eval metrics
 and montage review only as current references. Evaluate line art with the
 BSDS-style one-to-one matching F1 (`gt_bsds_f1`), and always report
 `line_width_p50`, `ink_ratio`, `fill_ratio` and the conditioning map's own
-score alongside it -- see the eight lessons at the top of this file, and
+score alongside it -- see the nine lessons at the top of this file, and
 **never the training loss** (lesson 7).
 
 ## Current Data Direction
