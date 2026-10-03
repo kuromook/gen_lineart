@@ -44,7 +44,7 @@ GT_DIR = Path(
     "/home/sh1/deepl/lineart-controlnet-sd15-refine/data/holdout_lineart_family_gt_line"
 )
 SHARED = FOUNDATION / "dataset/pairs_480"
-WORKER = TRACK / "experiments/score_ipadapter_probe_one_20260930.py"
+WORKER = TRACK / "evaluation/score_f1_signal_one.py"
 PYTHON = FOUNDATION / "venv/bin/python"
 
 
