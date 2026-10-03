@@ -110,6 +110,30 @@ def parse_args():
     parser.add_argument("--controlnet-conditioning-scale", type=float, default=2.5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ip-scales", default="0.4,0.8")
+    # Added 2026-10-02 after checking this track's usage against the official
+    # diffusers guide and the h94 model card. Both defaults keep the
+    # 2026-09-30 behaviour, so earlier runs stay reproducible.
+    parser.add_argument(
+        "--ip-weight-name",
+        default="ip-adapter_sd15.safetensors",
+        help="`ip-adapter_sd15` conditions on the GLOBAL (pooled) CLIP embedding -- "
+             "the model card's own wording, and the premise this track's prediction "
+             "rested on. `ip-adapter-plus_sd15` conditions on PATCH embeddings and is "
+             "the variant that could carry stroke placement, so a null from the pooled "
+             "one does not cover it.",
+    )
+    parser.add_argument(
+        "--ip-scale-mode",
+        default="uniform",
+        choices=("uniform", "style_only", "style_layout"),
+        help="where the adapter is injected. `uniform` is one float on every block, "
+             "which is what 2026-09-30 did and what the docs warn 'focuses more on the "
+             "image prompt'. The others are InstantStyle (arXiv:2404.02733) as diffusers "
+             "implements it: up block_0 is the style block, down block_2 the layout "
+             "block. Injecting only into the style block is the documented way to move "
+             "tone without content leaking in -- and content leaking in is exactly what "
+             "neither_ink 0.195 -> 0.320 looked like.",
+    )
     parser.add_argument("--out-root", default="results/ipadapter_probe_20260930")
     parser.add_argument(
         "--arms",
@@ -128,6 +152,35 @@ def load_pipe(args):
     pipe.to("cuda")
     pipe.set_progress_bar_config(disable=True)
     return pipe
+
+
+def ip_scale_config(mode, scale):
+    """A float for every block, or InstantStyle's per-block dictionary.
+
+    THE BLOCK INDICES ARE ARCHITECTURE-SPECIFIC AND THESE ARE SD1.5's. The
+    diffusers guide's example, `{"up": {"block_0": [0.0, 1.0, 0.0]}}`, is
+    written against an SDXL pipeline, whose `up_blocks[0]` is a
+    CrossAttnUpBlock2D. SD1.5's `up_blocks[0]` is a plain UpBlock2D with **zero**
+    attention layers, so that dictionary names nothing, every IP-Adapter
+    processor keeps the 0.0 default, and the adapter is silently off -- it was
+    run that way once on 2026-10-02 and produced output byte-identical to the
+    baseline across all 8 arms. InstantStyle's own `infer_style_sd15.py` uses
+    `target_blocks=["up_blocks.1"]` for style and
+    `["down_blocks.2", "mid_block", "up_blocks.1"]` for style+layout; SD1.5's
+    `up_blocks[1]` is the first attention-bearing up block, the analogue of
+    SDXL's `up_blocks[0]`, and carries 3 attention layers.
+
+    Blocks left out of the dictionary are set to 0, i.e. the adapter is off
+    there -- which is the point of the mode, and also why a wrong index fails
+    silently rather than raising. Check the output differs from the baseline.
+    """
+    if mode == "uniform":
+        return scale
+    if mode == "style_only":
+        return {"up": {"block_1": [scale, scale, scale]}}
+    if mode == "style_layout":
+        return {"down": {"block_2": [scale, scale]}, "up": {"block_1": [scale, scale, scale]}}
+    raise ValueError(mode)
 
 
 def run_arm(pipe, args, tiles, refs, arm, ip_scale, out_dir):
@@ -209,17 +262,18 @@ def main():
             continue
         if not ip_loaded:
             pipe.load_ip_adapter(
-                "h94/IP-Adapter", subfolder="models", weight_name="ip-adapter_sd15.safetensors"
+                "h94/IP-Adapter", subfolder="models", weight_name=args.ip_weight_name
             )
             ip_loaded = True
         refs = {"gt_same": refs_same, "gt_other": refs_other,
                 "gt_otherfam": refs_otherfam}[arm]
         for scale in ip_scales:
-            pipe.set_ip_adapter_scale(scale)
+            pipe.set_ip_adapter_scale(ip_scale_config(args.ip_scale_mode, scale))
             tag = f"{arm}_s{scale}"
             print(f"[probe] arm {tag}, {len(tiles)} tiles", flush=True)
             run_arm(pipe, args, tiles, refs, arm, scale, out_root / tag)
 
+    print(f"[probe] weights={args.ip_weight_name} scale_mode={args.ip_scale_mode}", flush=True)
     print(f"[probe] done -> {out_root}", flush=True)
 
 
