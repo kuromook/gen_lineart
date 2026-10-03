@@ -615,6 +615,13 @@ def build_generator(model_name, in_channels=1):
         # (~16K params) since this is a deliberately minimal distance-to-ceiling
         # probe, not a final model. in_channels=1 (conditioning image only).
         return MaskCleanupGenerator(in_channels=in_channels, out_channels=1, channels=24, blocks=3)
+    if model_name == "strokeselect_large":
+        # Capacity/receptive-field tuning variable (step 2 sweep, 2026-10-03):
+        # same shape, back up to MaskCleanupGenerator's own default size
+        # (channels=48/blocks=5, ~105K params) to test whether the minimal
+        # 16K-param version was receptive-field-starved rather than just
+        # undertrained.
+        return MaskCleanupGenerator(in_channels=in_channels, out_channels=1, channels=48, blocks=5)
     if model_name == "flowmaskcleanup":
         return FlowMaskCleanupGenerator(in_channels=in_channels)
     if model_name == "flowmaskunet":

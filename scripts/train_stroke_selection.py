@@ -75,7 +75,7 @@ def to_keep_mask(cond_edge, logit, threshold=0.5):
 def save_checkpoint(path, model, epoch, args):
     torch.save(
         {
-            "model_name": "strokeselect",
+            "model_name": args.model_name,
             "epoch": epoch,
             "in_channels": 1,
             "G_state": model.state_dict(),
@@ -102,9 +102,9 @@ def train(args):
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                          num_workers=args.workers, drop_last=True)
 
-    model = build_generator("strokeselect", in_channels=1).to(device)
+    model = build_generator(args.model_name, in_channels=1).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"model: strokeselect, {n_params} params", flush=True)
+    print(f"model: {args.model_name}, {n_params} params", flush=True)
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
@@ -150,6 +150,8 @@ def main():
     p.add_argument("--rough-dir", default=str(C / "data/rough_lineart_coarse"))
     p.add_argument("--label-dir", default=str(C / "results/keep_labels_20260917"))
     p.add_argument("--checkpoint-dir", required=True)
+    p.add_argument("--model-name", default="strokeselect",
+                    help="registered name in lineart.model_zoo.build_generator")
     p.add_argument("--epochs", type=int, default=2)
     p.add_argument("--batch-size", type=int, default=2)
     p.add_argument("--lr", type=float, default=6e-5)
