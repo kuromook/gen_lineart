@@ -137,11 +137,20 @@ closed, as are both of its successors.
   under the ControlNet lineage carries the oracle and decomposition findings.
   **Step 2 completed 2026-09-17**: a 16,201-parameter pixel-level keep/drop
   classifier, trained 3 epochs on all 8,467 pairs (~9 minutes), scored on the
-  same group-A 192-tile batch as the oracle. f1 **0.3161** against the
-  preprocessor's 0.3164 -- flat -- but the composition is not flat at all:
-  **precision +0.068** (0.2373 -> 0.3057) and **recall -0.169** (0.5255 ->
-  0.3566). It is deleting, and over-deleting; the montage confirms it has
-  stopped simply echoing the conditioning map. Ceiling is 0.6765 on that batch.
+  same group-A 192-tile batch as the oracle. **Rescored under lesson 9 on
+  2026-10-03, and the rescoring reverses the reading**: raw f1 0.3202 against
+  the preprocessor's 0.3164 looked flat, but the classifier's output is sparser
+  (ink_ratio 0.042 against 0.055) and therefore has a *lower* floor (0.1275
+  against 0.1494), so in signal it is **+0.1928 against +0.1670 -- clear of its
+  baseline by +0.0258.** The flatness was the hidden floor difference, not the
+  result. `stroke_decomposition.py` agrees independently: `c_survival` falls
+  1.0 -> **0.6283**, i.e. it deletes 37% of the strokes that should go.
+  Composition was never flat either: **precision +0.068** (0.2373 -> 0.3057) and
+  **recall -0.169** (0.5255 -> 0.3566) -- it is deleting, and over-deleting.
+  Ceiling on that batch is the pixel-level oracle at signal **+0.4872** (raw
+  0.5870), so the gap remains large and the shape of the conclusion stands:
+  selection is learnable, and this minimal configuration is far from the
+  ceiling. Rescore data: `results/signal_rescore_20261003/` in that tree.
   Named next variables, to be isolated one at a time: the conservative 0.5
   threshold, epoch count, `pos_weight`. Results:
   `results/stroke_selection_eval_20260917/` in that tree.
@@ -523,6 +532,8 @@ the signal between them):
 | 5 | **SDXL fine-tune cs2.0** | 0.1539 | **0.0825** | **+0.0714** |
 | 5 | degenerate | 0.1332 | 0.1285 | +0.0047 |
 | 5 | anime cs2.5 (void probe) | 0.1277 | 0.1336 | **-0.0059** |
+| 192 | **Track C pixel classifier** | 0.3202 | **0.1275** | **+0.1928** |
+| 192 | Track C pixel-level oracle | 0.5870 | 0.0997 | **+0.4872** |
 | housei 100 | **GT line art itself** | 0.9100 | 0.8443 | **+0.0657** |
 | housei | conditioning map | 0.1573 | 0.1480 | +0.0093 |
 | housei | degenerate | 0.0978 | 0.1027 | -0.0049 |
@@ -547,19 +558,28 @@ the signal between them):
    average across pools": on housei the metric does not work at all, so no f1
    comparison there means anything, cross-pool or not.
 
+4. **The first rescoring of a real result reversed its reading, in the
+   direction the raw numbers hid.** Track C's classifier looked flat against
+   its baseline at raw f1 0.3202 vs 0.3164. Its output is sparser, so its floor
+   is lower, so in signal it clears the baseline by +0.0258. **A sparse output
+   is penalised by raw f1 and rewarded by signal** -- which is the direction
+   that matters here, because deleting strokes is exactly what makes an output
+   sparser. Any past comparison between outputs of differing density is
+   suspect in the same way.
+
 **Still unreadable.** Signal needs the outputs, so a figure whose outputs are
 gone cannot be recovered, and **a raw value alone says nothing about where it
 sits.** These remain unranked until rescored:
 
-- Track C's pixel classifier **0.3161** and the conditioning map's 0.3231 it is
-  measured against (192 tiles)
 - Track A's round-1 **0.2514** and round-2 **0.2524**, and `manga_line`'s own
   0.2847 (192 tiles)
 - Track D's instrumented snapshots, 0.2270 through 0.2715 (192 tiles)
 - the old cs=1.0 default **0.1411** and the eleven-model band at cs1.0 around
   **0.13-0.15** (five tiles) -- the ones that prompted the request, still open,
   because realpairs' outputs are needed and their density is unknown
-- both delete-only oracles, **0.7425** and **0.5143**
+- the stroke-level delete-only oracles, **0.7425** and **0.5143** (Track C's
+  *pixel*-level oracle is measured, above; these two are the stroke-level
+  figures from the earlier decomposition)
 
 Rescoring any of these is cheap where the outputs survive: no GPU, no training.
 Whether they do is the first thing to check before quoting them again.
@@ -1222,7 +1242,8 @@ see the Track Ledger above.
    by 0.9 bits while the montage stayed unreadable.
 3. **Stroke selection** (`../lineart-stroke-selection`, Track C -- live but
    untouched since 2026-09-17). It is not superseded and it still has the widest
-   measured headroom in the project: its minimal classifier sits at f1 0.3161
+   measured headroom in the project: its minimal classifier sits at signal
+   +0.1928 against an oracle's +0.4872 (raw f1 0.3202
    against a 0.6765 ceiling on the same batch. The first result is genuinely
    informative -- flat f1 but **precision +0.068 and recall -0.169**, i.e. it
    learned to delete and it over-deletes -- so the named next variables are

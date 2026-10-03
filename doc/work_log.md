@@ -5469,3 +5469,47 @@ needs the outputs: Track C's 0.3161, Track A's 0.2514/0.2524, Track D's
 snapshots, both delete-only oracles, and the cs=1.0 and eleven-model figures that
 prompted the request. Rescoring is cheap where the outputs survive. Whether they
 survive is the first thing to check before quoting any of them again.
+
+## 2026-10-03 (later): Track C Reports, And The Rescoring Reverses Its Reading
+
+`inbox/note_step2_result_and_signal_correction_20261003.md`. Two things in it
+matter beyond the numbers.
+
+**The audit script is what produced this notice.** Track C opens by saying it was
+reporting because `tools/audit_track_ledger.py` had flagged it as committing past
+its last notice. The step-2 result had been sitting unreported since 2026-09-17.
+Working Discipline rule 4 did the job it was added for, on its first week.
+
+**Rescoring under lesson 9 reversed the reading, in the direction raw f1 hides.**
+The classifier looked flat: raw f1 0.3202 against the preprocessor's 0.3164. But
+its output is sparser (ink_ratio 0.042 against 0.055), so its floor is *lower*
+(0.1275 against 0.1494), and in signal it clears the baseline by **+0.0258**
+(+0.1928 against +0.1670). `stroke_decomposition.py` agrees independently:
+`c_survival` falls from 1.0 to 0.6283, so it deletes 37% of the strokes that
+should go. The pixel-level oracle is signal **+0.4872**, so the gap is still
+large and the conclusion's shape stands -- selection is learnable, this minimal
+configuration is far from the ceiling.
+
+The general form is worth holding on to: **raw f1 penalises a sparse output and
+signal does not.** Deleting strokes is precisely what makes an output sparser, so
+any past comparison between outputs of differing density is suspect in the same
+way, and a deletion-shaped approach was being systematically undersold.
+
+**A porting error of this session's making, found and fixed by Track C.**
+`measure_f1_signal.py` was ported here on 2026-10-03 with its `WORKER` constant
+still pointing at Track I's path -- the orchestrator moved, the worker did not.
+Track C hit it, copied the worker to `tools/evaluation/score_f1_signal_one.py`,
+repointed the constant, and verified the fix reproduces the notice's figures
+exactly (committed here as `486cff4`). Logic unchanged, path only. The lesson for
+this session is narrow and concrete: when porting a tool between trees, run it
+once in the destination before announcing it.
+
+Also recorded from that notice: Track C is **delete-only by construction**
+(`to_keep_mask()` cannot place ink outside the conditioning map), so the **B axis
+of `stroke_decomposition.py` -- strokes that must be drawn -- is out of its scope
+by design**, the same distinction its briefing already drew at pool level, now
+holding at stroke level. The axes to watch there are `c_survival` and `a_recall`.
+Its non-zero `b_recall` (0.1163) is the known render/PNG/re-Canny drift that also
+made the 2026-09-13 oracle's precision 0.9948 rather than 1.0, not invented
+strokes; `neither_ink` being effectively zero in both arms confirms it is not
+adding ink anywhere unrelated.
