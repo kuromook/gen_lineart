@@ -32,16 +32,24 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1] / "results/trackc_judge_20261004"
-ARMS = ROOT / "rough_projected"
 GT = Path("/home/sh1/deepl/lineart-controlnet-sd15-refine/data/holdout_lineart_family_gt_line")
 TILES = Path("/home/sh1/deepl/lineart/dataset/pairs_480/holdout_lineart_family.txt")
-STAGE = ROOT / "stage"
 
 VARIANTS = ["rough", "classifier", "placebo", "oracle", "placebo_oracle"]
 PAIRINGS = [("classifier", "rough"), ("classifier", "placebo"), ("oracle", "placebo_oracle")]
 SEED = 20261004
 N_PER_QUINTILE = 16
 N_REPEATS = 60
+
+import argparse
+_ap = argparse.ArgumentParser()
+_ap.add_argument("--arms", default=str(ROOT / "stroke_projected"))
+_ap.add_argument("--stage", default=str(ROOT / "stage_stroke"))
+_ap.add_argument("--prefix", default="s")
+_args = _ap.parse_args()
+ARMS = Path(_args.arms)
+STAGE = Path(_args.stage)
+PREFIX = _args.prefix
 
 rng = np.random.default_rng(SEED)
 tiles = [Path(l.strip()).stem for l in open(TILES) if l.strip()]
@@ -92,10 +100,10 @@ rng.shuffle(seq)
 pairs = []
 for i, (t, a, b) in enumerate(seq):
     l, r = (a, b) if rng.random() < 0.5 else (b, a)
-    pairs.append({"id": f"c{i:04d}", "tile": t, "l": vi[l], "r": vi[r],
+    pairs.append({"id": f"{PREFIX}{i:04d}", "tile": t, "l": vi[l], "r": vi[r],
                   "pairing": f"{a}_vs_{b}", "rep": ""})
 ridx = rng.choice(len(pairs), size=N_REPEATS, replace=False)
-reps = [{"id": f"d{j:04d}", "tile": pairs[k]["tile"], "l": pairs[k]["r"], "r": pairs[k]["l"],
+reps = [{"id": f"{PREFIX}r{j:04d}", "tile": pairs[k]["tile"], "l": pairs[k]["r"], "r": pairs[k]["l"],
          "pairing": pairs[k]["pairing"], "rep": pairs[k]["id"]} for j, k in enumerate(ridx)]
 pos = sorted(rng.choice(range(len(pairs) // 2, len(pairs)), size=N_REPEATS, replace=False))
 for p, rw in zip(pos, reps):
@@ -104,12 +112,12 @@ print(f"pairs: {len(pairs)} ({len(reps)} repeats, sides swapped, placed in the b
 
 json.dump({"variants": VARIANTS, "pairs": pairs}, open(STAGE / "pairs.json", "w"),
           separators=(",", ":"))
-with open(ROOT / "pairs.csv", "w", newline="") as f:
+with open(ROOT / f"pairs_{PREFIX}.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["id", "tile", "pairing", "left_variant", "right_variant", "repeat_of"])
     for p in pairs:
         w.writerow([p["id"], p["tile"], p["pairing"], VARIANTS[p["l"]], VARIANTS[p["r"]], p["rep"]])
-with open(ROOT / "staged_profiles.csv", "w", newline="") as f:
+with open(ROOT / f"staged_profiles_{PREFIX}.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["tile", "variant", "near_white", "ink", "gt_ink"])
     for t in chosen:
@@ -124,5 +132,5 @@ json.dump({"variants": VARIANTS, "pairings": ["%s_vs_%s" % p for p in PAIRINGS],
            "rationale": "all four arms are the same rough with different ink erased, so rendering cannot "
                         "separate them; the placebo is matched on erased ink and on deleted-fragment sizes, "
                         "so classifier_vs_placebo isolates WHICH strokes went"},
-          open(ROOT / "design.json", "w"), indent=1)
-print("manifest:", ROOT / "pairs.csv")
+          open(ROOT / f"design_{PREFIX}.json", "w"), indent=1)
+print("manifest:", ROOT / f"pairs_{PREFIX}.csv")

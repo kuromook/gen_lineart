@@ -6054,3 +6054,80 @@ consistency on the 60 repeats first, then the instrument check, and only then
 the decisive pairing. The gate is unchanged: hold-out agreement >= intra-rater
 consistency x 0.85, and clearly above f1 / near_white / fill alone. Falling
 short still means not proceeding to stage 2.
+
+## 2026-10-04 (same day) The judge rejected the material, and was right
+
+77 pairs into collection the judge stopped and described what he was seeing:
+white specks scattered over the drawing, like falling snow, and those images
+were NG across the board.
+
+### What it was
+
+The classifier decides one contour pixel at a time, so any stroke it
+half-decides comes out dotted. Measured over the rough's stroke segments (1px
+skeleton split at crossing-number junctions, >=4px, ~301 segments/tile on 20
+tiles):
+
+| arm | kept whole | **left PARTIAL** | removed whole |
+|---|---:|---:|---:|
+| classifier | 0.439 | **0.386** | 0.175 |
+| placebo | 0.396 | **0.521** | 0.083 |
+| oracle | 0.109 | **0.340** | 0.551 |
+| placebo_oracle | 0.093 | **0.513** | 0.395 |
+
+Not an artifact of the projection: the per-pixel decision is what it is, and
+**the pixel oracle -- this project's own definition of a correct deletion --
+breaks 34% of strokes.**
+
+### The 77 judgements were measuring breakage, not choice
+
+| pairing | result |
+|---|---|
+| oracle vs placebo_oracle (instrument) | oracle 17/17, 10 ties |
+| classifier vs placebo (decisive) | classifier 23/24, 3 ties |
+| classifier vs rough | 10/13, 10 ties, not separable |
+
+The instrument had resolution. But **the chosen side had fewer broken strokes
+in 23 of the 24 decided pairs** -- the same count as the headline preference.
+The preference is fully explained by which arm damaged fewer strokes, so the
+set could not answer which strokes were chosen. The 2026-09-16 caveat
+("coherence of what remains and choice of strokes are the same thing in this
+material") turned out to be the whole story rather than a caveat.
+
+Record kept: `results/trackc_judge_20261004/pixel_level_record/`
+(the 77 judgements, the readout, the manifest and design of that set),
+UI https://claude.ai/artifact/CF5bePbbC2YBRmvLfeLJqo, zoom
+`results/trackc_judge_20261004/speckle_zoom.png`.
+
+### Rebuilt at the unit the question is asked in
+
+`tools/project_deletions_by_stroke.py`: the rough's ink is cut into stroke
+segments, every ink pixel adopts the nearest segment, and a segment is removed
+whole when the decision erased more than half of it, kept whole otherwise. The
+placebos draw whole segments at random, matched to the arm they control for on
+the size distribution of the removed segments and then topped up to close the
+remaining ink gap.
+
+**Partial segments after the rebuild: 0.000 in every arm** (was 0.340-0.521).
+
+| arm | erased ink | ink_ratio | near_white |
+|---|---:|---:|---:|
+| rough | 0 | 0.1418 | 0.8697 |
+| classifier | 8402.6 | 0.1053 | 0.9019 |
+| placebo | 8435.0 | 0.1052 | 0.9030 |
+| oracle | 24536.0 | 0.0353 | 0.9677 |
+| placebo_oracle | 24598.0 | 0.0350 | 0.9680 |
+
+Tone audit, tighter than the pixel-level set: classifier vs placebo median
+|d near_white| **0.0010** (p90 0.0015), oracle vs placebo_oracle **0.0003**
+(p90 0.0008), classifier vs rough 0.0318 (p90 0.0471, still the one pairing
+that cannot be matched).
+
+Same design otherwise: 80 tiles, 240 pairs + 60 repeats = 300, ids `s….`,
+manifest `pairs_s.csv`, design `design_s.json`, profiles
+`staged_profiles_s.csv`, zoom `stroke_level_zoom.png`.
+
+**UI: https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3**
+
+A preference on this set cannot be explained by stroke damage, because no arm
+has any. The gate is unchanged.
