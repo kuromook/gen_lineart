@@ -5923,3 +5923,134 @@ page reads existing judgements on load and resumes where it left off.
 **Next**: collect the 300, then read them back and check intra-rater
 consistency on the 60 repeats before fitting anything. The pre-registered gate
 stands: hold-out agreement >= intra-rater consistency x 0.85.
+
+## 2026-10-04 Track E reopens: Track C's deletion, made judgeable
+
+The foundation's 2026-10-03 notice reopened this track on the grounds that
+Track C's classifier is structurally deletion-only, so its output is a subset of
+the conditioning's ink and therefore interpretable. The first half of that is
+exactly true. The second half is not, as rendered.
+
+### The output universe is a contour map, not the drawing
+
+`to_keep_mask()` masks `edge_map(conditioning)` -- the Canny contour map -- so
+the classifier's output is a subset of *that*, drawn as those contour pixels.
+Checked on all 192 holdout tiles: the classifier output is a strict subset of
+the contour map on **192/192**. But a contour map renders every stroke as its
+own two-sided outline, so neither the before nor the after reads as line art.
+Putting them in front of a judge would have reproduced the 2026-09-17 stopping
+condition exactly.
+
+- `results/trackc_judge_20261004/arm_rendering_check.png`
+  (GT | inverted conditioning | contour map | classifier | oracle render)
+
+### The baseline Track C quoted is a different rendering
+
+`measure_f1_signal.py --arms condition=CONDITION` renders the **inverted raw
+conditioning**, not the contour map. `_inverted_condition` is a subset of the
+contour map on **0/192** tiles. The +0.0272 that Track C is about to build a
+structural change on brackets two different renderings, not a before and after.
+
+The structurally correct baseline is the contour map with nothing deleted:
+
+| arm | ink_ratio | f1_true | f1_floor | signal |
+|---|---:|---:|---:|---:|
+| keep_all (nothing deleted) | 0.0820 | 0.3144 | 0.1536 | **0.16078** |
+| classifier | 0.0421 | 0.3202 | 0.1275 | **0.19276** |
+| shuffled_edge (degenerate) | 0.0815 | 0.1473 | 0.1683 | **-0.02104** |
+| condition_raw (Track C's row) | 0.0545 | 0.3164 | 0.1494 | 0.16696 |
+
+**The deletion effect is +0.0320, not +0.0272.** The result is not overturned;
+it is slightly larger. The lesson-9 protocol check passes: the degenerate arm
+(each tile given another source image's contour map) lands at -0.021.
+
+- `results/trackc_judge_20261004/signal_baseline_recheck.csv` (+ `_per_tile.csv`)
+- builder `tools/materialize_edge_universe_arms.py`
+- sent to Track C: `../lineart-stroke-selection/inbox/note_signal_baseline_is_the_wrong_render_20261004.md`
+
+### Making the decision judgeable
+
+The decision is interpretable even though its rendering is not. Each ink pixel
+of the rough adopts the keep/delete label of its nearest contour pixel (within
+4px), and the deleted ink is erased. The result is the same drawing with some
+strokes gone, which is the question this track was reopened to answer.
+
+`tools/project_deletions_to_rough.py` writes five arms, identical in rendering:
+
+| arm | erased ink (mean px) | ink_ratio | near_white |
+|---|---:|---:|---:|
+| rough (before) | 0 | 0.1418 | 0.8697 |
+| classifier | 10507.4 | 0.0962 | 0.9100 |
+| placebo | 10507.4 | 0.0962 | 0.9117 |
+| oracle | 22880.0 | 0.0425 | 0.9609 |
+| placebo_oracle | 22838.3 | 0.0427 | 0.9612 |
+
+Each placebo takes the real deletion's fragments, keeps their size
+distribution, and relocates them at random positions along the same contour
+map, then bisects a size scale until the **erased ink** matches the arm it
+controls for. Matching deleted contour pixels is not enough -- relocated
+fragments land on differently dense parts of the drawing -- and it is visible
+ink a judge would otherwise read as the cue. The oracle gets its own control
+because it erases 2.2x what the classifier does, and the comparison everything
+else is gated on must not be decidable on paper tone.
+
+The pixel oracle's keep labels did not exist for the holdout; they were built
+with Track C's own `tools/selection/build_keep_labels.py` and the same
+definition (192/192 tiles, keep rate 0.2373, 0.5 s/tile) at
+`results/trackc_judge_20261004/holdout_keep_labels/`. The classifier keeps
+0.514 of the contour map against the oracle's 0.237.
+
+- `results/trackc_judge_20261004/five_arm_montage.png`
+- `results/trackc_judge_20261004/projected_arms_montage.png`
+
+### The set
+
+Three pairings per tile, each asking a different question, pre-registered in
+reading order:
+
+1. **oracle vs placebo_oracle** -- INSTRUMENT CHECK. If the ideal deletion is
+   not visibly better than a random one of the same size, the eye has no
+   resolution on this material and nothing below it may be read.
+2. **classifier vs placebo** -- the decisive one. Ink-matched and
+   fragment-size-matched, so the only thing separating them is which strokes
+   went. A preference here means the classifier's deletions respect stroke
+   structure; coherence of what remains and choice of strokes are the same
+   thing in this material and are not separable by any pairing.
+3. **classifier vs rough** -- was deleting an improvement at all. The one
+   pairing that cannot be ink-matched, reported separately and never pooled.
+
+Tone audit over the 80 staged tiles (the 2026-09-17 failure mode, now closed by
+construction rather than by dropping candidates):
+
+| pairing | median abs delta near_white | p90 | median abs delta ink |
+|---|---:|---:|---:|
+| classifier vs placebo | 0.0017 | 0.0028 | 0.0005 |
+| oracle vs placebo_oracle | 0.0010 | 0.0036 | 0.0009 |
+| classifier vs rough | 0.0387 | 0.0602 | 0.0429 |
+
+80 tiles (16 from each GT-ink quintile of the 192 holdout), 240 pairs plus 60
+repeats with sides swapped in the back half = **300 judgements**. Sprite slice
+order verified against the arm files on disk; repeats start at position 120 of
+300.
+
+- builder `tools/build_trackc_judge_pairs.py` (seed 20261004, deterministic)
+- readout `tools/analyze_trackc_judgements.py`
+- records: `results/trackc_judge_20261004/` -- `pairs.csv`, `design.json`,
+  `staged_profiles.csv`, `stage/`
+
+### The UI
+
+**https://claude.ai/artifact/CF5bePbbC2YBRmvLfeLJqo**
+
+The 2026-09-16 page, unchanged apart from the sprite width (5 variants), the
+title and the copy. Blind A/B, left / tie / right by click or arrow key, one
+undo, judgements written to the artifact's `db` under `judgments/<pairId>` and
+re-read on load so collection resumes. The store was exercised once after
+publishing (one probe document written, listed back, deleted).
+
+**Next**: collect the 300, then read them back with
+`tools/analyze_trackc_judgements.py` in the pre-registered order -- intra-rater
+consistency on the 60 repeats first, then the instrument check, and only then
+the decisive pairing. The gate is unchanged: hold-out agreement >= intra-rater
+consistency x 0.85, and clearly above f1 / near_white / fill alone. Falling
+short still means not proceeding to stage 2.
