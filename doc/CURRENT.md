@@ -444,10 +444,25 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    `holdout_lineart_family` tiles: an image with **no relation to the input at
    all** (ControlNet residuals multiplied by zero) scores **f1 0.1941** against
    GT and 0.3498 against the conditioning map, purely by being dense -- a 2px
-   one-to-one match lands somewhere on a hatched field whatever it depicts. So
-   every f1 in this project must be read against **0.1941, not 0**. Rescored
-   that way, the 2026-09-30 IP-Adapter probe's baseline cleared the floor by
-   **+0.008**, and its arms differed from each other by +0.0006 to +0.0023.
+   one-to-one match lands somewhere on a hatched field whatever it depicts.
+   **Revised 2026-10-03, and the revision matters: that floor is not a
+   constant.** It is a property of the individual output, so subtracting one
+   number misreads in both directions. The same degenerate construction scores
+   0.1941 on `holdout_lineart_family`, **0.1285** on `diag_valid5` and
+   **0.1027** on housei; and density alone does not predict it either -- two
+   arms at ink_ratio 0.425 and 0.443 floor at **0.148 and 0.204**, because ink
+   concentrated into strokes hits a random GT less often than ink scattered as
+   hatching. What to report instead is the **signal**, a per-output matched
+   null:
+   `signal = f1(output, its own GT) - mean_j f1(output_j of the same arm, that GT)`,
+   j over tiles from other source images, GT held fixed and only the prediction
+   swapped. Tool: `tools/evaluation/measure_f1_signal.py` (no GPU, runs on
+   outputs already on disk). **Protocol: run the degenerate output through the
+   same procedure first and read nothing else until its signal comes out near
+   zero** -- that check caught two measurement errors in the run that produced
+   these figures. Rescored this way the 2026-09-30 IP-Adapter probe's baseline
+   is **-0.0012** on 192 tiles and **-0.0059** on five: not slightly above a
+   floor, but exactly nothing.
    More importantly f1 cannot separate the two ways of failing, which look
    identical through it: **(a) the output is still the rough**, and **(b) the
    output added ink that suits the metric without being line art**. The split
@@ -474,73 +489,80 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    here that agrees with what the eye reports ("the picture has not moved off
    the rough") rather than contradicting it.
 
-## Every f1 On Record, Read Against The Floor
+## Every f1 On Record, And What Can Still Be Read
 
-Done 2026-10-02 on the user's instruction, immediately after lesson 9 landed.
-This is step 4 of the recovery procedure below -- walk the numbers this file
-quotes and check what each one actually says. Nothing here is a new measurement;
-it is the same figures with `0.1941` subtracted and expressed as a fraction of
-the distance from that floor to the delete-only oracle, which is the real span
-available to a selection approach.
+**This section replaced an earlier one, and the earlier one was wrong.** On
+2026-10-02 it subtracted a single floor of 0.1941 from every figure and reported
+each as a share of the floor-to-oracle span. Track I measured the floor properly
+the next day and it is not a constant: it belongs to the individual output. The
+tables built on one floor are withdrawn. Kept here as a worked example of why a
+retraction is a pass over every store that repeated the number, not a correction
+in one place (Working Discipline, rule 3).
 
-**On `lineart_coarse`, floor 0.1941 to oracle 0.7425 (span 0.5484):**
+The replacement is **signal** -- see lesson 9 for the definition and
+`tools/evaluation/measure_f1_signal.py` for the implementation. Only a number
+with its signal measured can be ranked against another.
 
-| | f1 | above floor | share of span |
-|---|---:|---:|---:|
-| delete-only oracle | 0.7425 | +0.5484 | 100% |
-| conditioning map alone (Track B batch) | 0.3231 | +0.1290 | 23.5% |
-| conditioning map alone (Track I batch) | 0.3164 | +0.1223 | 22.3% |
-| Track C pixel classifier (16,201 param) | 0.3161 | +0.1220 | 22.2% |
-| Track D aligned-pairs arm (2,290 steps) | 0.2564 | +0.0623 | 11.4% |
-| Track D control arm | 0.2466 | +0.0525 | 9.6% |
-| IP-Adapter probe, best arm (void run) | 0.2047 | +0.0106 | 1.9% |
-| IP-Adapter probe, baseline (void run) | 0.2023 | +0.0082 | 1.5% |
+**Measured so far** (Track I, 2026-10-03; raw f1, that output's own floor, and
+the signal between them):
 
-**On `manga_line`, floor 0.1941 to oracle 0.5143 (span 0.3202):**
+| set | arm | raw | floor | **signal** |
+|---|---|---:|---:|---:|
+| 192 lineart_family | GT line art itself | 0.9948 | 0.1062 | **+0.8886** |
+| 192 | conditioning map `lineart_coarse` | 0.3164 | 0.1494 | **+0.1670** |
+| 192 | matched cs2.5 | 0.3115 | 0.1478 | +0.1636 |
+| 192 | matched cs1.0 | 0.2745 | 0.1428 | +0.1317 |
+| 192 | anime cs6.0 | 0.2114 | 0.1975 | +0.0139 |
+| 192 | degenerate (residuals x0) | 0.1941 | 0.1942 | **-0.0001** |
+| 192 | anime cs2.5 (the void probe's baseline) | 0.2023 | 0.2036 | **-0.0012** |
+| diag_valid5 | conditioning map `lineart_coarse` | 0.2639 | 0.1078 | **+0.1561** |
+| 5 | matched cs2.5 | 0.2637 | 0.1082 | +0.1556 |
+| 5 | SDXL bare cs2.0 | 0.2612 | 0.1085 | **+0.1527** |
+| 5 | SDXL bare cs2.5 | 0.2615 | 0.1096 | +0.1519 |
+| 5 | SDXL bare cs3.0 | 0.2578 | 0.1113 | +0.1465 |
+| 5 | **SDXL fine-tune cs2.0** | 0.1539 | **0.0825** | **+0.0714** |
+| 5 | degenerate | 0.1332 | 0.1285 | +0.0047 |
+| 5 | anime cs2.5 (void probe) | 0.1277 | 0.1336 | **-0.0059** |
+| housei 100 | **GT line art itself** | 0.9100 | 0.8443 | **+0.0657** |
+| housei | conditioning map | 0.1573 | 0.1480 | +0.0093 |
+| housei | degenerate | 0.0978 | 0.1027 | -0.0049 |
 
-| | f1 | above floor | share of span |
-|---|---:|---:|---:|
-| delete-only oracle | 0.5143 | +0.3202 | 100% |
-| conditioning map alone | 0.2847 | +0.0906 | 28.3% |
-| Track D instrumented run, step 7000 (f1 peak) | 0.2715 | +0.0774 | 24.2% |
-| Track A round 2 best (`w=0.4`) | 0.2524 | +0.0583 | 18.2% |
-| Track A round 1 best (`w=0.2`) | 0.2514 | +0.0573 | 17.9% |
-| Track D instrumented run, final | 0.2513 | +0.0572 | 17.9% |
-| Track D instrumented run, step 1000 | 0.2270 | +0.0329 | 10.3% |
+**Three things this changes.**
 
-**What the re-reading changes.** Nothing moves rank, and the direction of every
-past conclusion holds. What changes is the size of the thing being argued about.
-On `lineart_coarse` the whole history of this project occupies the band from
-1.5% to 23.5% of the available span, and the top of that band is the
-conditioning map doing nothing. The best trained model ever measured here, Track
-C's classifier, is 22.2% -- 0.0003 short of its own baseline rather than
-meaningfully near it. On `manga_line` the picture is slightly kinder because the
-oracle is lower: Track A's best reaches 18.2% and Track D's f1 peak 24.2%, both
-still under the 28.3% of leaving the conditioning map alone.
+1. **The worry that drove the request was wrong, and the way it was wrong is the
+   lesson.** SDXL fine-tune's 0.1539 looked like it sat below the floor. Its own
+   floor is **0.0825** -- *lower* than the degenerate output's, because thick,
+   fill-heavy ink hits a random GT less often -- so it carries +0.0714 of real
+   signal. Judging it by one constant would have condemned a result that was
+   merely weak. The original conclusion survives and sharpens: bare SDXL carries
+   **+0.1527** against the fine-tune's **+0.0714**, less than half, so lesson 5
+   holds after floor correction rather than in spite of it.
+2. **The void probe was not marginal, it was null.** -0.0012 and -0.0059 against
+   a construction that reads +0.0047 on noise. Yesterday's reading of it as
+   "+0.008 above the floor, 1.5% of the span" was an artefact of the single
+   constant.
+3. **`gt_bsds_f1` has essentially no discriminative power on housei.** Feeding it
+   **the correct answer** yields +0.0657. 38% of those tiles are near-blank and
+   blank matches blank at high f1. This is stronger than lesson 6's "do not
+   average across pools": on housei the metric does not work at all, so no f1
+   comparison there means anything, cross-pool or not.
 
-**Two caveats, both of which matter more than the table.**
+**Still unreadable.** Signal needs the outputs, so a figure whose outputs are
+gone cannot be recovered, and **a raw value alone says nothing about where it
+sits.** These remain unranked until rescored:
 
-1. **The floor is a property of density, not a constant.** It was measured with
-   a *dense* degenerate output (ink_ratio of these diffusion outputs runs near
-   0.44 against the conditioning map's 0.054). A sparse unrelated image would
-   score lower, so each sparse output's own floor is below 0.1941 and each dense
-   one's is at it. Subtracting a single number therefore flatters the dense
-   outputs and understates the sparse conditioning map: the preprocessor's true
-   margin over *its* floor is wider than +0.1290. Do not read the share-of-span
-   column as if one floor applied equally to both.
-2. **The five-tile floor has never been measured, and a large part of this
-   project's history lives there.** `diag_valid5` is where the eleven-model
-   table, the cs sweep, and both ControlNet tracks' early verdicts were decided.
-   Three figures on record there sit *below* the 192-tile floor: SDXL ft 1024 at
-   **0.1539**, the old cs=1.0 default at **0.1411**, and the whole eleven-model
-   band at cs1.0 around **0.13-0.15**. If the five-tile floor is anywhere near
-   0.1941, those configurations were not merely weak -- they were at or below
-   what an image unrelated to the input scores, and comparisons among them were
-   comparisons of noise. **This is cheap to settle**: one degenerate run on five
-   tiles, no training. Until it is settled, treat any five-tile figure under
-   roughly 0.20 as unranked rather than as a result. The housei pool's floor is
-   also unmeasured and is likely different again -- 38% of its tiles are
-   near-blank, so density, and therefore the floor, is not comparable.
+- Track C's pixel classifier **0.3161** and the conditioning map's 0.3231 it is
+  measured against (192 tiles)
+- Track A's round-1 **0.2514** and round-2 **0.2524**, and `manga_line`'s own
+  0.2847 (192 tiles)
+- Track D's instrumented snapshots, 0.2270 through 0.2715 (192 tiles)
+- the old cs=1.0 default **0.1411** and the eleven-model band at cs1.0 around
+  **0.13-0.15** (five tiles) -- the ones that prompted the request, still open,
+  because realpairs' outputs are needed and their density is unknown
+- both delete-only oracles, **0.7425** and **0.5143**
+
+Rescoring any of these is cheap where the outputs survive: no GPU, no training.
+Whether they do is the first thing to check before quoting them again.
 
 ## Working Discipline
 

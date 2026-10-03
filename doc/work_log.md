@@ -5416,3 +5416,56 @@ Two caveats came out of the re-reading and matter more than the table:
    settles it, no training. Until then, five-tile figures under about 0.20 are
    unranked rather than results. The housei floor is unmeasured too and likely
    different -- 38% of its tiles are near-blank.
+
+## 2026-10-03: The Floor Is Not A Constant -- Yesterday's Re-reading Withdrawn
+
+Track I measured the floor properly after this session asked for the five-tile
+figure, and the answer overturns the re-reading done here on 2026-10-02.
+Notice: `inbox/note_floor_is_per_output_not_a_constant_20261003.md`.
+
+**The floor belongs to the individual output, not to the dataset.** The same
+degenerate construction scores 0.1941 on `holdout_lineart_family`, 0.1285 on
+`diag_valid5` and 0.1027 on housei. Density does not predict it either: two arms
+at ink_ratio 0.425 and 0.443 floor at 0.148 and 0.204, because ink concentrated
+into strokes hits a random GT less often than ink scattered as hatching. So the
+foundation's own suggestion of a per-density-band table was also insufficient --
+the right form is a per-output matched null, `signal = f1(output, its own GT)
+- mean_j f1(output_j of the same arm, that GT)`, GT fixed and only the prediction
+swapped.
+
+**The worry that prompted the request was wrong, and how it was wrong is the
+useful part.** SDXL fine-tune's 0.1539 looked like it was below the floor. Its
+own floor is 0.0825 -- lower than the degenerate output's, because thick
+fill-heavy ink hits a random GT less often -- so it carries +0.0714 of real
+signal. A single constant would have condemned a weak result as a null one. The
+original conclusion survives and sharpens instead: bare SDXL carries +0.1527
+against the fine-tune's +0.0714, less than half, so lesson 5 holds after floor
+correction rather than in spite of it.
+
+**Two findings worth more than the correction itself.** The 2026-09-30 void
+probe is not marginal but null: -0.0012 on 192 tiles, -0.0059 on five, against a
+construction that reads +0.0047 on noise. And **`gt_bsds_f1` has essentially no
+discriminative power on housei** -- feeding it the correct answer yields +0.0657,
+because 38% of those tiles are near-blank and blank matches blank. That is
+stronger than lesson 6: on housei the metric does not work at all.
+
+Track I also caught two measurement errors itself, both by running the degenerate
+output through the same procedure and checking its signal came out near zero:
+drawing mismatched partners from a small fixed set of images (the first tile of
+each source, which were whiter than average and understated the floor), and
+swapping GT instead of the prediction (which buries how hittable a particular GT
+is and gave the degenerate output -0.0645 where it must be 0). That check is now
+protocol.
+
+Actions here: lesson 9's f1 half rewritten around signal; the 2026-10-02 section
+withdrawn and replaced by `## Every f1 On Record, And What Can Still Be Read`,
+which keeps the withdrawal visible as a worked example of Working Discipline
+rule 3; and the tool ported to `tools/evaluation/measure_f1_signal.py` unchanged
+apart from a header. `stroke_decomposition.py` needs no change -- `b_recall` and
+`neither_ink` do not have this problem.
+
+**Most of this project's quoted f1 figures still cannot be read**, because signal
+needs the outputs: Track C's 0.3161, Track A's 0.2514/0.2524, Track D's
+snapshots, both delete-only oracles, and the cs=1.0 and eleven-model figures that
+prompted the request. Rescoring is cheap where the outputs survive. Whether they
+survive is the first thing to check before quoting any of them again.
