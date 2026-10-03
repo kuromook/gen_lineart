@@ -6131,3 +6131,52 @@ manifest `pairs_s.csv`, design `design_s.json`, profiles
 
 A preference on this set cannot be explained by stroke damage, because no arm
 has any. The gate is unchanged.
+
+### The metric's own verdict on the same material (2026-10-04)
+
+Track C confirmed the aggregation question: their `classifier_stroke_agg`
+(+0.0282 against `keep_all`) calls this track's `segments_to_drop` /
+`erased_pixels` / `stroke_labels` verbatim on the ink array, 208.5 segments
+dropped per tile against 208 here. The earlier Jaccard 0.649 was a bad
+reconstruction on this side -- re-deriving their decision from the published
+PNG by edge-pixel majority uses only the ~61% of Canny edge pixels that are
+ink, which is not the vote that produced the render. Same decision, confirmed.
+
+So the signal was measured on the arms the judge actually sees -- the rough
+with whole segments removed -- with a degenerate arm in the same rendering
+(each tile given another source image's rough). 187 tiles common to every arm;
+5 tiles dropped silently by the per-tile timeout
+(`lineart_003_023`, `lineart_005_002` for classifier; `lineart_002_014`,
+`lineart_004_010`, `lineart_004_013` for placebo), so every figure below is on
+the common set and the comparisons are paired.
+
+| arm | ink_ratio | signal (187 tiles) |
+|---|---:|---:|
+| rough | 0.0545 | 0.16386 |
+| classifier | 0.0478 | 0.19110 |
+| placebo | 0.0420 | 0.16383 |
+| oracle | 0.0144 | 0.34345 |
+| placebo_oracle | 0.0131 | 0.13402 |
+| shuffled_rough (degenerate) | 0.0548 | **-0.02425** |
+
+Paired, per tile:
+
+| question | difference | 95% CI | higher on |
+|---|---:|---|---:|
+| was deleting an improvement (classifier - rough) | +0.0272 | +0.0201..+0.0344 | 72.2% of tiles |
+| were these the right strokes (classifier - placebo) | +0.0273 | +0.0217..+0.0329 | 78.6% of tiles |
+| instrument check (oracle - placebo_oracle) | +0.2094 | +0.1994..+0.2195 | 99.5% of tiles |
+
+**The metric prefers the classifier over an ink-matched random stroke choice
+by the same margin it prefers it over not deleting at all.** That is the first
+time in this track that f1 signal has had an opinion about stroke choice rather
+than about density, and it is the number the human judgement now has to be
+compared against rather than merely added to.
+
+`tools/analyze_trackc_judgements.py` therefore also reports, per pairing, how
+often the per-tile signal ordering agrees with the judge. The stage-2 gate was
+always "clearly above f1 / near_white / fill alone"; this is what "alone" means
+on this material, computed in advance so it cannot be chosen after the fact.
+
+Files: `results/trackc_judge_20261004/stroke_projected_signal.csv`,
+`stroke_projected_signal_per_tile.csv`.

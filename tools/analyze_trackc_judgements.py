@@ -50,8 +50,17 @@ def load(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--judgements", required=True, help="dump of the judgments collection")
-    ap.add_argument("--pairs", default=str(ROOT / "pairs.csv"))
+    ap.add_argument("--pairs", default=str(ROOT / "pairs_s.csv"))
+    ap.add_argument("--signal-per-tile", default=str(ROOT / "stroke_projected_signal_per_tile.csv"),
+                    help="per-tile signal for the same arms, to ask whether f1 signal already "
+                         "predicts the judge; the stage-2 gate requires beating it clearly")
     args = ap.parse_args()
+
+    signal = defaultdict(dict)
+    sp = Path(args.signal_per_tile)
+    if sp.exists():
+        for r in csv.DictReader(open(sp)):
+            signal[r["arm"]][Path(r["tile"]).stem] = float(r["signal"])
 
     j = load(args.judgements)
     pairs = {r["id"]: r for r in csv.DictReader(open(args.pairs))}
@@ -100,20 +109,39 @@ def main():
         verdict = "above chance" if lo > 0.5 else ("below chance" if hi < 0.5 else "NOT separable")
         print(f"{title}")
         print(f"   {target} preferred {k_t}/{n_dec} = {rate:.3f}  (95% CI {lo:.3f}-{hi:.3f})  ties {ties}  -> {verdict}")
+        # does f1 signal already call these the same way the judge does?
+        a, b = key.rsplit("_vs_", 1)
+        same = n_cmp = 0
+        for pid, d in j.items():
+            row = pairs.get(pid)
+            if row is None or row.get("repeat_of") or row["pairing"] != key or d["choice"] == "tie":
+                continue
+            t = row["tile"]
+            if t not in signal.get(a, {}) or t not in signal.get(b, {}):
+                continue
+            n_cmp += 1
+            if (winner(d) == a) == (signal[a][t] > signal[b][t]):
+                same += 1
+        agree = same / n_cmp if n_cmp else None
+        if n_cmp:
+            print(f"   f1 signal agrees with the judge on {same}/{n_cmp} = {agree:.3f} of these tiles")
         summary.append({"pairing": key, "target": target, "n_decided": n_dec, "n_ties": ties,
                         "preferred": k_t, "rate": round(rate, 4) if n_dec else None,
-                        "ci_lo": round(lo, 4), "ci_hi": round(hi, 4), "verdict": verdict})
+                        "ci_lo": round(lo, 4), "ci_hi": round(hi, 4), "verdict": verdict,
+                        "signal_agreement": round(agree, 4) if n_cmp else None,
+                        "signal_agreement_n": n_cmp})
         if key == "oracle_vs_placebo_oracle" and n_dec and lo <= 0.5:
             print("\n   The instrument check did not pass. Nothing below this line may be read:")
             print("   if the ideal deletion is not visibly better than a random one of the same")
             print("   size, this material cannot answer whether Track C deleted the right lines.\n")
 
+    out_path = ROOT / f"judgement_readout_{Path(args.pairs).stem}.json"
     json.dump({"n_judgements": len(j), "intra_rater": {"same": same, "n": tot,
                "consistency": round(consistency, 4) if tot else None,
                "stage2_gate": round(0.85 * consistency, 4) if tot else None},
                "pairings": summary},
-              open(ROOT / "judgement_readout.json", "w"), indent=1)
-    print(f"\nwritten: {ROOT / 'judgement_readout.json'}")
+              open(out_path, "w"), indent=1)
+    print(f"\nwritten: {out_path}")
 
 
 if __name__ == "__main__":
