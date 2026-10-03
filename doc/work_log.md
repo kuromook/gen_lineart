@@ -6180,3 +6180,69 @@ on this material, computed in advance so it cannot be chosen after the fact.
 
 Files: `results/trackc_judge_20261004/stroke_projected_signal.csv`,
 `stroke_projected_signal_per_tile.csv`.
+
+### Junctions were cutting the strokes the judge reads (2026-10-04)
+
+The judge reloaded, still saw snow, and asked whether a different URL was
+needed. It was -- he had been on the pixel-level artifact throughout, and the
+stroke-level one had zero judgements. But checking the new set rather than just
+answering turned up a second mechanism.
+
+Splitting the skeleton at every crossing is what the skeleton gives, not what a
+person sees. A long line crossing hatching becomes a dozen segments, so
+removing some of them punches gaps into a line that reads as continuous --
+visible in `placebo` especially. Segments that run straight through a junction
+(directions within about 145 degrees, read over 7px either side) are now
+chained back into one stroke before any decision is taken.
+
+| | split at junctions | chained |
+|---|---:|---:|
+| strokes per tile | 562 | 408 |
+| mean stroke | 53.0 px | 73.1 px |
+| p99 / max | 681 / 4373 | 1286 / 10732 |
+| ink in strokes >= 200px | 0.560 | **0.749** |
+
+Independent of the labelling (a removed region whose border touches surviving
+ink in two or more separate arcs is a gap inside a line, one arc is a removal
+from an end):
+
+| | classifier | placebo |
+|---|---:|---:|
+| pixel-level (what the judge saw) | 0.348 | 0.317 |
+| stroke-level, chained | **0.219** | 0.308 |
+
+**The placebo's rate barely moves, and that is not a defect left in.** Removing
+a random stroke from a dense rough leaves gaps between the strokes that crossed
+it; that is what choosing wrongly looks like. What the chaining removed is the
+mechanical artifact -- a decision boundary cutting across a stroke mid-line.
+The standing caveat holds unchanged: in this material "which strokes" and "how
+coherent the result looks" are the same thing, so a preference for the
+classifier reads as "its deletions respect stroke structure", not as "it picked
+the semantically right lines".
+
+Arms after chaining (erased ink matched to 0.5%):
+
+| arm | erased ink | ink_ratio | near_white |
+|---|---:|---:|---:|
+| rough | 0 | 0.1418 | 0.8697 |
+| classifier | 6684.6 | 0.1128 | 0.8952 |
+| placebo | 6717.6 | 0.1127 | 0.8960 |
+| oracle | 26508.1 | 0.0268 | 0.9758 |
+| placebo_oracle | 26677.7 | 0.0260 | 0.9765 |
+
+Tone audit tighter again: classifier vs placebo median |d near_white| 0.0007
+(p90 0.0011), oracle vs placebo_oracle 0.0003 (p90 0.0019), classifier vs rough
+0.0248 (p90 0.0367).
+
+Republished in place as Version 2 of
+https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3 (zero judgements had been
+recorded against Version 1, so no data was discarded).
+`results/trackc_judge_20261004/merged_set_fullsize.png`.
+
+**Correction to the entry above**: the signal table reported for "the judged
+material" was measured on the pre-chaining arms. A relaunch written as
+`cd ... && R=... && setsid ... &` backgrounds the whole list, so `R` was never
+set in the foreground shell, the `rm -f $R/...` that was meant to clear the
+stale csv removed nothing, and the watch fired on the old file. Those numbers
+describe the segment-level arms before junction chaining, not the arms now
+published. Re-measuring.

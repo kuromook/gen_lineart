@@ -48,22 +48,100 @@ REMOVE_ABOVE = 0.5      # a segment goes when more than half its ink was erased
 ARMS = ["rough", "classifier", "placebo", "oracle", "placebo_oracle"]
 
 
-def stroke_labels(ink):
-    """Cut the ink into stroke segments and give every ink pixel one.
+DIRECTION_PX = 7            # how far along a segment its direction is read
+COLLINEAR_DOT = -0.82       # about 145 degrees: straight enough to be one line
+
+
+def _direction(coords, junction_xy):
+    """Unit vector pointing from the junction into the segment."""
+    d = coords - junction_xy
+    near = coords[np.argsort((d * d).sum(1))[:DIRECTION_PX]]
+    v = near[-1] - near[0] if len(near) > 1 else near[0] - junction_xy
+    norm = np.hypot(*v)
+    return v / norm if norm else np.zeros(2)
+
+
+def _merge_across_junctions(sk, junc, lab, n):
+    """Chain segments that run straight through a crossing into one stroke.
+
+    Splitting at every junction is what the skeleton gives, but it is not what
+    a person sees: a long line crossing hatching becomes a dozen segments, and
+    removing some of them punches gaps into a line that reads as continuous.
+    Two segments meeting at a junction nearly head-on are the same line.
+    """
+    parent = list(range(n + 1))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    jlab, jn = ndimage.label(junc, structure=np.ones((3, 3)))
+    if jn == 0:
+        return parent
+    coords = {i: np.argwhere(lab == i) for i in range(1, n + 1)}
+    grown = ndimage.grey_dilation(jlab, footprint=np.ones((3, 3)))
+    for j in range(1, jn + 1):
+        touching = np.unique(lab[(grown == j) & (lab > 0)])
+        touching = [int(t) for t in touching if t > 0]
+        if len(touching) < 2:
+            continue
+        centre = np.argwhere(jlab == j).mean(0)
+        dirs = {t: _direction(coords[t], centre) for t in touching}
+        pairs = []
+        for a_i in range(len(touching)):
+            for b_i in range(a_i + 1, len(touching)):
+                a, b = touching[a_i], touching[b_i]
+                pairs.append((float(dirs[a] @ dirs[b]), a, b))
+        pairs.sort()
+        used = set()
+        for dot, a, b in pairs:
+            if dot > COLLINEAR_DOT or a in used or b in used:
+                continue
+            union(a, b)
+            used.update((a, b))
+    return parent
+
+
+def stroke_labels(ink, merge=True):
+    """Cut the ink into strokes and give every ink pixel one.
 
     skimage's 1px thinning plus a crossing number, never the shared
     evaluate_stroke_stability.skeletonize(), which leaves 2px ridges and breaks
-    junction detection.
+    junction detection. Segments that continue straight through a junction are
+    then chained back together, so a stroke is what a person would trace rather
+    than what the skeleton happened to cut.
     """
     sk = skeletonize(ink)
     p = np.pad(sk.astype(np.int8), 1)
     nb = [p[:-2, :-2], p[:-2, 1:-1], p[:-2, 2:], p[1:-1, 2:],
           p[2:, 2:], p[2:, 1:-1], p[2:, :-2], p[1:-1, :-2]]
     crossing = sum(np.abs(nb[i] - nb[(i + 1) % 8]) for i in range(8)) // 2
-    lab, n = ndimage.label(sk & ~(sk & (crossing >= 3)), structure=np.ones((3, 3)))
+    junc = sk & (crossing >= 3)
+    lab, n = ndimage.label(sk & ~junc, structure=np.ones((3, 3)))
     if n == 0:
         return np.zeros(ink.shape, dtype=np.int32), 0
-    # every ink pixel adopts the nearest segment's label, junctions included
+    if merge:
+        parent = _merge_across_junctions(sk, junc, lab, n)
+        root = np.arange(n + 1)
+        for i in range(1, n + 1):
+            r = i
+            while parent[r] != r:
+                r = parent[r]
+            root[i] = r
+        remap = {r: k for k, r in enumerate(sorted(set(root[1:].tolist())), start=1)}
+        table = np.zeros(n + 1, dtype=np.int32)
+        for i in range(1, n + 1):
+            table[i] = remap[root[i]]
+        lab = table[lab]
+        n = len(remap)
+    # every ink pixel adopts the nearest stroke's label, junctions included
     _, idx = ndimage.distance_transform_edt(lab == 0, return_indices=True)
     full = np.where(ink, lab[idx[0], idx[1]], 0)
     return full, n
