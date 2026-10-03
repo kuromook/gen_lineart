@@ -536,3 +536,71 @@ pos_weight・パラメータ数)の空間には、このタスクを解く鍵は
 あるので、その中間——小さい近傍パッチ単位での集約等)。
 これらは「1変数ずつ隔離」の対象として次に起案すべき、より大きな
 設計変更であり、今回のような係数調整の延長では届かないと判断する。
+
+## 2026-10-04 Track Eからの訂正: signalのbaselineが間違っていた(+0.0272→+0.0320)、構造変更(dilated conv)着手
+
+Track Eが再開直後に`inbox/note_signal_baseline_is_the_wrong_render_20261004.md`
+を発信。要旨: `results/signal_rescore_20261003/f1_signal_summary.csv`の
+`condition`行は`measure_f1_signal.py --arms condition=CONDITION`が描く
+**反転した生の条件画像**(`255-g`)であり、本trackの分類器
+(`edge_map(conditioning)`上のkeep-mask)が実際に手を加えた画像ではない。
+分類器出力がedge_mapの部分集合であることを192タイル全てで独自に再検証し、
+一致を確認(`e = edge_map(cond); subset = (cls & ~e).sum()==0` が192/192で
+真、mean ink: edge 0.0820/分類器0.0421——Track E報告値と完全一致)。
+
+正しいbaseline(`keep_all`=edge_mapそのもの、削除なし)で測り直した結果:
+
+| 腕 | ink_ratio | f1_true | 床 | signal |
+|---|---:|---:|---:|---:|
+| keep_all(正しいbaseline) | 0.0820 | 0.3144 | 0.1536 | +0.16078 |
+| 分類器 | 0.0421 | 0.3202 | 0.1275 | +0.19276 |
+| shuffled_edge(退化チェック) | 0.0815 | 0.1473 | 0.1683 | -0.02104 |
+| condition_raw(旧baseline、誤り) | 0.0545 | 0.3164 | 0.1494 | +0.16696 |
+
+**訂正後の削除効果は+0.0320**(旧+0.0272より大きく、結論は覆らない——
+むしろ強化される)。退化チェックは0近傍で合格、パイプラインは健全。
+以後の報告は`keep_all`を基準にする。詳細・出典は`doc/initial_notice.md`
+「Track Eからの訂正」の項。
+
+### 構造変更(受容野拡大)着手
+
+共通基盤の通達(次の一手は構造変更、容量ではなく受容野)を受けて、
+`lineart/model_zoo.py`の`MaskCleanupGenerator`に`dilations`引数を追加
+(dilated convはパラメータ数を増やさない——通達の「パラメータ数は
+据え置きが望ましい」をそのまま満たせる)。新モデル`strokeselect_dilated`
+(channels=24, blocks=3, dilations=[1,2,4]、既存`strokeselect`と**同じ
+16,201パラメータ**、受容野9px→17px)を登録し、勝者設定(epoch=12,
+pos_weight=3.97, batch=8)で学習(`checkpoints/stroke_selection_dilated_20261004/`、
+約12分で完了、損失は既存小型モデルと同様に早期収束——epoch3時点1.078→
+epoch12時点1.073)。
+
+`results/structural_dilated_20261004/`で評価(`keep_all`を正しいbaselineとして
+使用、4腕一括測定):
+
+| 腕 | ink | f1_true | 床 | signal | a_recall | c_survival |
+|---|---:|---:|---:|---:|---:|---:|
+| keep_all(baseline) | 0.0820 | 0.3144 | 0.1536 | +0.1608 | 0.9913 | 0.9990 |
+| **small(RF9px、既存)** | 0.0421 | 0.3202 | 0.1275 | +0.1928 | 0.7842 | 0.6283 |
+| **dilated(RF17px、同パラメータ数)** | 0.0409 | 0.3230 | 0.1253 | **+0.1977** | 0.7624 | **0.5815** |
+| shuffled_edge(退化チェック) | 0.0815 | 0.1473 | 0.1683 | -0.0210 | 0.3074 | 0.3182 |
+
+**keep_allに対する削除効果**: small +0.0320(Track E訂正値)→**dilated +0.0369**。
+受容野を広げた方向にわずかに前進(+0.0049)。stroke decompositionでも
+c_survivalが0.6283→0.5815(改善)、ただしa_recallも0.7842→0.7624(悪化)——
+**単純によりアグレッシブに削るようになっただけ**の可能性があり、
+pos_weightを動かした時と似た「消す量が増えてc_survival改善・a_recall悪化」
+というトレードオフの形に見える。退化チェック(shuffled_edge)は-0.0210で
+0近傍、パイプラインは健全。
+
+モンタージュ(`results/structural_dilated_20261004/montage_small_vs_dilated.png`、
+condition/small/dilated/oracle/GTの5列)を目視——**smallとdilatedはほぼ
+見分けがつかない**。容量スイープ(small vs large)の時と同じ所見。
+
+**判断**: 数値は改善方向だが、(a)閾値スイープで見たノイズ幅(±0.006)より
+小さく、エポックスイープのノイズ幅(0.0014)よりは大きい——ノイズ境界線上。
+(b)視覚的な差はほぼ無い。(c)a_recall悪化という副作用も伴う。**これを
+「受容野を広げる方向が効く」という確証として扱うのは時期尚早**——共通基盤の
+通達通り、Track Eの判定(消した線は消すべきだったか)が出るまでは
++0.0272/+0.0320のどちらの改善もbankしない方針を維持する。より広い受容野
+(downsampling付き構成等、現在の[1,2,4]よりさらに大きいdilation)を試すかは
+Eの判定を見てから判断。

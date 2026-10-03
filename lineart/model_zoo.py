@@ -419,19 +419,28 @@ class AttentionUNetGenerator(nn.Module):
 
 
 class MaskCleanupGenerator(nn.Module):
-    """Shallow cleanup model that uses atari as context, not as the output base."""
+    """Shallow cleanup model that uses atari as context, not as the output base.
 
-    def __init__(self, in_channels=2, out_channels=1, channels=48, blocks=5):
+    `dilations` (one entry per block, default all 1) widens the receptive
+    field without changing parameter count: a dilated 3x3 conv has the same
+    weight count as a regular one, only the sampling spacing changes
+    (padding is set equal to the dilation so spatial size is preserved).
+    """
+
+    def __init__(self, in_channels=2, out_channels=1, channels=48, blocks=5, dilations=None):
         super().__init__()
+        if dilations is None:
+            dilations = [1] * blocks
+        assert len(dilations) == blocks
         layers = [
             nn.Conv2d(in_channels, channels, 3, padding=1),
             nn.InstanceNorm2d(channels, affine=True),
             nn.ReLU(inplace=True),
         ]
-        for _ in range(blocks):
+        for d in dilations:
             layers.extend(
                 [
-                    nn.Conv2d(channels, channels, 3, padding=1, bias=False),
+                    nn.Conv2d(channels, channels, 3, padding=d, dilation=d, bias=False),
                     nn.InstanceNorm2d(channels, affine=True),
                     nn.ReLU(inplace=True),
                 ]
@@ -622,6 +631,17 @@ def build_generator(model_name, in_channels=1):
         # 16K-param version was receptive-field-starved rather than just
         # undertrained.
         return MaskCleanupGenerator(in_channels=in_channels, out_channels=1, channels=48, blocks=5)
+    if model_name == "strokeselect_dilated":
+        # Structural tuning variable (step 3, 2026-10-04): common-base notice
+        # after the 4-knob sweep said capacity (channels=48/blocks=5, +0 signal)
+        # wasn't it -- try widening the receptive field itself instead, with
+        # parameter count held. Same channels=24/blocks=3 shape as
+        # `strokeselect` (16,201 params, identical -- dilation adds no
+        # weights), dilations=[1,2,4] takes the receptive field from 9px to
+        # 17px.
+        return MaskCleanupGenerator(
+            in_channels=in_channels, out_channels=1, channels=24, blocks=3, dilations=[1, 2, 4]
+        )
     if model_name == "flowmaskcleanup":
         return FlowMaskCleanupGenerator(in_channels=in_channels)
     if model_name == "flowmaskunet":

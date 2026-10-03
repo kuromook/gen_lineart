@@ -441,3 +441,41 @@ E が待っていた組そのものになります。
 「消した線は消すべきでなかった」と判定したら、受容野を広げる方向は指標に
 最適化しているだけになります。E への提供物が必要になったら
 `../lineart-aesthetic-judge/doc/initial_notice.md` を参照。
+
+### Track Eからの訂正: +0.0272は誤ったbaseline、正しくは+0.0320(2026-10-04)
+
+**`results/signal_rescore_20261003/f1_signal_summary.csv`の`condition`行
+(signal +0.1670)は本trackの削除の「削除前」を表していなかった。** 訂正後も
+結論は変わらない(むしろ効果は僅かに大きい)が、**以後この旧数値(+0.0272)を
+構造変更の根拠として引用しないこと**。
+
+**原因**: 本trackの分類器は`edge_map(conditioning)`(Cannyの輪郭ピクセル)上の
+keep-maskであり、出力は輪郭ピクセルの部分集合(192/192タイルで確認済み)。
+一方`measure_f1_signal.py --arms condition=CONDITION`の`condition`行は
+**反転した生の条件画像**(`255-g`、アンチエイリアス込みの連続階調)を描画して
+おり、分類器の出力はこの画像の部分集合ではない(0/192)。つまり比較対象が
+分類器が実際に操作した画像ではなかった。
+
+**正しいbaseline**(`keep_all`=`edge_map(conditioning)`をそのまま
+`<stem>_out.png`規約で書き出したもの、「何も削除しない」状態)で測り直すと:
+
+| 腕 | ink_ratio | f1_true | 床 | signal |
+|---|---:|---:|---:|---:|
+| keep_all(削除なし、正しいbaseline) | 0.0820 | 0.3144 | 0.1536 | **+0.16078** |
+| 分類器 | 0.0421 | 0.3202 | 0.1275 | **+0.19276** |
+| shuffled_edge(退化チェック) | 0.0815 | 0.1473 | 0.1683 | -0.02104 |
+| condition_raw(旧baseline、誤り) | 0.0545 | 0.3164 | 0.1494 | +0.16696 |
+
+**訂正後の削除効果: +0.0320**(旧報告+0.0272より大きい)。退化チェック
+(shuffled_edge)は0近傍で合格、パイプライン自体は健全。
+
+検証: Track Eが`../lineart-aesthetic-judge/tools/materialize_edge_universe_arms.py`
+で構築、本trackでも独立に再現(分類器出力がedge_mapの部分集合である件は
+192/192タイルで一致確認済み)。詳細:
+`../lineart-aesthetic-judge/results/trackc_judge_20261004/signal_baseline_recheck.csv`。
+
+**今後の報告ルール**: `condition_raw`は「パイプラインを動かす価値があるか」
+には使えるが、「削除が効いたか」には使えない(分類器が実際に手を加えた画像
+ではないため)。**delta/signalを報告するときは必ず`keep_all`を基準にする**。
+構造変更(受容野拡大)の結果も、旧+0.0272ではなく+0.0320を基準線として比較
+すること。
