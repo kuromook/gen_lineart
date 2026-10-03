@@ -148,9 +148,27 @@ closed, as are both of its successors.
   Composition was never flat either: **precision +0.068** (0.2373 -> 0.3057) and
   **recall -0.169** (0.5255 -> 0.3566) -- it is deleting, and over-deleting.
   Ceiling on that batch is the pixel-level oracle at signal **+0.4872** (raw
-  0.5870), so the gap remains large and the shape of the conclusion stands:
-  selection is learnable, and this minimal configuration is far from the
-  ceiling. Rescore data: `results/signal_rescore_20261003/` in that tree.
+  0.5870). Rescore data: `results/signal_rescore_20261003/` in that tree.
+  **Tuning closed 2026-10-03, and the way it closed is the finding.** Four
+  variables were isolated one at a time -- decision threshold (0.3-0.7, no
+  retraining), epochs (to 15), `pos_weight` (2.0 / 3.97 / 6.0), and capacity
+  (16,201 -> 105,185 parameters, `channels=48,blocks=5`) -- and **every one of
+  them was already at its optimum.** Threshold peaks at the default 0.50 and
+  decays monotonically above it; 3 epochs converges and 15 moves signal by
+  0.0014; the mechanically derived `pos_weight` 3.97 beats both neighbours; and
+  **6.6x the parameters gives +0.1927, indistinguishable from the small model**,
+  with montages that cannot be told apart. Final configuration: signal
+  **+0.1942**. Four independent axes landing together on "the default is
+  optimal" reads as the ceiling of this architecture rather than of the task:
+  a flat conv stack with no pooling and no dilation has a receptive field of
+  only 9-13px, and multiplying parameters without widening it changes nothing.
+  **Untested and now the decision point**: (a) widening the actual receptive
+  field -- dilated convolutions or more stages, a structural change rather than
+  a capacity one; (b) whether the strict 2px-match label is itself hard to
+  learn, which is delicate because redefining the label breaks comparability
+  with the 0.6765 / 0.7425 ceilings. Commits `80d96c6`, `39c5387`, `ea450d6`,
+  `0be448f`; montages under `results/epoch_sweep_20261003/` and
+  `results/capacity_sweep_20261003/`.
   Named next variables, to be isolated one at a time: the conservative 0.5
   threshold, epoch count, `pos_weight`. Results:
   `results/stroke_selection_eval_20260917/` in that tree.
@@ -532,7 +550,8 @@ the signal between them):
 | 5 | **SDXL fine-tune cs2.0** | 0.1539 | **0.0825** | **+0.0714** |
 | 5 | degenerate | 0.1332 | 0.1285 | +0.0047 |
 | 5 | anime cs2.5 (void probe) | 0.1277 | 0.1336 | **-0.0059** |
-| 192 | **Track C pixel classifier** | 0.3202 | **0.1275** | **+0.1928** |
+| 192 | **Track C classifier, tuned final** | -- | -- | **+0.1942** |
+| 192 | Track C classifier, step 2 as first measured | 0.3202 | 0.1275 | +0.1928 |
 | 192 | Track C pixel-level oracle | 0.5870 | 0.0997 | **+0.4872** |
 | housei 100 | **GT line art itself** | 0.9100 | 0.8443 | **+0.0657** |
 | housei | conditioning map | 0.1573 | 0.1480 | +0.0093 |
@@ -1241,9 +1260,9 @@ see the Track Ledger above.
    is that **bits do not guarantee a visual pass**: position beat the marginal
    by 0.9 bits while the montage stayed unreadable.
 3. **Stroke selection** (`../lineart-stroke-selection`, Track C -- live but
-   untouched since 2026-09-17). It is not superseded and it still has the widest
-   measured headroom in the project: its minimal classifier sits at signal
-   +0.1928 against an oracle's +0.4872 (raw f1 0.3202
+   tuning closed 2026-10-03). It is not superseded and it still has the widest
+   measured headroom in the project: its tuned classifier sits at signal
+   +0.1942 against an oracle's +0.4872 (raw f1 0.3202
    against a 0.6765 ceiling on the same batch. The first result is genuinely
    informative -- flat f1 but **precision +0.068 and recall -0.169**, i.e. it
    learned to delete and it over-deletes -- so the named next variables are

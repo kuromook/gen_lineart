@@ -5513,3 +5513,38 @@ Its non-zero `b_recall` (0.1163) is the known render/PNG/re-Canny drift that als
 made the 2026-09-13 oracle's precision 0.9948 rather than 1.0, not invented
 strokes; `neither_ink` being effectively zero in both arms confirms it is not
 adding ink anywhere unrelated.
+
+## 2026-10-03 (later still): Track C's Tuning Closes -- Every Default Was Already Optimal
+
+`inbox/note_tuning_sweep_closed_20261003.md`. Four variables isolated one at a
+time on the pixel-level delete classifier, each read on signal plus
+`stroke_decomposition.py`'s `a_recall` and `c_survival`: decision threshold
+(0.3-0.7, no retraining needed, logits reused), epochs (to 15), `pos_weight`
+(2.0 / 3.97 / 6.0) and capacity (16,201 -> 105,185 parameters).
+
+**All four were already at their optimum.** Threshold peaks at the default 0.50
+and decays monotonically above it. Three epochs converges; fifteen moves signal
+by 0.0014, inside noise. The `pos_weight` derived mechanically from the class
+ratio beats both neighbours. And 6.6x the parameters scores +0.1927 against the
+small model's +0.1928, with montages that cannot be told apart. Final
+configuration: signal **+0.1942**.
+
+**Four independent axes agreeing is itself the result.** Track C reads it as the
+ceiling of this architecture rather than of the task, and the reasoning holds: a
+flat conv stack with no pooling and no dilation has a receptive field of 9-13px,
+so multiplying parameters without widening it should change nothing, and it did
+not. The decision now is structural -- dilated convolutions or more stages --
+or else a question about the label itself, which is delicate: redefining the
+2px strict match breaks comparability with the 0.6765 and 0.7425 ceilings
+everything here is measured against.
+
+**One correction to the notice's framing, and it is the kind lesson 9 exists
+for.** It reports the result as "about 8.5% of the distance from floor to
+ceiling". The figure 8.5% is right but the label is not: signal already has the
+floor subtracted, so signal zero *is* the floor, and floor-to-ceiling is
+0.1942 / 0.4872 = **39.9%**. 8.5% is the distance from the *conditioning-map
+baseline* to the ceiling, (0.1942 - 0.1670) / (0.4872 - 0.1670). Both are worth
+quoting and they say different things: the classifier is 39.9% of the way from
+nothing to the oracle, but it has closed only 8.5% of the gap that remained
+above what the preprocessor already gives for free. The second is the honest
+headline for a method whose whole purpose is to improve on that preprocessor.
