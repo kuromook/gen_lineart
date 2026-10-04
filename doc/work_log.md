@@ -5607,3 +5607,33 @@ that draws, or close. The dilated structural change is already done (+0.0369, a
 Track E's untried route -- re-rendering surviving strokes so the output reads as
 a sparse drawing rather than a holed rough -- is the one way this direction could
 still clear the usability bar, since what was measured was holed roughs.
+
+## 2026-10-04 (later): C, E and F Held; The Words Line Resumes
+
+User decision after lesson 10. The words line (Tracks G and H) becomes the
+active work. **Tracks C, E and F are held, not closed** -- kept in place so they
+can be re-measured when a new yardstick exists.
+
+Two things were added to make "held" mean something operationally, because a
+track that is merely idle decays into a track nobody can resume.
+
+**The state has to be durable.** The audit found work that existed only on this
+disk: Track C 7 unpushed commits, Track E 8 unpushed, Track F 14 uncommitted
+paths, Track I 4 unpushed plus 1 uncommitted. A held track whose last work was
+never pushed is not held, it is at risk. Each briefing now says so.
+
+**The trigger has to be named**, or a future session re-derives why it stopped:
+
+- **C**: what would change the verdict is not a new metric. Lesson 10 came from
+  a human absolute judgement and found the *perfect* deletion unusable, so a
+  better selector cannot help. The one thing that could move it is a different
+  output format -- Track E's untried route of re-rendering surviving strokes so
+  the result reads as a sparse drawing rather than a holed rough. What was
+  measured was holed roughs.
+- **E**: stopped because a comparison between two lossy outputs ranks the loss
+  (lesson 11). It reopens when two outputs differ by something other than
+  damage. Its unused build with tiles disjoint across arms is kept.
+- **F**: its negative -- no inter-word grammar within a panel, five measurements
+  agreeing -- was measured on the vocabulary it had at the time. Track H is
+  working on a better vocabulary, and re-asking the question on that vocabulary
+  is the trigger.

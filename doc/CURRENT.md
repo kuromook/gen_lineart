@@ -900,6 +900,11 @@ made before this was known, on the judgement that pixel-matching had stalled.
 is a mechanism that *draws* strokes at uniform weight, not one that chooses
 among the rough's existing marks.
 
+**Where the work is, as of 2026-10-04.** The words line (Tracks G and H) is the
+active front, by user decision the same day. Tracks C, E and F are **held, not
+closed** -- kept in place to be re-measured when a new yardstick exists, with
+each one's trigger named under Next Actions.
+
 **What survives unchanged, regardless of route.** These are measurements, not
 strategy:
 
@@ -1337,10 +1342,11 @@ closed out as of this commit.
 
 ## Next Actions
 
-Items 1-2 are the active fronts, both on the words line; item 3 is the
-selection line, live but idle. Item 4 is two open bugs in shared tooling, item 5
-a deferred strategic question, items 6-9 common-foundation housekeeping, none of
-them blocking. Every ControlNet track is closed and none leaves work behind --
+Items 1-2 are the active fronts, both on the words line -- **the only active
+work as of 2026-10-04**. Item 3 is the three held tracks and what would justify
+resuming each. Item 4 is two open bugs in shared tooling, item 5 a deferred
+strategic question, items 6-9 common-foundation housekeeping, none of them
+blocking. Every ControlNet track is closed and none leaves work behind --
 see the Track Ledger above.
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front).
@@ -1364,28 +1370,29 @@ see the Track Ledger above.
    (user, 2026-09-23). When it resumes, the standing warning from its last run
    is that **bits do not guarantee a visual pass**: position beat the marginal
    by 0.9 bits while the montage stayed unreadable.
-3. **Decide what Track C becomes** (`../lineart-stroke-selection`) -- **this is
-   the open decision, raised by Track C itself and explicitly not taken there.**
-   Lesson 10 removed the destination this track was aimed at: selecting among
-   the rough's ink cannot produce usable line art, because the perfect selection
-   does not either. Three options were named:
-   - **continue scoped as preprocessing only** -- deletion demonstrably clears
-     clutter and its selection is non-random (+0.0273 against ink-matched random
-     deletion, 88% of the gain surviving aggregation to whole strokes), so it
-     could serve whatever eventually draws
-   - **fold into a track that draws rather than selects**, which is where the
-     words line already is
-   - **close it out**
-
-   Worth weighing: the dilated structural change is already done (+0.0369, a
-   +0.0049 nudge on the noise boundary), so there is no half-finished experiment
-   holding the decision open, and the track has no unanswered question of its
-   own left. Against that, it holds the only mechanism here that measurably
-   improves on the preprocessor at all, and discarding it costs that.
-   Track E's untried route is adjacent and cheap: re-render the surviving
-   strokes so the output reads as a sparse drawing rather than a holed rough.
-   **That is the one way the deletion direction could still clear the usability
-   bar**, since lesson 10 measured holed roughs, not redrawn ones.
+3. **Tracks C, E and F are held, not closed** (user decision 2026-10-04). The
+   words line resumes as the active work; these three stay in place so they can
+   be re-measured when a new yardstick exists. **Held means the state must be
+   durable and the trigger must be named**, so each briefing records what would
+   justify picking it up again rather than leaving a future session to re-derive
+   it:
+   - **C** (`../lineart-stroke-selection`) -- what would change the verdict is
+     not a new metric. Lesson 10 came from a human absolute judgement, and it
+     found the *perfect* deletion unusable. The one thing that could move it is
+     a different **output format**: Track E's untried route of re-rendering the
+     surviving strokes so the result reads as a sparse drawing rather than a
+     holed rough. What was measured was holed roughs.
+   - **E** (`../lineart-aesthetic-judge`) -- stopped because a comparison
+     between two lossy outputs ranks the loss (lesson 11). It reopens when there
+     are two outputs that differ by something *other* than damage. Its unused
+     build, with tiles disjoint across arms, sits at
+     https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG.
+   - **F** (`../lineart-stroke-grammar`) -- closed its measurement phase on a
+     clean negative: no inter-word grammar within a panel, five measurements
+     agreeing. That negative was measured on *the vocabulary it had*. If the
+     words line produces a better vocabulary -- which is exactly what Track H is
+     working on -- the question is worth re-asking on it, and that is the
+     trigger.
 4. **Fix the two tool bugs found in `inbox/` (both still open).**
    (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
    192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
