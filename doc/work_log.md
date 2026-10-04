@@ -5637,3 +5637,41 @@ never pushed is not held, it is at risk. Each briefing now says so.
   agreeing -- was measured on the vocabulary it had at the time. Track H is
   working on a better vocabulary, and re-asking the question on that vocabulary
   is the trigger.
+
+## 2026-10-04 (correction): The Eye Had Resolution Only On Damage
+
+Two notices, one from each of Tracks E and C, correcting the pair folded in
+earlier the same day. Both earlier notes supported their argument with "the
+instrument check passed 17/17, so the judge was not failing to see something".
+Before the comparison artifact was deleted its database was exported and held
+**203** judgements, not the 77 reported, and reading all of them withdraws that
+claim.
+
+The pre-registered instrument check -- does the judge prefer the *ideal*
+deletion over a random one of the same ink -- passes 17/17 **only at the dashed,
+pixel level**. At stroke level it ties 91.1%; chained through junctions, 100%.
+Track C re-pulled all 203 records independently and confirmed 92.5% ties pooled
+across granularities.
+
+**The correction strengthens the conclusion rather than weakening it.** The
+earlier framing was "a comparison of deletions is dominated by damage". The data
+says something sharper: **once the damage is removed there is nothing left to
+see.** An ideal deletion and a random one of the same size do not differ in any
+way a person registers. That is the pre-registered stopping rule firing as
+designed, and it meets lesson 10 from the other side -- nothing in the deletion
+family is distinguishable from anything else in it, and none of it is line art.
+
+One figure worth keeping from the fuller read: on classifier versus the
+undeleted rough, junction-chained, 13 of 23 were ties and of the 10 decided the
+judge preferred **the undeleted rough on 7**. Not separable at that n, but the
+point estimate leans against deleting at all. Intra-rater consistency on the
+repeats was 9/12.
+
+Unaffected: +0.0320 against `keep_all` and +0.0273 against ink-matched random
+deletion. Those are statements about f1 signal and were never claims about what
+a person can see.
+
+**Note on the data.** The comparison artifact has been deleted and the exported
+`comparison_judgements_203.json` in Track E's results is the only copy. Lesson
+11 in `doc/CURRENT.md` now carries the correction inline rather than as a
+footnote, because the withdrawn claim was load-bearing in both original notices.

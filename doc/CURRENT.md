@@ -581,10 +581,30 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     which built the material and then closed the comparison rather than report
     it. Three granularities were tried -- per-pixel, stroke-aggregated,
     junction-chained -- each neutralising what decided the last, and each time
-    the judge was deciding on breakage: of 77 judgements, the side with fewer
-    broken strokes won **23 of 24** decided pairs, the same count as the
-    headline preference. The judge said so unprompted ("I am marking whichever
-    destroys too much as NG"). Changing the unit of deletion moved the damage
+    the judge was deciding on breakage: of the first 77 judgements read, the
+    side with fewer broken strokes won **23 of 24** decided pairs, the same
+    count as the headline preference. The judge said so unprompted ("I am
+    marking whichever destroys too much as NG"). **Corrected and sharpened the
+    same day**: the comparison artifact's database was exported before deletion
+    and held **203** judgements, not 77, and reading all of them withdraws the
+    claim that the eye was not the limitation. The pre-registered instrument
+    check -- does the judge prefer the *ideal* deletion over a random one of the
+    same ink -- passed 17/17 **only at the dashed, pixel level**. At stroke
+    level it ties **91.1%** of the time, and chained through junctions
+    **100%**. Track C re-pulled all 203 records independently and confirmed
+    92.5% ties pooled. So the sharper statement is not "the comparison is
+    dominated by damage" but **"once the damage is removed there is nothing
+    left to see"**: an ideal deletion and a random deletion of the same size
+    are indistinguishable to a person. On the decision pairing -- classifier
+    versus the undeleted rough, junction-chained -- 13 of 23 were ties and of
+    the 10 decided the judge preferred **the undeleted rough on 7** (not
+    separable at this n, but the point estimate leans against deleting at all).
+    Intra-rater consistency on repeats was 9/12. This agrees with lesson 10
+    from the other side: nothing in the deletion family is distinguishable from
+    anything else in it, and none of it is line art. The f1-signal figures
+    (+0.0320, +0.0273) were never claims about what a person sees and are
+    unaffected. The artifact has been deleted; the only copy of the records is
+    `../lineart-aesthetic-judge/results/trackc_judge_20261004/comparison_judgements_203.json`. Changing the unit of deletion moved the damage
     without removing it, because the damage *is* the output: the classifier
     removes a median 22.7% of the conditioning's ink and under 10% on none of
     the 192 tiles. **The check is cheap and belongs before the material is
