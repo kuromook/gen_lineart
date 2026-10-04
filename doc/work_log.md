@@ -6320,3 +6320,68 @@ https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3 (stroke-level, 0 judged).
 The 6-arm per-tile signal measurement was stopped unfinished; the summary
 figures quoted above come from the completed 187-tile run on the segment-level
 arms, and no per-tile signal exists for the junction-chained arms.
+
+## 2026-10-04 The absolute judgement: the deletion direction has a ceiling of zero
+
+Asked as a single image at a time, "is this usable as line art", binary. Run on
+Track C's own build of the set (https://claude.ai/artifact/5t2Hx2EtBNGEz87Ly2fETc),
+60 items, 15 tiles x 4 arms, the same 15 tiles across all arms.
+
+| arm | usable | 95% CI |
+|---|---:|---|
+| rough (the conditioning, untouched) | **0/15** | 0.000-0.204 |
+| classifier | **0/15** | 0.000-0.204 |
+| oracle (the pixel oracle -- the ceiling of this direction) | **0/15** | 0.000-0.204 |
+| gt | 14/15 | 0.702-0.988 |
+
+Median 1.3 s per item. These were not marginal calls.
+
+### The anchor is 14/14, not 14/15
+
+The one GT rejected is `lineart_003_000`, which is **blank**: GT ink 0.0000,
+near_white 1.0000, the only blank GT in all 192 holdout tiles (next lowest
+0.0141). The judge rejected an empty sheet, correctly. So the scale is
+validated and the zeroes are not a severe-rater artifact.
+
+Incidental: `holdout_lineart_family` contains one blank GT tile. f1 against it
+is meaningless and it should be excluded from per-tile reporting. One tile in
+192, so it changes no aggregate, but it is in the set.
+
+### What it establishes
+
+1. **The ceiling belongs to the direction, not to Track C.** The pixel oracle
+   is this project's own definition of a correct deletion -- the label
+   `build_keep_labels.py` teaches and the 0.7425 ceiling derives from. Applying
+   it perfectly yields 0% usable. A classifier converging on that oracle
+   converges on 0%.
+2. **Deletion moves nothing.** classifier = rough = oracle = 0%. There is not
+   even partial credit. The +0.0320 against `keep_all` and the +0.0273 against
+   an ink-matched random deletion are real as statistics and **zero as progress
+   toward a drawing**. This is the project's recurring pattern -- a metric
+   improving while line-art quality does not -- measured rather than suspected,
+   for the first time.
+3. **Line art is not a subset of the rough's ink.** It needs strokes drawn at
+   uniform weight, not a selection over a tangle. Any approach whose output
+   space is "the conditioning's ink, minus some" inherits this ceiling.
+
+### Limits of the evidence
+
+- 15 per arm: 0/15 means under ~20%, not literally zero.
+- Track C's build used **the same 15 tiles for all four arms**, so the judge saw
+  the clean GT of the same drawing. That can only depress the deletion arms.
+  Track E's own build (68 items, tiles disjoint across arms, three levels with
+  a borderline option, 8 repeats for self-consistency) avoids this and is
+  published and unused at https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG --
+  worth running only if the finding is disputed, since `rough` itself sits at
+  0% and all three deletion arms are identical.
+- Binary: "closer but not there" could not be expressed.
+
+### Status
+
+Track E has now answered the question it was reopened for, in the negative and
+more broadly than asked. The comparative route is closed (a comparison of
+deletions ranks damage); the absolute route is closed too, with a result: no
+deletion-only output, including the ideal one, is line art.
+
+Data: `results/trackc_judge_20261004/absolute_ratings.json`,
+`gt_rejected_lineart_003_000.png`.
