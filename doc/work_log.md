@@ -6182,3 +6182,85 @@ holdout_lineart_family 192タイル:
 
 新しい腕を測るときは、**必ず退化出力(残差×0)を同じ手順に通し、そのsignalが
 0近傍に出ることを確認してから他の数値を読む**。上の2件はこれで捕まえた。
+
+## 2026-10-03〜04: InstantStyle層別注入(SD1.5の正しい添字で)— track Iの問いに決着
+
+`experiments/run_instantstyle_20261003.sh`、`results/instantstyle_20261003/`。
+matched ControlNet、cs 1.0、12腕×192タイル。前回の無効だった2ルートは削除済み。
+
+### ゲートを先に通す設計にした
+
+添字誤りは例外も警告も出さず、数値は「きれいな帰無」として読めてしまう。
+本番前に3タイルを生成してbaselineとの差を確認し、engagedでなければ停止する:
+
+```
+[gate] pooled: mean|delta| vs baseline = 20.70 over 3 tiles
+[gate] plus:   mean|delta| vs baseline = 18.81 over 3 tiles
+[chain] gates passed
+```
+
+### 結果: 層別注入は初めて neither_ink を baseline より下げた
+
+| 腕 | b_recall | **neither_ink** | c_survival |
+|---|---:|---:|---:|
+| 条件画像(自明な基準線) | 0.0000 | 0.0000 | 1.0000 |
+| baseline(アダプタ無し) | 0.1601 | 0.1946 | 0.7106 |
+| **plus style_layout gt_same s0.8** | 0.1599 | **0.1508** | 0.7710 |
+| **plus style_layout gt_same s1.0** | **0.1890** | **0.1633** | 0.7870 |
+| plus style_layout gt_otherfam s0.8 | 0.1422 | 0.1862 | 0.7490 |
+| plus style_only gt_same s1.0 | 0.2002 | 0.2120 | 0.8030 |
+| pooled style_only gt_same s1.0 | 0.1761 | 0.2115 | 0.7641 |
+| (前日) plus uniform gt_same s1.0 | 0.2649 | 0.2320 | 0.8394 |
+| (前日) pooled uniform gt_otherfam s1.0 | 0.2515 | 0.3196 | 0.7622 |
+
+**`plus style_layout gt_same s1.0` は baseline に対し b_recall が高く
+(+0.029)かつ neither_ink が低い(−0.031)。両方で上回った初めての腕。**
+26腕まで「厳密なトレードオフしか無い」が続いていたので、これは本物の変化。
+
+**全層注入の白さは内容漏れだったことも確認できた**: near_white は
+uniform の 0.464 に対し style_layout は 0.075。公式ドキュメントの
+「全層に入れると画像プロンプトに寄りすぎる」という警告どおりで、
+前日に見たストライプ・スクリーントーンは style_layout では出ない
+(`plus_style_layout/montage_cs_sweep.png`、目視確認済み)。
+
+### しかし床補正すると、正直な参照では baseline と完全に同じ
+
+| 腕 | ink | 生f1 | 床 | **signal** |
+|---|---:|---:|---:|---:|
+| 条件画像 | 0.055 | 0.3164 | 0.1494 | **+0.1670** |
+| baseline | 0.389 | 0.2745 | 0.1428 | **+0.1317** |
+| plus style_layout **gt_same** s1.0 | 0.186 | 0.3008 | 0.1475 | +0.1533 |
+| plus style_layout gt_same s0.8 | 0.210 | 0.2959 | 0.1452 | +0.1507 |
+| **plus style_layout gt_otherfam s0.8** | 0.236 | 0.2787 | 0.1471 | **+0.1317** |
+| plus style_only gt_same s1.0 | 0.246 | 0.2825 | 0.1506 | +0.1319 |
+| plus uniform gt_same s1.0 | 0.110 | 0.2997 | 0.1564 | +0.1433 |
+
+**`gt_otherfam`(実用途)の signal は +0.1317 で、baseline の +0.1317 と
+小数4桁まで一致する。** 正直な参照を渡したとき、画像プロンプトチャンネルが
+f1に寄与した量は**ゼロ**。リークした参照でようやく +0.022 上積みされるが、
+それでも条件画像単体の +0.1670 にも matched cs2.5 の +0.1636 にも届かない。
+
+分解側も同じ構造: `gt_otherfam` の b_recall 0.1422 は baseline 0.1601 を
+**下回る**。両立を達成したのは**リーク腕だけ**。
+
+**`c_survival` は全26腕を通して一度も baseline を下回らない。**
+課題1の「引く」半分は、どの変種でも1ミリも動いていない。
+
+### track I の問いへの最終回答
+
+**「画像埋め込みという別チャンネルを足すと lesson 8 の機構が変わるか」→ 変わらない。**
+
+測った組み合わせ: pooled/plus × uniform/style_only/style_layout ×
+参照3種 × ip_scale 0.4〜1.0、cs 1.0と2.5、合計約40腕×192タイル。
+
+- **正直な参照では f1 signal が baseline と同一**(+0.1317)
+- **リーク参照でのみ上積みがあり**、それでも条件画像単体に届かない
+- 唯一の実質的な改善は **neither_ink の低下**(課題2)で、しかもリーク時のみ
+- **課題1は「足す」も「引く」も動かない**
+
+事前予測「変わらない。IP-Adapterが運ぶのは見た目であって線の位置ではない」は
+**全変種で支持された**。patch埋め込みは確かに内容を運ぶが、運ぶのは
+「参照画像の内容」であって「線画化の仕方」ではない。答えを渡せば答えに
+近づく、というだけで、それはオラクルの性質であって手法ではない。
+
+**きれいな否定結果として、この track の問いは閉じてよい。**
