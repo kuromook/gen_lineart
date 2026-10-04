@@ -6386,3 +6386,58 @@ deletion-only output, including the ideal one, is line art.
 
 Data: `results/trackc_judge_20261004/absolute_ratings.json`,
 `gt_rejected_lineart_003_000.png`.
+
+## 2026-10-04 Correction: the instrument check passed only on the damage
+
+Before deleting the comparison artifact its database was exported, and it held
+**203 judgements**, not the handful assumed: 143 + 19 repeats on the
+stroke-level set and 41 on the junction-chained decision set. Read before
+deleting, they change the reading of this track's own pre-registered gate.
+
+### Ties rise as the damage is removed
+
+| pairing | pixel-level (dashed) | stroke-level | junction-chained |
+|---|---:|---:|---:|
+| **oracle vs placebo_oracle** (instrument check) | 10/27 = **0.370** | 41/45 = **0.911** | 4/4 = **1.000** |
+| classifier vs placebo | 3/27 = 0.111 | 36/48 = 0.750 | 8/14 = 0.571 |
+| classifier vs rough | 10/23 = 0.435 | 40/50 = 0.800 | 13/23 = 0.565 |
+
+### The gate fails
+
+The pre-registered instrument check was: if the judge does not prefer the ideal
+deletion over a random one of the same size, the eye has no resolution on this
+material and nothing below it may be read. On the pixel-level set it passed
+17/17 and that was reported as "the eye has resolution". **It does not.** On
+the stroke-level material the same comparison is 91.1% ties, and on the
+junction-chained material 100% (4/4, small but consistent with the 45 above).
+
+So the 17/17 was resolution on dashing, not on stroke choice. Once the strokes
+are whole, the ideal deletion and a random deletion of the same size are
+indistinguishable to the judge. **Every earlier statement in this log that the
+eye "has resolution on this material" is withdrawn**; the correct statement is
+that it had resolution on damage only.
+
+That is the pre-registered stopping rule firing as designed, and it is a
+stronger result than the one it replaces: it is not that a comparison is
+*dominated* by damage, it is that **without damage there is nothing left to
+see**. Two deletions of the same rough differ in no way a person can register.
+
+### What survives of the decision pairing
+
+`classifier vs rough` on the junction-chained material: 13 ties of 23, and of
+the 10 decided the judge preferred the **undeleted rough** on 7
+(classifier 3/10, 95% CI 0.108-0.603 -- not separable, small n). Nothing here
+supports deletion as a visible improvement, and the point estimate leans the
+other way. Consistent with the absolute judgement, where classifier and rough
+both scored 0/15.
+
+Intra-rater consistency on the 19 repeats: **9/12 = 0.750** (95% CI
+0.468-0.911) over the pairs where both showings were decided. That caps any
+scorer at 0.637 hold-out agreement under the pre-registered gate -- moot now,
+since stage 2 was never reached.
+
+Data: `results/trackc_judge_20261004/comparison_judgements_203.json`,
+readouts `judgement_readout_pairs_s.json`, `judgement_readout_pairs_v.json`,
+`judgement_readout_pairs.json`. The artifact
+https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3 was deleted afterwards at the
+user's instruction; the export above is the only remaining copy.
