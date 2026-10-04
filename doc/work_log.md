@@ -5548,3 +5548,62 @@ quoting and they say different things: the classifier is 39.9% of the way from
 nothing to the oracle, but it has closed only 8.5% of the gap that remained
 above what the preprocessor already gives for free. The second is the honest
 headline for a method whose whole purpose is to improve on that preprocessor.
+
+## 2026-10-04: The Deletion Direction Has A Zero Ceiling
+
+Four notices, two from each of Tracks C and E, arriving within hours. Together
+they close a direction this project has pursued since 2026-09-11.
+
+**The measurement.** Track E put a blind, randomised, one-image-at-a-time
+question -- *is this usable as line art?* -- to 15 holdout tiles per arm:
+rough (untouched conditioning) **0/15**, Track C's classifier **0/15**, the
+**pixel-level oracle 0/15**, GT 14/15. Median 1.3s per item. The one GT
+rejection is `lineart_003_000`, a genuinely blank ground truth, so the judge
+rejected an empty sheet and the anchor is really 14/14.
+
+**Why the oracle row decides it.** The pixel oracle is this project's own
+definition of a correct deletion -- what `build_keep_labels.py` teaches and the
+source of the 0.7425 ceiling the whole line was measured against. Applied
+perfectly it is 0% usable, so a classifier converging on it converges on 0%.
+Deletion also moves nothing: rough = classifier = oracle, no partial credit.
+Track C reached the neighbouring result from the measurement side the same day
+-- the label is not a stroke-shaped teaching signal, leaving 34.0% of even the
+oracle's own strokes partially erased. **Line art is not a subset of the rough's
+ink.** Recorded as lesson 10.
+
+**What survives.** +0.0320 against `keep_all` and +0.0273 against an ink-matched
+random deletion are true: the selection is non-random rather than a density
+effect, and 88% of the gain survives aggregation to whole strokes, so it is
+stroke selection rather than per-pixel nibbling. They are simultaneously zero
+progress toward a drawing. Both are true at once and the second governs.
+
+**A second standing lesson, from how Track E closed the comparison rather than
+reporting it.** A comparison between two lossy outputs of the same source
+returns a ranking of the loss, not of the method. Three granularities were tried
+and each time the judge was deciding on breakage: of 77 judgements the side with
+fewer broken strokes won 23 of 24 decided pairs, matching the headline
+preference exactly, and the judge said so unprompted. The classifier removes a
+median 22.7% of the conditioning's ink and under 10% on none of the 192 tiles,
+so both sides of every pair are damaged and damage is computable. The check is
+cheap and belongs before the material is built. Recorded as lesson 11.
+
+**Two corrections that came out of it.** The classifier's effect was quoted
+against `condition`, the inverted *raw* conditioning, when the deletion-only
+classifier operates on `edge_map(conditioning)` and is a strict subset of it on
+192/192 tiles; against the right baseline (`keep_all`) it is **+0.0320**, not
++0.0272. And `lineart_003_000` is a blank GT sitting inside
+`holdout_lineart_family`, so every 192-tile f1 or signal average on record
+silently includes a meaningless cell. Both are now recorded, the second under
+Known Tool Traps.
+
+**What this changes here.** The Active Goal said the deletion framing was
+narrowed but not refuted; it is now refuted, and says so. The user's 2026-09-18
+redefinition -- stroke as word, panel as sentence -- was made before this was
+known, on the judgement that pixel-matching had stalled; it now has a harder
+reason behind it. Next Actions item 3 becomes the open decision Track C raised
+and deliberately did not take: continue as preprocessing only, fold into a track
+that draws, or close. The dilated structural change is already done (+0.0369, a
++0.0049 nudge on the noise boundary), so nothing half-finished holds it open.
+Track E's untried route -- re-rendering surviving strokes so the output reads as
+a sparse drawing rather than a holed rough -- is the one way this direction could
+still clear the usability bar, since what was measured was holed roughs.

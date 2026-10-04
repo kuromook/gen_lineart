@@ -169,6 +169,21 @@ closed, as are both of its successors.
   with the 0.6765 / 0.7425 ceilings. Commits `80d96c6`, `39c5387`, `ea450d6`,
   `0be448f`; montages under `results/epoch_sweep_20261003/` and
   `results/capacity_sweep_20261003/`.
+  **2026-10-04: the direction has a zero ceiling and the track's framing is now
+  a user decision.** The structural change was made (dilated RF 9->17px,
+  parameter count held) and gives +0.0369 against `keep_all`, a +0.0049 nudge
+  over +0.0320 -- on the noise boundary the four-knob sweep established, and
+  visually indistinguishable. It is unaffected as a measurement and inherits the
+  ceiling anyway: see lesson 10. The pixel oracle this track is measured against
+  scores **0/15 usable**, as does the untouched rough and as does this
+  classifier, against GT's 14/15. Selection inside "the rough's ink, minus some"
+  cannot reach a usable drawing however good it gets. What stands: the selection
+  is non-random (+0.0273 against ink-matched random deletion, 95% CI
+  +0.0217..+0.0329, higher on 78.6% of 187 tiles) and 88% of the gain survives
+  aggregation to whole stroke segments, so it is stroke selection rather than
+  per-pixel nibbling. **Track C has raised three options and is not deciding
+  between them**: continue scoped as preprocessing only, fold into a track that
+  draws rather than selects, or close out.
   Named next variables, to be isolated one at a time: the conservative 0.5
   threshold, epoch count, `pos_weight`. Results:
   `results/stroke_selection_eval_20260917/` in that tree.
@@ -256,8 +271,18 @@ work, and the stated expectation is that the pieces make each other easier.
   aesthetic one. The material confirms it: of the three candidate sources, only
   the preprocessor output is interpretable line art (midtone fraction 0.072
   against 0.503 and 0.259 for the trained models), so most pairs would have
-  been "clean line art vs broken something". **Re-open condition: when two
-  interpretable outputs can be compared.** Its diagnosis is what points at the
+  been "clean line art vs broken something". Re-open condition was: when two
+  interpretable outputs can be compared. **Met 2026-10-03, reopened, and
+  stopped again 2026-10-04 -- having produced the most consequential result of
+  the week.** The comparison itself was closed as unanswerable (lesson 11: it
+  ranks the loss, not the method), but before stopping it ran an *absolute*
+  judgement instead -- one image at a time, "is this usable as line art" -- and
+  that is what established lesson 10's zero ceiling. It also caught the wrong
+  baseline behind Track C's +0.0272. **Stopped, not concluded**: the untried
+  route it records is re-rendering surviving strokes so the output reads as a
+  sparse drawing rather than a holed rough. An unused build with disjoint tiles
+  across arms sits at https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG, worth
+  running only if someone disputes the finding. Its diagnosis is what points at the
   words line -- interpretability has to be produced before preference can be
   measured. UI and pairs are kept at `results/comparison_pairs_20260916/`.
 
@@ -348,7 +373,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and nine lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and eleven lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -515,6 +540,60 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    beside it. This is lesson 8 made measurable, and it is the first instrument
    here that agrees with what the eye reports ("the picture has not moved off
    the rough") rather than contradicting it.
+10. **Line art is not a subset of the rough's ink. Any method whose output
+    space is "the conditioning's ink, minus some" has a ceiling of zero.**
+    Added 2026-10-04 from `../lineart-aesthetic-judge` (Track E) and
+    `../lineart-stroke-selection` (Track C), who measured it from opposite
+    sides on the same day. Track E put a blind, randomised, one-image-at-a-time
+    question -- *is this usable as line art?* -- to 15 holdout tiles per arm:
+
+    | arm | usable |
+    |---|---:|
+    | rough (conditioning, untouched) | **0/15** |
+    | Track C's classifier | **0/15** |
+    | **the pixel-level oracle** | **0/15** |
+    | GT | 14/15 |
+
+    Median 1.3s per item, so these were not marginal calls, and the anchor is
+    really 14/14: the one GT rejection is `lineart_003_000`, a genuinely blank
+    ground truth, so the judge rejected an empty sheet and the scale is sound.
+    **The decisive row is the oracle.** It is this project's own definition of
+    a correct deletion -- what `tools/selection/build_keep_labels.py` teaches,
+    and the source of the 0.7425 ceiling everything in that line was measured
+    against. Applied perfectly it is 0% usable, so a classifier converging on
+    it converges on 0%. Deletion also moves nothing: rough = classifier =
+    oracle, with no partial credit. Track C reached the neighbouring result
+    from the measurement side the same day -- the label is not a stroke-shaped
+    teaching signal, leaving 34.0% of even the oracle's own strokes partially
+    erased. **What survives and what does not**: the classifier's +0.0320
+    against `keep_all` and +0.0273 against an ink-matched random deletion are
+    true statistics, and establish that its selection is non-random rather than
+    a density effect. They are simultaneously **zero progress toward a
+    drawing**, and that is the number that should govern investment. Deletion
+    remains viable as a **preprocessing step**; it is not a route to the
+    deliverable. Limits stated by the measurers: 15 per arm means "under about
+    20%", not literally zero; and the same tiles appeared across arms, which
+    can only depress the deletion arms -- but `rough` is itself at 0% and all
+    three deletion arms are identical, so there is no gap for that to have
+    manufactured. Data: `../lineart-aesthetic-judge/results/trackc_judge_20261004/`.
+11. **A comparison between two lossy outputs of the same source returns a
+    ranking of the loss, not of the method.** Added 2026-10-04 from Track E,
+    which built the material and then closed the comparison rather than report
+    it. Three granularities were tried -- per-pixel, stroke-aggregated,
+    junction-chained -- each neutralising what decided the last, and each time
+    the judge was deciding on breakage: of 77 judgements, the side with fewer
+    broken strokes won **23 of 24** decided pairs, the same count as the
+    headline preference. The judge said so unprompted ("I am marking whichever
+    destroys too much as NG"). Changing the unit of deletion moved the damage
+    without removing it, because the damage *is* the output: the classifier
+    removes a median 22.7% of the conditioning's ink and under 10% on none of
+    the 192 tiles. **The check is cheap and belongs before the material is
+    built**: take any axis that separates the arms -- tone, density, breakage,
+    damage -- measure it, and see whether it predicts the preference. If it
+    does, the human judgement adds nothing that was not already computable.
+    This is adjacent to lesson 9 but distinct: lesson 9 is a metric scoring a
+    relationship that is not there; this is a *human* judgement decided by a
+    quantity already in hand.
 
 ## Every f1 On Record, And What Can Still Be Read
 
@@ -550,12 +629,23 @@ the signal between them):
 | 5 | **SDXL fine-tune cs2.0** | 0.1539 | **0.0825** | **+0.0714** |
 | 5 | degenerate | 0.1332 | 0.1285 | +0.0047 |
 | 5 | anime cs2.5 (void probe) | 0.1277 | 0.1336 | **-0.0059** |
-| 192 | **Track C classifier, tuned final** | -- | -- | **+0.1942** |
-| 192 | Track C classifier, step 2 as first measured | 0.3202 | 0.1275 | +0.1928 |
+| 192 | **Track C classifier vs `keep_all`** | -- | -- | **+0.0320** |
+| 192 | Track C classifier vs ink-matched random deletion | -- | -- | +0.0273 |
+| 192 | Track C classifier, dilated RF 9->17px, vs `keep_all` | -- | -- | +0.0369 |
+| 192 | Track C classifier, as first measured against the wrong baseline | 0.3202 | 0.1275 | +0.1928 |
 | 192 | Track C pixel-level oracle | 0.5870 | 0.0997 | **+0.4872** |
 | housei 100 | **GT line art itself** | 0.9100 | 0.8443 | **+0.0657** |
 | housei | conditioning map | 0.1573 | 0.1480 | +0.0093 |
 | housei | degenerate | 0.0978 | 0.1027 | -0.0049 |
+
+**Baseline correction, 2026-10-04.** The classifier's figures above were first
+quoted against `condition`, which `measure_f1_signal.py` renders as the inverted
+*raw* conditioning image. The deletion-only classifier does not operate on that;
+it operates on `edge_map(conditioning)`, the contour map, and is a strict subset
+of it on 192/192 tiles. Against the correct baseline (`keep_all` -- the contour
+map with nothing deleted) the effect is **+0.0320**, not the +0.0272 reported on
+2026-10-03. Direction unchanged, magnitude larger. Found by Track E,
+re-derived and confirmed by Track C.
 
 **Three things this changes.**
 
@@ -709,6 +799,13 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `gt_bsds_f1` at **-0.269**. It also tracks the "strokes the map does have"
   column at r 0.75-0.90 within an arm, so report the normalised form too, and
   always beside f1, `fill_ratio`, `near_white_frac` and a montage.
+- **`lineart_003_000` has a blank ground truth and is in
+  `holdout_lineart_family`.** 480x480, every pixel 255 -- the only blank GT among
+  the 192 (next lowest ink is 0.0141). Any f1 or signal computed against it is
+  meaningless, so it silently contaminates every 192-tile average on record.
+  Found 2026-10-04 when a human judge rejected it as "not usable line art",
+  correctly, while rating GT. Exclude or flag it when reporting; past averages
+  carry it.
 - **Per-pair alignment scores now exist for all 8,467 training pairs**:
   `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
   (rough / manga_line / lineart_coarse, each with `le3`, `3to8`, `gt8`,
@@ -787,13 +884,21 @@ foundation (shared scripts, dataset pipeline, project-level docs).
 
 This supersedes the goal that stood here from 2026-09-11 to 2026-09-30, "close
 the gap between the preprocessor's output and GT", which was framed entirely
-around deleting the strokes the preprocessor over-draws. **That framing is not
-refuted -- it is no longer the whole project.** Deletion is still live as Track
-C and still has the widest measured headroom of anything here. But every attempt
-to reach GT by matching pixels, whether by generating or by selecting, has
-landed in the same place: at or just above the preprocessor's own score. On
-2026-09-18 the user redefined the problem instead of pushing further on that
-axis, and that redefinition is where the work now is.
+around deleting the strokes the preprocessor over-draws. **As of 2026-10-04 that
+framing is refuted, not merely narrowed** -- see lesson 10. A human judge found
+the pixel oracle, which is this project's own definition of a perfect deletion,
+**0/15 usable as line art**, the same as the untouched rough and the same as
+Track C's classifier, against GT's 14/15. **Line art is not a subset of the
+rough's ink**, so no amount of selection inside that output space reaches a
+drawing. Deletion survives as a **preprocessing step** -- clearing clutter
+before something else draws -- and its selection is measurably non-random, but
+it is not a route to the deliverable.
+
+The user's 2026-09-18 redefinition -- stroke as word, panel as sentence -- was
+made before this was known, on the judgement that pixel-matching had stalled.
+**It now has a second, harder reason behind it**: the thing that has to happen
+is a mechanism that *draws* strokes at uniform weight, not one that chooses
+among the rough's existing marks.
 
 **What survives unchanged, regardless of route.** These are measurements, not
 strategy:
@@ -1259,21 +1364,28 @@ see the Track Ledger above.
    (user, 2026-09-23). When it resumes, the standing warning from its last run
    is that **bits do not guarantee a visual pass**: position beat the marginal
    by 0.9 bits while the montage stayed unreadable.
-3. **Stroke selection** (`../lineart-stroke-selection`, Track C -- live but
-   tuning closed 2026-10-03). It is not superseded and it still has the widest
-   measured headroom in the project: its tuned classifier sits at signal
-   +0.1942 against an oracle's +0.4872 (raw f1 0.3202
-   against a 0.6765 ceiling on the same batch. The first result is genuinely
-   informative -- flat f1 but **precision +0.068 and recall -0.169**, i.e. it
-   learned to delete and it over-deletes -- so the named next variables are
-   concrete: the conservative 0.5 threshold, more epochs, `pos_weight`. Isolate
-   one at a time. Two constraints bound the route: per-segment keep/drop cannot
-   reach pixel-level selection (measured twice, cutting finer does not rescue
-   it), and selection can never add the ~16% of GT stroke length the
-   preprocessor never finds, which is what caps oracle recall at 0.604. Lesson 7
-   applies even though the objective is discriminative: score a holdout at each
-   snapshot rather than watching the loss. Proposal:
-   `doc/track_proposal_stroke_selection_20260911.md`.
+3. **Decide what Track C becomes** (`../lineart-stroke-selection`) -- **this is
+   the open decision, raised by Track C itself and explicitly not taken there.**
+   Lesson 10 removed the destination this track was aimed at: selecting among
+   the rough's ink cannot produce usable line art, because the perfect selection
+   does not either. Three options were named:
+   - **continue scoped as preprocessing only** -- deletion demonstrably clears
+     clutter and its selection is non-random (+0.0273 against ink-matched random
+     deletion, 88% of the gain surviving aggregation to whole strokes), so it
+     could serve whatever eventually draws
+   - **fold into a track that draws rather than selects**, which is where the
+     words line already is
+   - **close it out**
+
+   Worth weighing: the dilated structural change is already done (+0.0369, a
+   +0.0049 nudge on the noise boundary), so there is no half-finished experiment
+   holding the decision open, and the track has no unanswered question of its
+   own left. Against that, it holds the only mechanism here that measurably
+   improves on the preprocessor at all, and discarding it costs that.
+   Track E's untried route is adjacent and cheap: re-render the surviving
+   strokes so the output reads as a sparse drawing rather than a holed rough.
+   **That is the one way the deletion direction could still clear the usability
+   bar**, since lesson 10 measured holed roughs, not redrawn ones.
 4. **Fix the two tool bugs found in `inbox/` (both still open).**
    (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
    192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
