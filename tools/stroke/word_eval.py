@@ -46,7 +46,7 @@ def main():
     dev = torch.device("cuda")
     ck = torch.load(a.ckpt, map_location=dev, weights_only=False)
     levels = tuple(ck.get("levels", (8, 5, 5, 5, 5)))
-    m = Codebook2(levels=levels).to(dev); m.load_state_dict(ck["model"]); m.eval()
+    m = Codebook2(levels=levels, coord_bins=ck["args"].get("coord_bins", 0)).to(dev); m.load_state_dict(ck["model"]); m.eval()
     m.rfsq.stages = ck["args"].get("stages", 3)
     n_words = int(np.prod(levels))
     tp, tw, tm, tmeta = load("results/cluster_set_20260919", "train", dev)
