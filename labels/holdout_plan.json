@@ -1,0 +1,35 @@
+{
+ "seed": 20261004,
+ "r_max": 0.5,
+ "series_frac_target": 0.15,
+ "panel_mod": 20,
+ "n_candidates": 26308,
+ "n_groups": 36,
+ "test_series_groups": [
+  "suc",
+  "kacho",
+  "ben",
+  "pc",
+  "ng",
+  "riko",
+  "uni",
+  "mayer",
+  "phantom",
+  "hamlabi"
+ ],
+ "usage_counts": {
+  "train": 17761,
+  "test_panel": 4404,
+  "test_series": 4143
+ },
+ "usage_frac": {
+  "train": 0.6751,
+  "test_panel": 0.1674,
+  "test_series": 0.1575
+ },
+ "first300": {
+  "train": 197,
+  "test_series": 46,
+  "test_panel": 57
+ }
+}
