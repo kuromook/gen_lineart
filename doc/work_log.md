@@ -6370,10 +6370,11 @@ is meaningless and it should be excluded from per-tile reporting. One tile in
 - Track C's build used **the same 15 tiles for all four arms**, so the judge saw
   the clean GT of the same drawing. That can only depress the deletion arms.
   Track E's own build (68 items, tiles disjoint across arms, three levels with
-  a borderline option, 8 repeats for self-consistency) avoids this and is
-  published and unused at https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG --
-  worth running only if the finding is disputed, since `rough` itself sits at
-  0% and all three deletion arms are identical.
+  a borderline option, 8 repeats for self-consistency) avoids this. It went
+  unused and was deleted on 2026-10-04 at the user's instruction: `rough` itself
+  sits at 0% and all three deletion arms are identical, so there is no gap for
+  the contamination to have manufactured. `tools/build_absolute_ratings.py`
+  rebuilds it if the finding is ever disputed.
 - Binary: "closer but not there" could not be expressed.
 
 ### Status
