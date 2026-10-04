@@ -50,7 +50,7 @@ def load(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--judgements", required=True, help="dump of the judgments collection")
-    ap.add_argument("--pairs", default=str(ROOT / "pairs_s.csv"))
+    ap.add_argument("--pairs", default=str(ROOT / "pairs_v.csv"))
     ap.add_argument("--signal-per-tile", default=str(ROOT / "stroke_projected_signal_per_tile.csv"),
                     help="per-tile signal for the same arms, to ask whether f1 signal already "
                          "predicts the judge; the stage-2 gate requires beating it clearly")
@@ -96,8 +96,8 @@ def main():
         per_tile[row["pairing"]][row["tile"]] = winner(d)
 
     order = [("1. INSTRUMENT CHECK  oracle vs placebo_oracle", "oracle_vs_placebo_oracle", "oracle"),
-             ("2. DECISIVE          classifier vs placebo", "classifier_vs_placebo", "classifier"),
-             ("3. SEPARATE          classifier vs rough", "classifier_vs_rough", "classifier")]
+             ("2. THE DECISION      classifier vs rough", "classifier_vs_rough", "classifier"),
+             ("3. BEYOND THE METRIC classifier vs placebo", "classifier_vs_placebo", "classifier")]
     summary = []
     for title, key, target in order:
         c = by.get(key, {})
@@ -108,19 +108,21 @@ def main():
         lo, hi = wilson(k_t, n_dec)
         verdict = "above chance" if lo > 0.5 else ("below chance" if hi < 0.5 else "NOT separable")
         print(f"{title}")
-        print(f"   {target} preferred {k_t}/{n_dec} = {rate:.3f}  (95% CI {lo:.3f}-{hi:.3f})  ties {ties}  -> {verdict}")
+        tie_rate = ties / (n_dec + ties) if (n_dec + ties) else 0.0
+        print(f"   {target} preferred {k_t}/{n_dec} = {rate:.3f}  (95% CI {lo:.3f}-{hi:.3f})"
+              f"  ties {ties} ({tie_rate:.1%})  -> {verdict}")
         # does f1 signal already call these the same way the judge does?
-        a, b = key.rsplit("_vs_", 1)
+        arm_a, arm_b = key.rsplit("_vs_", 1)
         same = n_cmp = 0
         for pid, d in j.items():
             row = pairs.get(pid)
             if row is None or row.get("repeat_of") or row["pairing"] != key or d["choice"] == "tie":
                 continue
             t = row["tile"]
-            if t not in signal.get(a, {}) or t not in signal.get(b, {}):
+            if t not in signal.get(arm_a, {}) or t not in signal.get(arm_b, {}):
                 continue
             n_cmp += 1
-            if (winner(d) == a) == (signal[a][t] > signal[b][t]):
+            if (winner(d) == arm_a) == (signal[arm_a][t] > signal[arm_b][t]):
                 same += 1
         agree = same / n_cmp if n_cmp else None
         if n_cmp:
@@ -130,6 +132,41 @@ def main():
                         "ci_lo": round(lo, 4), "ci_hi": round(hi, 4), "verdict": verdict,
                         "signal_agreement": round(agree, 4) if n_cmp else None,
                         "signal_agreement_n": n_cmp})
+        # the point of the restratified set: does the eye follow the metric's
+        # own per-pair claim, or part company with it where the claim is weak?
+        buckets = defaultdict(lambda: [0, 0, 0])   # preferred, decided, ties
+        for pid, d in j.items():
+            row = pairs.get(pid)
+            if row is None or row.get("repeat_of") or row["pairing"] != key:
+                continue
+            delta = row.get("signal_delta")
+            if delta in (None, ""):
+                # built before the per-tile measurement landed: attach the
+                # metric's claim now, which is all the stratification was for
+                t = row["tile"]
+                if t in signal.get(arm_a, {}) and t in signal.get(arm_b, {}):
+                    delta = signal[arm_a][t] - signal[arm_b][t]
+                else:
+                    continue
+            b = "metric: no gain" if float(delta) <= 0 else "metric: gain"
+            if d["choice"] == "tie":
+                buckets[b][2] += 1
+                continue
+            buckets[b][1] += 1
+            if winner(d) == target:
+                buckets[b][0] += 1
+        for b in sorted(buckets):
+            k_b, n_b, t_b = buckets[b]
+            if n_b:
+                blo, bhi = wilson(k_b, n_b)
+                print(f"      {b:16s} {target} preferred {k_b}/{n_b} = {k_b/n_b:.3f}"
+                      f"  (95% CI {blo:.3f}-{bhi:.3f})  ties {t_b}")
+            else:
+                print(f"      {b:16s} no decided pairs, ties {t_b}")
+        if buckets:
+            summary[-1]["by_metric_claim"] = {b: {"preferred": v[0], "decided": v[1], "ties": v[2]}
+                                              for b, v in buckets.items()}
+
         if key == "oracle_vs_placebo_oracle" and n_dec and lo <= 0.5:
             print("\n   The instrument check did not pass. Nothing below this line may be read:")
             print("   if the ideal deletion is not visibly better than a random one of the same")

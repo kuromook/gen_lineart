@@ -6246,3 +6246,77 @@ set in the foreground shell, the `rm -f $R/...` that was meant to clear the
 stale csv removed nothing, and the watch fired on the old file. Those numbers
 describe the segment-level arms before junction chaining, not the arms now
 published. Re-measuring.
+
+## 2026-10-04 Closed: a comparison of deletions is a damage ranking
+
+Third iteration, same reduction. The judge put it plainly: what he is doing is
+marking the one that destroys too much as NG, and when the other one deletes
+even more, marking that instead. That is a damage ranking, and damage is
+computable -- it was computed here three times, each in minutes.
+
+### The fix made the grain coarser, not absent
+
+Chaining strokes through junctions cut the number of removed regions and
+tripled the size of the largest ones. "Fine snow" became "large-flake snow",
+which is what the judge reported.
+
+| version | removed regions/tile | median | p90 | max | ink removed |
+|---|---:|---:|---:|---:|---:|
+| pixel-level | 516 | 3.2 px | 58 px | 768 px | 32.6% |
+| merged strokes (published) | 143 | 3.6 px | **100 px** | **2176 px** | 22.3% |
+
+### Why no granularity can fix it
+
+The classifier removes **22.7% of the ink on the median tile, and under 10% on
+none of them**. The conditioning is a dense tangle of overlapping strokes;
+taking a fifth of it away always leaves holes. Both sides of every pair have
+holes, so the only judgement available is which holes are less objectionable.
+Changing the unit of deletion (contour pixel -> stroke segment -> stroke
+chained through junctions) moves the damage; it cannot remove it, because the
+damage **is** the output.
+
+### What was actually established
+
+1. **The eye has resolution on this material.** The pre-registered instrument
+   check passed 17/17 (10 ties) on the pixel-level set. The judge is not
+   failing to see; he is seeing the only thing that varies.
+2. **The preference was fully explained by damage.** On the 77 judgements
+   collected, the chosen side had fewer broken strokes in 23 of 24 decided
+   pairs, the same count as the headline preference.
+3. **f1 signal already answers the pairing that was called decisive**:
+   classifier - placebo = +0.0273 (95% CI +0.0217..+0.0329), classifier higher
+   on 78.6% of tiles, measured before any judgement was collected.
+
+So the answer to "does a human support Track C's +0.0320" is not "not yet". It
+is **that question cannot be put to a human in this output format**: a
+comparison of two deletion-only outputs over a rough returns a damage ranking,
+which the project can compute without spending the judge's time.
+
+### Where that leaves the track
+
+Track E's own stopping rule from 2026-09-17 was "both sides must be
+interpretable". They are now -- the images read as drawings, tone and ink are
+matched to 0.0007, and the strokes are not dashed. Interpretable turned out not
+to be sufficient: both sides must also be **undamaged**, and a deletion cannot
+be.
+
+Not attempted, and the two ways forward if this is reopened again:
+
+- **absolute instead of comparative**: show one image, ask whether it is usable
+  as line art. Include `oracle` and GT. If even the pixel oracle is unusable,
+  the ceiling belongs to the deletion direction itself, not to Track C's
+  classifier. ~60 judgements, cheaper per item than a comparison.
+- **change the output format**: re-render the surviving strokes at uniform
+  weight so the result reads as a sparse drawing rather than a holed rough.
+  Risk: the re-rendering is this track's drawing decision, not Track C's.
+
+Material kept: `results/trackc_judge_20261004/` (five arms at three
+granularities, the 77 pixel-level judgements under `pixel_level_record/`,
+manifests `pairs.csv` / `pairs_s.csv` / `pairs_v.csv`, montages
+`speckle_zoom.png`, `stroke_level_zoom.png`, `merged_set_fullsize.png`).
+UIs: https://claude.ai/artifact/CF5bePbbC2YBRmvLfeLJqo (pixel-level, 77 judged),
+https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3 (stroke-level, 0 judged).
+
+The 6-arm per-tile signal measurement was stopped unfinished; the summary
+figures quoted above come from the completed 187-tile run on the segment-level
+arms, and no per-tile signal exists for the junction-chained arms.
