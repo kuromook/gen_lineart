@@ -5675,3 +5675,52 @@ a person can see.
 `comparison_judgements_203.json` in Track E's results is the only copy. Lesson
 11 in `doc/CURRENT.md` now carries the correction inline rather than as a
 footnote, because the withdrawn claim was load-bearing in both original notices.
+
+## 2026-10-04 (later): Track G's First Notice Closes The 13-Day Gap
+
+The first-contact section placed in Track G's briefing was answered the same
+day. All six bullets of the foundation's picture were confirmed, with two
+corrections and three substantive additions.
+
+**The blocker is word purity, not tooling.** A word is a shape class with size
+removed, so one word spans roughly 6x in size and mixes meanings -- the user
+reads w342/w343/w344 as closed eyes where Track F named them panel frame, bangs
+and hair tips. Relative placement measured on mixed words is diluted. **That is
+why the work moved to Track H on 2026-09-25 and why Track G has been idle
+since**: fixing a trustworthy set of words is a prerequisite, not a detour.
+
+**Two corrections to what this file said.** "Do not restart from placement"
+(2026-09-23) was about *ordering*, not about dropping placement -- rendering had
+to become readable first, and it since did (real cluster instances replaced
+decoded prototypes, token match 5,345/5,345, A-column F1 0.78 at precision 1.00,
+the black blobs being real solid fills rather than a width bug). The goal was
+then restated as analysing placement on the GT word segmentation with no
+generative model. And the 49/164/254 reliability split is the *second* version;
+the first flipped 8 of the top 20 words on the random draw alone. Reliability
+there means boundary stability, **not** freedom from mixed meaning -- which is
+the blocker itself.
+
+**The instrument check failed three times and produced no verdict** on the claim
+it was testing, which was the user's: that placement is decided by relative
+position rather than absolute coordinates. Three designs failed their relocation
+or range checks. Relations do transfer across halves, but a reference large
+relative to the panel makes "within 4 reference sizes" cover the whole panel,
+and shrinkage tuned on the whole set erased the few tight pairs. Grid
+probabilities have too many knobs for the question; the untried candidate is a
+point prediction scored by miss distance.
+
+**Two findings for other tracks.** `results/cluster_set_20260919/meta.csv` in
+Track F has `cy` and `cx` swapped, and the corpus position bins were built as
+x/H and y/W, so 16-20% of clusters saturate the top bin against 6.25% uniform.
+**Every position-bits figure from Tracks F and G was measured on those bins** --
+7.563 marginal, 6.315-6.388 cloze, 6.658. Track F was not modified and is now
+held, so this waits for whoever resumes it; recorded under Known Tool Traps.
+Track G's earlier "the original line PNGs are stored transposed" is probably the
+same swap from another angle, not re-verified.
+
+**And the thing that needed acting on immediately**: Track H's `face-words`
+branch has **never been pushed** -- no upstream, absent from `origin`, confirmed
+here. It is a worktree of Track G's separate clone, so neither
+`git worktree list` from the integration tree nor the ledger audit can see it.
+The active front of the project is also the least durable thing in it. Recorded
+at the top of its Next Actions entry.

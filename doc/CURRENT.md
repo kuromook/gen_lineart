@@ -819,6 +819,16 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `gt_bsds_f1` at **-0.269**. It also tracks the "strokes the map does have"
   column at r 0.75-0.90 within an arm, so report the normalised form too, and
   always beside f1, `fill_ratio`, `near_white_frac` and a montage.
+- **`results/cluster_set_20260919/meta.csv` in Track F has `cy` and `cx`
+  swapped**: the `cy` column holds x and `cx` holds y. The corpus position bins
+  were built as x/H and y/W, so 16-20% of clusters saturate the top bin against
+  6.25% if uniform. **Every position-bits figure from Tracks F and G was
+  measured on those bins** -- 7.563 marginal, 6.315-6.388 cloze, 6.658 in Track
+  G. Reported by Track G 2026-10-04; Track F was not modified, and Track G's
+  own GT analyses use the corrected axes. Track F is held, so this will be
+  waiting for whoever resumes it. Track G's earlier claim that "the original
+  line PNGs are stored transposed" is probably the same swap seen from another
+  angle, and was not re-verified.
 - **`lineart_003_000` has a blank ground truth and is in
   `holdout_lineart_family`.** 480x480, every pixel 255 -- the only blank GT among
   the 192 (next lowest ink is 0.0141). Any f1 or signal computed against it is
@@ -1370,6 +1380,21 @@ blocking. Every ControlNet track is closed and none leaves work behind --
 see the Track Ledger above.
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front).
+   **Its branch has never been pushed** -- no upstream is configured and
+   `face-words` does not exist on `origin` as of 2026-10-04, so every commit in
+   that track exists on one disk only. It is also a worktree of Track G's
+   separate clone, which is why neither the integration tree's
+   `git worktree list` nor `tools/audit_track_ledger.py` can see it. **Push it
+   before anything else.** It is the active front and the least durable thing
+   in the project. Reported by Track G, confirmed here.
+   Why it exists, from Track G's first notice: a word is a shape class with
+   size removed, so words mix meanings and dilute any placement measured on
+   them; fixing a small, trustworthy set of words is the prerequisite Track G
+   stopped for. It assigns human strategic labels (eye, nose, mouth, brow, ear)
+   in a namespace separate from `wNNN`, at instance level, with a held-out part
+   fixed at labelling time -- and **the user allowed those labels as ground
+   truth for evaluation, an explicit exception to "names are interpretive
+   only"**. It owes its own notice; nothing here speaks for its results.
    Waiting on the user: step 1's size-stratified montages of the closed-eye
    candidates w342/w343/w344 are built and the tool checks passed, and the
    **visual judgement has not been given yet**. That judgement gates the rest:
@@ -1381,15 +1406,54 @@ see the Track Ledger above.
    live in a **namespace separate from the machine word ids**, and the held-out
    split is **assigned mechanically at labelling time**, before any result is
    seen, both by panel and by series.
-2. **Panel generation** (`../lineart-panel-generation`, Track G). Blocked
-   upstream by its own choice, and correctly so: it can generate, but the words
-   render as an ant swarm, so no visual judgement is possible and placement
-   measurement was halted after failing an instrument check. Its own next steps
-   are recorded there -- prototype-plus-residual decoding to make words legible
-   first, then re-judge, then placement. **Do not restart from placement**
-   (user, 2026-09-23). When it resumes, the standing warning from its last run
-   is that **bits do not guarantee a visual pass**: position beat the marginal
-   by 0.9 bits while the montage stayed unreadable.
+2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **idle
+   since 2026-09-25; the work moved to Track H that day, and its own blocker is
+   what sent it there.** First notice received 2026-10-04 and it closes the
+   13-day gap; three things in it change the picture here:
+   - **The blocker is word purity, not tooling.** A word is a shape class with
+     size removed, so one word spans roughly 6x in size and mixes meanings --
+     the user reads w342/w343/w344 as closed eyes where Track F named them
+     panel frame, bangs and hair tips. **Relative placement measured on mixed
+     words is diluted**, which is why fixing a small set of words came first.
+     That is Track H.
+   - **"Do not restart from placement" (2026-09-23) was about ordering, not
+     about dropping placement.** Rendering had to become readable first,
+     because the ant swarm could not be judged at all. It since was: real
+     cluster instances replaced decoded prototypes (token match 5,345/5,345,
+     A-column F1 0.78 at precision 1.00; the black blobs are real solid fills,
+     not a width bug) and the user judged the words recognisable. The goal was
+     then restated as **analysing placement on the ground-truth word
+     segmentation, with no generative model, measuring word trustworthiness
+     while doing it.**
+   - **The instrument check failed three times and was stopped before any main
+     run, with no verdict on the claim it was testing** -- the user's domain
+     claim that placement is decided by relative position rather than absolute
+     coordinates. v1 (32x32, offsets in reference-word sizes), v2 (16x16,
+     direction x log-distance) and v3 (relation types fixed on the training
+     half) all failed their relocation or range checks. The diagnosis is that
+     relations do transfer (type-1 median distance 4.1 reference sizes) but a
+     reference large relative to the panel makes "within 4 sizes" cover
+     everything, and shrinkage tuned on the whole set erased the few tight
+     pairs. **Grid probabilities have too many knobs for this question**; the
+     first candidate on return is a point prediction scored by miss distance,
+     not yet registered.
+
+   Measured on GT and replicating across halves (62 works -> 36 groups, 380
+   near-duplicate panels dropped): per-word median detail-flip **0.275** (the
+   global 23.2% was a frequency-weighted average), **238 words** have a
+   placement preference that replicates, and relative placement between
+   different words is consistent across halves but **weak** -- residual cosine
+   0.15 against a null near zero. The word-reliability split **49 / 164 / 254**
+   is the second version, three-valued by bootstrap with zero pass/fail flips
+   across three seeds; the first version flipped 8 of the top 20 words on the
+   random draw alone and is superseded. Reliability there means **boundary
+   stability, not freedom from mixed meaning** -- which is exactly the blocker
+   above. The generative line (PosAR-W, set-AR vs two-stage) is **on hold, not
+   abandoned**; a train/sample mismatch in the placement sampler was found and
+   fixed, worth 0.011 pos bits, and did not explain the collapsed compositions.
+   The standing warning from its last run still holds: **bits do not guarantee a
+   visual pass** -- position beat the marginal by 0.9 bits while the montage
+   stayed unreadable.
 3. **Tracks C, E and F are held, not closed** (user decision 2026-10-04). The
    words line resumes as the active work; these three stay in place so they can
    be re-measured when a new yardstick exists. **Held means the state must be
