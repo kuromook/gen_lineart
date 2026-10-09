@@ -391,9 +391,14 @@ work, and the stated expectation is that the pieces make each other easier.
     UI (`tools/face/group_server.py`, port 8473) where the author selects
     strokes and groups them into parts, pre-registered on 2026-10-09 to measure
     mixing, fragmentation and omission, and to evaluate a regrouping mechanism
-    against the same held-out split the instance labels use. **Live as of
-    2026-10-09 20:06 with zero production groups recorded**; the five trial
-    groups are excluded by pre-registration.
+    against the same held-out split the instance labels use. It went live
+    2026-10-09 20:06 with no production groups; **read from that track's files
+    on 2026-10-10 07:24 there are 41 groups in `labels/face_groups.jsonl`**,
+    the five trial groups being in a separate file and excluded by
+    pre-registration. That is this file looking at the track's disk, not the
+    track reporting -- it still owes its notice -- so treat the figure as a
+    timestamp, not a status. The three pre-registered measurements need more
+    than 41.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
