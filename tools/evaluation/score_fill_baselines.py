@@ -48,6 +48,7 @@ HAS_FILL_AREA = 0.001    # ~230 px; below this a tile carries no fill to find
 FULL_FILL_AREA = 0.90    # tile lies inside a fill -- no boundary in the window
 SENS_RADII = (3.0, 6.0)
 SENS_ARMS = ("blank", "all_black", "preproc@32", "msgan")
+NC_ARMS = ("preproc@32", "preproc@otsu", "preproc@budget", "msgan")
 
 
 def otsu_ink(gray):
@@ -68,11 +69,16 @@ def budget_ink(gray, n_px):
     return mask
 
 
-def arm_masks(tile, split, gt_ink, radius=FILL_HALF_WIDTH_PX):
-    """Every arm's ink mask for one tile. Returns {arm: ink_mask}."""
+def arm_masks(tile, pool, gt_ink, radius=FILL_HALF_WIDTH_PX):
+    """Every arm's ink mask for one tile. Returns {arm: ink_mask}.
+
+    `pool` is the list name, which is how the arm directories are keyed --
+    not the split, which is how the GT is keyed. They differ (ako5_held lives
+    in the train split), and conflating them would read the wrong file or
+    none at all."""
     stem = tile[:-4] if tile.endswith(".jpg") else tile
-    pp_raw = load_gray(R / "preproc" / split / f"{stem}.jpg")  # white-on-black
-    ms = load_gray(R / "msgan" / split / f"{stem}_out.png")    # ink-on-white
+    pp_raw = load_gray(R / "preproc" / pool / f"{stem}.jpg")  # white-on-black
+    ms = load_gray(R / "msgan" / pool / f"{stem}_out.png")    # ink-on-white
     full = np.ones((IMAGE_SIZE, IMAGE_SIZE), dtype=bool)
     return {
         "blank": np.zeros((IMAGE_SIZE, IMAGE_SIZE), dtype=bool),
@@ -122,7 +128,7 @@ def main():
         if first_gt_fill is None:
             first_gt_fill = gt_fill
 
-        inks = arm_masks(tile, args.split, gt_ink)
+        inks = arm_masks(tile, args.list, gt_ink)
         preds = {arm: fill_mask(ink) for arm, ink in inks.items()}
 
         for arm, pred in preds.items():
@@ -131,8 +137,11 @@ def main():
                          "pred_fill_ratio": round(fill_ratio_cv2(inks[arm]), 6),
                          "pred_ink_ratio": round(float(inks[arm].mean()), 6), **s})
 
-        # nc3 / nc4 on the two arms that are not degenerate by construction
-        for arm in ("preproc@32", "msgan"):
+        # nc3 / nc4 on every arm that is not degenerate by construction.
+        # preproc@budget is included because C1's verdict rests on it: it is
+        # the most generous preprocessor reading, and an arm whose control was
+        # never run cannot be read at all.
+        for arm in NC_ARMS:
             for nc, mutated in (("nc3_transpose", preds[arm].T),
                                 ("nc4_shift50", np.roll(preds[arm], (50, 50), (0, 1)))):
                 s = score_masks(mutated, gt_fill)
@@ -142,12 +151,12 @@ def main():
         # nc2: the PREVIOUS tile's prediction against this tile's GT
         if pending is not None:
             prev_tile, prev_preds, prev_meta = pending
-            for arm in ("preproc@32", "msgan", "all_black"):
+            for arm in NC_ARMS + ("all_black",):
                 s = score_masks(prev_preds[arm], gt_fill)
                 rows.append({**gt_meta, "arm": f"nc2_offbyone:{arm}",
                              "radius": FILL_HALF_WIDTH_PX, "pred_fill_ratio": "",
                              "pred_ink_ratio": "", **s})
-        pending = (stem, {a: preds[a] for a in ("preproc@32", "msgan", "all_black")}, gt_meta)
+        pending = (stem, {a: preds[a] for a in NC_ARMS + ("all_black",)}, gt_meta)
 
         # radius sensitivity -- the conclusion must not live on radius 4 alone
         for radius in SENS_RADII:
@@ -164,7 +173,7 @@ def main():
     # close the nc2 ring so the last tile is not silently dropped
     if pending is not None and first_gt_fill is not None:
         _, prev_preds, prev_meta = pending
-        for arm in ("preproc@32", "msgan", "all_black"):
+        for arm in NC_ARMS + ("all_black",):
             s = score_masks(prev_preds[arm], first_gt_fill)
             rows.append({**prev_meta, "arm": f"nc2_offbyone:{arm}",
                          "radius": FILL_HALF_WIDTH_PX, "pred_fill_ratio": "",

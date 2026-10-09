@@ -27,6 +27,7 @@ R = Path("results/baseline_fill_20261009")
 MAIN_ARMS = ["blank", "preproc@128", "preproc@32", "preproc@otsu",
              "preproc@budget", "msgan", "all_black"]
 PREPROC_ARMS = [a for a in MAIN_ARMS if a.startswith("preproc")]
+NC_ARMS = ("preproc@32", "preproc@otsu", "preproc@budget", "msgan")
 
 
 def load(lists):
@@ -155,7 +156,7 @@ def main():
             print(f"  NC1 polarity not inverted: fill area {pol_area:.4f} "
                   f"(bar >=0.90), gap to all_black {gap:.4f} (bar <=0.02) -> "
                   f"{'as predicted' if ok else 'NOT as predicted'}")
-        for arm in ("preproc@32", "msgan"):
+        for arm in NC_ARMS:
             true_iou = micro_iou(by_arm.get(arm, [])) or 0.0
             line = [f"  {arm:12} true micro IoU {true_iou:.4f}"]
             for nc, bar in (("nc2_offbyone", 0.10), ("nc3_transpose", None),
@@ -167,9 +168,20 @@ def main():
                     nc_verdicts[(pool, arm)] = (true_iou, v or 0.0)
             print("  ".join(line))
             t, n2 = nc_verdicts[(pool, arm)]
-            print(f"               -> {'above' if t > n2 + 0.01 else 'NOT above'} "
+            above = t > n2 + 0.01
+            n3 = micro_iou(by_arm.get(f"nc3_transpose:{arm}", [])) or 0.0
+            # Registered bar: the transpose should fall to the off-by-one
+            # level. Printed beside it is the sharper reading, |true - nc3|:
+            # an arm that scores the same transposed knows how MUCH to paint
+            # and not WHERE, and that is a quantity effect, not a placement.
+            localised = (t - n3) > 0.01
+            print(f"               -> {'above' if above else 'NOT above'} "
                   f"its own off-by-one control"
-                  f"{'' if t > n2 + 0.01 else '  [NOT READ as alignment]'}")
+                  f"{'' if above else '  [NOT READ as alignment]'}")
+            print(f"               -> transpose costs {t - n3:+.4f} "
+                  f"(nc3-nc2 gap {n3 - n2:+.4f}, registered bar <=0.03); "
+                  f"{'localised' if localised else 'NOT localised -- the overlap is quantity, not placement'}")
+            nc_verdicts[(pool, arm)] = (t, n2, localised)
 
     print("\n" + "=" * 78)
     print("PRIMARY: normal layer, GT has a fill  (micro IoU, per pool, radius 4)")
@@ -208,8 +220,14 @@ def main():
     print("=" * 78)
     for pool in pools:
         s = summary[pool]
-        best_pp_arm = max(PREPROC_ARMS, key=lambda a: s.get(a) or -1)
-        best_pp = s.get(best_pp_arm) or 0.0
+        def readable(a):
+            v = nc_verdicts.get((pool, a))
+            return v is None or v[2]  # arms with no control registered pass through
+        best_pp_arm = max(PREPROC_ARMS, key=lambda a: (s.get(a) or -1) if readable(a) else -1)
+        best_pp = (s.get(best_pp_arm) or 0.0) if readable(best_pp_arm) else 0.0
+        dropped = [a for a in PREPROC_ARMS if not readable(a)]
+        if dropped:
+            print(f"  (not read, failed their own transpose control: {', '.join(dropped)})")
         ms = s.get("msgan") or 0.0
         print(f"\n[{pool}]  n={s['_n']}  GT fill area={s['_gt_area']:.4f}")
         if best_pp >= 0.20:
