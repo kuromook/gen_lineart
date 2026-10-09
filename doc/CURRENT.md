@@ -1,7 +1,11 @@
 # Current Project State
 
-Updated: 2026-10-09 JST (Tracks G and H, two new lessons, and a **withdrawn
-tool trap** -- the `cy`/`cx` swap was a misdiagnosis; see Known Tool Traps).
+Updated: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
+trap** -- the `cy`/`cx` swap was a misdiagnosis -- and, later the same day,
+Track G's resumed placement question settled: the reference frame carries the
+win and lesson 13 now holds from both the classification and the prediction
+side; see Known Tool Traps for two new entries on checking a box's
+orientation and on writing a negative control).
 The Track Ledger, Lessons, Known Tool Traps, Active Goal and Next Actions are
 current as of this date; the ledger was rebuilt on 2026-09-30 by
 reading every track's own files after this file had fallen 13 days behind. The
@@ -219,8 +223,9 @@ work, and the stated expectation is that the pieces make each other easier.
   discriminative framing is archived in that tree at
   `doc/archive/initial_notice_discriminative_20260918.md`.
 - `../lineart-panel-generation` (branch `panel-generation`, **Track G**, and
-  note the separate clone) -- **active, last commit 2026-09-25.** Given a
-  concept, choose words and place them. Approval is recorded in its own
+  note the separate clone) -- **active, last commit 2026-10-09; the resumed
+  placement question is settled and the track is now waiting on Track H's
+  unit.** Given a concept, choose words and place them. Approval is recorded in its own
   briefing and work log ("起案・承認された", 2026-09-21); **the copy of its
   proposal still says draft/unapproved**, so that copy is stale, not the
   status. Where it got to, in order:
@@ -246,6 +251,50 @@ work, and the stated expectation is that the pieces make each other easier.
   - *2026-09-25*: an attempt to measure absolute vs relative position **failed
     its own instrument check and was halted**, handed to Track H to do first on
     face parts, where the relations are clear.
+  - *2026-10-09, the halted question settled, with the face box as the
+    reference frame.* Resumed on the foundation's instruction; the grid of
+    probabilities was dropped for a point prediction scored by miss distance
+    (panel short side), one knob only (word minimum n = 20), fitted on one
+    series group and evaluated on the other, both directions reported
+    separately, 40,228 in-box clusters after dropping duplicate panels. All
+    four gates passed both ways, but the decomposition is the finding: median
+    miss **0.347 absolute/per-word (A2) -> 0.157 box centre alone (F0) ->
+    0.152 box+word (F3)**, so **97% of the "relative beats absolute" win is
+    containment in the face box** and 3% is placing the word inside it
+    (F3-F0 95% CI [-0.0078, -0.0043] / [-0.0074, -0.0046]; the negative
+    control -- swap in a same-area box from another panel -- erases it). **The
+    anchor is required**: predicting the box position too (C1, 0.350 / 0.340)
+    is no better than absolute, in fact marginally worse (C1-A2 CI
+    [+0.00004, +0.0040]), which measures the "if" in the user's claim that
+    one fixed word determines the rest. In absolute coordinates the word adds
+    nothing (A2-A1 CI spans 0 both ways). **In the eye/mouth size band
+    (r = 0.1-0.25) the word's contribution is exactly zero** (F3-F0 -0.0001 /
+    -0.0003), while clustering the in-box (u, v) of that band into three on
+    the fit half alone reproduces, independently in both groups, **the same
+    three peaks Track H found by a different implementation and a different
+    figure** (0.256/0.742/0.496 u against H's 0.27/0.73/0.50). Knowing which
+    of the three peaks would **halve the miss (0.074 vs F0's 0.149)**, and the
+    word takes none of that: so **the relative structure is real and large,
+    and the word does not point at it** -- lesson 13 confirmed from the
+    prediction side. The author then judged the figures: orientation correct,
+    the two eyes and the mouth below them visible, all 12 face boxes on faces,
+    r >= 0.5 is "a circle" (not "contour/hair" as the track wrote, corrected),
+    and **some of the 12 clusters are not one thing** -- the author seeing the
+    unit trap directly. The author also noted the three peaks are coarse
+    because profile and reclining faces are mixed in, so **0.074 is an upper
+    bound on the ceiling, not the best attainable**, which strengthens rather
+    than weakens the conclusion. Artifacts `results/framerel_20261009/`, tool
+    `tools/gen/framerel.py` (written without reusing the coordinate parts of
+    `placement_gt.py` / `relpos.py`, reading `meta.csv` by column name and
+    taking panel size from the line PNG, so it does not sit on the distorted
+    bins). Notices
+    `inbox/note_track_g_frame_relative_placement_20261009.md` and
+    `inbox/note_track_g_status_and_idle_capacity_20261009.md`. **Decided
+    2026-10-09 (user): the next measurement waits for Track H's unit** --
+    restricting to frontal faces was drafted but never registered or run,
+    because with a mixed unit it would only measure a mixed unit's stability.
+    `framerel.py` takes a new unit's labels in place of the word id, so the
+    distance to 0.074 comes out in one run.
   - Also reported from here, and **withdrawn as to its cause on 2026-10-04**:
     the claim that Track F's `cluster_set` meta has `cy` and `cx` swapped. The
     columns are as named; what is transposed is `strokes`/`pts` and `dims`.
@@ -740,6 +789,16 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     quantitative form of "a word is a shape class with scale discarded": the
     shape class is real and the meaning is not in it.**
 
+    **Confirmed from the prediction side the same day, by Track G, on a
+    different question with a different tool and a different split** (series
+    groups, not panels): asked to place a cluster inside its face box, box+word
+    is indistinguishable from the box centre in the eye/mouth band (0.1492 vs
+    0.1493, and 0.1451 vs 0.1454 the other direction), while knowing which of
+    the band's three peaks a cluster belongs to **halves the miss (0.074)**.
+    So the structure is there and large; the word takes none of it. Two tracks
+    arriving at this from a classification task and a regression task is the
+    reason to trust it.
+
 ## Every f1 On Record, And What Can Still Be Read
 
 **This section replaced an earlier one, and the earlier one was wrong.** On
@@ -995,7 +1054,12 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   denominators under either reading -- so they are genuinely distorted, with
   16-20% of clusters saturating the top bin against 6.25% if uniform, and
   **every position-bits figure from Tracks F and G still sits on them**: 7.563
-  marginal, 6.315-6.388 cloze, 6.658 in Track G.
+  marginal, 6.315-6.388 cloze, 6.658 in Track G. **How far those three figures
+  actually move is being measured** -- Track G was given exactly that, with the
+  bins rebuilt on matched denominators (Next Actions item 2); its own
+  2026-10-09 tool `tools/gen/framerel.py` deliberately does not use the bins at
+  all, reading `meta.csv` by column name and taking panel size from the line
+  PNG.
   **Track G's own GT analyses are numerically unaffected, with their axis
   labels swapped.** Verified here on 2026-10-09 by reading
   `tools/gen/placement_gt.py`: it takes `x = meta.cy` and divides by `dims[1]`,
@@ -1006,6 +1070,41 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   one" -- is mirrored across the diagonal.** Track F's files were not modified
   and Track F is held, so this waits for whoever resumes it; its briefing
   carried the wrong cause from 2026-10-04 and was corrected on 2026-10-09.
+- **The line-PNG check has no sensitivity to the orientation of a face box.**
+  Reported by Track G on 2026-10-09 and verified here against
+  `../lineart-face-words/results/h3_face_parts_20261004/faces.csv`. Lesson 12's
+  remedy -- score points against the ink in `dataset/<source>/line/*.png` --
+  only exercises `strokes` / `pts` / `meta`. A face box `(x0, y0, x1, y1)` can
+  be read either way round and the PNG check will not move at all, so a track
+  that uses the detector boxes needs its own cheap check: **does the box fit
+  inside the panel.** Read by column name, 7.3% of the 5,531 boxes stick out
+  and the 90th percentile of the overflow is **0.4 px** -- the detector
+  clipping at the edge. Read with x and y exchanged, **40.5%** leave the panel
+  and the 90th percentile is **1,018.6 px**. (Both fractions count overflow
+  beyond a 2 px tolerance, which is what reproduces Track G's numbers; the
+  overflow percentiles are over all boxes.) It discriminates because panels are
+  not square: 94.6% of the 5,345 panels differ by more than 5% between the
+  sides (94.3% of the 3,821 that hold a box), aspect ratio median 1.56. Any
+  track handling the boxes -- H and G today -- should run it before reading a
+  direction off a figure; it is shared here as
+  `tools/evaluation/face_box_check.py`, which takes the csv as its one argument
+  and reproduces the four figures above.
+- **A negative control has to name one concrete error, not a direction.**
+  Track G's first instrument check on 2026-10-09 failed its own negative
+  control and the fault was in the control, not the data: the registration said
+  "exchange x and y", and the implementation exchanged the axis order of `pts`
+  while leaving the cluster centre `(cx, cy)` correct. That is a hybrid that
+  cannot occur -- it transposes a prototype's local offsets about its own true
+  centre -- and it scored **0.3854** against a <= 0.2 bar while the correct
+  reading scored 1.0000. Re-run one error type at a time: exchanging x and y of
+  the finished points scores **0.0095**, confusing `meta.cy` / `meta.cx` (the
+  known defect in Track G's `placement_gt.py`) **0.0020**, a 50 px shift
+  **0.0833**, and the impossible hybrid **0.3854** -- and that last one is high
+  **only for small clusters** (0.94 at 63 px diameter, 0.71 at 69 px, 0.12 at
+  303 px), because a local transpose about the right centre barely moves a
+  small thing. The lesson is the phrasing: **"swap x and y" is a different
+  mutation at every layer**, so a control is written as the specific confusion
+  a real caller could make, one per row, each with its own expected score.
 - **`cluster_set`'s unit is built from proximity alone, so it mixes parts and
   silently drops strokes.** Measured by Track H on 2026-10-09 against 1,003
   author-assigned instance labels inside detected face boxes. Clusters come
@@ -1183,6 +1282,18 @@ in 71% of 5,345 panels), and the finding that **frame-relative** coordinates
 show the eye/mouth/nose structure that word-to-word placement never did. The
 face box is the first reference frame this project has that is not itself
 another mixed word.
+
+**Later the same day Track G put sizes on that second asset, and the route's
+bottleneck is now a number.** Asked to place a cluster, the reference frame is
+worth a median **0.190** of the panel's short side and the word inside it
+**0.006**; knowing which of the eye/mouth band's three peaks a cluster belongs
+to would be worth another **0.075**, and the author's reading that profile and
+reclining faces are mixed into those peaks means even that is an underestimate.
+So the missing piece is not a better placement model and not more words: it is
+**a label that says which peak** -- that is, the unit. Two tracks reached this
+from opposite directions on the same day, one classifying parts and one
+predicting positions, which is the reason the route is being rebuilt at the unit
+and not anywhere else.
 
 Two things follow that are worth stating plainly, because they are easy to lose:
 
@@ -1635,25 +1746,43 @@ blocking. Every ControlNet track is closed and none leaves work behind, and
      7,000 for closed eye -- so either the order stops being uniform (which
      would bias what "position predicts" means and was deliberately avoided) or
      the rare parts get a different instrument. Unresolved, and the user's call.
-2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **resuming
-   2026-10-09 by user decision, for exactly one question**, after being idle
-   since 2026-09-25 when the work moved to Track H and its own blocker sent it
-   there. The reasoning behind the decision is a resource one and worth keeping,
+2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **resumed
+   and settled the same day, 2026-10-09; the slot is open again and has been
+   re-routed.** It had been idle since 2026-09-25, when the work moved to
+   Track H and its own blocker sent it there. The reasoning behind the decision is a resource one and worth keeping,
    because it will recur: Track H's line-level ground truth occupies **the
    author**, which is this project's scarce resource, while the machine sits
    idle -- and **no held experiment anywhere in the project is GPU-bound**, the
    heavy work having all been closed by lesson 8. So the work to pick up is work
    that needs neither the GPU nor the author's eyes, which is what this one is.
-   The question is the one this track halted on without a verdict: **is
-   placement decided by relative position rather than absolute coordinates.**
-   The named, unstarted candidate is unchanged -- a point prediction scored by
-   miss distance rather than grid probabilities -- and what has changed is that
-   Track H's **5,531 detected face boxes** supply a reference frame that is not
-   itself a mixed word, which is precisely what the halt's own diagnosis said
-   was missing. The resume instruction is written into that track's briefing
-   (`c05b461`), including the reading order: the axis correction and lesson 12
-   before any figure is built, or its montages will be mirrored the way Track
-   H's were. **Not resumed**: the generative line, which stays on hold.
+   The question it halted on is now answered -- **placement is relative only
+   once a reference frame is given, and the word contributes almost nothing
+   inside it**; the numbers, the author's visual verdict and the three peaks
+   are in the Track Ledger entry for 2026-10-09, and the one-line consequence
+   is in lesson 13. Both notices are in `inbox/`
+   (`note_track_g_frame_relative_placement_20261009.md`,
+   `note_track_g_status_and_idle_capacity_20261009.md`); every figure in them
+   was re-derived here from `results/framerel_20261009/` before being folded
+   in, and the box-orientation numbers were recomputed from `faces.csv`
+   independently. **Not resumed, and still on hold**: the generative line
+   (PosAR-W, set-AR vs two-stage, scale-up), untouched.
+   **What the track now waits for** is Track H's unit: `tools/gen/framerel.py`
+   takes a new unit's labels in place of the word id, so the distance to the
+   0.074 ceiling comes out in one run, right after item 1's three measurements
+   land. Restricting to frontal faces was drafted and deliberately **not**
+   registered -- with a mixed unit it would measure a mixed unit.
+   **The re-routed slot, decided 2026-10-09 by the foundation under the user's
+   standing permission to give Track G other tracks' work**: measure the real
+   blast radius of the distorted corpus position bins (the trap above) and
+   re-report the figures that sit on them -- rebuild the bins with matched
+   denominators and recompute the marginal 7.563, the cloze 6.315-6.388 and
+   Track G's own 6.658. The track proposed it itself, it reported the
+   distortion in the first place, and it needs neither the GPU nor the author's
+   eyes. The precedent for the shape of the answer is Track I on
+   `lineart_003_000`: **if the shift is small, "no re-measurement needed" can
+   be stated and closed; if it is large, the premise Track F resumes on has
+   changed.** Pre-registration first, as always, including which figure counts
+   as "large".
    Deliberately *not* chosen for the same slot, and why, so the decision is not
    re-litigated: Track C/E's re-render route is the one named untried thing in
    the deletion family, but its verdict needs the author's eyes and would
@@ -1749,6 +1878,9 @@ blocking. Every ControlNet track is closed and none leaves work behind, and
      parts in 41% of labelled cases and excludes 14.6% of all strokes. The
      second one sharpens the trigger rather than the negative: a better
      vocabulary now plainly means a better **unit**, not just a better codebook.
+     One thing to wait for before resuming it either way: Track G is measuring
+     how much the distorted position bins actually moved its figures (item 2),
+     and that answer lands on F's premise, not only on its hygiene.
 4. **Both tool bugs are fixed, 2026-10-09 -- what remains under this item is
    the data-side decision.** (a) The `housei`-prefix split heuristic now
    resolves by looking for the file, through

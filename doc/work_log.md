@@ -5897,3 +5897,96 @@ ten real tiles the guarded and in-process CSVs are **byte-identical**
 run reports 10/10 missed and still completes. Subprocess overhead is about
 0.3s per tile, so the default 300s cap is on, with `--bsds-timeout 0` restoring
 the old uncapped behaviour for anyone who wants the old speed.
+
+## 2026-10-09 (fourth entry): Track G Settled The Placement Question In One Day; The Frame Carries The Win
+
+Two notices arrived from Track G on the day it was resumed
+(`inbox/note_track_g_frame_relative_placement_20261009.md` 21:33,
+`inbox/note_track_g_status_and_idle_capacity_20261009.md` 22:27). Both are
+folded into `doc/CURRENT.md`: the Track Ledger entry for 2026-10-09, one
+addition to lesson 13, two new Known Tool Traps, the Active Goal, and Next
+Actions items 2 and 3.
+
+**The result.** The question halted on 2026-09-25 -- is placement relative
+rather than absolute -- is answered, with the detector's face box as the
+reference frame. Scored as a point prediction by miss distance in panel short
+sides, one knob, fitted on one series group and evaluated on the other, both
+directions reported separately: median miss **0.347** for absolute per-word
+(A2), **0.157** for the box centre alone (F0), **0.152** for box+word (F3). So
+**97% of "relative beats absolute" is containment in the box** and 3% is the
+word placing itself inside it. The anchor is required -- C1, which predicts
+the box position too, is 0.350 / 0.340, no better than absolute (CI
+[+0.00004, +0.0040], marginally worse) -- which is the measured form of the
+"if" in the user's claim that one fixed word determines the rest.
+
+**Why this is the day's second confirmation of lesson 13.** In the eye/mouth
+size band the word's contribution is exactly zero (F3-F0 -0.0001 / -0.0003),
+while clustering that band's in-box (u, v) into three on the fit half alone
+reproduces -- independently in both groups, and matching Track H's figure from
+a different implementation -- the two eyes and the mouth, and knowing which
+peak a cluster belongs to **halves the miss (0.074 against F0's 0.149)**. The
+structure is real and large; the word takes none of it. Track H measured this
+by classifying parts, Track G by predicting positions, on different splits
+with different tools, the same day.
+
+**Verification done here before folding anything in.** Every figure was
+re-derived from `results/framerel_20261009/{check,results,oracle_band}.json`:
+the four-row table, all the confidence intervals, the four size bins, the three
+peak centres, the ceiling, and the instrument check's five readings. The
+box-orientation figures were recomputed independently from
+`../lineart-face-words/results/h3_face_parts_20261004/faces.csv` (read-only;
+Track H is writing to `labels/`): 5,531 boxes, **7.3%** out of panel read by
+column name with a 90th percentile overflow of **0.4 px**, **40.5%** out with
+**1,018.6 px** read exchanged. Track G's notice did not state the two implicit
+tolerances; they are 2 px of overflow and 5% off square, which is what
+reproduces 0.0732 / 0.4048 and 94.6% exactly. Both are now written into the
+trap, and the check itself is shared tooling:
+`tools/evaluation/face_box_check.py`, verified against the same csv.
+
+**Two traps added, and the second is the more general one.** (a) The line-PNG
+check has no sensitivity to the orientation of a face box -- it only exercises
+`strokes`/`pts`/`meta` -- so a box-using track needs the fit-inside-the-panel
+check above. (b) **A negative control has to name one concrete error, not a
+direction.** Track G's first instrument check failed on its own control: the
+registration said "exchange x and y" and the implementation exchanged the axis
+order of `pts` while leaving the centre correct, a hybrid no real caller can
+produce, which scored 0.3854 against a <= 0.2 bar. Re-run one error type at a
+time it is 0.0095 (exchange the finished points), 0.0020 (confuse
+`meta.cy`/`meta.cx`, the known defect in `placement_gt.py`), 0.0833 (a 50 px
+shift) and 0.3854 for the impossible hybrid -- high only for small clusters,
+because a local transpose about the right centre barely moves a small thing.
+This belongs next to lesson 12: that lesson says a check inside one coordinate
+system cannot see an orientation error; this says the control that is supposed
+to catch it must name the mutation a caller could actually make.
+
+**The author's visual verdict, recorded because it changed two things.**
+Orientation correct, the two eyes and the mouth below them visible, all 12
+boxes on faces, and r >= 0.5 is "a circle" -- the track had written
+"contour/hair" and corrected itself. Then the two that matter: **some of the 12
+clusters are not one thing**, the unit trap seen directly by the author rather
+than inferred from a statistic; and the three peaks are coarse because profile
+and reclining faces are mixed into the same (u, v) space, so **0.074 is an
+upper bound on the ceiling and the word's shortfall is larger than measured**.
+The conclusion strengthens rather than weakens. The author also kept the route:
+"fixing words that are stable on frontal faces is sound".
+
+**Routing.** Track G asked to be named a task, saying its slot is open again
+and that the user had allowed it to take other tracks' work. It is given the
+one it proposed: **measure the real blast radius of the distorted corpus
+position bins and re-report the three figures that sit on them** (marginal
+7.563, cloze 6.315-6.388, its own 6.658), with the bins rebuilt on matched
+denominators. It reported the distortion in the first place, it needs neither
+the GPU nor the author's eyes, and the shape of the answer has a precedent in
+Track I's `lineart_003_000` ruling: if the shift is small, "no re-measurement
+needed" can be closed; if it is large, the premise Track F resumes on has
+changed. Pre-registration first, including which figure counts as large.
+
+Not routed, and why, so it is not re-opened by a later session: ranking the
+unlabelled candidates by a frame-relative prior to find the rare parts faster
+would relieve the author, who is the real bottleneck, but it would rank by
+position in order to test whether position predicts, and the user deliberately
+kept the labelling order uniform for that reason. It also overlaps Track H's
+third pre-registered measurement -- how much of a part's ink never enters
+`cluster_set` at all -- since the rare parts (nose, mouth, closed eye) are
+exactly the one- and two-stroke parts that unit structurally excludes. That
+question stays the user's, and it needs item 1's numbers first.
