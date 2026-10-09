@@ -450,6 +450,30 @@ work, and the stated expectation is that the pieces make each other easier.
   tone gain reported earlier was mostly content leaking in (`near_white` 0.464
   under uniform injection falls to 0.075 when only the style blocks are used).
 
+- `../lineart-solid-fill` (branch `solid-fill`, **Track J**) -- **opened
+  2026-10-09 by user decision**, reopening Next Actions item 5 after the GPU
+  was found idle with nothing held anywhere that is GPU-bound. Predict the
+  **solid fills** from the rough: a region problem, not a line problem. The
+  reason this and not another GPU slot: the preprocessor's `fill_ratio` is
+  **0.0%** against GT's **24.5%**, so this is the only residual where the
+  standing result "no trained model beats the preprocessor" (lesson 6) cannot
+  apply by construction -- and a loss settles what item 5 actually asked,
+  whether fills are the other half of the plan or a separate project. Counts
+  measured here on the day it opened: **11,868 tiles that have never been
+  trained on and appear in no evaluation set** (`housei` 5,070 train and
+  **1,596 test**, `ako5` 6,380, `ako5r` 418), with the holdout already
+  separated as a different source; `ako5` has no test split of its own. Its
+  briefing carries the four data traps (no `ako5` split, 26-38% near-blank
+  tiles, `housei` `grid_cv` 3.18, `line_width_p50` cannot see fills), a
+  two-stage plan -- **baseline inference first**, because neither pool has ever
+  been scored at all, then the four-day slot for a region model against three
+  mandatory baselines (paint nothing / paint every closed region / paint GT's
+  mean share by area) -- and one prohibition worth repeating here: **the
+  diffusion route is predicted not to produce fills at all**, by Track D's
+  hypothesis 4 (content absent from the conditioning map is not drawn) plus
+  lesson 8, so using it requires first building an instrument that could
+  falsify that prediction.
+
 ### Not part of either line
 
 - `../lineart-controlnet-realpairs` -- the **closed** cross-hatch track, kept as
@@ -1697,12 +1721,12 @@ closed out as of this commit.
 
 ## Next Actions
 
-Items 1-2 are the active fronts, both on the words line -- **the only active
-work as of 2026-10-09**, Track H on the author's time and Track G on the
-machine's. Item 3 is the three held tracks and what would justify resuming
-each. Item 4 is two open bugs in shared tooling, item 5 a deferred
-strategic question, items 6-9 common-foundation housekeeping, none of them
-blocking. Every ControlNet track is closed and none leaves work behind, and
+Items 1-2 are the fronts on the words line -- Track H on the author's time and
+Track G on the machine's -- and **item 5 is the third front as of 2026-10-09**,
+Track J on the GPU, which until that day had nothing to do. Item 3 is the three held tracks and what would justify resuming
+each. Item 4 is two open bugs in shared tooling, **item 5 is now an active
+third front -- Track J, the solid fills, opened 2026-10-09 to take the idle
+GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every ControlNet track is closed and none leaves work behind, and
 **Track I closed itself on 2026-10-04** -- see the Track Ledger above.
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
@@ -1898,9 +1922,15 @@ blocking. Every ControlNet track is closed and none leaves work behind, and
    change, not a bug fix, and it must be applied to training and holdout
    together or it merely inverts the train/eval mismatch. Details: **Known
    Tool Traps** above.
-5. **Solid fills (the housei/ako5 pools): deferred, by user decision
-   2026-09-13.** Not dropped -- the question was put and answered "not now".
-   Recorded here so it stays visible rather than becoming a silent omission.
+5. **Solid fills: reopened 2026-10-09 by user decision, as Track J
+   (`../lineart-solid-fill`, branch `solid-fill`).** Deferred on 2026-09-13,
+   reopened when the GPU was idle and the survey found **nothing held anywhere
+   in the project that is GPU-bound** -- which is structural, not an oversight:
+   the heavy generative line closed with lesson 8, Track I closed on a
+   four-decimal null, the deletion family closed with lesson 10, and the CNN+GAN
+   family was left at lesson 5. What remains on the words line is bounded by the
+   author and by labels, neither of which a GPU shortens. Fills are the one
+   exception, and the ledger entry above has the reasoning and the counts.
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
    appear in no evaluation set. They are not a harder version of the current
    task but a different one: GT there is 24.5% solid fill against the lineart

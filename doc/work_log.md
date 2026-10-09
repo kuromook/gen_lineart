@@ -5990,3 +5990,58 @@ third pre-registered measurement -- how much of a part's ink never enters
 `cluster_set` at all -- since the rare parts (nose, mouth, closed eye) are
 exactly the one- and two-stroke parts that unit structurally excludes. That
 question stays the user's, and it needs item 1's numbers first.
+
+## 2026-10-09 (fifth entry): The Idle GPU Goes To The Solid Fills, As Track J
+
+The user asked for a GPU-bound track to run. The honest answer to the question
+as asked is that **there is no registered, ready-to-run GPU experiment left in
+any track**, and that is structural rather than an oversight: the heavy
+generative line closed with lesson 8, Track I closed on a null equal to four
+decimals, the deletion family closed with lesson 10, and the CNN+GAN family was
+left behind at lesson 5. What is left on the words line is bounded by the author
+and by labels. A GPU shortens neither.
+
+One exception exists and it is worth the slot: **solid fills**. The
+preprocessor's `fill_ratio` is 0.0% against GT's 24.5%, so this is the only
+residual where lesson 6 -- no trained model beats the preprocessor -- cannot
+apply by construction. The user reopened Next Actions item 5, deferred on
+2026-09-13, and chose a new track for it.
+
+**Opened `../lineart-solid-fill`, branch `solid-fill`, Track J** (worktree of
+this repo, `2399c99`, pushed). Not folded into the closed ControlNet trees: the
+task is region prediction, and mixing it into a tree whose premises are closed
+would carry those premises along.
+
+Counts measured here before writing the briefing, from
+`dataset/pairs_480/*/line`: `housei` 5,070 train and **1,596 test**, `ako5`
+6,380, `ako5r` 418 -- **11,868 tiles never trained on and in no evaluation
+set** -- against `lineart`'s 168 + 24, which is the entire current evaluation
+set. The holdout is already separated as a different source, and `ako5` has no
+test split of its own, so anything evaluated there needs a mechanical split by
+work or page, fixed before results are seen.
+
+Four data traps went into the briefing: no `ako5` split; 26-38% of tiles are
+near-blank, so a mixed average dilutes everything; `housei`'s `grid_cv` is 3.18,
+the highest of any pool; and `line_width_p50` cannot distinguish a fill from a
+thick line, which is the error that produced the "thick lines" reading of
+`housei` 7.59 in the first place.
+
+The plan is two-stage, and the first stage needs no author and little GPU:
+**these two pools have never been scored at all**, so the baselines come first
+-- the preprocessor alone and the adopted checkpoint
+`combined_koma_lucy_mild_msgan_20260729` run over them, scored on the fill mask
+itself (IoU / F1, `fill_ratio` error) with the near-blank layer reported
+separately. Then the four-day slot for a region model, against three mandatory
+baselines: paint nothing, paint every closed region the preprocessor finds, and
+paint GT's mean share starting from the largest regions. That third one is the
+statistic control -- it knows how much to paint and not where.
+
+**The prohibition recorded most explicitly**: do not try to make
+diffusion/ControlNet produce the fills. Track D's hypothesis 4 (content absent
+from the conditioning map is not drawn) plus lesson 8 predict that route cannot
+produce them at all, and the conditioning map has 0.0% fill by measurement. Any
+attempt needs an instrument that could falsify that prediction first.
+
+Why a loss is also an outcome: item 5's real question was whether the fills are
+the other half of this project's plan or a separate project. A model that
+cannot beat "paint GT's mean share by area" answers it.
