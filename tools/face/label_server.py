@@ -180,7 +180,7 @@ button kbd{display:inline-block;min-width:1.4em;margin-right:6px;padding:0 4px;b
 </div><script>
 const DEF=[["1","face.eye.open","目(開)"],["2","face.eye.closed","目(閉)"],["3","face.brow","眉"],["4","face.nose","鼻"],["5","face.mouth","口"],["6","face.ear","耳"],["7","face.other","その他の顔(シワなど)"],["0","not_face","顔パーツではない"],["s","unsure","わからない"]];
 
-let cur=0,sel=new Set(),ov=1,st={done:0,next:0,counts:{}},it=null,TARGET=300;
+let cur=0,sel=new Set(),ov=1,st={done:0,next:0,counts:{}},it=null,TARGET=1000;
 const $=id=>document.getElementById(id);
 function drawBtns(){$("btns").innerHTML=DEF.map(d=>`<button class="${sel.has(d[1])?"on":""}" onclick="pick('${d[1]}')"><kbd>${d[0].toUpperCase()}</kbd>${d[2]}</button>`).join("")}
 function imgs(){for(const v of ["face","zoom","panel"])$(v).src=`/img?o=${cur}&v=${v}&ov=${ov}`}
