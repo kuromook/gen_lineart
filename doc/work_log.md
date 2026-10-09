@@ -6202,3 +6202,53 @@ passed (IC1 7/7, reproducing the inventory's seven `fill_ratio` cells to four
 decimals from an independent implementation) and the arms were still being
 materialised. `lucy_mild` at about 0.5s per tile on one CPU thread is the
 bottleneck.
+
+## 2026-10-10 (second entry): The User Raises Fills, And The Unit Is The Region
+
+The user's reading of why fills matter, recorded in the author's own terms
+(Working Discipline 6) and routed to Track J (`847bac5`), with the Active Goal
+and the Track J ledger entry updated:
+
+> In hair especially, a **region** -- an area closed off by lines -- is
+> sometimes filled and sometimes not. If the line can be recovered from the
+> region, handling fills may become much easier. Separately, hair's highlight
+> fills are a kind of texture, and being able to split that from the line art
+> is what keeps the processing smooth -- or, failing that, creates branching
+> that is hard to handle.
+
+**Why this is more than a priority change.** It says the unit of the fill
+decision is the **region**, not the pixel, and that a fill's outline *is* a
+line -- so a fill is not a separate kind of ink but a region that has an
+outline. Two payoffs follow and they need different premises, which is the part
+worth keeping separate:
+
+- **A, the ground-truth decomposition (line / fill / texture), needs no rough
+  and no GPU** -- and it is not only Track J's business. The words line's unit
+  problem is substantially a fill problem: `cluster_set` mixes parts mostly
+  through hair and shading hatch (w342/w343/w344 turned out to be "arc, short
+  stroke bundle" holding hair, hatch and panel borders; three quarters of
+  labelled brows share a cluster with the bangs above them; 14.6% of all
+  strokes enter no cluster at all). If fill and texture can be separated from
+  line, the corpus the words line is built on gets cleaner at the same time.
+- **B, rough-to-fill prediction, has an unmeasured premise**: the information
+  about which regions are filled has to be present in the rough. If it is not,
+  the task is proposal rather than prediction and the scoring changes shape.
+
+**Three GT-only measurements were routed, to come before any stage-2 design**:
+how much of a fill region's boundary is already traced by separate line ink
+(which decides whether "recover the line from the region" is recovery or
+construction); whether highlight fills separate from solid fills by shape
+statistics alone; and whether the rough indicates filled regions at all.
+
+**One measured constraint was sent along with it.** Track J's own contact-sheet
+pass found `ako5` tiles sitting entirely inside a fill, with no boundary in the
+480px window -- 0.5% entirely filled, 31.3% near-blank. A region formulation
+may therefore not fit the tile size this project's whole evaluation apparatus
+is built on, and may need panel-level inputs. Stage 2 has been told to state
+explicitly whether it measures on tiles or on panels.
+
+**What was deliberately not done**: stage 1's pre-registration was not touched.
+It is mid-scoring, and the discipline cuts both ways -- fix the criteria before
+seeing the results, and do not move the results to suit a new framing. Track J
+was told to produce the stage-1 verdict first and not even design stage 2 until
+C1 and C2 are out.

@@ -511,7 +511,24 @@ work, and the stated expectation is that the pieces make each other easier.
   pools (the 2026-09-11 inventory sampled 120 tiles each):
   `results/baseline_fill_20261009/gt_fill_profile.csv`, where `housei` test is
   **41.1% near-blank** against the sampled 38.3%, and roughly half its tiles
-  contain any fill at all. Its
+  contain any fill at all.
+  **Reframed 2026-10-10 by the user, and this changes the unit before stage 2
+  is registered**: the thing that is filled or not filled is a **region** closed
+  off by lines, not a set of pixels, and a fill's outline is a line -- so if the
+  line can be recovered from the region, fills stop being a separate kind of ink
+  (the Active Goal has the author's wording and what follows from it). Three
+  measurements on GT alone, no model and no GPU, come before any stage-2 design:
+  **(1)** how much of a fill region's boundary is already traced by line ink in
+  GT, which decides whether "recover the line from the region" is recovery or
+  construction; **(2)** whether highlight fills in hair separate from solid
+  fills by shape statistics alone, since the author calls them a texture;
+  **(3)** whether the rough carries any indication of which regions are filled
+  -- if it does not, stage 2 is not a prediction task at all. The region
+  framing also runs into a measured limit: tiles that sit entirely inside a
+  fill have no boundary in the window, so it may need panel-level inputs rather
+  than 480px tiles. Stage 1 is unaffected and its pre-registration stands as
+  written -- this is for the next registration, not a revision of the one being
+  scored. Its
   briefing carries the four data traps (no `ako5` split, 26-38% near-blank
   tiles, `housei` `grid_cv` 3.18, `line_width_p50` cannot see fills), a
   two-stage plan -- **baseline inference first**, because neither pool has ever
@@ -1454,6 +1471,35 @@ So the missing piece is not a better placement model and not more words: it is
 from opposite directions on the same day, one classifying parts and one
 predicting positions, which is the reason the route is being rebuilt at the unit
 and not anywhere else.
+
+**The user raised the importance of fills on 2026-10-10, with a reason that
+reaches back into the words line.** Recorded as the author's framing (Working
+Discipline 6), in the author's own terms: in hair, a **region** -- an area
+closed off by lines -- is sometimes filled and sometimes not, and **if the line
+can be recovered from the region, fills become much easier to handle**, because
+a filled area is not a separate kind of ink but a region that has an outline.
+Separately, the **highlight fills in hair are a kind of texture**, and being
+able to split that from the line art is what keeps a pipeline from growing
+branches it cannot otherwise avoid. Two consequences the foundation draws from
+it, which need keeping apart because they need different things:
+- **The ground-truth side needs no rough at all.** Whether a fill's boundary
+  coincides with line ink, and whether highlight fills separate from solid
+  fills by shape alone, are measurable on GT, with no model and no GPU. And it
+  lands on the unit problem: the reason `cluster_set` mixes parts is
+  overwhelmingly hair and shading hatch -- w342/w343/w344 turned out to be
+  "arc, short stroke bundle" holding hair, hatch and panel borders; three
+  quarters of labelled brows share a cluster with the bangs above them; 14.6%
+  of all strokes enter no cluster. **So a line/fill/texture decomposition is
+  not only Track J's business: part of the words line's unit problem is a fill
+  problem.**
+- **The rough side has an unmeasured premise.** Predicting which regions are
+  filled requires that the information be present in the rough. If it is not,
+  the task is not prediction but proposal, and the goal changes. That is the
+  fork Track J's stage 2 has to settle before it registers anything.
+One constraint is already measured and bears on both: some `ako5` tiles sit
+entirely inside a fill with no boundary inside the 480px window (0.5% entirely
+filled, 31.3% near-blank), so **a region-level formulation may not fit the tile
+size this project evaluates on** and may need panel-level inputs.
 
 Two things follow that are worth stating plainly, because they are easy to lose:
 
