@@ -28,6 +28,7 @@ TRACKF = Path("/home/sh1/deepl/lineart-stroke-grammar")
 CLUSTERS = TRACKF / "results/cluster_set_20260919"
 CORPUS = TRACKF / "results/grammar_corpus_20260920/corpus.npz"
 FACES = Path("/home/sh1/deepl/lineart-face-words/results/h3_face_parts_20261004/faces.csv")
+DATASET = Path("/home/sh1/deepl/lineart/dataset")
 
 OFF_Y, OFF_X, OFF_S = 512, 528, 544
 BOS, EOS = 556, 557
@@ -285,18 +286,96 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="results/posbins_20261009")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--figs", action="store_true", help="図だけ描く(道具確認の後)")
     a = ap.parse_args()
     out = ROOT / a.out; out.mkdir(parents=True, exist_ok=True)
     chk, data = run_checks(out)
     if data is None or not chk.get("passed_no_training"):
         print("主測定に進まず停止。", flush=True); return 1
+    seq0, seqF, split, pid_c, dims, pans, words = data
+    if a.figs:
+        fig1_bins(out, pans, dims, words, seq0.shape[1])
+        fig2_examples(out, pans, dims)
+        print("図:", out / "fig1_bins.png", out / "fig2_examples.png", flush=True)
+        return 0
     if a.check:
         return 0
-    seq0, seqF, split, pid_c, dims, pans, words = data
     np.savez_compressed(out / "corpus_fixed.npz", seq=seqF, split=split, panels=pid_c, dims=dims)
     print("書き出し:", out / "corpus_fixed.npz", flush=True)
     return 0
 
+
+
+# ---------------------------------------------------------------- 図
+def fig1_bins(out, pans, dims, words, L):
+    """16x16 ビンの占有率: 現行 / 補正後 / 一様"""
+    import cv2
+    tiles = []
+    for name, mode in (("current (y/W, x/H)", "orig"), ("fixed (y/H, x/W)", "fixed")):
+        s = build_seq(pans, dims, words, mode, L)
+        yv = s[:, 2::4]; xv = s[:, 3::4]
+        n = min(yv.shape[1], xv.shape[1])
+        yv = yv[:, :n]; xv = xv[:, :n]
+        m = (yv >= 0) & (xv >= 0)
+        h = np.zeros((N_BINS, N_BINS))
+        np.add.at(h, (yv[m] - OFF_Y, xv[m] - OFF_X), 1)
+        tiles.append((name, h / h.sum()))
+    tiles.append(("uniform", np.full((N_BINS, N_BINS), 1.0 / (N_BINS * N_BINS))))
+    vmax = max(t[1].max() for t in tiles)
+    S = 360
+    imgs = []
+    for name, h in tiles:
+        g = (255 * (1 - (h / vmax) ** 0.5)).astype(np.uint8)
+        im = cv2.cvtColor(cv2.resize(g, (S, S), interpolation=cv2.INTER_NEAREST), cv2.COLOR_GRAY2BGR)
+        cv2.rectangle(im, (0, 0), (S - 1, S - 1), (0, 0, 220), 2)
+        cv2.putText(im, name, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(im, f"top row/col share {h[-1].sum() + h[:, -1].sum() - h[-1, -1]:.3f}",
+                    (6, S - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 0, 0), 1, cv2.LINE_AA)
+        imgs.append(im)
+    cv2.imwrite(str(out / "fig1_bins.png"), np.concatenate(imgs, 1))
+
+
+def fig2_examples(out, pans, dims, n=12):
+    """代表コマを線画 PNG の上に: 切り詰められるまとまりを赤、それ以外を青。補正後の格子を重ねる"""
+    import cv2
+    pan_rows = list(csv.DictReader(open(TRACKF / "results/panel_pack_20260919/panels.csv")))
+    rng = np.random.default_rng(SEED)
+    # 切り詰めが実際に起きるコマから選ぶ(現象が見える形。選び方は結果を見る前に固定)
+    cand = []
+    for pid, cs in pans:
+        d0, d1 = float(dims[pid][0]), float(dims[pid][1])
+        y = np.array([c[2] for c in cs]); x = np.array([c[3] for c in cs])
+        k = int(((y / d0 >= 1) | (x / d1 >= 1)).sum())
+        if k >= 5 and len(cs) >= 20:
+            cand.append((pid, cs, k))
+    pick = [cand[i] for i in rng.choice(len(cand), min(n, len(cand)), replace=False)]
+    CELL = 420
+    cells = []
+    for pid, cs, k in sorted(pick):
+        img = cv2.imread(str(DATASET / pan_rows[pid]["source"] / "line" / pan_rows[pid]["name"]))
+        f = CELL / max(img.shape[0], img.shape[1])
+        img = cv2.resize(img, (int(img.shape[1] * f), int(img.shape[0] * f)))
+        cv = np.full((CELL, CELL, 3), 245, np.uint8)
+        cv[:img.shape[0], :img.shape[1]] = img
+        W, H = float(dims[pid][0]), float(dims[pid][1])
+        for b in range(1, N_BINS):                                   # 補正後の格子
+            cv2.line(cv, (int(b / N_BINS * W * f), 0), (int(b / N_BINS * W * f), int(H * f)), (210, 210, 210), 1)
+            cv2.line(cv, (0, int(b / N_BINS * H * f)), (int(W * f), int(b / N_BINS * H * f)), (210, 210, 210), 1)
+        for (_i, _sc, y, x) in cs:
+            clipped = (y / W >= 1) or (x / H >= 1)
+            cv2.circle(cv, (int(x * f), int(y * f)), 3, (0, 0, 220) if clipped else (200, 90, 0), -1)
+        cv2.rectangle(cv, (0, 0), (int(W * f), int(H * f)), (0, 160, 0), 2)
+        cv2.putText(cv, f"#{pid} W={int(W)} H={int(H)}  clipped {k}/{len(cs)}", (6, 18),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.rectangle(cv, (0, 0), (CELL - 1, CELL - 1), (150, 150, 150), 1)
+        cells.append(cv)
+    rows_ = [np.concatenate(cells[r * 4:(r + 1) * 4], 1) for r in range(len(cells) // 4)]
+    grid = np.concatenate(rows_, 0)
+    leg = np.full((34, grid.shape[1], 3), 255, np.uint8)
+    cv2.putText(leg, "red = clipped by the current bins (y/W>=1 or x/H>=1) / blue = not / "
+                     "grey grid = the corrected 16x16 / green = the panel's ink bounds",
+                (8, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.imwrite(str(out / "fig2_examples.png"), np.concatenate([leg, grid], 0))
 
 if __name__ == "__main__":
     sys.exit(main())
