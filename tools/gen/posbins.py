@@ -123,13 +123,28 @@ def marginal_bits(seq, split_mask):
 
 
 def top_bin_share(seq):
-    """最上位ビン(15)の占有率。y と x の合計での割合"""
-    t = seq[seq >= 0]
+    """最上位ビン(15)の占有率(合計 / y / x)"""
     yv = seq[:, 2::4]; xv = seq[:, 3::4]
     yv = yv[yv >= 0] - OFF_Y; xv = xv[xv >= 0] - OFF_X
     n = len(yv) + len(xv)
     return float(((yv == N_BINS - 1).sum() + (xv == N_BINS - 1).sum()) / n), \
         float((yv == N_BINS - 1).mean()), float((xv == N_BINS - 1).mean())
+
+
+def clipped_share(pans, dims, mode):
+    """比が 1 以上で切り詰められた割合(y, x)。2026-09-23 の記録 15.9% / 20.1% と同じ量"""
+    ny = nx = cy_ = cx_ = 0
+    for pid, cs in pans:
+        d0, d1 = float(dims[pid][0]), float(dims[pid][1])
+        y = np.array([c[2] for c in cs]); x = np.array([c[3] for c in cs])
+        if mode == "orig":
+            fy, fx = y / max(d0, 1), x / max(d1, 1)
+        elif mode == "fixed":
+            fy, fx = y / max(d1, 1), x / max(d0, 1)
+        else:
+            fy, fx = x / max(d0, 1), y / max(d1, 1)
+        cy_ += int((fy >= 1).sum()); cx_ += int((fx >= 1).sum()); ny += len(y); nx += len(x)
+    return cy_ / ny, cx_ / nx
 
 
 # ---------------------------------------------------------------- 道具確認
@@ -164,12 +179,16 @@ def k2_dims_vs_png(dims, pans):
     pid = [p for p, _ in pans if p in png]
     d = dims[pid]
     ph = np.array([png[p][0] for p in pid]); pw = np.array([png[p][1] for p in pid])
-    as_named = float((((d[:, 0] <= pw) & (d[:, 1] <= ph))).mean())      # dims = (W, H)
-    swapped = float((((d[:, 0] <= ph) & (d[:, 1] <= pw))).mean())       # dims = (H, W) と読む
+    SL = 2            # panel_dims() は ceil(インク最大) + 2 なので PNG を最大 1px 上回る
+    as_named = float((((d[:, 0] <= pw + SL) & (d[:, 1] <= ph + SL))).mean())   # dims = (W, H)
+    swapped = float((((d[:, 0] <= ph + SL) & (d[:, 1] <= pw + SL))).mean())    # (H, W) と読む
     nonsq = float((np.abs(ph - pw) > 0.05 * np.minimum(ph, pw)).mean())
     return (as_named >= 0.990 and swapped <= 0.700), dict(
         n=len(pid), as_WH=round(as_named, 4), as_HW=round(swapped, 4),
-        nonsquare=round(nonsq, 4), thresholds=dict(as_WH_min=0.990, as_HW_max=0.700))
+        nonsquare=round(nonsq, 4), slack_px=SL,
+        ratio_WH=[round(float(np.median(d[:, 0] / pw)), 4), round(float(np.median(d[:, 1] / ph)), 4)],
+        ratio_HW=[round(float(np.median(d[:, 0] / ph)), 4), round(float(np.median(d[:, 1] / pw)), 4)],
+        thresholds=dict(as_WH_min=0.990, as_HW_max=0.700))
 
 
 def run_checks(out, dev="cuda"):
@@ -204,15 +223,40 @@ def run_checks(out, dev="cuda"):
     # N1 / N2 / N3: 誤りの型ごとの陰性対照
     seqF = build_seq(pans, dims, words, "fixed", L)
     seqM = build_seq(pans, dims, words, "mirror", L)
-    sat = {k: top_bin_share(s)[0] for k, s in (("orig", seqA), ("fixed", seqF), ("mirror", seqM))}
-    n1 = bool(0.16 <= sat["orig"] <= 0.20)
-    n2 = bool(abs(sat["mirror"] - sat["fixed"]) <= 0.010)
-    chk["N1"] = dict(passed=n1, top_bin_share_orig=round(sat["orig"], 4), expected=[0.16, 0.20])
-    chk["N2"] = dict(passed=n2, top_bin_share_mirror=round(sat["mirror"], 4),
-                     top_bin_share_fixed=round(sat["fixed"], 4), tolerance=0.010)
-    print("N1(分母の取り違えで飽和):", "合格" if n1 else "不合格", round(sat["orig"], 4), flush=True)
-    print("N2(軸名の取り違えでは飽和しない):", "合格" if n2 else "不合格",
-          f"mirror {sat['mirror']:.4f} vs fixed {sat['fixed']:.4f}", flush=True)
+    sat = {k: top_bin_share(s) for k, s in (("orig", seqA), ("fixed", seqF), ("mirror", seqM))}
+    clip = {k: clipped_share(pans, dims, k) for k in ("orig", "fixed", "mirror")}
+    # N1: 判定する量は「切り詰められた割合」(2026-09-23 の記録 15.9% / 20.1% と同じ量)
+    n1 = bool(abs(clip["orig"][0] - 0.159) <= 0.005 and abs(clip["orig"][1] - 0.201) <= 0.005)
+    chk["N1"] = dict(passed=n1, clipped_orig=[round(v, 4) for v in clip["orig"]],
+                     recorded=[0.159, 0.201], tolerance=0.005,
+                     clipped_fixed=[round(v, 4) for v in clip["fixed"]],
+                     top_bin_orig=[round(v, 4) for v in sat["orig"]],
+                     top_bin_fixed=[round(v, 4) for v in sat["fixed"]])
+    print("N1(分母の取り違えで切り詰め):", "合格" if n1 else "不合格",
+          f"{clip['orig'][0]:.4f} / {clip['orig'][1]:.4f}(記録 0.159 / 0.201)", flush=True)
+    # N2: 合否ではなく実演。鏡像は補正版の 2 トークンを入れ替えただけなので対称な統計量は定義上同一
+    mb_f, _, _, _ = marginal_bits(seqF, split); mb_m, _, _, _ = marginal_bits(seqM, split)
+    # トークン ID ではなくビン番号で比べる(OFF_Y と OFF_X が 16 違う)。
+    # 2::4 と 3::4 は長さが 1 違うので短い方に揃える
+    def _bins(sq, off, step):
+        v = sq[:, step::4]
+        return np.where(v >= 0, v - off, -1)
+    my, mx = _bins(seqM, OFF_Y, 2), _bins(seqM, OFF_X, 3)
+    fy_, fx_ = _bins(seqF, OFF_Y, 2), _bins(seqF, OFF_X, 3)
+    k = min(my.shape[1], mx.shape[1], fy_.shape[1], fx_.shape[1])
+    swapped_identical = bool(np.array_equal(my[:, :k], fx_[:, :k])
+                             and np.array_equal(mx[:, :k], fy_[:, :k]))
+    chk["N2_demo"] = dict(judged=False, mirror_is_fixed_with_tokens_swapped=swapped_identical,
+                          top_bin_fixed=round(sat["fixed"][0], 4), top_bin_mirror=round(sat["mirror"][0], 4),
+                          marginal_fixed=round(mb_f, 6), marginal_mirror=round(mb_m, 6),
+                          clipped_fixed=[round(v, 4) for v in clip["fixed"]],
+                          clipped_mirror=[round(v, 4) for v in clip["mirror"]],
+                          note="鏡像は補正版の位置2トークンを入れ替えただけ。対称な統計量は定義上同一で、"
+                               "この対照は設計上必ず通る=空振り。鏡像を捕まえるのは外部の基準に当てた K2 だけ")
+    n2 = True
+    print("N2(実演・合否にしない): 鏡像 = 補正版のトークン入替", swapped_identical,
+          f"| 飽和 {sat['fixed'][0]:.4f} 対 {sat['mirror'][0]:.4f}"
+          f" | 周辺 {mb_f:.6f} 対 {mb_m:.6f}", flush=True)
 
     rng = np.random.default_rng(SEED)
     seqR = seq0.copy()
