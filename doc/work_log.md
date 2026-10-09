@@ -201,3 +201,59 @@ C1(「前処理器は原理上塗れない」)が**同語反復になる**。そ
 真の検査になる。どれか1つでも micro IoU 0.20 以上なら、前提は誤りとして見出しに出す。
 
 他の腕・陰性対照・合否基準は登録どおりで変更しない。`msgan` の出力は濃い二値なので 128 のまま。
+
+### 中断時点の状態 (2026-10-09、利用上限により中断。**採点値はまだ1つも出ていない**)
+
+事前登録と器具は完成、腕の実体化は走行中。**合否判定はまだ出していない。**
+
+**完了**
+
+- **IC1 合格(7/7)**: `results/baseline_fill_20261009/ic1_fill_ratio.csv`。棚卸し CSV の
+  `fill_ratio` 7セル全部を自分の実装で小数4桁まで再現(ako5 0.2564、housei 0.2879 など)。
+  第2脚も確認: cv2 の 3x3 近似と scipy の厳密 EDT は**距離そのものは最大 8.56px 食い違う**が、
+  4px 閾値を跨ぐ画素は 87万インク画素中 **0個**(閾値 ±0.5px の帯にいるのはインクの 3.13%、
+  そこでの誤差は最大 0.18px)。つまり `fill_ratio` はこの近似に依存していない
+- **評価リスト確定**: `results/baseline_fill_20261009/lists/`。登録どおり
+  housei_test 1,596 / ako5_held 689 / ako5r_held 23 = **2,308 枚**。規則と held ページは
+  `lists/SPLIT.md`
+- **GT 記述統計(モデル非依存、13,046枚)**: `results/baseline_fill_20261009/gt_fill_profile.csv`
+
+  | プール | n | ink | fill_ratio | **fill面積率** | near-blank% | ベタ有り% | 全面ベタ% |
+  |---|---:|---:|---:|---:|---:|---:|---:|
+  | `ako5` | 5,962 | 0.0845 | 0.2759 | **0.0757** | 31.3% | 64.4% | 0.5% |
+  | `housei` train | 5,070 | 0.0523 | 0.2223 | **0.0454** | 26.6% | 53.3% | 0.1% |
+  | `housei` test | 1,596 | 0.0534 | 0.2174 | **0.0460** | 41.1% | 49.3% | 0.0% |
+  | `ako5r` | 418 | 0.0628 | 0.2617 | **0.0404** | 0.0% | 100.0% | 0.0% |
+
+  読み方: 「GT は 24.5%」はインク正規化値で、**面積では 4〜8%**。`housei` test は
+  **41.1% が near-blank**(棚卸しの 38.3% より高い)で、「ベタを探す対象がある」タイルは
+  約半分しかない。層別が必須なのはこの数字のため
+- **GT ベタマスクの目視確認**: `results/baseline_fill_20261009/montage_gtcheck_housei_normal_fill.png`
+  (seed 20261009 の無作為8枚、normal_fill 層)。赤のオーバーレイは髪のベタに正確に載っており、
+  **マスク定義は妥当**。同じ図で前処理器の列はほぼ空(予告どおりだが、採点値はまだ出していない)
+- **道具一式**: `tools/evaluation/{fill_mask,check_fill_instrument,build_fill_eval_lists,`
+  `profile_fill_pools,score_fill_baselines,report_fill_baselines,montage_fill}.py`、
+  `experiments/run_fill_baselines_20261009.sh`
+- **msgan 腕の再現方法を確定**: チェックポイントは `in_channels=2` で、aux 無しでは別のモデルになる。
+  atari aux → `preprocess_atari_aux --mode lucy_mild` → `--aux-dir` 付き推論の3段を
+  `run_combined_koma_lucy_mild_msgan_20260729.sh` どおりに再現(24枚でスモーク済み)
+
+**走行中(中断時点)**
+
+`experiments/run_fill_baselines_20261009.sh`(ログ `logs/fill_baselines_20261009.log`)。
+housei_test の preproc 1,596 と atari 1,596 は完了、**`lucy_mild` が律速**(約0.5s/枚、
+CPU単スレッド)。残り: housei の lucy と msgan、ako5_held 689、ako5r_held 23。見積り約1時間。
+**次セッションはまずログで完了を確認すること。**
+
+**次の一手(順に)**
+
+1. `score_fill_baselines.py --list <各リスト> --split <test|train>` を3本
+2. `report_fill_baselines.py` — IC2/IC3 と NC1-NC4 を先に印字し、落ちた腕は読まない。
+   そのうえで C1/C2 の判定が自動で出る(基準は登録済みで、コードに埋めてある)
+3. `montage_fill.py --mode random`(各プール × 3層)と `--mode extreme`
+4. 共通基盤へ通達 `../lineart/inbox/`。第2段の登録は第1段の数値が出てから
+
+**事実の訂正1件(数値を見る前の、数え直しによるもの)**: briefing と共通基盤 Next Actions 項目5 の
+**「11,868 枚」は `ako5r` 418 を `ako5` の 6,380 の中で二重計上し、`housei` test 1,596 を
+落としている**。実数は train 側 11,450(ako5 5,962 + ako5r 418 + housei 5,070)、
+housei test 1,596 を足して **13,046 枚**。未学習・未評価という主張自体は変わらない。
