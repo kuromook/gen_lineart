@@ -1,7 +1,9 @@
 # Current Project State
 
-Updated: 2026-09-30 JST. The Track Ledger, Lessons, Known Tool Traps, Active
-Goal and Next Actions are current as of this date; the ledger was rebuilt by
+Updated: 2026-10-09 JST (Tracks G and H, two new lessons, and a **withdrawn
+tool trap** -- the `cy`/`cx` swap was a misdiagnosis; see Known Tool Traps).
+The Track Ledger, Lessons, Known Tool Traps, Active Goal and Next Actions are
+current as of this date; the ledger was rebuilt on 2026-09-30 by
 reading every track's own files after this file had fallen 13 days behind. The
 descriptive sections further down -- Current Data Direction, Current Model
 Interpretation, Current Extraction Rules, Current Data Pipeline Stage, and the
@@ -244,8 +246,13 @@ work, and the stated expectation is that the pieces make each other easier.
   - *2026-09-25*: an attempt to measure absolute vs relative position **failed
     its own instrument check and was halted**, handed to Track H to do first on
     face parts, where the relations are clear.
-  - Also found here, and a trap for anyone reading that data: in Track F's
-    `cluster_set` meta, **the `cy` column is x and `cx` is y**.
+  - Also reported from here, and **withdrawn as to its cause on 2026-10-04**:
+    the claim that Track F's `cluster_set` meta has `cy` and `cx` swapped. The
+    columns are as named; what is transposed is `strokes`/`pts` and `dims`.
+    The distorted position bins are real, and so is the consequence for every
+    position-bits figure. Track G's own analyses are numerically unaffected but
+    carry **swapped axis labels** -- see Known Tool Traps for the settled
+    version, which it needs before it resumes.
 - `../lineart-face-words` (branch `face-words`, **Track H**, worktree of the
   Track G clone) -- **active, the current front of this line, opened
   2026-09-25.** Its proposal records user approval dated 2026-09-25. Pin down
@@ -256,11 +263,59 @@ work, and the stated expectation is that the pieces make each other easier.
   should be easiest because one artist does not vary them much. Methodology
   worth noting -- **held-out labels are assigned mechanically at labelling
   time**, before any result is seen, split two ways (by panel, and by series to
-  test whether a rule survives a different artist). Progress: step 1's
-  size-stratified montages of the "closed eye" candidates w342/w343/w344 are
-  built and the tool checks passed, including an added negative control after
-  a suspiciously perfect 1.00 overlay score; **awaiting the user's visual
-  judgment.**
+  test whether a rule survives a different artist). **Pushed as of 2026-10-09**
+  (`ca9d788` = `origin/face-words`), so it is no longer single-disk.
+  Where it got to, in order:
+  - *2026-10-04, the opening hypothesis is refuted.* The user judged the
+    size-stratified montages of w342/w343/w344: across 150 instances there is
+    **one closed eye as a drawing** (r2270 and r89070 are the same strokes in
+    two overlapping panels of one page) and 34 pieces of hair. Splitting by
+    size does not separate them because **these are not closed-eye words** --
+    they are the class "arc, short bundle of strokes", holding hair, shading
+    hatch, panel borders and an ear, while scoring among the best shape
+    cohesion on record (0.53-0.56). The user's reading is the thing to carry:
+    *an arch of hair is itself decided by its relation to what is around it,
+    and cannot be judged from shape alone.*
+  - *2026-10-04, every figure built so far was a mirror image*, caught against
+    the line PNGs. The strokes are stored (y, x). This is lesson 12 and the
+    settled axis statement in Known Tool Traps; the figures were rebuilt from
+    the same seeds and row numbers.
+  - *2026-10-04, shape-neighbour retrieval is weak and the detector works.*
+    Collecting the nearest clusters to a verified seed by symmetric chamfer
+    returns **5 ears in 40** for the ear seed and **2 closed eyes in 40**
+    (seed excluded) for the eye seed -- about a tenth, consistent with the
+    user's reading above, and the approach was dropped. What replaced it is an
+    external anime face detector (`deepghs/anime_face_detection`
+    `face_detect_v1.4_s`, distributed default threshold 0.307, knobs untouched)
+    used **only as a labelling aid, never trained on**: on 42 panels the user
+    counted **7 missed faces against 39 boxes with no false positive**, about
+    15%, passing the pre-registered 20%/20% gate, and the misses are
+    fragmentary cuts. Run over everything: **3,821 of 5,345 panels have a face,
+    5,531 boxes, and 42,983 clusters (24% of 176,887) fall inside one.**
+  - *2026-10-04, the face box turns out to carry the structure the words did
+    not.* Density of cluster centres in box-relative coordinates shows **two
+    peaks at the eyes** ((0.27, 0.40) and (0.73, 0.38)) and **one at the
+    mouth** ((0.50, 0.73)) at relative size 0.1-0.25, a nose-shaped ridge below
+    centre at r < 0.1, and a ring of contour and hair at r >= 0.5. Recorded
+    sceptically in that track, correctly: a detector that places boxes by
+    finding eyes and mouths will reproduce their positions, so the montages and
+    the labels are what test it.
+  - *2026-10-04..09, 1,003 instance labels and the first rule draft.* Verified
+    here against `labels/strategic_labels.csv`. Cues compared leave-one-out
+    within the training labels only: **position+size beats the word outright,
+    and the word adds nothing on top of it** -- lesson 13. Orientation helps
+    eyes and mouths and not brows, for a reason that redirected the track.
+  - *2026-10-09, the unit is the problem, and the user's decision follows from
+    it.* **41% of labelled part instances are mixed** and brows are 75% mixed,
+    almost always with the hair beside them; 14.6% of all strokes are in no
+    candidate cluster at all. So rather than tune a rule on the existing
+    clusters, the track is **building line-level ground truth**: a tablet-capable
+    UI (`tools/face/group_server.py`, port 8473) where the author selects
+    strokes and groups them into parts, pre-registered on 2026-10-09 to measure
+    mixing, fragmentation and omission, and to evaluate a regrouping mechanism
+    against the same held-out split the instance labels use. **Live as of
+    2026-10-09 20:06 with zero production groups recorded**; the five trial
+    groups are excluded by pre-registration.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
@@ -373,7 +428,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and eleven lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and thirteen lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -614,6 +669,58 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     This is adjacent to lesson 9 but distinct: lesson 9 is a metric scoring a
     relationship that is not there; this is a *human* judgement decided by a
     quantity already in hand.
+12. **An instrument check that compares two things inside the same coordinate
+    system cannot detect an orientation error. Anchor one leg of every check to
+    something the pipeline did not produce.** Added 2026-10-04 from
+    `../lineart-face-words` (Track H). Every montage that track and Track G had
+    built was a **mirror image across the diagonal**, and the pre-registered
+    check certified it perfectly: "share of an instance's points within 3px of
+    its panel's own line art" came out at median **1.00, minimum 1.00**,
+    because the red overlay and the grey background were both drawn from the
+    same `strokes.npy` whichever way it was read. A negative control was added
+    precisely because 1.00 looked too good, and it passed too -- swapping x/y
+    drops the score to 0.00-0.02 and a 50px shift to 0.00-0.09 -- so the check
+    had real sensitivity and was still blind to the single error present. What
+    caught it was the **line PNG on disk**, an artefact nothing in the analysis
+    chain produces, together with the user noticing that nothing in the montage
+    stood upright. The check Track H runs now reads the same strokes against
+    `dataset/<source>/line/*.png` and separates the two readings cleanly:
+    0.999 against 0.11. Note what the error did and did not touch: chamfer
+    distances, word ids, sizes and counts are invariant under a transpose, so
+    the numbers survived and only the **pictures and every statement about
+    direction** were wrong. That is the general shape -- a transpose is cheap to
+    make, expensive to see, and leaves the metrics looking healthy. The count
+    that track keeps of its own broken instruments stood at six before this one.
+13. **The machine word does not carry what the thing is; position and size
+    inside a detected frame do.** Added 2026-10-09 from Track H, measured on
+    1,003 author-assigned instance labels inside anime-face-detector boxes.
+    Leave-one-out within the training labels only -- optimistic by construction,
+    since the same panel and the same face sit in the neighbourhood, so it is
+    read **only as a comparison between cues**:
+
+    | cue | open eye (prec/rec, base 0.27) | mouth (base 0.14) | brow (base 0.16) |
+    |---|---|---|---|
+    | position + size | 0.66 / 0.78 | 0.66 / 0.74 | 0.43 / 0.34 |
+    | word alone | 0.60 / 0.50 | 0.33 / 0.10 | 0.00 / 0.00 |
+    | position + size + word | 0.64 / 0.70 | 0.61 / 0.74 | 0.35 / 0.20 |
+    | position + size + orientation | **0.72 / 0.85** | **0.73 / 0.87** | 0.43 / 0.34 |
+
+    Nose and ear are below 20 positives and read as reference values only; both
+    are at or near zero for every cue, which is a neighbour-vote problem at
+    n=13-14 rather than evidence against position. **Adding the word to
+    position+size makes every label worse**, and the word alone is at base rate
+    for everything except open eyes. The vocabulary is spread far too thin to
+    be an identity: 223 training instances occupy **79 of the 500 words**, the
+    most frequent holding 11. Orientation (length-weighted mean stroke
+    direction, doubled-angle) lifts eyes and mouths and leaves brows exactly
+    where they were, because three quarters of labelled brows share a cluster
+    with the hair above them and the hair's vertical strokes own the cluster's
+    direction -- the trap below, not a failure of the cue. The author's claim
+    that brows run roughly perpendicular to the hair is supported where the
+    unit permits it: brows not mixed with hair sit at a median 16 degrees from
+    horizontal with none past 60, bangs-only clusters at 71. **This is the
+    quantitative form of "a word is a shape class with scale discarded": the
+    shape class is real and the meaning is not in it.**
 
 ## Every f1 On Record, And What Can Still Be Read
 
@@ -757,6 +864,15 @@ incident that actually happened here.
    routing. Theme work belongs in a track, started in a clean session from that
    track's briefing. This is a role boundary rather than a caution, because the
    caution failed.
+6. **On what a picture depicts, the author decides.** Added 2026-10-04 from
+   Track H. A session read that track's verified closed-eye seed as "an open
+   mouth with teeth" off a 0.3x montage, wrote the retraction into the work log
+   and propagated it into the findings; the user, who drew the page, restored
+   it, and the full-resolution crop agrees with the user. Claude's reading of a
+   drawing is a hypothesis for the author to confirm, never grounds to overturn
+   their judgement -- and when a judgement is in doubt, pull the
+   full-resolution crop instead of arguing from the montage. The cost here was
+   not the misreading but the retraction built on top of it.
 
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
@@ -819,16 +935,48 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `gt_bsds_f1` at **-0.269**. It also tracks the "strokes the map does have"
   column at r 0.75-0.90 within an arm, so report the normalised form too, and
   always beside f1, `fill_ratio`, `near_white_frac` and a montage.
-- **`results/cluster_set_20260919/meta.csv` in Track F has `cy` and `cx`
-  swapped**: the `cy` column holds x and `cx` holds y. The corpus position bins
-  were built as x/H and y/W, so 16-20% of clusters saturate the top bin against
-  6.25% if uniform. **Every position-bits figure from Tracks F and G was
-  measured on those bins** -- 7.563 marginal, 6.315-6.388 cloze, 6.658 in Track
-  G. Reported by Track G 2026-10-04; Track F was not modified, and Track G's
-  own GT analyses use the corrected axes. Track F is held, so this will be
-  waiting for whoever resumes it. Track G's earlier claim that "the original
-  line PNGs are stored transposed" is probably the same swap seen from another
-  angle, and was not re-verified.
+- **The axis trap in Track F's `cluster_set`, settled 2026-10-04 -- and the
+  cause this file carried until 2026-10-09 was wrong.** The withdrawn version,
+  reported by Track G on 2026-09-23 and repeated here, was that
+  `results/cluster_set_20260919/meta.csv` has `cy` and `cx` swapped. **It does
+  not.** Track H settled it against an artefact outside the analysis chain --
+  the line PNGs under `dataset/<source>/line/` -- on 42 panels: **`meta.cy` is
+  y and `meta.cx` is x, exactly as the columns are named.** What is transposed
+  sits one layer down: **`strokes.npy` and `cluster_set` `pts` are stored
+  (y, x)** -- read as (x, y) only 0.11 of the points land on the PNG's ink,
+  read as (y, x) 0.999 -- and **corpus `dims` is (W, H)**, not (H, W). Track
+  G's companion claim that the line PNGs are stored transposed was the same
+  misreading from the other side and is withdrawn too: the PNGs are upright.
+  **What survives is the whole consequence.** The corpus position bins were
+  built as `py = cy/dims[0]` = y/W and `px = cx/dims[1]` = x/H -- mismatched
+  denominators under either reading -- so they are genuinely distorted, with
+  16-20% of clusters saturating the top bin against 6.25% if uniform, and
+  **every position-bits figure from Tracks F and G still sits on them**: 7.563
+  marginal, 6.315-6.388 cloze, 6.658 in Track G.
+  **Track G's own GT analyses are numerically unaffected, with their axis
+  labels swapped.** Verified here on 2026-10-09 by reading
+  `tools/gen/placement_gt.py`: it takes `x = meta.cy` and divides by `dims[1]`,
+  and `y = meta.cx` divided by `dims[0]`, so the two misreadings cancel and
+  every normalised ratio it computes is the correct one wearing the other
+  axis's name. Distances and symmetric statistics hold; **anything that reads a
+  direction -- up/down, left/right, the sign of an angle, "the word above this
+  one" -- is mirrored across the diagonal.** Track F's files were not modified
+  and Track F is held, so this waits for whoever resumes it; its briefing
+  carried the wrong cause from 2026-10-04 and was corrected on 2026-10-09.
+- **`cluster_set`'s unit is built from proximity alone, so it mixes parts and
+  silently drops strokes.** Measured by Track H on 2026-10-09 against 1,003
+  author-assigned instance labels inside detected face boxes. Clusters come
+  from a Louvain cut (resolution 2.0) of a 4-nearest-neighbour stroke graph
+  (`tools/stroke/label_clusters.py`) -- no orientation, no connectivity,
+  nothing semantic -- so a brow and the bangs above it become one cluster while
+  a part drawn in two separated pieces splits in two. **41% of the 575 labelled
+  instances that contain a face part are mixed**, brows worst at 98 of 131
+  (75%). And `build_cluster_set.py` admits only clusters of 3-32 strokes:
+  **14.6% of all 2,168,753 strokes are in no candidate at all** (3.9% in
+  clusters of 1-2, 10.7% in clusters of 33+), which structurally excludes parts
+  drawn with one or two strokes -- nose, mouth, closed eye, exactly the ones
+  hardest to label. Any claim of the form "word W means X" inherits all of
+  this, and so does every per-word statistic in Tracks F, G and H.
 - **`lineart_003_000` has a blank ground truth and is in
   `holdout_lineart_family`.** 480x480, every pixel 255 -- the only blank GT among
   the 192 (next lowest ink is 0.0141). Any f1 or signal computed against it is
@@ -969,6 +1117,25 @@ render as an ant swarm no human can judge whether a panel reads at all. So the
 front of the work moved *upstream*, to making the words themselves legible and
 nameable. That is Track H: pin down the face-part words first, because the more
 cards are face-up, the easier the rest becomes.
+
+**As of 2026-10-09 that front has moved upstream once more, and this is the
+current shape of the route.** Track H put author labels on 1,003 instances and
+found that the word is not what identifies a part -- position and size inside a
+detected face box are, and adding the word makes the prediction *worse* (lesson
+13). Then it found why the rest is not reachable by a better cue: the unit
+itself is wrong. `cluster_set`'s clusters are cut from stroke proximity alone,
+so 41% of labelled part instances mix two things -- brows with the bangs above
+them, three times in four -- and 14.6% of all strokes never enter a cluster at
+all. **So the words line is currently rebuilding its unit rather than its
+model**: the author groups individual strokes into parts to make line-level
+ground truth, against which mixing, fragmentation and omission can be measured
+and a regrouping mechanism scored. Two assets came out of the detour and both
+should be held on to -- an external face detector that works on these panels
+(no false positives and 15% of faces missed on 42 audited panels, faces found
+in 71% of 5,345 panels), and the finding that **frame-relative** coordinates
+show the eye/mouth/nose structure that word-to-word placement never did. The
+face box is the first reference frame this project has that is not itself
+another mixed word.
 
 Two things follow that are worth stating plainly, because they are easy to lose:
 
@@ -1379,33 +1546,47 @@ strategic question, items 6-9 common-foundation housekeeping, none of them
 blocking. Every ControlNet track is closed and none leaves work behind --
 see the Track Ledger above.
 
-1. **Face-part words** (`../lineart-face-words`, Track H -- the current front).
-   **Its branch has never been pushed** -- no upstream is configured and
-   `face-words` does not exist on `origin` as of 2026-10-04, so every commit in
-   that track exists on one disk only. It is also a worktree of Track G's
-   separate clone, which is why neither the integration tree's
-   `git worktree list` nor `tools/audit_track_ledger.py` can see it. **Push it
-   before anything else.** It is the active front and the least durable thing
-   in the project. Reported by Track G, confirmed here.
+1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
+   and a live session is on it as of 2026-10-09). **The push is done**:
+   `ca9d788` equals `origin/face-words`, verified here, so the
+   "single-disk" flag raised on 2026-10-04 is cleared. It remains a worktree of
+   Track G's separate clone, so neither `git worktree list` here nor
+   `tools/audit_track_ledger.py` can attribute it -- the audit prints it as a
+   separate clone, which is the best it can do.
    Why it exists, from Track G's first notice: a word is a shape class with
    size removed, so words mix meanings and dilute any placement measured on
    them; fixing a small, trustworthy set of words is the prerequisite Track G
-   stopped for. It assigns human strategic labels (eye, nose, mouth, brow, ear)
+   stopped for. It assigns author strategy labels (eye, nose, mouth, brow, ear)
    in a namespace separate from `wNNN`, at instance level, with a held-out part
    fixed at labelling time -- and **the user allowed those labels as ground
    truth for evaluation, an explicit exception to "names are interpretive
-   only"**. It owes its own notice; nothing here speaks for its results.
-   Waiting on the user: step 1's size-stratified montages of the closed-eye
-   candidates w342/w343/w344 are built and the tool checks passed, and the
-   **visual judgement has not been given yet**. That judgement gates the rest:
-   whether splitting a word by size separates closed eyes from panel borders and
-   hair. After it, pre-register the labelling procedure and the rule's pass
-   criteria, then run one full loop (label -> rule -> held-out check) on closed
-   eyes before widening to open eyes, brows, nose, mouth, ears. Two
-   methodological commitments already recorded there are worth keeping: labels
-   live in a **namespace separate from the machine word ids**, and the held-out
-   split is **assigned mechanically at labelling time**, before any result is
-   seen, both by panel and by series.
+   only"**. It owes its own notice; the ledger entry above is this file reading
+   its work log, not the track speaking.
+   **Where it stands and what the foundation is waiting for.** The opening
+   hypothesis is refuted, the words turned out not to carry part identity
+   (lesson 13), and the track has moved up a level: the unit itself is wrong, so
+   it is collecting line-level ground truth through the grouping UI, zero
+   production groups so far. Three things to watch from here rather than act on:
+   - **The three measurements that ground truth is for are pre-registered and
+     unanswered**: how many true groups one current cluster spans (mixing), how
+     many clusters one true group splits into (fragmentation), and how much of a
+     part's ink never enters `cluster_set` at all. Those numbers decide whether
+     the regrouping mechanism is a repair or a replacement, and they are the
+     first thing to fold in here when they land.
+   - **The held-out discipline is now carried across two label sets.** The face
+     queue inherits the instance queue's series groups and the same
+     page-sha1 rule, and the track verified zero panels disagree between them,
+     so a mechanism can be scored without a leak across the two label types.
+     This is worth protecting if anything proposes re-splitting.
+   - **A rule's pass criteria are still unset by design** (precision 0.80 /
+     recall 0.60 per label on the panel-held-out side is the recorded
+     candidate, with fewer than 20 positives counting as undecidable). They are
+     to be fixed before the held-out side is read. Note the counting problem
+     already visible: at the random order's rate, reaching 20 held-out
+     positives needs roughly 1,000 labels for mouth and nose, 2,400 for ear and
+     7,000 for closed eye -- so either the order stops being uniform (which
+     would bias what "position predicts" means and was deliberately avoided) or
+     the rare parts get a different instrument. Unresolved, and the user's call.
 2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **idle
    since 2026-09-25; the work moved to Track H that day, and its own blocker is
    what sent it there.** First notice received 2026-10-04 and it closes the
@@ -1454,6 +1635,18 @@ see the Track Ledger above.
    The standing warning from its last run still holds: **bits do not guarantee a
    visual pass** -- position beat the marginal by 0.9 bits while the montage
    stayed unreadable.
+
+   **Two things were routed to its briefing on 2026-10-09 and should be the
+   first things read when it resumes.** (a) The axis correction: the swap it
+   reported was a misdiagnosis, its own analyses are numerically fine but every
+   *directional* reading in them is mirrored, and the distorted corpus bins are
+   still distorted -- Known Tool Traps has the settled version. (b) Track H's
+   results, which bear directly on the question G halted: the words do not
+   carry part identity (lesson 13), the unit mixes parts (the trap above), and
+   the structure G was looking for in word-to-word placement does appear
+   cleanly in **frame-relative** coordinates once a face box supplies the
+   frame. If relative position is to be measured again, the face box is the
+   first reference frame this project has that is not another mixed word.
 3. **Tracks C, E and F are held, not closed** (user decision 2026-10-04). The
    words line resumes as the active work; these three stay in place so they can
    be re-measured when a new yardstick exists. **Held means the state must be
@@ -1476,7 +1669,14 @@ see the Track Ledger above.
      agreeing. That negative was measured on *the vocabulary it had*. If the
      words line produces a better vocabulary -- which is exactly what Track H is
      working on -- the question is worth re-asking on it, and that is the
-     trigger.
+     trigger. **Two corrections were written into its briefing on 2026-10-09**,
+     both aimed at whoever resumes it: the axis note it received on 2026-10-04
+     named the wrong cause (the columns are as named; the transpose is in
+     `strokes`/`pts` and `dims`, and the distorted bins remain distorted), and
+     Track H has since measured that the unit `cluster_set` is built on mixes
+     parts in 41% of labelled cases and excludes 14.6% of all strokes. The
+     second one sharpens the trigger rather than the negative: a better
+     vocabulary now plainly means a better **unit**, not just a better codebook.
 4. **Fix the two tool bugs found in `inbox/` (both still open).**
    (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
    192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
@@ -1524,7 +1724,15 @@ see the Track Ledger above.
    the work above.
 8. Decide whether umbrella/layer-difference rows (ako5ver2) should be
    manually masked, tagged for future routing, or left held out. Still open.
-9. **Keep this file from falling behind again.** The 2026-09-30 reconciliation
+9. **Keep this file from falling behind again.** Status 2026-10-09: the
+   mechanism now half works. Track G sent its first notice on 2026-10-04 and it
+   is folded in; Track H has pushed its branch but **still owes a notice**, so
+   everything above about it is this file reading that track's work log, which
+   is second-hand by construction. The audit ran clean today apart from
+   uncommitted paths in two finished trees (`cleanup-refiner`,
+   `controlnet-sd15-refine`) -- worth a look only to decide whether they are
+   worth keeping, since both tracks are closed.
+   The 2026-09-30 reconciliation
    is done -- the Track Ledger above was rebuilt from every track's own files,
    and the three proposals and the Kimi exchange are now held in `doc/`. What
    caused the drift is structural and still true: **Tracks G and H live in a
