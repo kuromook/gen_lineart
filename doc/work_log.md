@@ -5805,3 +5805,48 @@ again.
 Cleared: Track H's branch is pushed (`ca9d788` = `origin/face-words`), so the
 2026-10-04 single-disk flag is resolved. Still owed: a notice from Track H
 itself; everything above is this file reading that track's work log.
+
+## 2026-10-09 (later): The Machine Goes To Track G's Halted Question
+
+**Survey first, because the premise needed checking.** The user asked which
+track had an experiment on hold that could use the idle resource while Track H's
+manual labelling runs. The honest answer is that **nothing in the held queue is
+GPU-bound**: an RTX 3060 sits at 0% with 158MiB used, and every heavy consumer
+this project ever had was a ControlNet or diffusion training run, all closed by
+lesson 8. The words line is CPU-light -- Track G records its own generation
+model at about one second per epoch. So the scarce resource here is not compute,
+it is **the author's eyes**, and Track H is spending exactly that. The selection
+rule follows: pick work that needs neither the GPU nor a human judgement.
+
+Three candidates were rejected under that rule and the reasons are recorded in
+Next Actions 2 so they are not re-argued: Track C/E's re-render route (the one
+named untried thing in the deletion family, but its verdict is a human
+judgement), Track G's generation scale-up (cheap, but needs a visual gate and
+leaves word purity unsolved), and the solid-fill pool (would use the GPU, has no
+route to it after lesson 8, and reopening it is a separate decision).
+
+**User decision: Track G, for one question only** -- the one it halted on
+2026-09-25 without a verdict, whether placement is decided by relative position
+rather than absolute coordinates. Its named candidate (a point prediction scored
+by miss distance, not grid probabilities) was never started. What changed since
+the halt is that the halt's own diagnosis -- a reference word large relative to
+the panel makes "within 4 reference sizes" cover everything -- is answered by
+Track H's 5,531 detected face boxes, a reference frame that is not itself a
+mixed word. Resume instruction written into that track's briefing (`c05b461`),
+with the asset paths, the read-only constraint on the face-words tree (Track H
+is writing to it right now), the note that `faces.csv` is gitignored and exists
+on one disk, and a reading order that puts the axis correction and lesson 12
+first so its figures do not come out mirrored.
+
+**Two ledger corrections found while surveying.** Track I **closed itself on
+2026-10-04** (`7c2f470`) and this file still listed its tone axis as untested;
+in fact about forty arms were run and the honest-reference use case scores
++0.1317 against a no-adapter baseline of +0.1317, equal to four decimals, with
+only a leaked reference buying anything. Two results outlive it: InstantStyle
+layer-wise injection is the first arm on record to beat a baseline on `b_recall`
+and `neither_ink` at once (it needs the leak, and `c_survival` never improves),
+and the tone gain reported earlier was largely content leaking in. Second, the
+same track had already **measured** the blank-GT contamination this file warns
+about: `lineart_003_000` shifts a 192-tile average by a uniform +0.001 and
+changes no comparison, so it is reporting hygiene rather than grounds to
+re-measure anything. Both folded in.

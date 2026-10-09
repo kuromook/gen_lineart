@@ -381,7 +381,25 @@ work, and the stated expectation is that the pieces make each other easier.
   given an unrelated image -- every difference inside one standard error, win
   rates at chance. Those two arms hold ControlNet fixed and vary only the
   reference, so **that null belongs to IP-Adapter alone**, whatever state the
-  spatial channel was in. Untested: the tone axis in the paired configuration.
+  spatial channel was in.
+  **Closed 2026-10-04 (`7c2f470`) on a clean negative, and that closure
+  includes the tone axis this file listed as untested.** About forty arms --
+  pooled and patch checkpoints, uniform / style-only / style+layout injection,
+  three reference types, `ip_scale` 0.4-1.0, at cs 1.0 and 2.5. Floor-corrected,
+  the real use case (an honest, unrelated reference) scores **+0.1317 against a
+  no-adapter baseline of +0.1317, equal to four decimals**: the image-prompt
+  channel contributes exactly nothing. Leaking the tile's own GT buys +0.022 and
+  still lands below the conditioning map alone (+0.1670) and below the bare
+  matched ControlNet (+0.1636). The patch checkpoint does carry reference
+  *content* -- leak and unrelated reference separate there, where the pooled one
+  had them identical to four decimals -- but what it carries is the reference's
+  content, not how to draw line art. Two results from it outlive the track:
+  InstantStyle's layer-wise injection, rerun with SD1.5's own block indices
+  behind a gate that fails loudly, is **the first arm on record to beat a
+  baseline on `b_recall` and `neither_ink` at once** -- it needs the leak to do
+  it, and `c_survival` never improves in any of its twenty-six arms; and the
+  tone gain reported earlier was mostly content leaking in (`near_white` 0.464
+  under uniform injection falls to 0.075 when only the style blocks are used).
 
 ### Not part of either line
 
@@ -983,7 +1001,11 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   meaningless, so it silently contaminates every 192-tile average on record.
   Found 2026-10-04 when a human judge rejected it as "not usable line art",
   correctly, while rating GT. Exclude or flag it when reporting; past averages
-  carry it.
+  carry it. **How much it carries was then measured, by Track I before it
+  closed: a uniform +0.001 shift that changes no comparison on record.** So
+  this is a reporting-hygiene item and not a reason to re-run anything --
+  worth stating plainly, because "every average on record is contaminated"
+  invites a re-measurement that the size of the effect does not justify.
 - **Per-pair alignment scores now exist for all 8,467 training pairs**:
   `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
   (rough / manga_line / lineart_coarse, each with `le3`, `3to8`, `gt8`,
@@ -1540,11 +1562,12 @@ closed out as of this commit.
 ## Next Actions
 
 Items 1-2 are the active fronts, both on the words line -- **the only active
-work as of 2026-10-04**. Item 3 is the three held tracks and what would justify
-resuming each. Item 4 is two open bugs in shared tooling, item 5 a deferred
+work as of 2026-10-09**, Track H on the author's time and Track G on the
+machine's. Item 3 is the three held tracks and what would justify resuming
+each. Item 4 is two open bugs in shared tooling, item 5 a deferred
 strategic question, items 6-9 common-foundation housekeeping, none of them
-blocking. Every ControlNet track is closed and none leaves work behind --
-see the Track Ledger above.
+blocking. Every ControlNet track is closed and none leaves work behind, and
+**Track I closed itself on 2026-10-04** -- see the Track Ledger above.
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
    and a live session is on it as of 2026-10-09). **The push is done**:
@@ -1587,9 +1610,33 @@ see the Track Ledger above.
      7,000 for closed eye -- so either the order stops being uniform (which
      would bias what "position predicts" means and was deliberately avoided) or
      the rare parts get a different instrument. Unresolved, and the user's call.
-2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **idle
-   since 2026-09-25; the work moved to Track H that day, and its own blocker is
-   what sent it there.** First notice received 2026-10-04 and it closes the
+2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **resuming
+   2026-10-09 by user decision, for exactly one question**, after being idle
+   since 2026-09-25 when the work moved to Track H and its own blocker sent it
+   there. The reasoning behind the decision is a resource one and worth keeping,
+   because it will recur: Track H's line-level ground truth occupies **the
+   author**, which is this project's scarce resource, while the machine sits
+   idle -- and **no held experiment anywhere in the project is GPU-bound**, the
+   heavy work having all been closed by lesson 8. So the work to pick up is work
+   that needs neither the GPU nor the author's eyes, which is what this one is.
+   The question is the one this track halted on without a verdict: **is
+   placement decided by relative position rather than absolute coordinates.**
+   The named, unstarted candidate is unchanged -- a point prediction scored by
+   miss distance rather than grid probabilities -- and what has changed is that
+   Track H's **5,531 detected face boxes** supply a reference frame that is not
+   itself a mixed word, which is precisely what the halt's own diagnosis said
+   was missing. The resume instruction is written into that track's briefing
+   (`c05b461`), including the reading order: the axis correction and lesson 12
+   before any figure is built, or its montages will be mirrored the way Track
+   H's were. **Not resumed**: the generative line, which stays on hold.
+   Deliberately *not* chosen for the same slot, and why, so the decision is not
+   re-litigated: Track C/E's re-render route is the one named untried thing in
+   the deletion family, but its verdict needs the author's eyes and would
+   compete with the labelling; Track G's generation scale-up is cheap but needs
+   a visual gate and leaves word purity unsolved; the solid-fill pool would use
+   the GPU but has no route to it after lesson 8, and reopening it is a separate
+   user decision (item 5).
+   First notice received 2026-10-04 and it closes the
    13-day gap; three things in it change the picture here:
    - **The blocker is word purity, not tooling.** A word is a shape class with
      size removed, so one word spans roughly 6x in size and mixes meanings --
