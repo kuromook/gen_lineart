@@ -487,11 +487,26 @@ work, and the stated expectation is that the pieces make each other easier.
   **0.0%** against GT's **24.5%**, so this is the only residual where the
   standing result "no trained model beats the preprocessor" (lesson 6) cannot
   apply by construction -- and a loss settles what item 5 actually asked,
-  whether fills are the other half of the plan or a separate project. Counts
-  measured here on the day it opened: **11,868 tiles that have never been
-  trained on and appear in no evaluation set** (`housei` 5,070 train and
-  **1,596 test**, `ako5` 6,380, `ako5r` 418), with the holdout already
-  separated as a different source; `ako5` has no test split of its own. Its
+  whether fills are the other half of the plan or a separate project.
+  **`fill_ratio` is normalised by ink, not by area**, and this file invited the
+  area reading until Track J separated the two on 2026-10-09: 24.5% is the
+  share of *ink pixels* belonging to strokes wider than 8px, and the share of
+  the *tile* that is fill is **4-8%** (measured over all 13,046 tiles: `ako5`
+  0.0757, `housei` train 0.0454, `housei` test 0.0460, `ako5r` 0.0404). Both
+  belong next to each other wherever either is quoted -- the same failure as
+  the "16-20%" above.
+  **Counts, corrected 2026-10-09 by Track J and re-verified here**: the
+  **11,868** first recorded in this entry was wrong twice over, counting
+  `ako5r` inside `ako5` (a `^ako5` prefix match) and dropping `housei`'s test
+  tiles. The pools hold **13,046 tiles that have never been trained on and
+  appear in no evaluation set**: 11,450 in train (`ako5` 5,962, `housei`
+  5,070, `ako5r` 418) plus `housei`'s **1,596 test** tiles, which are the
+  holdout and are already separated as a different source; `ako5` has no test
+  split of its own. Track J also has the first full-population profile of these
+  pools (the 2026-09-11 inventory sampled 120 tiles each):
+  `results/baseline_fill_20261009/gt_fill_profile.csv`, where `housei` test is
+  **41.1% near-blank** against the sampled 38.3%, and roughly half its tiles
+  contain any fill at all. Its
   briefing carries the four data traps (no `ako5` split, 26-38% near-blank
   tiles, `housei` `grid_cv` 3.18, `line_width_p50` cannot see fills), a
   two-stage plan -- **baseline inference first**, because neither pool has ever
@@ -2072,7 +2087,9 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
    Over 12,000 tiles across `ako5` and `housei` have never been trained on and
    appear in no evaluation set. They are not a harder version of the current
    task but a different one: GT there is 24.5% solid fill against the lineart
-   pool's 4.0%, 27-38% of tiles are near-blank, and the preprocessor fills
+   pool's 4.0% -- both **ink-normalised**; by tile area the fill in these pools
+   is 4-8%, and the two quantities are not interconvertible because the mask
+   that measures area is a dilated opening, see the Track J entry -- 27-38% of tiles are near-blank, and the preprocessor fills
    nothing at all (fill_ratio 0.0%), so an edge-detector-plus-selection
    pipeline cannot reach it by construction. The delete-only oracle tops out at
    0.3291 there against 0.7425 on the lineart pool. The natural moment to

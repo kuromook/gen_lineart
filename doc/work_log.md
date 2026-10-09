@@ -6016,7 +6016,11 @@ Counts measured here before writing the briefing, from
 `dataset/pairs_480/*/line`: `housei` 5,070 train and **1,596 test**, `ako5`
 6,380, `ako5r` 418 -- **11,868 tiles never trained on and in no evaluation
 set** -- against `lineart`'s 168 + 24, which is the entire current evaluation
-set. The holdout is already separated as a different source, and `ako5` has no
+set. **Both of those figures were wrong and Track J caught it the same day**:
+`^ako5` matches `ako5r`, so `ako5` is 5,962 and `ako5r`'s 418 was counted
+twice, and the total dropped `housei`'s test tiles. The pools hold **13,046**
+tiles (11,450 train plus 1,596 test), re-verified here with anchored prefixes.
+The claim that none of them has been trained on or evaluated is unaffected. The holdout is already separated as a different source, and `ako5` has no
 test split of its own, so anything evaluated there needs a mechanical split by
 work or page, fixed before results are seen.
 
@@ -6141,3 +6145,60 @@ replaced but holding / replaced and changed) so whoever resumes Track F reads
 one table instead of re-deriving it. Named rather than left open because the
 track asked to be named, and this is the only part of the hygiene sweep still
 missing.
+
+## 2026-10-10: Two Corrections From Track J, Both To This File's Own Numbers
+
+Track J has not sent a notice yet -- its stage-1 run was still materialising
+arms when the session broke off -- but its pre-registration and instrument
+checks are in `../lineart-solid-fill/doc/work_log.md`, and two of its findings
+correct this file rather than report a result. Folded in before anything else,
+since both travel into other tracks if left.
+
+**(a) The tile count was wrong, twice over.** The foundation wrote 11,868 on
+2026-10-09, from `ls dataset/pairs_480/train/line | grep -c "^ako5"` -- which
+also matches `ako5r`, so `ako5` came out 6,380 instead of 5,962 and `ako5r`'s
+418 was counted a second time -- and the total left out `housei`'s 1,596 test
+tiles. Re-verified here with anchored prefixes: `ako5` 5,962, `ako5r` 418,
+`housei` 5,070 train and 1,596 test, so the pools hold **13,046** tiles,
+11,450 of them in train. The claim that rests on it -- none of these has been
+trained on or appears in any evaluation set -- is unaffected. Corrected in the
+Track J ledger entry and in the 2026-10-09 work-log entry that first carried
+it.
+
+**(b) `fill_ratio` is normalised by ink, not by area, and this file invited
+the wrong reading.** "GT there is 24.5% solid fill" is the share of *ink
+pixels* in strokes wider than 8px. The share of the *tile* that is fill is
+**4-8%** (`ako5` 0.0757, `housei` train 0.0454, test 0.0460, `ako5r` 0.0404),
+measured by Track J over all 13,046 tiles. The two are not interconvertible,
+because the mask that measures area is a dilated opening of the core the ratio
+counts -- multiplying `fill_ratio` by `ink_ratio` gives 0.023 for `ako5` where
+the measured area share is 0.076. Both quantities now stand next to each other
+in item 5 and in the ledger. This is the same failure as the "16-20%" in the
+axis trap: **a number whose quantity is not written down gets re-read as the
+quantity the reader expects.** Two instances in two days, from two different
+tracks, on two different files -- so it is the dominant failure mode in this
+project's records, not an incident.
+
+**Worth recording about Track J's own discipline, since the foundation set it
+and it held under pressure.** Its smoke test found that the preprocessor's
+output is white-on-black and faint (0.01% of pixels above 128 on content-rich
+`ako5` tiles), which means scoring the `preproc` arm at the project's standard
+threshold would have made C1 -- "the preprocessor structurally cannot fill" --
+**a tautology about its own threshold**. It amended the pre-registration
+*before* the run to score that arm under four binarisations including a budget
+variant that is handed GT's ink count and only has to place it, and recorded
+explicitly that the amendment makes its own headline harder to reach rather
+than easier. That is the shape an amendment is allowed to take.
+
+It also found that the first full-population profile of these pools differs
+from the 2026-09-11 inventory, which sampled 120 tiles per pool: `housei` test
+is **41.1% near-blank** against the sampled 38.3%, and only about half its
+tiles contain any fill at all. The stratification the briefing demanded is
+therefore not a formality; the unstratified mean would be dominated by tiles
+with nothing to find.
+
+No result is folded in, because no score exists yet: the instrument checks
+passed (IC1 7/7, reproducing the inventory's seven `fill_ratio` cells to four
+decimals from an independent implementation) and the arms were still being
+materialised. `lucy_mild` at about 0.5s per tile on one CPU thread is the
+bottleneck.
