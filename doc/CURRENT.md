@@ -910,18 +910,43 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   configurations, and it is not predictable from image density -- similar tiles
   hit it or do not. 98 of 584 pairs (16.8%) timed out in one run. Environment
   causes (cv2 thread contention, sharing a process with PyTorch/CUDA) were
-  tested and ruled out. Work around it by dispatching per tile to a subprocess
-  under a hard `timeout` and recording a miss:
-  `tools/evaluation/vae_roundtrip_score.py`. **If a batch evaluation appears
-  hung, suspect one slow tile before suspecting a hang.** The metric itself was
-  left unchanged -- it is shared and validated.
-- **`evaluate_fixed_outputs.py --split auto` resolves GT paths wrongly for
-  168 of the 192 `holdout_lineart_family.txt` tiles.** It decides with
-  `"train" if name.startswith("housei") else "test"`, and only the 24
-  `lineart_004_*` tiles actually live in test. The default sample list was all
-  `lineart_004_*`, which is why nobody noticed. **Unfixed.** Any past 192-tile
-  number produced through `--split auto` should be re-checked; Track A's and
-  Track B's 192-tile scoring used other scripts and was not audited.
+  tested and ruled out. **If a batch evaluation appears hung, suspect one slow
+  tile before suspecting a hang.** The metric itself is unchanged -- it is
+  shared and validated, and every comparison on record depends on it.
+  **The mitigation is now shared, as of 2026-10-09**: `bsds_guard.match_f1()`
+  in `tools/evaluation/` dispatches one tile to
+  `score_bsds_f1_one.py` under a hard cap and returns `None` instead of
+  blocking, so a caller records a miss and the batch stays readable. Default
+  cap 300s; `--bsds-timeout 0` restores the old uncapped in-process call.
+  `evaluate_fixed_outputs.py` and `condition_roundtrip_fidelity.py` both go
+  through it and both gained a `bsds_timed_out` column, with means over the
+  survivors and the miss count printed. Verified on 10 tiles: the guarded and
+  in-process CSVs are byte-identical, a 0.001s cap reports 10/10 missed rather
+  than scoring anything, and `bsds_guard.py` run directly self-checks both.
+  The per-tile pattern this generalises came from
+  `../lineart-pair-signal/tools/evaluation/vae_roundtrip_score.py`, which is
+  still the reference for a whole-batch runner with a thread pool.
+- **The `"train" if name.startswith("housei") else "test"` split heuristic was
+  wrong for 168 of the 192 `holdout_lineart_family.txt` tiles, and it was in
+  nine places, not one. Fixed 2026-10-09.** Only the 24 `lineart_004_*` tiles
+  live in test; the default sample lists were all `lineart_004_*`, which is why
+  nobody noticed. Beyond `evaluate_fixed_outputs.py`, which is where it was
+  reported, the same line sat in `evaluate_stroke_stability.py` and six
+  `tools/compare/*.py` scripts. All nine now call
+  `tools/evaluation/gt_paths.resolve()`, which decides by looking for the file
+  and raises naming the tile when it is in neither split. Verified: 192/192
+  tiles resolve, 168 to train and 24 to test, and a nonexistent tile raises.
+  **And the blast radius recorded here was overstated, which is worth saying
+  plainly rather than quietly dropping.** This file asked for every past
+  192-tile number produced through `--split auto` to be re-checked. **No
+  re-check is needed.** The two split directories share no basename at all --
+  14,102 train tiles against 1,620 test tiles, zero overlap, measured
+  2026-10-09 -- so the heuristic could never read a *different* tile's GT. It
+  either resolved correctly or pointed at a path that does not exist, and both
+  the evaluator and the compare scripts raise on a missing file. The bug blocked
+  runs; it did not corrupt numbers. The only figures it could ever produce were
+  from all-`lineart_004_*` or all-`housei` sample lists, both of which it
+  resolved correctly.
 - **The shared `evaluate_stroke_stability.skeletonize()` leaves a 2px-wide
   skeleton.** Cut it into segments at junctions and 64% of the skeleton
   classifies as "junction", shattering lines into dots (only 1.7% of segments
@@ -1724,21 +1749,23 @@ blocking. Every ControlNet track is closed and none leaves work behind, and
      parts in 41% of labelled cases and excludes 14.6% of all strokes. The
      second one sharpens the trigger rather than the negative: a better
      vocabulary now plainly means a better **unit**, not just a better codebook.
-4. **Fix the two tool bugs found in `inbox/` (both still open).**
-   (a) `evaluate_fixed_outputs.py --split auto` mis-resolves GT for 168 of the
-   192 `holdout_lineart_family.txt` tiles; it should resolve per tile by
-   looking for the file rather than by a `housei` prefix test, the way the
-   holdout runner already does. Then re-check any past 192-tile number that
-   went through it. (b) `bipartite_match_f1`'s pathological slowness has a
-   working mitigation in one track
-   (`tools/evaluation/vae_roundtrip_score.py`, per-tile subprocess with a hard
-   timeout) but nothing shared -- every track batch-scoring `gt_bsds_f1` needs
-   it. Lifting that into the shared evaluation path is the cheap fix; changing
-   the metric itself is not on the table, it is validated and comparisons
-   depend on it. The unapplied `manga_line` emptiness fix (downscale to 240px
-   plus auto-contrast) is a data-side decision, not a bug fix -- and it must be
-   applied to training and holdout together or it inverts the mismatch.
-   Details for all three: **Known Tool Traps** above.
+4. **Both tool bugs are fixed, 2026-10-09 -- what remains under this item is
+   the data-side decision.** (a) The `housei`-prefix split heuristic now
+   resolves by looking for the file, through
+   `tools/evaluation/gt_paths.resolve()`, in all **nine** places it appeared
+   rather than only the one that was reported. The re-check of past 192-tile
+   numbers this item asked for **is not needed, and the reason is recorded
+   under Known Tool Traps**: the two splits share no basename, so the heuristic
+   could only resolve correctly or point at nothing, and every caller raises on
+   a missing file. (b) `bipartite_match_f1`'s unbounded worst case now has a
+   shared guard, `tools/evaluation/bsds_guard.match_f1()`, used by the two
+   shared batch scorers; the metric is untouched. Guarded and unguarded output
+   is byte-identical on the verification batch.
+   **Still open and still a user decision**: the unapplied `manga_line`
+   emptiness fix (downscale to 240px plus auto-contrast). It is a data-side
+   change, not a bug fix, and it must be applied to training and holdout
+   together or it merely inverts the train/eval mismatch. Details: **Known
+   Tool Traps** above.
 5. **Solid fills (the housei/ako5 pools): deferred, by user decision
    2026-09-13.** Not dropped -- the question was put and answered "not now".
    Recorded here so it stays visible rather than becoming a silent omission.

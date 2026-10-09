@@ -5850,3 +5850,50 @@ same track had already **measured** the blank-GT contamination this file warns
 about: `lineart_003_000` shifts a 192-tile average by a uniform +0.001 and
 changes no comparison, so it is reporting hygiene rather than grounds to
 re-measure anything. Both folded in.
+
+## 2026-10-09 (later still): Both Shared Tool Bugs Fixed, And One Trap Was Overstated
+
+The foundation-side half of the slot, running while Track G's session is picked
+up. Next Actions 4 held two open bugs in shared tooling; both are closed.
+
+**(a) The split heuristic was in nine places, not one.** The reported site was
+`evaluate_fixed_outputs.py --split auto`, deciding with `"train" if
+name.startswith("housei") else "test"`. Reproduced the recorded anchor first:
+**168 of 192 `holdout_lineart_family` tiles resolve wrongly, 24 correctly**, the
+24 being `lineart_004_*`, exactly as the trap said. Then grepped, and the same
+line sat in `evaluate_stroke_stability.py` and six `tools/compare/*.py`. All
+nine now call a shared `tools/evaluation/gt_paths.resolve()` that decides by
+looking for the file and raises naming the tile otherwise. Verified: 192/192
+resolve, 168 train and 24 test, and a nonexistent tile raises instead of
+returning a path.
+
+**And the trap's blast radius was overstated -- by this file.** It asked for
+every past 192-tile number produced through `--split auto` to be re-checked.
+That is not needed: `dataset/pairs_480/train/line` and `test/line` share **no
+basename at all** (14,102 against 1,620, zero overlap, measured today), so the
+heuristic could never substitute a different tile's GT. It either resolved
+correctly or pointed at a path that does not exist, and both the evaluator and
+the compare scripts raise on a missing file. **The bug blocked runs; it did not
+corrupt numbers.** Demonstrated incidentally by the verification batch itself:
+its ten tiles include six `lineart_001/003/008_*` that the old heuristic sends
+to `test`, where they do not exist, so that run would have crashed before the
+fix rather than printing something wrong.
+
+**(b) The pathological metric now has a shared guard.**
+`tools/evaluation/bsds_guard.match_f1()` dispatches one tile to
+`score_bsds_f1_one.py` under a hard cap and returns `None` on timeout, so a
+caller records a miss and the batch stays readable; the per-tile pattern comes
+from `../lineart-pair-signal`'s `vae_roundtrip_score.py`, which never reached
+shared tooling. `evaluate_fixed_outputs.py` and `condition_roundtrip_fidelity.py`
+both go through it, both gained a `bsds_timed_out` column, means are taken over
+the survivors, and the miss count prints. **The metric itself is untouched** --
+it is validated and every comparison on record depends on it.
+
+Checks, since a measuring tool is exactly what this project keeps breaking:
+`bsds_guard.py` run directly compares guarded against in-process on a random
+case (identical to 1e-12) and confirms a 1ms cap returns `None`; end to end on
+ten real tiles the guarded and in-process CSVs are **byte-identical**
+(`diff` clean, bsds_f1 0.1321 either way), and at `--bsds-timeout 0.001` the
+run reports 10/10 missed and still completes. Subprocess overhead is about
+0.3s per tile, so the default 300s cap is on, with `--bsds-timeout 0` restoring
+the old uncapped behaviour for anyone who wants the old speed.

@@ -42,6 +42,8 @@ import numpy as np
 
 from tile_region_manifest_480 import edge_map, long_line_ratio, orientation_entropy
 
+import gt_paths  # noqa: E402
+
 
 IMAGE_SIZE = 480
 THRESHOLD = 128
@@ -68,10 +70,8 @@ def normalize_name(name):
 
 
 def dataset_path(name, split):
-    base = normalize_name(name)
-    if split == "auto":
-        split = "train" if base.startswith("housei") else "test"
-    return f"dataset/pairs_480/{split}/line/{base}.jpg"
+    """Resolve by looking for the file; see tools/evaluation/gt_paths.py."""
+    return str(gt_paths.resolve(name, kind="line", split=split))
 
 
 def load_ink_and_gray(path):

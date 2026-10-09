@@ -47,7 +47,10 @@ from PIL import Image
 from skimage.metrics import structural_similarity
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "pair_extraction"))
-from tile_region_manifest_480 import edge_map, chamfer, bipartite_match_f1  # noqa: E402
+from tile_region_manifest_480 import edge_map, chamfer  # noqa: E402
+
+import bsds_guard  # noqa: E402
+import gt_paths  # noqa: E402
 
 IMAGE_SIZE = 480
 TRUNCATE_PX = 8.0
@@ -93,6 +96,11 @@ def main():
     parser.add_argument("--model", action="append", required=True, help="LABEL=DIR")
     parser.add_argument("--truncate", type=float, default=TRUNCATE_PX)
     parser.add_argument("--output-csv", default="results/condition_roundtrip_fidelity.csv")
+    parser.add_argument(
+        "--bsds-timeout", type=float, default=bsds_guard.DEFAULT_TIMEOUT_S,
+        help="per-tile hard cap in seconds for the bipartite match, whose worst "
+             "case is unbounded; 0 runs it in-process with no cap (old behaviour)",
+    )
     args = parser.parse_args()
 
     names = [n.strip() for n in open(args.sample_list) if n.strip()]
@@ -106,7 +114,7 @@ def main():
 
     rows = []
     for base in bases:
-        rough_path = f"dataset/pairs_480/{args.split}/rough/{base}.jpg"
+        rough_path = str(gt_paths.resolve(base, kind="rough", split=args.split))
         orig_gray, orig_edge = preprocess_condition(detector, load_rgb(rough_path))
         for label, directory in models:
             out_path = directory / f"{base}_out.png"
@@ -115,14 +123,22 @@ def main():
             recov_gray, recov_edge = preprocess_condition(detector, load_rgb(out_path))
             roundtrip_chamfer = chamfer(recov_edge, orig_edge, truncate=args.truncate)
             roundtrip_ssim = float(structural_similarity(orig_gray, recov_gray, data_range=255))
-            roundtrip_bsds_f1, _, _ = bipartite_match_f1(recov_edge, orig_edge, BSDS_TOLERANCE_PX)
-            gt_edge = edge_map(load_gray_array(f"dataset/pairs_480/{args.split}/line/{base}.jpg"))
+            matched = bsds_guard.match_f1(
+                recov_edge, orig_edge, BSDS_TOLERANCE_PX, args.bsds_timeout
+            )
+            # None means the tile hit the pathological tail of the match; it is
+            # recorded as a miss so the rest of the batch stays readable.
+            roundtrip_bsds_f1 = float("nan") if matched is None else matched[0]
+            gt_edge = edge_map(load_gray_array(
+                str(gt_paths.resolve(base, kind="line", split=args.split))
+            ))
             gt_chamfer = chamfer(edge_map(load_gray_array(out_path)), gt_edge, truncate=args.truncate)
             rows.append({
                 "sample": base, "model": label,
                 "roundtrip_chamfer": round(roundtrip_chamfer, 4),
                 "roundtrip_ssim": round(roundtrip_ssim, 4),
                 "roundtrip_bsds_f1": round(roundtrip_bsds_f1, 4),
+                "bsds_timed_out": int(matched is None),
                 "gt_chamfer": round(gt_chamfer, 4),
                 "orig_condition_ink": int(orig_edge.sum()),
                 "recovered_condition_ink": int(recov_edge.sum()),
@@ -142,9 +158,15 @@ def main():
             continue
         rt = np.mean([r["roundtrip_chamfer"] for r in model_rows])
         ssim_mean = np.mean([r["roundtrip_ssim"] for r in model_rows])
-        bsds_mean = np.mean([r["roundtrip_bsds_f1"] for r in model_rows])
+        bsds_mean = float(np.nanmean([r["roundtrip_bsds_f1"] for r in model_rows]))
         gc = np.mean([r["gt_chamfer"] for r in model_rows])
         print(f"{label:30s} {rt:18.4f} {ssim_mean:15.4f} {bsds_mean:18.4f} {gc:12.4f}")
+    n_timed_out = sum(r["bsds_timed_out"] for r in rows)
+    if n_timed_out:
+        print(
+            f"\n{n_timed_out}/{len(rows)} tiles exceeded the {args.bsds_timeout:.0f}s "
+            "bsds cap and are NaN above (see tools/evaluation/bsds_guard.py)"
+        )
     print(f"\nsaved: {args.output_csv}")
 
 

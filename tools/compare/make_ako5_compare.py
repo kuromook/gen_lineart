@@ -16,6 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from lineart.unetgenerator import UNetGenerator
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evaluation"))
+import gt_paths  # noqa: E402
+
 IMAGE_SIZE = 480
 CKPT = "checkpoints/ako5/best.pth"
 OUT_DIR = "results/ako5"
@@ -30,13 +33,11 @@ SAMPLES = [
 
 
 def rough_path(name):
-    sub = "train" if name.startswith("housei") else "test"
-    return f"dataset/pairs_480/{sub}/rough/{name}.jpg"
+    return str(gt_paths.resolve(name, kind="rough"))
 
 
 def line_path(name):
-    sub = "train" if name.startswith("housei") else "test"
-    return f"dataset/pairs_480/{sub}/line/{name}.jpg"
+    return str(gt_paths.resolve(name, kind="line"))
 
 
 def main():

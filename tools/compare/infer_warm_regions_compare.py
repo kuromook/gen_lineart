@@ -12,6 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from lineart.unetgenerator import UNetGenerator
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evaluation"))
+import gt_paths  # noqa: E402
+
 
 IMAGE_SIZE = 480
 CHECKPOINT = "checkpoints/warm_regions/best.pth"
@@ -30,8 +33,7 @@ SAMPLES = [
 
 
 def dataset_path(name, kind):
-    split = "train" if name.startswith("housei") else "test"
-    return f"dataset/pairs_480/{split}/{kind}/{name}.jpg"
+    return str(gt_paths.resolve(name, kind=kind))
 
 
 def load_image(path, autocontrast=False):

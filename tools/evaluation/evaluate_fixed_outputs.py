@@ -43,7 +43,10 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "pair_extraction"))
-from tile_region_manifest_480 import bipartite_match_f1, edge_map  # noqa: E402
+from tile_region_manifest_480 import edge_map  # noqa: E402
+
+import bsds_guard  # noqa: E402
+import gt_paths  # noqa: E402
 
 
 IMAGE_SIZE = 480
@@ -75,10 +78,8 @@ def normalize_name(name):
 
 
 def dataset_path(name, split):
-    base = normalize_name(name)
-    if split == "auto":
-        split = "train" if base.startswith("housei") else "test"
-    return f"dataset/pairs_480/{split}/line/{base}.jpg"
+    """Resolve by looking for the file; see tools/evaluation/gt_paths.py."""
+    return str(gt_paths.resolve(name, kind="line", split=split))
 
 
 def load_gray(path):
@@ -99,7 +100,7 @@ def distance_to_ink(ink):
     return cv2.distanceTransform((~ink).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
 
 
-def metrics(pred, target, truncate_px):
+def metrics(pred, target, truncate_px, bsds_timeout=bsds_guard.DEFAULT_TIMEOUT_S):
     pred_dist = distance_to_ink(pred)
     target_dist = distance_to_ink(target)
     pred_count = max(int(pred.sum()), 1)
@@ -112,7 +113,15 @@ def metrics(pred, target, truncate_px):
         float(np.minimum(target_dist[pred], truncate_px).mean())
         + float(np.minimum(pred_dist[target], truncate_px).mean())
     )
-    bsds_f1, bsds_precision, bsds_recall = bipartite_match_f1(pred, target, TOLERANCE_PX)
+    matched = bsds_guard.match_f1(pred, target, TOLERANCE_PX, bsds_timeout)
+    if matched is None:
+        # The tile hit the pathological tail of maximum_bipartite_matching.
+        # Recorded as a miss so the rest of the batch is still readable.
+        bsds_f1 = bsds_precision = bsds_recall = float("nan")
+        bsds_timed_out = 1
+    else:
+        bsds_f1, bsds_precision, bsds_recall = matched
+        bsds_timed_out = 0
     pred_ink = float(pred.mean())
     target_ink = float(target.mean())
     return {
@@ -122,6 +131,7 @@ def metrics(pred, target, truncate_px):
         "bsds_precision": bsds_precision,
         "bsds_recall": bsds_recall,
         "bsds_f1": bsds_f1,
+        "bsds_timed_out": bsds_timed_out,
         "chamfer_px": chamfer,
         "pred_ink": pred_ink,
         "target_ink": target_ink,
@@ -129,14 +139,18 @@ def metrics(pred, target, truncate_px):
     }
 
 
-def main(models, samples, output_csv, split, extraction, truncate_px):
+def main(models, samples, output_csv, split, extraction, truncate_px,
+         bsds_timeout=bsds_guard.DEFAULT_TIMEOUT_S):
     rows = []
     for name in samples:
         target = extract_ink(dataset_path(name, split), extraction)
         for model in models:
             base = normalize_name(name)
             pred = extract_ink(f"results/{model}/{base}_out.png", extraction)
-            row = {"sample": base, "model": model, **metrics(pred, target, truncate_px)}
+            row = {
+                "sample": base, "model": model,
+                **metrics(pred, target, truncate_px, bsds_timeout),
+            }
             rows.append(row)
 
     fields = list(rows[0])
@@ -149,7 +163,7 @@ def main(models, samples, output_csv, split, extraction, truncate_px):
     for model in models:
         model_rows = [row for row in rows if row["model"] == model]
         means = {
-            key: np.mean([row[key] for row in model_rows])
+            key: float(np.nanmean([row[key] for row in model_rows]))
             for key in (
                 "f1_2px", "bsds_f1", "chamfer_px", "ink_ratio", "precision_2px", "recall_2px",
                 "bsds_precision", "bsds_recall",
@@ -159,6 +173,12 @@ def main(models, samples, output_csv, split, extraction, truncate_px):
             f"{model:12s}  {means['f1_2px']:.4f}  {means['bsds_f1']:.4f}  {means['chamfer_px']:7.3f}"
             f"  {means['ink_ratio']:9.3f}  {means['precision_2px']:.4f}"
             f"  {means['recall_2px']:.4f}  {means['bsds_precision']:.4f}  {means['bsds_recall']:.4f}"
+        )
+    n_timed_out = sum(row["bsds_timed_out"] for row in rows)
+    if n_timed_out:
+        print(
+            f"\n{n_timed_out}/{len(rows)} tiles exceeded the {bsds_timeout:.0f}s bsds cap"
+            " and are NaN above (see tools/evaluation/bsds_guard.py)"
         )
     print(f"\nsaved: {output_csv}")
 
@@ -175,6 +195,12 @@ if __name__ == "__main__":
              "'threshold' (raw gray<128, reproduces pre-2026-08-09 numbers)",
     )
     parser.add_argument("--truncate-px", type=float, default=TRUNCATE_PX)
+    parser.add_argument(
+        "--bsds-timeout", type=float, default=bsds_guard.DEFAULT_TIMEOUT_S,
+        help="per-tile hard cap in seconds for the bipartite match, whose worst "
+             "case is unbounded; 0 runs it in-process with no cap (old behaviour)",
+    )
     args = parser.parse_args()
     samples = read_sample_list(args.sample_list) if args.sample_list else SAMPLES
-    main(args.models, samples, args.output_csv, args.split, args.extraction, args.truncate_px)
+    main(args.models, samples, args.output_csv, args.split, args.extraction,
+         args.truncate_px, args.bsds_timeout)
