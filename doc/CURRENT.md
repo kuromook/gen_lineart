@@ -5,7 +5,11 @@ trap** -- the `cy`/`cx` swap was a misdiagnosis -- and, later the same day,
 Track G's resumed placement question settled: the reference frame carries the
 win and lesson 13 now holds from both the classification and the prediction
 side; see Known Tool Traps for two new entries on checking a box's
-orientation and on writing a negative control).
+orientation and on writing a negative control. Later still: the distorted
+position bins were measured and the verdict is **"big"** -- every position-bits
+figure in Tracks F and G is replaced, no verdict flips, and 86% of the apparent
+placement structure was the panel's aspect ratio, which is **lesson 14**. Track
+J opened to take the idle GPU).
 The Track Ledger, Lessons, Known Tool Traps, Active Goal and Next Actions are
 current as of this date; the ledger was rebuilt on 2026-09-30 by
 reading every track's own files after this file had fallen 13 days behind. The
@@ -232,7 +236,11 @@ work, and the stated expectation is that the pieces make each other easier.
   - *2026-09-21, generation smoke*: set-at-once vs two-stage. Word bits
     **7.078 / 7.094** passed the pre-registered 7.312 gate; position bits
     6.680 / 6.658 beat the 7.563 marginal but **failed** the 6.388 cloze band,
-    and the gate was not relaxed after the fact. **The visual gate failed**:
+    and the gate was not relaxed after the fact. **Every one of those position
+    figures was replaced on 2026-10-09** -- on corrected bins they read 7.901 /
+    7.880 against a 7.957 marginal and still fail the 7.789 band, so the
+    verdicts stand and the margin over the marginal falls from 0.905 bits to
+    0.077. See Known Tool Traps. **The visual gate failed**:
     the output is "prototypes scattered at statistically plausible positions",
     not a readable scene -- recorded in that tree as 蟻の群れ, an ant swarm.
     Leak checks and a "too good to be true" audit of the 0.662 scale bits were
@@ -295,6 +303,27 @@ work, and the stated expectation is that the pieces make each other easier.
     because with a mixed unit it would only measure a mixed unit's stability.
     `framerel.py` takes a new unit's labels in place of the word id, so the
     distance to 0.074 comes out in one run.
+  - *2026-10-09 (third notice), the distorted position bins measured and the
+    verdict is "big".* Given this by the foundation as work needing neither the
+    GPU nor the author. Rebuilt the bins on matched denominators -- words,
+    scales, order and the split unchanged, only the two position tokens -- and
+    re-ran all five figures in matched pairs, same seed, same code, same
+    session. **The figures all move (largest delta 1.449 bits against a
+    pre-registered 0.270 "big" threshold) and no recorded verdict flips**; the
+    numbers, the collapsed margins and the mechanism are in Known Tool Traps.
+    The mechanism is the finding: **the position tokens were encoding the panel
+    aspect ratio**, and a no-training frequency table on a 16-way aspect bin
+    reproduces 86% of the cloze transformer's advantage -- lesson 14. **Track
+    F's central negative is untouched**: word bits move by -0.056 to +0.004 and
+    the cloze still falls far short of its 6.348 gate, so "no inter-word grammar
+    inside a panel" never sat on the position bins, and the track's own
+    pre-registration forbade using this run to re-read that negative. Its
+    instrument checks failed four times in the day and **all four failures were
+    in the checking side, never in the measured side** -- including a control
+    that was vacuous by construction and a known-value cell that named a number
+    without naming the quantity, both now in the traps. Track F's files were
+    not touched: `train_cloze.py` was copied unchanged (sha256 verified against
+    the original) and run with this track's own paths.
   - Also reported from here, and **withdrawn as to its cause on 2026-10-04**:
     the claim that Track F's `cluster_set` meta has `cy` and `cx` swapped. The
     columns are as named; what is transposed is `strokes`/`pts` and `dims`.
@@ -519,7 +548,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and thirteen lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and fourteen lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -822,7 +851,22 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     So the structure is there and large; the word takes none of it. Two tracks
     arriving at this from a classification task and a regression task is the
     reason to trust it.
-
+14. **Put a no-training frequency table on one cheap descriptor next to every
+    learned number.** Added 2026-10-09 from Track G's position-bin run. The
+    cloze transformer looked at every other cluster in a panel and bought 1.228
+    bits over the position marginal. A frequency table conditioned on **one
+    16-way bin of the panel's aspect ratio**, with no model and no training at
+    all, bought **1.054 of those 1.228 bits -- 86%** -- and once the bins were
+    rebuilt on matched denominators the same table bought exactly nothing while
+    the transformer kept 0.17 bits. The structure the learned model appeared to
+    find was a leak from a broken normalisation, and **the thing that exposed it
+    cost nothing to compute**. So the control is not optional: for any learned
+    figure, name the cheapest descriptor of the input that could carry the same
+    information -- the frame's shape, the ink total, the instance count -- and
+    score a table on it. If the table gets most of the way there, the model is
+    not the finding. This is the same move as the lesson under Track C
+    (measure the computable axis before asking a person to judge), one level
+    down: measure the computable axis before believing a model.
 ## Every f1 On Record, And What Can Still Be Read
 
 **This section replaced an earlier one, and the earlier one was wrong.** On
@@ -1075,15 +1119,57 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   misreading from the other side and is withdrawn too: the PNGs are upright.
   **What survives is the whole consequence.** The corpus position bins were
   built as `py = cy/dims[0]` = y/W and `px = cx/dims[1]` = x/H -- mismatched
-  denominators under either reading -- so they are genuinely distorted, with
-  16-20% of clusters saturating the top bin against 6.25% if uniform, and
-  **every position-bits figure from Tracks F and G still sits on them**: 7.563
-  marginal, 6.315-6.388 cloze, 6.658 in Track G. **How far those three figures
-  actually move is being measured** -- Track G was given exactly that, with the
-  bins rebuilt on matched denominators (Next Actions item 2); its own
-  2026-10-09 tool `tools/gen/framerel.py` deliberately does not use the bins at
-  all, reading `meta.csv` by column name and taking panel size from the line
-  PNG.
+  denominators under either reading -- so they are genuinely distorted.
+  **The quantity that was 16-20% here until 2026-10-09 was mislabelled**, and
+  the correction matters because it is what a track trying to reproduce the
+  figure will aim at: the original 2026-09-23 record says *"py pins to top bin
+  15 at 15.9%, px at 20.1%"*, which is the **share of clusters whose ratio
+  reaches or exceeds 1 and is clipped**, not top-bin occupancy. Verified here
+  on 2026-10-09 against the corpus: **top-bin occupancy is 17.96% (py) and
+  22.39% (px)**, the top row plus top column is **40.3%**, and the clipped
+  share is the recorded 15.9% / 20.1% -- the original note's companion figures
+  ("cy <= H is 84%", "cx <= W is 80%") are that clipped share from the other
+  side, 84.13% / 79.93%.
+  **The blast radius is now measured, and the verdict is "big" (Track G,
+  2026-10-09, `results/posbins_20261009/`).** Rebuilding the bins on matched
+  denominators moves every position figure: marginal **7.563 -> 7.957**, cloze
+  **6.315-6.388 -> 7.785-7.792**, two-stage **6.658 -> 7.880**, set-at-once
+  **6.680 -> 7.901**, the largest delta 1.449 bits against a pre-registered
+  "big" threshold of 0.270. **No recorded verdict flips** -- every sign holds --
+  but the margins collapse: Track F's position gate from 1.175 bits to 0.165,
+  Track G's two-stage from 0.905 to 0.077, the cloze-band failure from 0.270 to
+  0.088. So the position-bits figures all need replacing, and no past
+  conclusion needs withdrawing. The corrected corpus is kept at
+  `../lineart-panel-generation/results/posbins_20261009/corpus_fixed.npz`, with
+  words, scales, order and the train/test split identical to the original and
+  only the two position tokens rebuilt.
+  **What the distortion actually was, which is the part worth carrying**:
+  `y/W` collapses toward zero on wide panels and exceeds 1 on tall ones, so the
+  position tokens were **encoding the panel's aspect ratio**. With no learning
+  at all, a frequency table conditioned only on a 16-way aspect-ratio bin
+  reaches **6.510 bits** against the 7.563 marginal -- **86% of the advantage
+  the cloze transformer obtained by looking at every other cluster in the
+  panel** (1.054 of 1.228). On the corrected bins the same table gains exactly
+  nothing (7.946 against a 7.946 marginal) and the transformer's remaining edge
+  is **0.17 bits**. Corroborating, all without training: the correlation
+  between a panel's mean `py` and `log2(H/W)` falls from **+0.909 to +0.012**
+  (`px`, -0.913 to -0.120), the between-panel share of bin variance from
+  0.509/0.494 to 0.122/0.099, and the clipped share from 15.9%/20.1% to
+  **0.0%/0.0%**. Reproduced here independently from
+  `../lineart-stroke-grammar/results/grammar_corpus_20260920/corpus.npz`:
+  top-bin 0.1796/0.2239, top row+column 0.4034, correlations +0.909/-0.913,
+  and the aspect-only table at 6.517-6.528 depending on the smoothing.
+  **One convention to know before comparing any of these numbers**: the
+  "marginal" is the **sum of the two token marginals**, H(py) + H(px), not the
+  joint. On the original bins that overstates the baseline by 0.190 bits (joint
+  7.373, measured here), because the broken normalisation correlated the two
+  axes; on the corrected bins the two are nearly independent (joint 7.951
+  against the sum 7.954), so the corrected margins are not artefacts of the
+  convention -- an honest train-fitted 256-cell table scores 7.945 on the test
+  panels and the cloze still beats it by 0.16 bits.
+  Track G's own 2026-10-09 tool `tools/gen/framerel.py` deliberately does not
+  use the bins at all, reading `meta.csv` by column name and taking panel size
+  from the line PNG.
   **Track G's own GT analyses are numerically unaffected, with their axis
   labels swapped.** Verified here on 2026-10-09 by reading
   `tools/gen/placement_gt.py`: it takes `x = meta.cy` and divides by `dims[1]`,
@@ -1129,6 +1215,26 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   small thing. The lesson is the phrasing: **"swap x and y" is a different
   mutation at every layer**, so a control is written as the specific confusion
   a real caller could make, one per row, each with its own expected score.
+  **Two more ways the same check went wrong on 2026-10-09**, both from Track
+  G's position-bin run, where the instrument checks failed four times and the
+  measured side never did:
+  (i) **A control can be vacuous by construction.** The mirror control for the
+  rebuilt bins -- "read `(x/W, y/H)` instead of `(y/H, x/W)`" -- is the same
+  corpus with its two position tokens exchanged, so every symmetric statistic
+  (saturation, clipped share, marginal entropy) is **identical by definition**:
+  0.0500 against 0.0500, 7.956639 against 7.956639. It passes whatever the code
+  does. **An axis-name swap cannot be detected by a symmetric statistic at
+  all**; only a check against something outside the coordinate system can see
+  it -- here "do the dims fit the panel", 100% as (W, H) against 3.3% as
+  (H, W). That is lesson 12 again, one layer up: the control inherits the
+  blindness of the statistic it is built from.
+  (ii) **A known-value cell has to record which quantity, not just the
+  number.** The check aimed at this file's "16-20% saturating the top bin" and
+  failed, because the figure in the original record is the **clipped share**
+  (15.9% / 20.1%), while top-bin occupancy is 17.96% / 22.39%. Both are near
+  20% and neither reproduces the other. The number alone is not a reproducible
+  anchor; the quantity, the denominator and the population belong next to it,
+  and that is now fixed in the axis trap above.
 - **`cluster_set`'s unit is built from proximity alone, so it mixes parts and
   silently drops strokes.** Measured by Track H on 2026-10-09 against 1,003
   author-assigned instance labels inside detected face boxes. Clusters come
@@ -1275,9 +1381,19 @@ and a panel as a sentence. Track F then established a clean negative that
 determines everything downstream: **there is no inter-word grammar inside a
 panel** -- five independent measurements agree, and a bigram model is *worse*
 than unigram. So generation cannot be "a grammar consumes a word sequence".
-What does exist is a real vocabulary and real structure in **where** words sit.
-Hence Track G's shape: the concept is supplied from outside, and the model's job
-is only which words appear and where they go.
+What does exist is a real vocabulary and -- as this was stated until 2026-10-09
+-- real structure in **where** words sit. Hence Track G's shape: the concept is
+supplied from outside, and the model's job is only which words appear and where
+they go. **That second half has since been measured down to almost nothing**:
+the position bins the figure rested on were distorted, and 86% of the apparent
+placement structure was the panel's own aspect ratio leaking through a broken
+normalisation (lesson 14). On corrected bins what a transformer gets from
+seeing every other cluster in the panel is **0.17 bits**, and Track G's
+frame-relative run put the same conclusion in panel widths: the reference frame
+is worth 0.190 and the word inside it 0.006. So the vocabulary is real and
+**the placement structure, as measured on these words, is not** -- which is the
+same verdict from the two directions the project measured it, and it points at
+the unit again rather than at a better placement model.
 
 Track G has already run that and **failed its visual gate** while passing its
 numeric ones -- prototypes land at statistically plausible positions and the
@@ -1802,11 +1918,27 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
    denominators and recompute the marginal 7.563, the cloze 6.315-6.388 and
    Track G's own 6.658. The track proposed it itself, it reported the
    distortion in the first place, and it needs neither the GPU nor the author's
-   eyes. The precedent for the shape of the answer is Track I on
-   `lineart_003_000`: **if the shift is small, "no re-measurement needed" can
-   be stated and closed; if it is large, the premise Track F resumes on has
-   changed.** Pre-registration first, as always, including which figure counts
-   as "large".
+   eyes. The precedent for the shape of the answer was Track I on
+   `lineart_003_000`: if the shift is small, "no re-measurement needed" can be
+   closed; if it is large, the premise Track F resumes on has changed.
+   **Done the same day, and the answer is "large" (third notice, folded into
+   Known Tool Traps).** Every position figure is replaced, no verdict flips, the
+   margins collapse, and the mechanism is that the tokens were encoding the
+   panel's aspect ratio -- 86% of the learned advantage reproducible by a
+   frequency table with no training, which is now lesson 14. Track F's premise
+   has changed in exactly one direction: its word negative is untouched and its
+   **placement** claim is much weaker than recorded.
+   **The slot is open again and the next assignment is named**: finish the
+   sweep. Which of the *remaining* figures in Tracks F and G sit on the
+   distorted bins, and what do they read when rebuilt -- specifically Track F's
+   "238 words have a placement preference that replicates" and its weak
+   relative placement (residual cosine 0.15 against a null near zero), plus any
+   figure in either track's logs derived from `bins_of`. Some of it was computed
+   on real coordinates rather than bins and is therefore unaffected; the
+   deliverable is the list, separated into "unaffected", "replaced, verdict
+   holds" and "replaced, verdict changes", so whoever resumes Track F reads one
+   table instead of re-deriving this. Same conditions: no GPU, no author's eyes,
+   pre-registration first, Track F's files untouched.
    Deliberately *not* chosen for the same slot, and why, so the decision is not
    re-litigated: Track C/E's re-render route is the one named untried thing in
    the deletion family, but its verdict needs the author's eyes and would
@@ -1902,9 +2034,15 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
      parts in 41% of labelled cases and excludes 14.6% of all strokes. The
      second one sharpens the trigger rather than the negative: a better
      vocabulary now plainly means a better **unit**, not just a better codebook.
-     One thing to wait for before resuming it either way: Track G is measuring
-     how much the distorted position bins actually moved its figures (item 2),
-     and that answer lands on F's premise, not only on its hygiene.
+     **Measured 2026-10-09, and the answer splits F's record in two**: its word
+     negative is untouched (word bits move by -0.056 to +0.004 and the cloze
+     still falls far short of its 6.348 gate), while **every position figure is
+     replaced and the placement claim is much weaker** -- the marginal goes
+     7.563 -> 7.957, the cloze band 6.315-6.388 -> 7.785-7.792, and 86% of what
+     looked like placement structure was the panel's aspect ratio (lesson 14).
+     A corrected corpus identical in every other token is kept at
+     `../lineart-panel-generation/results/posbins_20261009/corpus_fixed.npz`, so
+     a resume starts from that rather than rebuilding it.
 4. **Both tool bugs are fixed, 2026-10-09 -- what remains under this item is
    the data-side decision.** (a) The `housei`-prefix split heuristic now
    resolves by looking for the file, through

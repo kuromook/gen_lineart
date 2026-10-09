@@ -6045,3 +6045,99 @@ attempt needs an instrument that could falsify that prediction first.
 Why a loss is also an outcome: item 5's real question was whether the fills are
 the other half of this project's plan or a separate project. A model that
 cannot beat "paint GT's mean share by area" answers it.
+
+## 2026-10-09 (sixth entry): The Position Bins Were "Big" — 86% Of The Placement Structure Was The Panel's Aspect Ratio
+
+Track G's third notice of the day
+(`inbox/note_track_g_position_bins_blast_radius_20261009.md`) answers the
+assignment given in the third briefing notice. Folded into `doc/CURRENT.md`:
+the axis trap rewritten, the negative-control trap extended with two more
+failure forms, **lesson 14** added, the Track G ledger entry, the Active Goal,
+and Next Actions items 2 and 3.
+
+**The verdict is "big", and no past verdict flips.** Rebuilding the bins with
+matched denominators -- words, scales, order and the train/test split identical,
+only the two position tokens replaced -- moves every position figure: marginal
+7.563 -> 7.957, cloze 6.315-6.388 -> 7.785-7.792, two-stage 6.658 -> 7.880,
+set-at-once 6.680 -> 7.901. The largest delta, 1.449 bits, is 5.4x the
+pre-registered "big" threshold of 0.270, which was itself set from the
+narrowest recorded margin. Every sign holds, so nothing is withdrawn, but the
+margins collapse: Track F's position gate 1.175 -> 0.165 bits, Track G's
+two-stage 0.905 -> 0.077, the cloze-band failure 0.270 -> 0.088. Track I's
+`lineart_003_000` outcome -- "a hygiene note, not a reason to re-run" -- does
+not apply here; the figures need replacing.
+
+**The mechanism is the result.** `y/W` collapses toward zero on wide panels and
+exceeds 1 on tall ones, so the position tokens were **encoding the panel's
+aspect ratio**. A frequency table conditioned on nothing but a 16-way
+aspect-ratio bin, with no training at all, reaches 6.510 bits against the
+7.563 marginal -- **86% of what the cloze transformer bought by looking at
+every other cluster in the panel**. On the corrected bins that table gains
+exactly nothing and the transformer keeps 0.17 bits. This is now **lesson 14**:
+put a no-training frequency table on one cheap descriptor next to every learned
+number, because here the cheapest descriptor of the input took 86% of the
+finding.
+
+**Verified here before folding, from Track F's own corpus
+(`../lineart-stroke-grammar/results/grammar_corpus_20260920/corpus.npz`)**:
+176,887 clusters, top-bin occupancy 0.1796 / 0.2239, top row plus column
+0.4034, correlation between panel-mean `py` and `log2(H/W)` **+0.909** and
+`px` **-0.913**, and the aspect-only frequency table at 6.517-6.528 depending
+on smoothing against Track G's 6.510. The corrected corpus reproduces their
+numbers too (top-bin 0.0586 / 0.0414). The training-based figures are Track
+G's, with their own re-run of the original drifting at most 0.034 bits from the
+recorded value.
+
+**One thing this verification added.** The "position marginal" is the **sum of
+the two token marginals**, H(py) + H(px) = 7.5631, not the joint, which is
+7.3729 -- measured here. On the original bins the convention therefore
+overstates the baseline by 0.190 bits, because the broken normalisation
+correlated the two axes; that is more than the 0.165-bit margin the corrected
+cloze has over the corrected marginal, so the question of whether the surviving
+margin is a convention artefact had to be checked rather than assumed. It is
+not: after the fix the two axes are nearly independent (joint 7.9511 against
+the sum 7.9541), and an honest train-fitted 256-cell table scores 7.9450 on the
+test panels, which the cloze still beats by 0.16 bits. Recorded in the trap so
+nobody compares a joint figure with a summed one.
+
+**The correction this made to our own records.** The trap here said "16-20% of
+clusters saturating the top bin". The original 2026-09-23 record says *"py pins
+to top bin 15 at 15.9%, px at 20.1%"* -- the **clipped share**, not occupancy.
+Top-bin occupancy is 17.96% / 22.39%. Both are near 20% and neither reproduces
+the other, which is how Track G's instrument check failed against our own
+figure. Generalised into the traps as: **a known-value cell has to record which
+quantity, with its denominator and population, not just the number.** Sibling
+to the entry from this morning about naming the one concrete error in a
+negative control -- both are the same failure, a check written in words loose
+enough to mean two things.
+
+**And a vacuous control, which is lesson 12 one layer up.** The mirror control
+"read `(x/W, y/H)` instead of `(y/H, x/W)`" is the same corpus with its two
+position tokens exchanged, so saturation, clipped share and marginal entropy
+are identical **by definition** -- 0.0500 against 0.0500, 7.956639 against
+7.956639. It passes whatever the code does. An axis-name swap cannot be caught
+by any symmetric statistic; only a check against something outside the
+coordinate system can see it, which here is "do the dims fit the panel", 100%
+read as (W, H) against 3.3% read as (H, W).
+
+**Track F's central negative is untouched and that was pre-registered, not
+decided afterwards.** Word bits move by -0.056 to +0.004 and the cloze still
+falls far short of its 6.348 gate, so "no inter-word grammar inside a panel"
+never sat on the position bins. Track G's own registration forbade using this
+run to re-read that negative, and it did not. What did change is F's
+**placement** claim, which is now much weaker than recorded -- so its resume
+premise is split in two, and the ledger says so.
+
+**Also worth recording about the day**: Track G's instrument checks failed four
+times and **all four failures were in the checking side**, never in the
+measured side. A broken negative control, a known-value cell aimed at the wrong
+quantity, a missing constant in the check's own formula, and two arrays of
+mismatched shape. The measured side has not produced a single error today.
+
+**Routing.** The slot is open again and the next assignment is named in item 2:
+finish the sweep -- which of the remaining figures in Tracks F and G sit on the
+distorted bins, what they read when rebuilt, and a three-way list (unaffected /
+replaced but holding / replaced and changed) so whoever resumes Track F reads
+one table instead of re-deriving it. Named rather than left open because the
+track asked to be named, and this is the only part of the hygiene sweep still
+missing.
