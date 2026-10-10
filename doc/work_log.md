@@ -601,3 +601,136 @@ Line refinement. Diffusion or ControlNet in any role. Any claim about ツヤベ�
 (the texture case in the user's 2026-10-10 observation) -- the fill mask at
 radius 4 does not separate it from plain ベタ, and no arm here is asked to.
 Any number without `blank` and the preprocessor beside it.
+
+## 2026-10-10 (amendment, before any stage-2 arm has run) User's correction, and the two proposals measured
+
+Three things from the user, in the order they change the registration.
+
+### 1. Prohibition 2 lifted for this stage
+
+"いったん禁止を解除する承認をするのは問題ないつもりだ". The learned arms M0/M1
+stand as registered. The falsifier written yesterday stays: an adversarial
+term, or reading the output as line art, puts it back inside the prohibition.
+
+### 2. `rough_dark` is demoted from contender to ceiling -- the user's account, measured
+
+The user's account: solid fills concentrate in 髪 / 衣類(トップス) /
+タイツ(スパッツ); those are decided before the rough is drawn, so **the artist
+does not mark them**. A fill-like mark in a rough indicates *indecision*,
+which is the opposite of what my arm assumed.
+
+Measured on the aligned koma pairs, `tools/evaluation/rough_fill_signal.py`:
+
+| source | base fill rate | rough mark | its area | **GT fill covered** | precision | lift |
+|---|---:|---|---:|---:|---:|---:|
+| ako5ver2 (167 panels) | 10.28% | rough<128 | 2.11% | **4.2%** | 20.4% | 1.98 |
+| | | rough<64 | 0.15% | 0.3% | 21.2% | 2.06 |
+| | | area-like | 0.57% | 1.2% | 21.7% | 2.11 |
+| housei (73 panels) | 3.21% | rough<128 | 0.60% | **1.6%** | 8.4% | 2.62 |
+| | | area-like | 0.09% | 0.2% | 7.7% | 2.40 |
+
+**96% of the solid-fill area has no dark mark under it in the rough**, and the
+strictest reading leaves 99.7%. So the recall ceiling of any "the rough
+already has it" arm is 4.2%, and the arm I registered yesterday as the one
+most likely to win cannot win. It stays in, reported as that ceiling.
+
+Visible directly in `results/region_closure_20261010/pair_check.png`: in all
+four pairs the hair and clothing that are solid black in the line art are
+drawn in the rough as **an outline with white inside**.
+
+What is *not* settled: the user's claim has a sign -- a fill-like mark should
+mark indecision, so fill rate under such a mark should be *below* base, lift
+< 1. Measured lift is about 2. That does not refute the claim, because my
+proxy for "a sign" is any dark area in the rough, which is mostly ordinary
+contour ink sitting where the drawing is dense, and fills are also where the
+drawing is dense. **Registered as open**, with the instrument it needs: a
+mark is a *sign* only if it is an area the artist filled in the rough and did
+not have to, which requires the 面 of section 3 to even be stated. Not
+claimed either way until then.
+
+### 3. "縮小して閉じて見えるなら面" -- measured, and it does not recover the 面
+
+Two readings of the proposal, both run against the thing it is for: does a GT
+fill component come out as its own region?
+
+**(a) Downscale** (`tools/evaluation/closure_by_downscale.py`). Barrier from
+the rough, scales 1 to 1/16, two ink-coverage thresholds:
+**enclosed 0.0% at every setting**, with the matched region a median 93-98% of
+the panel. Barrier taken from the de-filled GT instead: also 0.0%.
+The diagnostic says why -- `results/region_closure_20261010/downscale_diagnostic.png`:
+INTER_AREA downscaling of a 2.7px stroke gives ~0.17 coverage per cell, so the
+stroke **breaks into dashes** as the image shrinks. Shrinking makes the barrier
+worse, not better. The eye bridges the gap; this operation widens it.
+
+**(b) Morphological closing** of the rough's ink, which is the reading that
+actually bridges gaps (`tools/evaluation/closure_by_closing.py`, 59 panels,
+1,602 fill regions >=500px):
+
+| closing radius | barrier cost | enclosed (fill area) | median tightness |
+|---:|---:|---:|---:|
+| 0 | 2.1% | 0.0% | 0.167 |
+| 4 | 2.6% | 0.1% | 0.178 |
+| 8 | 3.7% | 0.3% | 0.178 |
+| 16 | 6.6% | **9.3%** | 0.085 |
+| 32 | 12.5% | **15.4%** | 0.033 |
+
+Closing does something a shrink cannot, and it is still not enough: at best
+15% of the fill area ends up inside a sub-panel region, and that region is
+**30x the size of the fill**. "Enclosed" is being bought by swallowing the
+neighbourhood, which `tightness` is there to catch.
+
+**Consequence**: the mechanical readings of "treat an ambiguously closed
+outline as a 面" do not deliver a 面. The requirement the user states is
+right; cheap morphology does not meet it. This *supports* the registered
+design rather than changing it -- the model stays pixel-wise and the metric
+stays region-wise, and no region proposer is built.
+
+### 4. What replaces `rough_dark` as the thing to beat
+
+If the rough does not mark fills, then what predicts them is **what the region
+is** -- hair, top, tights -- and the user has already said where those sit.
+That is the same shape as lesson 13 (*the word does not carry what the thing
+is; position and size inside a detected frame do*) and it makes lesson 14's
+mandatory no-training control into this stage's main hypothesis rather than a
+formality.
+
+Registered as stage 2a, no GPU, before the slot:
+
+  2a-1  Run `deepghs/anime_face_detection` (ONNX, the detector Track H
+        registered in H2) over the koma panels. Instrument check: zero
+        detections on a blank image, and the box-orientation check in
+        `../lineart/tools/evaluation/face_box_check.py` -- boxes read with x
+        and y exchanged leave the panel, which is the lesson-12 anchor here.
+  2a-2  Describe every GT fill component >=500px in **face-relative**
+        coordinates: offset and size in units of the nearest face box.
+        The user's claim predicts three clusters -- above/around the face
+        (hair), below it at roughly torso offset (tops), further below
+        (tights) -- and that is a prediction about a histogram, falsifiable
+        before anything is trained.
+  2a-3  The frequency table: predict filled/not from face-relative position
+        and size alone, no training, fitted on the train families. **This is
+        now the baseline the GPU arms must beat**, in place of `rough_dark`.
+
+Pass criteria C1-C5 are unchanged, and C3 now bites harder: if the frequency
+table comes within 0.05 region-F1 of M0/M1, the headline is that a histogram
+over face-relative position does the job.
+
+### 5. 枝落とし -- recorded, with what it would take
+
+The user: a line running continuously out of a ベタ面 has to be cut off like a
+branch, and the way to find it is that it does not fit the curve the stroke
+was following. This is a real defect in the current mask -- stage 1's montage
+showed eye outlines and a pair of glasses inside the radius-4 fill mask.
+
+Measured bound on how much is at stake, from stage 1's radius ladder: 93.6%
+(housei) and 92.3% (ako5) of the fill area survives going from radius 4 to 6,
+so roughly 7% of the mask is narrow enough to be branch rather than 面. That
+is the budget this would recover, and it is small enough that it is **not**
+registered as part of stage 2's scoring. What is registered: the radius
+ladder is reported, so no verdict rests on the 7%.
+
+The stronger method the user describes -- fit the stroke's own curve and cut
+where the ink stops following it -- is a separate instrument, and the honest
+note is that it needs the stroke decomposition the project already has
+(`tools/evaluation/stroke_decomposition.py`) pointed at a new question. Not
+started, not registered, recorded here so it is not lost.
