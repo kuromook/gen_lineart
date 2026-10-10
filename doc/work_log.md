@@ -348,3 +348,63 @@ ako5 0.1250 / 0.1201 / 0.1109。**4→6 で 93.6% / 92.3% が残る**ので、
 
 副次として登録した `stroke_decomposition`(線側)と `bsds`(部分抽出)は未実施。
 主結果と判定には不要で、第2段の登録前に必要なら回す。
+
+## 2026-10-10 Design check before stage 2: does a fill region close inside the input window?
+
+User, on reading the stage-1 montage finding: "パネル単位からコマ単位にしよう、ということだね?"
+That is the right reading of the problem, so it was measured rather than
+agreed to. `tools/evaluation/check_region_closure.py`, GT line art only, no
+model, no arm: fill-mask connected components of >=200px, counting those that
+touch the window border -- a region whose own boundary is outside the input is
+one the model is never shown whole.
+
+| set | n | median min side | stroke px | components | border-cut | fill AREA in cut comps |
+|---|---:|---:|---:|---:|---:|---:|
+| housei 480 grid tile | 1596 | 480 | 1.91 | 2547 | 47.3% | 87.6% |
+| housei koma panel | 74 | 1876 | 1.91 | 2119 | 5.6% | 26.4% |
+| ako5 480 grid tile | 689 | 480 | 2.74 | 1631 | 52.3% | 92.9% |
+| ako5ver2 koma panel | 171 | 1576 | 2.74 | 8247 | 8.9% | 48.5% |
+
+The two units are at the *same drawing scale* -- the stroke widths match to
+two decimals per source, which is what makes the rows comparable. Nothing was
+resized.
+
+`stroke_px` had to be measured over ink *outside* the fill mask. Over all ink
+it reads 27.15px on an ako5 koma panel against 5.48px on a 480 tile, which
+looks like a 5x scale difference and is not one: the median is sitting in the
+middle of the solid areas, i.e. it is reporting the thing under test. The
+first version of this check did exactly that and the scale-free argument built
+on it was wrong. Same family as the transpose control: a statistic that moves
+with the quantity being measured is not a control on it.
+
+Caveat, stated rather than resolved: the koma window is both *larger* (3-4x per
+side) and *aligned to the drawing's own boundaries*. This measurement does not
+separate the two. It does not need to for the decision -- the koma gives both
+-- but no claim is made here that alignment alone is what does it.
+
+Not in the numbers, from the sheets: on the 480 grid the red (closed) mask
+lands on eye outlines and a pair of glasses -- thick *lines* at that zoom, not
+areas -- while the hair mass is blue in every tile that contains one. On the
+koma panels the red regions are hair and clothing, which is what a person
+means by ベタ. Visual:
+  results/region_closure_20261010/montage_ako5_koma_panels.png
+  results/region_closure_20261010/montage_ako5_480_grid.png
+  results/region_closure_20261010/montage_housei_koma_panels.png
+  results/region_closure_20261010/montage_housei_480_grid.png
+
+Consequences for stage 2, to be settled in its registration, not here:
+
+1. Stage 1's `all_black` 0.0939 / 0.1201 is a property of the 480 window. On a
+   koma panel, with its blank margins, it will be lower. Baselines must be
+   re-measured at whatever unit stage 2 adopts; they do not carry across.
+2. Paired koma panels already exist, no extraction needed: ako5ver2 171,
+   4th 155, fitness 109, housei 74, hamlabi 58, gakuen 46, clip_pairs_v3 5018
+   (+ psd_line 756 line-only, unusable as pairs).
+3. The koma pipeline deliberately went the *other* way in 2026-07-26 -- panel
+   -> subregion -> per-subregion alignment refinement, 58 -> 75 -> 85 tiles for
+   housei -- because `ink_range` rejected 80.9% of panel candidates and
+   panel-level alignment was too loose for line position. Both gates are line
+   gates. A mostly-blank panel is a valid "do not paint" label, and a few px of
+   misalignment moves a region's boundary without changing which region is
+   black. Whether that tolerance claim holds is itself measurable and should be
+   registered as an instrument check, not assumed.
