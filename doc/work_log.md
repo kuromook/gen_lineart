@@ -1330,3 +1330,82 @@ in_fill split has to stay in every table.
    `stroke_curves.poly_rms`. It affects only the exploratory piecewise fit's
    smallest pieces, where `line_rms` decides the class anyway, but it is
    noted rather than silenced.
+
+## 2026-10-10 Diagnostic D1: is a fill's ink recoverable as curves at all?
+
+User's question: is it hopeless that a solid fill lands in the pile of lines
+the curve model cannot explain? Registered before measuring.
+
+### First, correcting something I was about to claim
+
+The chained run shows 74.8% explained outside the fill mask against 62.5%
+inside, which looks like chaining separating a fill's spine from a drawn
+stroke where curvature could not. **It is not.** Matched by chain length the
+gap nearly vanishes and then reverses:
+
+| fragments per chain | outside fill | inside fill | diff |
+|---|---:|---:|---:|
+| 1 | 88.0% | 83.2% | +4.9 |
+| 2 | 71.5% | 65.8% | +5.7 |
+| 3-4 | 46.6% | 44.8% | +1.8 |
+| 5+ | 16.3% | 21.9% | **-5.6** |
+
+The whole 12-point gap is composition: 11.2% of inside-fill length sits in
+chains of 5+ fragments against 4.4% outside, and long chains are explained
+less. **Curvature still cannot separate a fill's spine from a stroke**, which
+is the 2026-10-10 fragment-unit finding unchanged. Recorded because I nearly
+reported the opposite.
+
+### The size of the problem
+
+40 ako5ver2 koma panels, line art:
+
+| | |
+|---|---:|
+| ink pixels | 23,868,453 |
+| of which inside the fill mask | 21,100,383 (**88.4%**) |
+| skeleton length, total | 1,264,628 |
+| outside the fill | 611,606 (48.4%) |
+| inside the fill (the medial-axis lattice) | 653,022 (51.6%) |
+| fill contour length, 7,136 regions | 848,871 |
+| unexplained length that is inside the fill | **60.3%** |
+
+So a fill's spine is half of all skeleton length and three fifths of
+everything the curve model fails on.
+
+### Why this is probably not hopeless, and the thing that decides it
+
+A fill's medial axis is **an artefact of skeletonizing a filled region**. It
+is not a drawn mark: nobody drew the lattice. The drawn mark at a fill is its
+**outline**. So the repair is not a better curve model, it is to stop
+skeletonizing filled regions and take their contour instead -- and the
+separator needed for that is width, which already exists as the fill mask
+itself (a distance transform, computed from the image, not from a model).
+
+The catch, and the reason this is a measurement and not an assertion: the
+fill mask includes the 4px rim, so **the fill mask swallows the fill's own
+drawn outline**. Deleting the fill therefore deletes real drawn lines. The
+contour has to put them back, and that only works if a fill's outline is
+about as curve-like as a drawn stroke.
+
+### The measurement and its bar, fixed now
+
+For each fill-region contour and each outside-fill chain >= 30px, split
+recursively (each piece fitted in its own PCA frame, as in the exploratory
+piecewise fit) until every piece is within RMS 1.0px, capped at 20 pieces,
+and record **pieces per 100px of length**.
+
+**対処可能 if the median pieces per 100px of fill contours is within 2x the
+median of outside-fill drawn chains.** Then a fill's outline is a drawn line
+of ordinary complexity and the lattice can simply be dropped.
+
+**対処不能 (for this approach) if it is worse than 2x**, which would mean the
+fill boundary is not a curve the model can carry and the fill needs its own
+representation rather than being folded into lines.
+
+Negative control **NC-d1**: the same measure on contours of a **shuffled**
+region set -- each fill region's mask replaced by that of a different region
+from another panel, scaled to the same area. Named error: *pieces per 100px
+is just a function of how long and how blobby a closed curve is, and any
+closed region of this size would score the same.* No pass bar; it is there so
+the contour number can be read at all.
