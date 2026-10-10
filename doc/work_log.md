@@ -954,3 +954,123 @@ to test the hypothesis the user actually stated, and it is the same operation
 item 2 needs, since continuing a stroke across a junction and continuing it
 across a gap are one mechanism. The item-2 pass criteria (enclosed >= 25% at
 tightness >= 0.30, NC-c2 at least 10 points below) are unchanged.
+
+## 2026-10-10 Item 4 step 2 pre-registration: chaining fragments through junctions
+
+Written before a line of the chainer existed. The user asked how the join is
+actually decided, so the mechanism is spelled out here in full; the thresholds
+below are the registered ones and are not to be moved after a result is seen.
+
+### The graph
+
+Junction pixels (skeleton, 8-neighbour degree >= 3) are not single pixels --
+an X crossing yields a small cluster of them. So:
+
+  node  = a connected component of the junction-pixel set (8-conn)
+  arm   = (fragment, which end), for every fragment end 8-adjacent to a node
+  the chainer's only job: at each node, decide which arms continue each other
+
+Unlike the H-curve run, **short fragments are kept** (no MIN_BRANCH_PX gate at
+this stage). Dropping a 4px fragment would sever a stroke that runs through it.
+
+### What is measured at an arm
+
+Not the fragment's global PCA -- a long curved fragment's overall direction is
+not its direction at the tip. A local window of the last `TAN_WIN = 12` px at
+that end, read inside -> outward, with the frame built explicitly rather than
+from SVD sign luck:
+
+  u = unit tangent from the window's PCA, flipped to point OUTWARD
+  v = rot90(u)                     (so the handedness is fixed, not inherited)
+  t = a s^2 + b s + c              fitted in (s = along u, t = along v)
+
+At the tip (s = s_e): slope m = 2 a s_e + b, so
+
+  outward tangent  T = (u + m v) / sqrt(1 + m^2)
+  signed curvature K = 2a / (1 + m^2)^{3/2}
+
+A fragment shorter than 3px has no curvature: T = tip - other end, K = 0.
+
+### The cost of joining arm i to arm j
+
+Traversing i outward and then into j means entering j against its outward
+direction. A plane curve's signed curvature flips under reversal, so
+continuity is `K_i ~ -K_j`, not `K_i ~ K_j`. Three terms, each in its own
+physical unit, then normalised:
+
+  angle      theta = angle(T_i, -T_j)                    [degrees]
+  curvature  dK    = |K_i + K_j| / (|K_i| + |K_j| + 1/KAPPA_REF)
+  offset     d     = mean of the two perpendicular distances from one arm's
+                     extrapolated parabola to the other arm's tip   [px]
+
+  cost = theta/THETA0 + W_KAPPA * dK + d/D0
+
+  THETA0 = 30 deg   D0 = 1.5 px   W_KAPPA = 1.0   KAPPA_REF = 200 px
+  hard gates: theta <= 60 deg, d <= 3.0 px  (a wider pair is never joined)
+
+The offset term is what separates a real continuation from two strokes that
+pass a junction side by side with parallel tangents. The KAPPA_REF floor is
+what stops two nearly-straight ends being punished for noisy curvature.
+
+### The decision at a node
+
+A **maximum-weight matching over the node's arms**, not greedy pairing, and
+**arms are allowed to stay unmatched** -- that is the whole point at a T,
+where the bar continues and the stem genuinely stops. Unmatched costs
+`C_UNMATCHED = 1.0` per arm, so a pair is only made when its cost is under
+2.0; a pure 60 deg kink costs exactly 2.0, which is why the gate and the
+break-even coincide. All matchings are enumerated exhaustively for nodes with
+up to `MAX_ARMS = 8` arms; a larger node leaves every arm unmatched and is
+counted in the report rather than handled silently.
+
+Every arm is used at most once, so the result is automatically a set of
+disjoint simple paths and cycles -- no stroke ever branches.
+
+### Instrument checks
+
+- **IC-j1 synthetic crossing.** A straight line and a parabola a=0.004 drawn
+  crossing on a blank canvas. PASS = exactly 2 chained strokes, each one
+  classed `line`/`arc` (NOT `split`), and the parabola's coefficient
+  recovered within the IC-c1 tolerance (20% relative, rms <= 0.5). A wrong
+  pairing produces two strokes with a kink, which the fit calls split or
+  unexplained -- so this check is sensitive to exactly the failure it is for.
+- **IC-j2 T-junction.** A straight bar with a stem meeting it at 90 deg.
+  PASS = the bar is one stroke and the stem is a separate stroke; 3 arms ->
+  1 pair + 1 unmatched. This is the check that fails if matching were greedy.
+- **IC-j3 rotation.** IC-j1 rotated 37 deg in COORDINATES (the IC-c3
+  amendment). PASS = identical pairing, cost deltas < 1e-9.
+- **IC-j4 external anchor (lesson 12).** Each recovered stroke drawn in its
+  own colour over the on-disk line PNG, under `results/`. Judged by eye
+  against strokes a person would have drawn.
+
+### Negative controls, one named error each
+
+- **NC-j1 shuffled geometry.** At each node, the arms' (T, K) are replaced by
+  those of a different randomly chosen node with the same arm count, seed
+  20261010. Named error: *the matcher is not using geometry at all, and any
+  matching of the right shape would score the same.*
+- **NC-j2 random valid matching.** At each node, a uniformly random matching
+  with no gates and no cost. Named error: *the gain comes merely from making
+  strokes longer, since a longer stroke is a different unit, not from making
+  the right ones.*
+- **NC-j3 length fairness.** Not a pass/fail arm but a condition on reading
+  NC-j1/NC-j2: their stroke-length medians must be within 20% of the real
+  chainer's. If they are not, the explained share is reported as a curve
+  against length rather than as a single number, because a longer stroke is
+  harder to explain and the comparison would otherwise be rigged.
+
+### H-stroke pass criterion, fixed now
+
+Same model and same thresholds as H-curve, so the two units are directly
+comparable: **>= 70% of stroke length in the line art, strokes >= 30px and
+`in_fill < 0.5`, explained as line / single parabola / one-breakpoint split
+at RMS <= 1.0px**, with NC-j1 and NC-j2 both at least 10 points below. The
+rough is reported beside it, never pooled with it. Inside-fill strokes are
+reported separately, as in H-curve.
+
+A length-scaled breakpoint budget (floor(len/60), max 3) is computed and
+reported as **exploratory only**; it cannot move the criterion above. The
+controls get the same budget whenever it is quoted.
+
+Cycles (closed chains) cannot be fitted in a PCA frame and are counted and
+reported, not dropped quietly.
