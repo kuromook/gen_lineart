@@ -1074,3 +1074,122 @@ controls get the same budget whenever it is quoted.
 
 Cycles (closed chains) cannot be fitted in a PCA frame and are counted and
 reported, not dropped quietly.
+
+## 2026-10-10 Chainer: three amendments, each forced by a check that failed
+
+Recorded before the H-stroke number was read, in the order the failures came.
+
+### IC-j1 failed, and the reason is topological, not a bug
+
+A straight line crossing a parabola gave **3 strokes, two of them `split`**,
+not 2. The skeleton of an X is not two crossing paths: skeletonizing produced
+**two** degree-3 clusters bridged by a **1.0px stub**, so the crossing has 6
+arms across 2 nodes, and the stub belongs to *both* drawn curves. No matching
+that uses each arm at most once can recover both strokes while the stub is a
+fragment.
+
+**Amendment:** junction clusters joined by a fragment of at most
+`MERGE_PX = 6.0` are merged into one node and the stub is absorbed into it.
+The stub's ink then joins no stroke, so the absorbed count and absorbed
+length are printed in every run rather than disappearing. 6.0px is about
+twice the measured stroke width on this material (2.74px over `ink & ~fill`),
+which is the scale the stub's length is set by.
+
+After the amendment IC-j1 PASSES: 4 arms, 2 pairs, 2 strokes, `line` +
+`arc`, with **a = -0.004011 recovered against a true 0.004** (0.3% error).
+
+### IC-j3 failed on a real panel, which the synthetic case could not show
+
+On the synthetic crossing IC-j3 passed at 4.9e-13. On a real koma panel it
+failed with a **worst term delta of exactly 37** -- the rotation angle. Cause:
+a 1-pixel fragment has no direction, and the code fell back to a fixed
+`[1, 0]`, i.e. to the image axes. This is the same class of error IC-c3 was
+written to catch, and it only appeared because the check was pointed at real
+ink.
+
+**Amendment:** a directionless arm now returns no tangent and is never
+matched. A fixed axis is never substituted for a measurement that does not
+exist.
+
+### IC-j3's tolerance was itself mis-registered
+
+With that fixed, the real panel gave matching-identical = True and a worst
+delta of **1.21e-06**, against a registered bar of 1e-9. The bar was wrong,
+not the code: `theta = degrees(arccos(T_i . -T_j))` and arccos has an infinite
+derivative at +-1, so for two collinear arms a 1e-12 rounding difference in
+the dot product becomes `sqrt(2e-12)` rad = 8e-5 deg. Measured worst case is
+**theta = 180.0 vs 179.99999879**, with dK at 2.3e-11 and d at 7.7e-13 --
+conditioning, not an axis dependence.
+
+**Amendment, with the reason above and not after seeing a result:** per-term
+tolerances, cost 1e-6 / theta 1e-3 deg / dK 1e-6 / d 1e-6, and the criterion
+that actually carries the check is left exact and unchanged -- **the chosen
+matching must be identical**. Real panel now: matching identical, cost 4e-08,
+theta 1.2e-06, dK 2.3e-11, d 7.6e-13. PASS.
+
+### The first real run showed two of the registered constants are wrong
+
+40 ako5ver2 koma panels, line art: 4,368 arms but only **537 joins**, median
+chain 14px, **median 1 fragment per chain**. The chainer was barely chaining.
+Per-candidate-pair diagnosis on one panel (409 candidate pairs, 102 nodes):
+
+| gate verdict | pairs |
+|---|---:|
+| rejected by theta | 188 |
+| rejected by offset d | 35 |
+| passed gates but cost >= 2 | 97 |
+| no direction | 37 |
+| **accepted** | **52** |
+
+| term | p10 | p25 | median | p75 | p90 |
+|---|---:|---:|---:|---:|---:|
+| theta (deg) | 10.5 | 32.1 | **61.8** | 91.1 | 133.0 |
+| offset d (px) | 0.55 | 1.15 | 1.83 | 2.83 | 5.94 |
+| dK | 0.00 | 0.21 | **0.73** | 0.91 | 0.95 |
+| cost | 1.75 | 2.70 | 4.23 | 5.87 | 7.88 |
+
+Two defects, both in numbers I set by eyeball:
+
+1. **The tangent is read where it is most deformed.** Skeletonizing pulls ink
+   toward a junction's centre, so the last pixels of a fragment bend into the
+   junction. At a 3-arm node only one of the three candidate pairs is a real
+   continuation, so about a third of candidates should be good -- but p25 of
+   theta is already 32 deg and the median 62 deg, so the 60 deg gate is
+   discarding real continuations. Added `TAN_SKIP`: a collar is skipped at
+   the tip, the parabola is fitted behind it, and the tangent is **evaluated
+   at the tip by extrapolation**.
+2. **Curvature over a 12px window is mostly quantisation noise.** `dK` has
+   median 0.73 of the 2.0 budget, so the curvature term is spending the
+   budget on noise. `KAPPA_REF = 200px` is far too small a floor: a 0.5px
+   jitter over a 12px window is already a curvature of ~0.03, six times the
+   1/200 floor.
+
+### How those constants get fixed without fitting them to the hypothesis
+
+Calibrating them on the explained share would be fitting the instrument to
+the thing being tested. So a **labelled target that is not the hypothesis**,
+on real ink (lesson 12):
+
+**IC-j6, cut and rejoin.** Take a real line-art panel; crop a window centred
+on a long fragment F; draw a straight occluding stroke of 36px across F at a
+random angle, only where the occluder stays 2px clear of all other ink so the
+ground truth stays known; re-skeletonize, which cuts F in two at a new
+junction. The two parts are one stroke **by construction**.
+
+  rejoin = share of trials where both parts end in one chain   (recall)
+  wrong  = share of trials where a part of F is chained to a piece of the
+           occluder instead                                   (precision)
+  score  = rejoin - wrong
+
+Panels are split mechanically: the H-stroke number is read from panels
+**[0:40]**, calibration uses **[40:171]**, so nothing is tuned on the images
+the number comes from. The angle histogram is always reported beside the
+score, because sites are only usable where the occluder is clear of other ink
+and that biases which angles get tested.
+
+Swept: TAN_SKIP, TAN_WIN, KAPPA_REF, THETA_MAX, D_MAX, W_KAPPA. The selection
+rule, fixed before the sweep was read: **the highest `rejoin - wrong`**, with
+ties broken toward the smaller parameter change from the registered values.
+
+Pre-calibration score on 74 trials from panels [100:171]: rejoin 0.486,
+wrong 0.027, **score 0.459**.

@@ -93,7 +93,7 @@ def skeleton_branches(ink):
     return out, skel
 
 
-def order_path(pix):
+def order_path(pix, min_px=None):
     """Walk a thin component into a single ordered path. Returns None for a
     component that is not a simple path (a residual blob), rather than
     guessing an order for it."""
@@ -118,7 +118,7 @@ def order_path(pix):
         path.append(cur)
         if len(path) > len(s):
             return None
-    if len(path) < MIN_BRANCH_PX:
+    if len(path) < (MIN_BRANCH_PX if min_px is None else min_px):
         return None
     return np.array([(x, y) for (y, x) in path], dtype=np.float64)
 
