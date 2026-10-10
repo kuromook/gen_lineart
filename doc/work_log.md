@@ -1792,3 +1792,74 @@ entirely -- with the same model, the same thresholds, and both controls given
 the same treatment. Pass is unchanged: >= 70% explained with NC-j1 and NC-j2
 both at least 10 points below, now on a population where every member is
 something a person drew.
+
+## 2026-10-10 H-stroke-3 pre-registration: the three-way re-run
+
+Written before the tool existed. Every member of every scored population is
+something a person drew; the medial axis is excluded by construction rather
+than by a threshold.
+
+### The three populations
+
+  **A  line ink with no fill contact.** Skeletonize `ink & ~fill`, not `ink`.
+     The medial axis then does not exist to be filtered out, and neither does
+     the rim. A line running into a blacked region now ends about 4px early;
+     that is where B takes over, and it is stated rather than hidden.
+  **B  fill contours.** `cv2.findContours` on the fill mask (RETR_CCOMP, so
+     holes count), cut into open pieces (below), each piece >= 30px.
+  **C  the medial axis.** Excluded by construction. Not scored, not pooled,
+     and its length is printed so the exclusion is visible.
+
+A and B are scored **separately and never pooled** -- they are different
+populations, and the project rule against pooling across pools applies.
+The rough is reported beside the line art and never pooled with it.
+
+### Where a contour is cut
+
+A drawn contour ends where another stroke meets it. So:
+
+    a contour point is a CUT POINT if the de-filled line skeleton
+    (`skeletonize(ink & ~fill)`) has a pixel within CUT_NEAR_PX = 2.0 of it
+
+Adjacent cut points are collapsed into one (a stroke meeting a contour touches
+it over a few pixels). Between consecutive cut points the contour is one open
+piece. **A contour with no cut point stays closed, cannot be fitted by a model
+that needs a principal axis, and is counted and reported as
+`closed_uncut` -- never dropped quietly.**
+
+### Controls
+
+A keeps the chainer's own controls, because A has a chaining decision:
+  **NC-j1** shuffled tangents, **NC-j2** random matching, both as registered.
+
+B has no chaining decision to shuffle, so it gets two of its own:
+  **NC-t2  cut points shuffled** to random positions along the same contour,
+     the same number of them. Named error: *the pieces fit merely because the
+     contour was cut into that many pieces, not because the cuts are where
+     strokes actually meet.*
+  **NC-d1  a random closed curve** with the same perimeter and the same
+     isoperimetric ratio, cut by the same rule. Named error: *any closed curve
+     of this size and blobbiness would score the same.*
+
+### Pass criterion, unchanged from H-stroke
+
+**>= 70% of length explained as line / single parabola / one-breakpoint split
+at RMS <= 1.0px, with every control for that population at least 10 points
+below.** Applied separately to A and to B. Thresholds, the model, and the
+30px floor are all unchanged, so the numbers stay comparable to the failed
+run.
+
+### The trap applied to myself
+
+The last run failed because a threshold on mask overlap was read as a
+population filter. So for every chain in A this run records `near_fill`, the
+share of its pixels within 4px of the fill mask, and **prints that
+distribution inside the kept set**, not just the rule that built it.
+
+### Instrument check IC-t1, expected values written down first
+
+A synthetic disc of radius 60 at the centre with two straight lines running
+into it, one from the left and one from below. Expected: 2 cut points, so the
+disc's contour becomes **exactly 2 open pieces**; both classed `arc` or
+`split` (a half-circle is not a line); and a disc with **no** line touching it
+produces **0 cut points and 1 `closed_uncut`**.
