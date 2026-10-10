@@ -1693,3 +1693,102 @@ user's domain claim directly: the GT fill is hair and tops, and the rough has
 essentially nothing dark in those places. `rough_dark` is near-empty;
 `rough_dark@budget` spends its budget on the rough's lines; `freq_table`
 predicts almost nothing.
+
+## 2026-10-10 Correction: the fill's ink WAS inside the H-stroke statistic
+
+Asked directly whether the lines that appear as a fill's spine are inside the
+failed verdict's statistic. They are -- not as the spine itself, but as
+half-submerged chains, and it changes the reading completely.
+
+### What the registered subset actually contains
+
+The cut is `in_fill < 0.5`, the share of a chain's pixels inside the fill
+mask. A chain with 49% of its pixels in a fill is inside the statistic. By
+length, the line art's registered subset is only **35.7% strictly fill-free**:
+
+| in_fill | chains | px | share of the subset | explained |
+|---|---:|---:|---:|---:|
+| exactly 0 | 2,373 | 186,728 | 35.7% | **94.8%** |
+| 0 - 0.1 | 717 | 106,938 | 20.5% | 80.7% |
+| 0.1 - 0.3 | 913 | 123,831 | 23.7% | 64.5% |
+| 0.3 - 0.5 | 622 | 103,486 | 19.8% | **45.3%** |
+
+The headline 74.8% is a mixture whose explained share falls monotonically with
+fill contamination, from 94.8% to 45.3%.
+
+### The verdict does not change
+
+| line art, >=30px | real | NC-j1 | NC-j2 |
+|---|---:|---:|---:|
+| as registered, in_fill < 0.5 | 74.8% | 72.9% (-1.9) | 68.7% (-6.1) |
+| zero fill pixels | 94.8% | 93.7% (-1.1) | 91.2% (-3.6) |
+
+**H-stroke still fails** -- neither cut reaches the registered 10-point control
+gap. The bar is not moved and the verdict stands.
+
+### What I reported to the user and to the foundation was wrong
+
+I reported that explained share falls as a stroke is assembled -- 88.0% at one
+fragment, 56.8% at two or more, 40.0% at three or more -- and concluded that
+**"a drawn stroke carries one equation" is not supported on finished line
+art**. Restricted to chains with **zero** fill pixels:
+
+| fragments per chain | as registered (in_fill<0.5) | zero fill pixels | px (zero-fill) |
+|---|---:|---:|---:|
+| 1 | 88.0% | **95.3%** | 152,242 |
+| 2 | 71.5% | **92.8%** | 25,633 |
+| 3-4 | 46.6% | **92.8%** | 8,526 |
+| 5+ | 16.3% | 100.0% | 327 (too small to read) |
+
+**The decline was fill contamination, not length.** On fill-free line ink the
+explained share is flat at 93-95% however many fragments were chained, and on
+3+ fragment chains the controls fall **16.9** (NC-j1) and **45.8** (NC-j2)
+points below -- far past the 10-point gap the registered subset could not
+reach.
+
+So the user's hypothesis is **supported** on fill-free line ink, and my
+"not supported" was an artefact of letting half-submerged chains into the
+statistic.
+
+### And the asymmetry I headlined to the foundation collapses
+
+`note_track_j_rough_line_asymmetry_20261010b.md` leads with line art 40.0%
+against rough 81.2% at 3+ fragments and offers it as bearing on the
+rough -> line problem. On fill-free ink the same cell is **92.8% line art
+against 87.9% rough**. The asymmetry was the fill mask: the line art has
+fills, the rough has almost none. **It is not a property of the two domains.**
+A correction has been filed.
+
+### The confound in the other direction, checked
+
+`in_fill == 0` selects chains far from any blacked region, which could simply
+be panel borders, balloons and backgrounds -- simple lines. Checked, and it is
+not that: at 3-4 fragments the fill-free population is 41.8% `line`, 26.2%
+`arc`, 24.8% `split`, so **51% of it is curved**, with median straightness
+0.931 against 0.910 and median curvature 0.00106 against 0.00134. What shifts
+is `unexplained`, 7.2% against 58.9%.
+
+Two real limits stay: the fill-free slice at 3-4 fragments is 8,526px against
+71,971px in that cell, about a tenth of it; and it remains a selected
+population.
+
+### Why the cut cannot simply be tightened, and where this joins D1
+
+`in_fill == 0` is not the right cut either -- it **over-excludes**. The fill
+mask includes the 4px rim, so a chain tracing a blacked hair's outline is a
+drawn line with high `in_fill`. Tightening the cut throws away every fill
+contour, which D1 measured as being at **1.03x the analytic floor** for a
+closed curve of its size -- i.e. as smooth as a drawn line can be.
+
+So both threads arrive at the same place: **near a fill, the drawn line is the
+fill's contour, and it has to be taken from the contour, not from the
+skeleton.** The skeleton inside a fill is a medial axis and belongs to nothing
+drawn; the skeleton on a fill's rim is a drawn line the mask has swallowed.
+
+**Registered next, with its bar fixed before it runs**: re-run H-stroke on a
+three-way split -- line ink with no fill contact, fill contours taken by
+`cv2.findContours` and cut into open pieces, and the medial axis excluded
+entirely -- with the same model, the same thresholds, and both controls given
+the same treatment. Pass is unchanged: >= 70% explained with NC-j1 and NC-j2
+both at least 10 points below, now on a population where every member is
+something a person drew.
