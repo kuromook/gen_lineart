@@ -1609,3 +1609,87 @@ assumed:
 
 The third isolates the unit from the material: it is our own panels, read at
 the published value's unit. Registered before any of the three was computed.
+
+## 2026-10-10 IC2 result: IC2a PASS exactly, and IC2b found that stage 1 and stage 2 are not comparable pools
+
+### IC2a -- PASS, 6/6, delta 0.0000
+
+`results/fill_koma_20261010/ic2a_fill_ratio.csv`. Every koma pool the external
+2026-09-11 inventory publishes, reproduced on the replayed seeded sample:
+
+| pool | published | ours (cv2) | ours (exact EDT) | delta |
+|---|---:|---:|---:|---:|
+| trainlist:clippairskoma | 0.0917 | 0.0917 | 0.0917 | **0.0000** |
+| trainlist:ako5ver2koma | 0.1313 | 0.1313 | 0.1313 | **0.0000** |
+| trainlist:fitnesskoma | 0.1619 | 0.1619 | 0.1619 | **0.0000** |
+| trainlist:gakuenkoma | 0.1396 | 0.1396 | 0.1396 | **0.0000** |
+| trainlist:hamlabikoma | 0.1428 | 0.1428 | 0.1428 | **0.0000** |
+| trainlist:houseikoma | 0.1249 | 0.1249 | 0.1249 | **0.0000** |
+
+Bar was 6/6 within 0.002; both legs agree to 0.0000. Stage 1 had only ever
+checked the 7 `shared/` cells, so the pools stage 2 actually uses were
+unverified until now.
+
+### IC2b -- no bar, and it found the thing that matters
+
+`results/fill_koma_20261010/ic2b_unit_carryover.csv`.
+
+| | fill_ratio |
+|---|---:|
+| published tile value (external) | 0.0917 |
+| our clip_pairs_v3 koma **panels** | **0.4676** |
+| our 480 **windows** cut from those same panels | **0.2510** |
+
+A four- to fivefold gap on what the registration treated as the same
+material. The diagnosis, on 60 panels and the same 60-panel sample of their
+pool:
+
+| | ink | width over ALL ink | width over `ink & ~fill` | fill_ratio |
+|---|---:|---:|---:|---:|
+| their 480 tiles (the anchor pool) | 0.0397 | 3.54 | **2.62** | 0.0928 |
+| our koma panels, native | 0.0915 | 22.18 | **2.52** | 0.4494 |
+| our 480 windows from them | 0.0923 | 15.16 | **2.07** | 0.2582 |
+
+**It is not scale.** Width over `ink & ~fill` is 2.62 / 2.52 / 2.07 -- the same
+drawing scale, which is what the registration's "stroke width identical to the
+480 pools" claim was about and that claim survives. (The 1.91px quoted earlier
+is a pooled median; 2.52 here is the mean of per-panel medians. Different
+aggregation of the same quantity, not a conflict.)
+
+**It is selection.** Their pool carries 0.0397 ink against our 0.0915 -- less
+than half. Their `clippairskoma` tiles are the survivors of the koma
+pipeline's training filter, and the 2026-07-26 note records that `ink_range`
+rejected **80.9% of candidates**. What a filter keyed on ink range rejects is
+exactly the fill-heavy material. **The externally profiled pool is what is
+left after the fills were filtered out.**
+
+### What this changes, and it is a correction to my own registration
+
+The stage-2 registration says the corpus is "native scale, stroke width
+1.91px (identical to the 480 pools, so the radius-4 fill definition carries
+over unchanged and **stage 1's masks remain comparable**)". The first half
+holds. **The second half does not**: the definition carries over, the pool
+profile does not. Stage 2's corpus is 4.8x more fill-heavy than stage 1's.
+
+Consequences, to be carried in every stage-2 report:
+
+- **`all_black`'s identity value will be several times stage 1's.** Stage 1's
+  0.0939 / 0.1201 are |G|/|P| on 480 tiles of filtered material; on this
+  corpus the same identity is a much larger number. Any stage-2 number read
+  against stage 1's is misread.
+- **C1's 0.05 margin is not scale-free.** It was fixed against stage 1's
+  numbers. It stays as registered -- bars are not moved -- but the report must
+  say beside it that the base rate differs by ~5x, so clearing it here is a
+  weaker statement than clearing it there would have been.
+- This is **good news for the task and bad news for comparability**: stage 2
+  is being run on material that actually contains the thing being predicted,
+  which stage 1's pool largely did not.
+
+### Visual, as required
+
+`results/fill_koma_20261010/montage_held_normal_random.png` (8 held panels,
+normal stratum, seed 20261010 fixed before any score was read). It shows the
+user's domain claim directly: the GT fill is hair and tops, and the rough has
+essentially nothing dark in those places. `rough_dark` is near-empty;
+`rough_dark@budget` spends its budget on the rough's lines; `freq_table`
+predicts almost nothing.

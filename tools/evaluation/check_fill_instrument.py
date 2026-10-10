@@ -104,10 +104,23 @@ def published():
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="results/baseline_fill_20261009/ic1_fill_ratio.csv")
+    ap.add_argument("--scope", default="shared", choices=("shared", "koma", "all"),
+                    help="shared = stage 1's 7 cells (default, unchanged); "
+                         "koma = stage 2's IC2a, the trainlist koma pools")
+    ap.add_argument("--min-pass", type=int, default=None)
     args = ap.parse_args()
 
     pub = published()
-    cells = [p for p in pub if p.startswith("shared/") and "(other" not in p]
+    if args.scope == "shared":
+        cells = [p for p in pub if p.startswith("shared/") and "(other" not in p]
+    elif args.scope == "koma":
+        # IC2a: the pools stage 2 actually uses. gather() already collects them
+        # because they consume the same shared RNG; only the scoring skipped them.
+        cells = [p for p in pub if p.startswith("trainlist:") and "(other" not in p]
+    else:
+        cells = [p for p in pub if "(other" not in p]
+    min_pass = args.min_pass if args.min_pass is not None else (
+        MIN_PASS if args.scope == "shared" else len(cells))
     pools, drawn = replay_sampling(gather())
 
     rows, n_pass, n_cells = [], 0, 0
@@ -154,13 +167,14 @@ def main():
             w.writerow({k: r.get(k, "") for k in fields})
 
     leg2_max = max((r.get("delta_leg2", 0) for r in rows if "delta_leg2" in r), default=0)
-    verdict = "PASS" if n_pass >= MIN_PASS else "FAIL -> use the registered fallback"
-    print(f"\nIC1 leg 1 (seeded replay, cv2): {n_pass}/{n_cells} cells within "
-          f"{TOL_LEG1} -> {verdict}")
-    print(f"IC1 leg 2 (cv2 vs exact EDT): max gap {leg2_max:.4f} "
+    verdict = "PASS" if n_pass >= min_pass else "FAIL -> use the registered fallback"
+    label = "IC1" if args.scope == "shared" else "IC2a"
+    print(f"\n{label} leg 1 (seeded replay, cv2): {n_pass}/{n_cells} cells within "
+          f"{TOL_LEG1}, bar {min_pass} -> {verdict}")
+    print(f"{label} leg 2 (cv2 vs exact EDT): max gap {leg2_max:.4f} "
           f"(sensitivity bar {TOL_LEG2}, not a pass bar)")
     print(f"saved: {out}")
-    return 0 if n_pass >= MIN_PASS else 1
+    return 0 if n_pass >= min_pass else 1
 
 
 if __name__ == "__main__":
