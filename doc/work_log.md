@@ -6393,3 +6393,30 @@ are kept as plain project habits without the skill: the assert-based self-check
 for new non-trivial logic, and the `shortcut: <limit>, <when to upgrade>` tag
 with those tags collected. Track H's briefing was corrected; it had carried the
 earlier recommendation for half a day.
+
+**Same evening, the idle GPU goes to Track J's own stage-2 arms.** The user
+asked again whether any track had GPU work. It does, and no new track was
+needed: stage 2's two learned arms (`M0` window-only, `M1` window + the whole
+koma downscaled, with `M1 - M0` as the registered question "does seeing the
+whole 面 help predict it?") were registered and cleared this afternoon and had
+not started, because Track J is on a CPU instrument -- a stroke chainer -- whose
+four registered next steps are also CPU. The two share no code path, so the
+notice says to start M0/M1 and keep the chainer running; `train_fill_seg.py`
+does not exist yet, IC1-IC5 and a smoke run come first, and the slot note is
+that today is Saturday, so the weekend is for the instrument checks and Monday
+for the long run unless it fits sooner. Everything else is unchanged: Track G's
+generation side is still held on word purity, Track H is author-bound, Track F
+is held. The one item that would create GPU work if decided is still the
+unapplied `manga_line` emptiness fix, which is a data decision for the user.
+
+**Read out of Track J's log while answering that question, and not yet reported
+by the track**: the chainer says a drawn stroke does not carry one equation. The
+explained share falls as a stroke is actually assembled -- 88.0% at one
+fragment, 56.8% at two or more, **40.0% at three or more** -- while on the
+*rough* the same measurement gives 95.9% / 88.6% / **81.2%**. A piecewise fit
+(at most three breakpoints, registered as exploratory) explains 89.0% of the
+line art's long chains against controls at 70.8% / 62.2%. So a drawn line is a
+short chain of parabolas, and the earlier 95.7% came from the fragment unit,
+exactly as lesson 11 warned. The asymmetry is the part that may outrun Track J:
+the rough is describable by one curve and the finished line is not. Marked here
+as the foundation reading that track's files; a notice has been asked for.
