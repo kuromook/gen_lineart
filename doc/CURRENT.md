@@ -693,12 +693,18 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    alone scores 0.3177 against GT, the bare ControlNet 0.3027, and
    distance-from-conditioning tracks f1 monotonically (0.88 -> 0.3027, 0.84
    -> 0.2961, 0.26 -> 0.1820). The baseline is cheap -- no inference, just
-   score the conditioning images you already have. **This contamination has
-   not been checked on the SD1.5 track**, whose 0.2354 is in the same
-   position; it may well survive, since `consistency_weight` moved
-   near_white 0.400 -> 0.779, which copying the conditioning cannot explain,
-   and that would make it the project's first demonstrated case of the model
-   contributing rather than the preprocessor.
+   score the conditioning images you already have. **Corrected 2026-10-10.** This paragraph stood for a
+   month saying the contamination "has not been checked on the SD1.5 track",
+   whose 0.2354 is in the same position, and that it might survive. The answer
+   was already in this same file, in Current Data Direction: that track's
+   consistency loss moved the output **away** from its conditioning map while
+   moving it toward GT (vs-conditioning 0.5009 -> 0.4618 as f1 rose 0.2175 ->
+   0.2354), so it is the one case on record that is *not* copying -- and it
+   closed anyway on 2026-09-13, because the re-measurement on 192 tiles put
+   `manga_line` alone at 0.2847 against its 0.2514 / 0.2524. The mechanism was
+   real and still did not carry the output past the preprocessor. **Nothing is
+   open here**; an open-sounding sentence was left standing after its own
+   question had been answered elsewhere in the file.
    A companion metric was added for the same reason on 2026-09-11:
    `profile_metrics` now returns **`fill_ratio`** (share of ink in strokes
    thicker than 8px) beside `line_width_p50`, because width alone cannot
