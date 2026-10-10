@@ -9,7 +9,12 @@ orientation and on writing a negative control. Later still: the distorted
 position bins were measured and the verdict is **"big"** -- every position-bits
 figure in Tracks F and G is replaced, no verdict flips, and 86% of the apparent
 placement structure was the panel's aspect ratio, which is **lesson 14**. Track
-J opened to take the idle GPU).
+J opened to take the idle GPU. **2026-10-10**: Track J's stage 1 is in -- the
+preprocessor cannot fill, so for fills the baseline is *paint nothing* against
+*paint everything* -- and two GT-only measurements moved its unit to the koma
+panel, one of which says the line art on this corpus **encloses almost
+nothing**, which the words line should know about. Two new tool traps came out
+of it).
 The Track Ledger, Lessons, Known Tool Traps, Active Goal and Next Actions are
 current as of this date; the ledger was rebuilt on 2026-09-30 by
 reading every track's own files after this file had fallen 13 days behind. The
@@ -539,6 +544,45 @@ work, and the stated expectation is that the pieces make each other easier.
   hypothesis 4 (content absent from the conditioning map is not drawn) plus
   lesson 8, so using it requires first building an instrument that could
   falsify that prediction.
+  **Stage 1 came in on 2026-10-10, and every number below was re-derived here
+  from the track's own `per_tile_*.csv` before being folded in** -- an
+  independent pass over the pixel counts reproduces `report.txt` arm for arm:
+  - **Nothing in the preprocessor family fills.** On the primary stratum
+    (normal layer, GT has a fill, pools never averaged) the readable ceiling is
+    micro IoU **0.0000** (`preproc@128`), against a GT fill area of 0.0939 on
+    `housei` test (n=782) and 0.1201 on `ako5` held (n=474). **C1 holds**: the
+    premise of the track is intact and stage 2 is cleared to register.
+  - **The trivial arm is the comparison to beat, and its score is an identity,
+    not a measurement.** `all_black` scores micro IoU 0.0939 / 0.1201 --
+    exactly the GT fill-area share, because painting everything makes the
+    intersection the GT and the union the tile (the track's IC2 confirms it on
+    2,308/2,308 tiles; re-derived here as 0.093921 / 0.120147). "The trivial
+    arm scores 0.094" and "GT fill area is 9.4%" are therefore **one number**,
+    and any arm below it is worse than blacking in the whole tile. For fills
+    the standing baseline is **not** the preprocessor -- lesson 6 cannot bite,
+    the preprocessor scores zero -- but the pair *paint nothing* / *paint
+    everything*.
+  - **The adopted checkpoint does not fill either.**
+    `combined_koma_lucy_mild_msgan_20260729`, put on these pools for the first
+    time, reaches 0.0163 / 0.0152 and **fails its own off-by-one control**, so
+    even that is not evidence of placement; it thickens strokes. Consistent
+    with lesson 8 and Track D's hypothesis 4.
+  - **Three corrections to the track's own notice, found here and sent back.**
+    (i) The headline "the preprocessor's ceiling is micro IoU 0.0002" quotes
+    `preproc@32`, an arm its own registration excludes from being read; the
+    readable ceiling is 0.0000, and the largest number any variant reached is
+    **0.1618** (`preproc@budget` on `ako5`, handed GT's ink count so that only
+    placement was its job). (ii) `preproc@32` and `@otsu` were excluded for
+    failing **NC2, the off-by-one control**, not the transpose control that the
+    report's summary line names for all three; only `@budget` failed NC3.
+    (iii) `preproc@128` is described in the C1 line as the best variant
+    "passing the negative controls", but no control was run on it -- it predicts
+    nothing, so there was nothing to control. The accurate statement is that
+    **every variant predicting a nonzero amount failed a control.** None of
+    this moves C1 or C2.
+  - One verdict is **held**, correctly: on `ako5r` (n=23) `msgan` lands at
+    0.0664, between the registered bars, to be decided on the montage before
+    stage 2 registers. n=23 cannot carry more than that.
 
 ### Not part of either line
 
@@ -664,7 +708,12 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    cases: coarse_trained, the identified fill-escape model, 91.6%; a clean
    line-art model 7.1%; GT tiles 3.3%. A fill-excluded "corrected width" was
    tried and rejected -- it collapsed to ~1.9 everywhere, since what remains
-   after removing fills is their own thin fringes.
+   after removing fills is their own thin fringes. **Partly revised
+   2026-10-10**: it does not collapse to a single value -- 1.91 on `housei`
+   against 2.74 on `ako5` -- and because it is invariant to the window size
+   while the all-ink width is not, it is the only usable scale check when a
+   tile is compared against a panel. Rejected for style, kept for scale; see
+   the Known Tool Traps entry on statistics taken over all ink.
    A second reading rule from the same review: **do not average across the
    `lineart` and `housei` pools.** They are different tasks, not different
    sources -- 5.9% vs 21.9% of GT ink is solid fill, 1% vs 38% of tiles are
@@ -1297,6 +1346,44 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   this is a reporting-hygiene item and not a reason to re-run anything --
   worth stating plainly, because "every average on record is contaminated"
   invites a re-measurement that the size of the effect does not justify.
+- **A summary statistic taken over *all* ink is a reading of the solid areas
+  whenever fills are present.** `2 * median(distance-to-paper over ink)` reads
+  **27.15px** on an `ako5` koma panel and **5.48px** on a 480 tile of the same
+  material at the same drawing scale -- it looks like a 5x scale difference and
+  is not one; the median is sitting inside the blacked-in areas, which are a
+  larger share of the ink in the larger window. Measured over ink *outside* the
+  fill mask the two agree at **2.74 and 2.74**. Found by Track J 2026-10-10,
+  whose own first scale-free argument was built on the wrong leg; reproduced
+  here over 24 panels and 197 tiles with an independent exact-EDT
+  implementation (18.03 against 4.47 over all ink, **2.828 against 2.828**
+  outside the fill). `line_width_p50` has exactly this exposure, and it is the
+  same confusion that once made `housei` GT's 7.59 read as deliberate thick
+  strokes (lesson 6). The rule: **before comparing any per-unit ink statistic
+  across two window sizes, recompute it outside the fill mask.** Note also that
+  the fill-excluded width, which lesson 6 records as having "collapsed to ~1.9
+  everywhere", does separate the pools (1.91 `housei` against 2.74 `ako5`) and
+  is invariant to the window -- which makes it the right instrument for a
+  cross-unit scale check even though it is useless for the question lesson 6
+  was asking it.
+- **An arm can beat its off-by-one control and still carry no location
+  information at all -- what it is scoring is the *amount* of ink.** Track J's
+  `preproc@budget` (the preprocessor handed GT's own ink count, so that only
+  placement was left to it) reaches micro IoU **0.1618** on `ako5` against
+  0.0615 for the off-by-one control, which reads as a clear pass. But
+  **transposing the prediction costs 0.0012, and shifting it 50px costs
+  0.0003**: two transforms that destroy location change nothing, so the overlap
+  is not placement. The only control that bites is re-pairing with another
+  panel's GT, and that gap is just the between-panel difference in *how much*
+  is blacked in. macro IoU at a seventh of micro (0.0230 against 0.1618) says
+  the same from the other side. So: **a control that removes location must cost
+  a localised arm something; if the score survives it, the arm is scoring
+  quantity, and an off-by-one control alone will wave it through.** This is the
+  sibling of the box-orientation trap above and of lesson 12 -- there the
+  transpose was the error nothing could detect, here the transpose is what
+  detected a different kind of false positive. One reporting note from the same
+  report: the verdict word "localised" was printed **without the threshold it
+  was judged against**, which is the records failure this file has now logged
+  three times in two days; a judgement word travels with its bar or not at all.
 - **Per-pair alignment scores now exist for all 8,467 training pairs**:
   `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
   (rough / manga_line / lineart_coarse, each with `le3`, `3to8`, `gt8`,
@@ -1500,6 +1587,29 @@ One constraint is already measured and bears on both: some `ako5` tiles sit
 entirely inside a fill with no boundary inside the 480px window (0.5% entirely
 filled, 31.3% near-blank), so **a region-level formulation may not fit the tile
 size this project evaluates on** and may need panel-level inputs.
+**Both of those were then measured on GT alone, 2026-10-10, and both came back
+against the easy reading** (Track J, `results/region_closure_20261010/`; the
+direction and the size of each were reproduced here from the images with an
+independent implementation):
+- **The 480px window is the wrong unit, and by a wide margin.** On a 480 tile
+  **87.6%** (`housei`) and **92.9%** (`ako5`) of the solid-fill *area* sits in
+  a connected component whose own boundary is outside the window; on a koma
+  panel of the same material at the same drawing scale it is 26.4% / 48.5%.
+  Stage 2 therefore takes the **koma panel** as its input unit. A model shown a
+  480 tile is being asked about an object it is never shown whole.
+- **The line art does not enclose anything, and this one is not only Track J's
+  problem.** Taking strokes alone (`ink & ~fill`) and flood-filling what they
+  close gives **1.2 regions per panel** on both `ako5ver2` and `housei` koma
+  (5.7 on `clip_pairs_v3`), the largest background component is **100.0% of the
+  background in every panel inspected**, and **95-100% of the fill area lies
+  outside any enclosed region**. So "propose closed regions, then classify
+  each" has no ground truth to be scored against on this corpus. Track J's
+  answer is to take the 面 to be the **fill connected component**, keeping the
+  model pixel-wise while the metric becomes region-wise. The consequence worth
+  carrying to the words line: **any proposal that assumes a part or a region
+  can be recovered as an area enclosed by the line art cannot be built on this
+  corpus by that construction** -- offered as a fact about the corpus, not a
+  finding about Track H's or Track G's own units.
 
 Two things follow that are worth stating plainly, because they are easy to lose:
 
@@ -2148,6 +2258,24 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
    that is what decides whether this is the other half of the plan or a
    separate project. Inventory:
    `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
+   **Stage 1 is done (2026-10-10) and its verdict is that the premise holds**:
+   the preprocessor's readable ceiling is micro IoU 0.0000 and the adopted
+   checkpoint fails its own off-by-one control, so the comparison for fills is
+   *paint nothing* against *paint everything* (whose score is the GT area share
+   by identity: 0.0939 / 0.1201). **Two GT-only measurements then moved the
+   unit before stage 2 was registered**: a fill region does not close inside a
+   480px window (87.6% / 92.9% of fill area is in a border-cut component), so
+   the input is now the **koma panel**; and the line art encloses almost
+   nothing (1.2 regions per panel, 95-100% of fill area outside any of them),
+   so the 面 is taken to be the fill connected component rather than a proposed
+   closed region. Stage 2 is registered in the track's log on `clip_pairs_v3`
+   koma panels, split on **work family** with the `ako` series collapsed (9
+   families, 969 panels, 19.3% held out, fixed before any score) because
+   whether a character's hair is blacked in is a property of that character.
+   **One item is waiting on the user, not on the track**: Track J reads a
+   non-adversarial segmentation model as *outside* the CNN+GAN prohibition
+   (lesson 5), with its falsifier written down. That reading needs a yes or a
+   no before the four-day slot is spent.
 6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting

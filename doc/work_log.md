@@ -6252,3 +6252,81 @@ It is mid-scoring, and the discipline cuts both ways -- fix the criteria before
 seeing the results, and do not move the results to suit a new framing. Track J
 was told to produce the stage-1 verdict first and not even design stage 2 until
 C1 and C2 are out.
+
+## 2026-10-10 (later) Track J's stage 1: the premise holds, and the unit moved to the panel
+
+Two notices arrived from Track J (`inbox/note_track_j_fill_baseline_20261010.md`,
+`inbox/note_track_j_region_unit_20261010.md`). The foundation re-derived the
+numbers before folding them in, which is the only reason three of them changed.
+
+**The verdict.** C1 holds: on the primary stratum (normal layer, GT has a fill,
+pools never averaged) the readable preprocessor ceiling is micro IoU **0.0000**,
+against a GT fill area of 0.0939 (`housei` test, n=782) and 0.1201 (`ako5` held,
+n=474). C2: the adopted checkpoint `combined_koma_lucy_mild_msgan_20260729`
+reaches 0.0163 / 0.0152 and fails its own off-by-one control, so stage 2's three
+registered baselines stand. One verdict is held, correctly, on `ako5r`'s 23
+tiles. Independent recomputation from `per_tile_*.csv` reproduced every arm in
+`report.txt` exactly, including the control arms.
+
+**What re-deriving it caught.** Three labelling errors, all of the family this
+file has been logging all week -- a number travelling without the quantity or
+the bar it was judged against:
+1. The notice's headline, "the preprocessor's ceiling is micro IoU 0.0002",
+   quotes `preproc@32`, an arm the track's own registration excludes from being
+   read. The readable ceiling is 0.0000. The largest number any variant reached
+   is **0.1618** (`preproc@budget` on `ako5`).
+2. The report's summary line attributes the exclusion of `preproc@32`,
+   `@otsu` and `@budget` to "their own transpose control". `@32` and `@otsu`
+   failed **NC2, the off-by-one control**; only `@budget` failed NC3.
+3. The C1 line calls `preproc@128` the best variant "passing the negative
+   controls". No control was run on it -- it predicts nothing. The accurate
+   statement is that every variant predicting a nonzero amount failed a control.
+
+None of the three moves C1 or C2, which is why they are corrections and not a
+re-run. A fourth was found in the track's own `tools/evaluation/fill_mask.py`
+docstring, which converts `fill_ratio` to an area by multiplying by `ink_ratio`
+("25.6% is about 2.4% of the page"). That multiplication is exactly the error
+this file removed from its own entry on 2026-10-09: the mask is a dilated
+opening, so the measured area is **0.0757**, 3.25x the product. It matters more
+there than here, because that file is now the definition of the quantity.
+
+**Two findings worth more than the verdict.**
+- **`preproc@budget` beat its off-by-one control (0.1618 against 0.0615) while
+  carrying no location information at all**: transposing its prediction costs
+  0.0012 and shifting it 50px costs 0.0003. The overlap is *amount*, not
+  placement; the off-by-one control alone would have waved it through, because
+  the only thing re-pairing destroys is the between-panel difference in how much
+  is blacked in. Recorded as a Known Tool Trap -- the sibling of lesson 12, with
+  the sign reversed: there the transpose was the error nothing could detect,
+  here the transpose is what detected a different kind of false positive.
+- **A statistic taken over all ink is a reading of the solid areas.**
+  `2 * median(dist-to-paper over ink)` is 27.15px on an `ako5` koma panel and
+  5.48px on a 480 tile of the same material at the same scale; outside the fill
+  mask the two agree at 2.74 and 2.74. Reproduced here on 24 panels and 197
+  tiles with an independent exact-EDT implementation: 18.03 against 4.47 over
+  all ink, **2.828 against 2.828** outside the fill. `line_width_p50` has the
+  same exposure. This also partly revises lesson 6: the fill-excluded width does
+  not "collapse to ~1.9 everywhere" (1.91 `housei`, 2.74 `ako5`), and since it
+  is invariant to the window while the all-ink width is not, it is the right
+  instrument for a cross-unit scale check -- rejected for style, kept for scale.
+
+**The unit moved, on GT alone, before stage 2 was registered.** On a 480 tile
+87.6% (`housei`) / 92.9% (`ako5`) of fill *area* belongs to a component whose
+own boundary is outside the window; on koma panels of the same material it is
+26.4% / 48.5%. So stage 2 takes the koma panel as its input. And the second
+measurement is the one that reaches past this track: taking strokes alone and
+flood-filling what they enclose gives **1.2 regions per panel**, the largest
+background component is **100.0% of the background in every panel inspected**,
+and 95-100% of the fill area lies outside any enclosed region. **The line art on
+this corpus does not enclose anything.** "Propose closed regions, then classify
+each" has no ground truth to score against, so Track J takes the 面 to be the
+fill connected component and keeps the model pixel-wise with a region-wise
+metric -- an afternoon instead of the four-day slot. The same fact is now in the
+Active Goal for the words line, because any proposal there that assumes a part
+can be recovered as an area enclosed by the line art cannot be built this way on
+this corpus.
+
+**Open and routed to the user, not to the track**: Track J reads a
+non-adversarial segmentation model as outside the lesson-5 CNN+GAN prohibition,
+with its falsifier written down. That is a judgement about a standing
+prohibition, so it goes to the user before the four-day slot is spent.
