@@ -2166,3 +2166,94 @@ here.
 The second run uses panels `[40:171]`, which is what the IC-j6 headline
 (rejoin 0.654 / wrong 0.039) was measured on, so the split is comparable to
 the number it is splitting. `[0:40]` stays untouched.
+
+## 2026-10-11 IC-j7 result on the IC-j6 panel set
+
+`[40:171]`, 1560 sites -> **311 usable trials**, rejoin **0.643** (the IC-j6
+headline was 0.654 on 309 trials of the same panels and constants; the two
+trials' difference comes from site ordering, and 0.643 is the figure the split
+below is a split *of*). C2 PASS: 200 rejoined + 111 buckets = 311, residual 0.
+
+| bucket | n | of failures | matched counterfactual | flip |
+|---|---:|---:|---|---:|
+| **`topology`** | 90 | **81.1%** | `merge_touch` | **37.8%** |
+| `gate_d` | 7 | 6.3% | `gates` | 0% |
+| `wrong_arm_occluder` | 7 | 6.3% | `drop_rival` | 57% |
+| `cost_break_even` | 4 | 3.6% | `force` | 100% (**IDENTITY**, see below) |
+| `gate_both` | 2 | 1.8% | `gates` | 0% |
+| `wrong_arm_other` | 1 | 0.9% | `drop_rival` | 0% |
+
+All other levels, for every bucket: `gates` 0% everywhere; `both` 86% / 50% /
+100% / 57% / 100%; `merge_touch` **0% on every non-topology bucket**, so the
+counterfactual is specific and is not simply joining more things.
+
+### What the split says
+
+1. **The registered question was the wrong question.** "Refused by the cost
+   break-even" and "joined to the wrong arm" together are **11.8%** of the
+   failures. Four fifths of them never get as far as a cost: the two halves of
+   one cut stroke sit at nodes that no matching can reach across.
+2. **The merge defect is real but partial.** `merge_touch` -- union every
+   cluster a fragment of at most `MERGE_PX` *touches*, instead of the two its
+   ends were assigned to -- flips **37.8%** of the topology failures, which is
+   **30.6% of all failures** and would move rejoin from 0.643 to about 0.75 if
+   it carried no price. The remaining **50% of all failures** are topology
+   failures that this rule does not fix, and their cause is not yet named.
+3. `gates` alone flips nothing anywhere, exactly as A1's arithmetic predicted
+   (`THETA_MAX / THETA0 = 2.0` is the break-even, so a gated angle is already
+   refused on cost). The angle gate is not a separate mechanism from the cost
+   at these constants.
+4. `force` flipping 100% of `cost_break_even` is **an identity**, labelled as
+   one: those pairs are ungated, and forcing a pair at a node that has nothing
+   else to offer leaves only one choice.
+
+### Verdicts, with their thresholds
+
+- **C1** IC-j7 6/6 constructed trials in the bucket written down -> **PASS**.
+- **C2** exhaustive, residual 0 -> **PASS**.
+- **C3** (a bucket holding >= 10% of failures must flip >= 60% under its own
+  counterfactual, and NC-j7b must sit >= 20 points below the pooled 37.8%)
+  -> **NOT ACTIONABLE**, on both legs:
+  - `topology`, the only bucket over 10%, flips **37.8%**, under 60.
+  - NC-j7b **30/96 = 31.2%, gap +6.6 points**, under 20.
+
+**The second leg was unreachable by construction and I am recording that
+rather than moving it.** With one bucket holding 81.1% of the failures, a
+bucket drawn at random from the observed distribution *is the correct label*
+81% of the time. From the printed numbers: a shuffled draw picks
+`merge_touch` with p = 0.811, and `merge_touch` flips 37.8% of topology
+trials and 0% of everything else, so the shuffled rate cannot fall much below
+0.811 x 0.811 x 0.378 = 0.249, bounding the achievable gap at about **13
+points** against a 20-point bar. This is the same defect as population A's
+criterion in H-stroke-3: an absolute gap measured over a population one
+category dominates. **Neither bar moves.** What the registration should have
+required is a gap conditional on the bucket, and that is for the next entry
+to register in advance, not for this one to adopt after seeing the result.
+
+- **C4** no constant was changed. `stroke_chain.py` is byte-identical to the
+  calibrated version; `merge_touch` lives only in `diagnose_icj6.py` as a
+  counterfactual.
+
+### Price
+
+**NC-j7c = 0/391.** No already-rejoined trial is broken by removing the gates,
+forcing a pair, or the touch merge. **Node-local only**: a counterfactual
+applied at one node cannot see damage elsewhere, and `merge_touch` changes
+every node in the image. The global price is IC-j6's own `wrong` rate (0.039
+today) and belongs to the repair's own registration.
+
+Visual: `results/stroke_chain_20261010/icj7_buckets.png` (one row per bucket,
+three sampled failures each; F orange, occluder blue, the winning rival
+magenta, the two true arm tips circled). Per-trial rows:
+`results/stroke_chain_20261010/icj7_failures.csv`. Run log:
+`results/stroke_chain_20261010/icj7_line_full.txt`.
+
+### The next registration, named but not yet written
+
+Split `topology` again. The 38% that `merge_touch` flips have a named and
+measured cause. The 62% that it does not are the critical path now, and the
+candidates to register against are: a true part absorbed as a stub under
+`MERGE_PX`; the occluder's own junction swallowing a part whole; and more than
+two clusters in one crossing. Pass criteria and controls to be fixed before
+the tool is written, and the conditional-gap form of C3 to be registered
+there.
