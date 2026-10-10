@@ -1193,3 +1193,140 @@ ties broken toward the smaller parameter change from the registered values.
 
 Pre-calibration score on 74 trials from panels [100:171]: rejoin 0.486,
 wrong 0.027, **score 0.459**.
+
+## 2026-10-10 IC-j6 calibration result, and H-stroke: FAILS as registered
+
+All numbers from `results/stroke_chain_20261010/`
+(`icj6_grid.csv`, `icj6_tanwin_extension.txt`, `hstroke_line.txt`,
+`hstroke_rough.txt`, `strokes_ako5_*.csv`, montages `icj4_*.png`).
+
+### IC-j6: the calibration, and what it says about my own description
+
+309 labelled cut-and-rejoin trials, panels [40:171], disjoint from the [0:40]
+the H-stroke number is read from. Best of each axis over the registered
+972-point grid:
+
+| axis | best value | score | rejoin | wrong |
+|---|---|---:|---:|---:|
+| W_KAPPA | **0.0** (0.5 -> 0.602, 1.0 -> 0.592) | 0.615 | 0.654 | 0.039 |
+| TAN_SKIP | **2** (0 -> 0.553, 4 -> 0.447) | 0.615 | 0.654 | 0.039 |
+| TAN_WIN | **20** (12 -> 0.515, 8 -> 0.385) | 0.615 | 0.654 | 0.039 |
+| THETA_MAX | no effect (45/60/75/90 all 0.615) | | | |
+| D_MAX | 3.0 = 5.0 (2.0 -> 0.576) | | | |
+| KAPPA_REF | no effect, because W_KAPPA is 0 | | | |
+
+Registered constants scored **0.362**; calibrated **0.615** (rejoin 0.654,
+wrong 0.039). Selection rule was fixed beforehand and not touched.
+
+Three things worth keeping:
+
+- **Curvature agreement is worth nothing at a junction.** Every combination
+  in the top band has `W_KAPPA = 0`, and the three KAPPA_REF values tie
+  because the term is switched off. **My own description of the mechanism to
+  the user -- "the continuation whose tangent AND curvature agree" -- is half
+  wrong.** Curvature read over a 20px skeleton window is quantisation noise.
+  Only the tangent and the sideways offset carry anything.
+- **The collar is a precision fix, not a recall fix.** TAN_SKIP 0 -> 2 leaves
+  rejoin almost unchanged (0.657 -> 0.654) and drops wrong joins from 0.104
+  to 0.039. The deformed last pixels at a junction were making the *wrong*
+  arms look collinear.
+- **TAN_WIN = 20 sat on the grid edge**, so that axis was extended beyond the
+  registered grid (24 -> 0.583, 32 -> 0.579, 48 -> 0.560, 64 -> 0.547). It is
+  a real interior optimum; the grid did bracket it.
+
+With the calibrated constants IC-j1, IC-j2 and IC-j3 all still PASS (IC-j1
+recovers a = -0.004011 against a true 0.004).
+
+### H-stroke: the bar is cleared, the control condition is not
+
+Registered: **>= 70% of stroke length explained, strokes >= 30px with
+in_fill < 0.5, AND NC-j1 and NC-j2 both at least 10 points below.**
+
+| | line art | rough |
+|---|---:|---:|
+| real | **74.8%** | **92.9%** |
+| NC-j1 shuffled tangents | 72.9% (**-1.9**) | 91.6% (**-1.3**) |
+| NC-j2 random matching | 68.7% (**-6.1**) | 88.8% (**-4.1**) |
+
+**H-stroke FAILS.** The 70% bar is cleared on both, and the registered
+10-point control gap is met on neither. The bar is not moved; this is a fail
+and is recorded as one.
+
+### Why it fails, which is a defect in the criterion I wrote
+
+The chainer joins only **7,513 of 40,212 arms (18.7%)** in the line art and
+**6,812 of 54,573 (12.5%)** in the rough. So the registered subset is mostly
+chains of a single fragment, on which the real arm and both controls are
+**identical by construction**:
+
+| line art, >=30px outside fill | real | NC-j1 | NC-j2 | share of px |
+|---|---:|---:|---:|---:|
+| single fragment | 88.0% | 88.2% | 86.8% | 57% |
+| chained, >= 2 fragments | 56.8% | 50.9% | 43.8% | 43% |
+| chained, >= 3 fragments | 40.0% | 30.0% | 22.0% | 20% |
+
+| rough, >=30px outside fill | real | NC-j1 | NC-j2 | share of px |
+|---|---:|---:|---:|---:|
+| single fragment | 95.9% | 96.1% | 95.7% | 59% |
+| chained, >= 2 fragments | 88.6% | 82.9% | 76.1% | 41% |
+| chained, >= 3 fragments | 81.2% | 71.6% | 58.9% | 15% |
+
+I registered a criterion on a population the treatment barely touches. That
+is my error in the registration, not a reason to rescore: the criterion
+stands failed, and the cut below is reported as a diagnostic beside it, never
+in place of it.
+
+Where the arms genuinely differ the chainer does beat both controls, by
+5.7-9.6 points against the shuffled tangents and 12.6-22.3 against random
+matching -- so **the joins it makes are the right ones more often than
+chance**, consistent with IC-j6's rejoin 0.654 / wrong 0.039.
+
+### The finding that actually answers the user's hypothesis
+
+In the line art, explained share falls monotonically as a stroke is actually
+assembled: **88.0% at one fragment, 56.8% at two or more, 40.0% at three or
+more.** The longer the drawn stroke, the worse a single line or a single
+parabola describes it. So the hypothesis as stated -- a drawn stroke carries
+one equation, straight or a parabolic arch -- **is not supported at the
+stroke unit on the line art**, and the 95.7%/85.1% from the fragment unit was
+indeed the artefact lesson 11 warned it was.
+
+The rough behaves differently and much better: 95.9% / 88.6% / **81.2%**. A
+rough stroke really does mostly follow one curve; a finished line does not.
+
+The exploratory piecewise fit (at most `floor(len/60)` and no more than 3
+breakpoints, each piece in its own PCA frame) explains **89.0%** of the
+line art's >=3-fragment chains against controls at 70.8% and 62.2%, and
+94.7% of the rough's against 83.2% / 69.0%. Registered as exploratory, so it
+cannot move the bar -- but it says where the description that does fit lives:
+**a drawn stroke is a short chain of parabolas, not one parabola.**
+
+### IC-j4, by eye
+
+`icj4_line_koma_0002_page0001_p3_zoom_line.png`: chains run the length of
+real contours in one colour -- a jaw line, a hem, a long hair sweep -- and
+the colour changes at junctions the chainer declined, which matches a 65%
+rejoin rate. `..._zoom_fill.png` is the same panel's solid fill: a lattice of
+long smooth chains that are the fill's medial axis and not drawn strokes at
+all. The two sheets side by side are the clearest statement of why the
+in_fill split has to stay in every table.
+
+### Registered next steps
+
+1. **The join rate is the binding constraint, not the curve model.** 18.7% of
+   arms joined caps everything downstream. The next measurement is on IC-j6,
+   not on the hypothesis: of the 34.6% of trials the chainer fails to rejoin,
+   how many are refused by the cost break-even (2.0) versus matched to the
+   wrong arm. Those are different repairs.
+2. The single-parabola model is now known to be the wrong description above
+   one fragment. Before item 2 is run, the model used for "does this
+   continue" should be re-registered as **piecewise**, with the breakpoint
+   budget fixed by length as above and the controls given the same budget.
+3. Item 2's own pass criteria (enclosed >= 25% at tightness >= 0.30, NC-c2 at
+   least 10 points below) are unchanged. The chainer is the instrument item 2
+   needs and it now has a measured rejoin rate, so item 2's result can be
+   read against a known instrument rather than an assumed one.
+4. `np.polyfit` emits RankWarning on near-collinear short segments in
+   `stroke_curves.poly_rms`. It affects only the exploratory piecewise fit's
+   smallest pieces, where `line_rms` decides the class anyway, but it is
+   noted rather than silenced.
