@@ -734,3 +734,120 @@ where the ink stops following it -- is a separate instrument, and the honest
 note is that it needs the stroke decomposition the project already has
 (`tools/evaluation/stroke_decomposition.py`) pointed at a new question. Not
 started, not registered, recorded here so it is not lost.
+
+## 2026-10-10 (correction) I misstated the user's claim about rough marks
+
+The amendment above wrote that the user's account "has a sign ... so fill rate
+under such a mark should be *below* base, lift < 1". That is not what was
+said. The user, correcting it:
+
+> サインがあるのは迷いだから ベタになるかもしれないしならないかもしれないが、
+> 何もない真っ白よりなりにくいわけではない
+
+So the claim is that a mark means **undecided** -- it may or may not become a
+fill -- and explicitly **not** that a marked area is less likely than blank
+paper. The measured lift of about 2 is therefore *consistent* with the
+account, not in tension with it, and there is no open sign question to
+resolve. What stands unchanged is the part that actually governs the design:
+**96% of the fill area has no mark at all**, so `rough_dark` is a ceiling of
+4.2% recall and not a contender.
+
+Noted as an error of mine in reading, not a change of position by the user.
+
+## 2026-10-10 Plan for the stroke-equation instrument (items 2 and 4) -- DRAFT, nothing run
+
+User: items 2 (recovering a 面 from outlines that only look closed) and 4
+(cutting a line that runs out of a ベタ面 as a branch) are both to be taken
+up, and item 4 comes with a hypothesis:
+
+> おそらく大半の線は放物線状のアーチか直線なので線からその線がもつ方程式を
+> 見いだせると思う（あるいは途中の点から別の曲線に変化するものもあるかも）
+
+### The reason to do them together: they are one tool
+
+Item 4 needs to know what curve a stroke is following, to say where the ink
+stops following it. Item 2 needs to bridge a gap the eye bridges -- and the
+measured reason the cheap methods failed is that both are **isotropic**:
+closing by radius 32 swallows the neighbourhood (tightness 0.033) because it
+grows in every direction, and downscaling breaks strokes instead of joining
+them. Extending a stroke **along its own fitted curve** is anisotropic by
+construction: it adds ink only where the drawing was already going. So the
+same fit that cuts a branch in item 4 is what closes a gap in item 2, and
+item 4 must be built first.
+
+### The instrument
+
+`tools/evaluation/stroke_curves.py` (new, no GPU):
+
+  1. skeletonize the ink (skimage 0.25.2 is present)
+  2. split the skeleton at junctions (degree >= 3) into polyline branches
+  3. per branch, fit in its own PCA frame: **line** (degree 1) and
+     **parabola** (degree 2), keeping residual RMS for each
+  4. piecewise: search one breakpoint, fit two parabolas, accept the split
+     only if the residual drop beats a fixed penalty -- the user's "途中の点
+     から別の曲線に変化するもの"
+  5. emit per branch: class (line / arc / split / unexplained), coefficients,
+     residual, length, endpoints with tangents
+
+### Hypothesis H-curve, stated so it can fail
+
+**At least 70% of skeleton branch length is explained as a straight line or a
+single parabola at residual RMS <= 1.0px**, with the split class allowed to
+carry a further share reported separately. Below 70%, the hypothesis that
+strokes have a recoverable equation is not supported on this material and
+item 2's bridging loses its basis -- that is a real possible outcome and the
+number is fixed here before the first fit is run.
+
+### Instrument checks
+
+  IC-c1  synthetic strokes with known equations -- a straight segment, a
+         parabola of known curvature, a circular arc -- rendered as ink at
+         the corpus's own stroke width and recovered. The line and parabola
+         must come back within a tolerance written down before the run; the
+         **circular arc must come back as a worse parabola fit than the
+         parabola does**, or the classifier is not distinguishing shapes.
+  IC-c2  the skeleton overlaid on the line PNG **on disk**, not on anything
+         this pipeline produced (lesson 12's anchor), and a branch count on
+         one panel counted by hand first.
+  IC-c3  frame invariance: rotate the input 90 degrees; every residual must
+         be unchanged. A fit done in image axes rather than the stroke's own
+         frame fails this and would otherwise pass everything else.
+
+### Negative controls, one named error each
+
+  NC-c1  random polylines with the same length and endpoint distribution as
+         the real branches. If real strokes do not fit much better than
+         these, "most lines are arcs or straight" is unsupported and the
+         measured 70% was a property of short segments, which fit anything.
+  NC-c2  **shuffled tangents** for the bridging step: extend each endpoint in
+         a random direction instead of along its fitted curve. Isotropic
+         closing already reaches 15.4% enclosed, so bridging must beat its
+         own shuffled version, or it is dilation wearing a hat. This is the
+         control the whole of item 2 rests on.
+  NC-c3  branch pruning applied to a panel with no solid fill at all: it must
+         remove nothing.
+
+### Pass criteria for item 2, against what is already measured
+
+Isotropic closing's best, on 59 ako5 koma panels, is **enclosed 15.4% of fill
+area at tightness 0.033** (radius 32). Curve-based bridging passes only if it
+reaches **enclosed >= 25% at tightness >= 0.30** -- both together, since
+either alone is reachable by swallowing or by doing nothing. NC-c2 must fall
+at least 10 points below it.
+
+### Order and cost
+
+Item 4's fit first, then item 2's bridging on top of it; item 2 cannot be
+evaluated before IC-c1 and NC-c1 have been read. No GPU, so this does not
+compete with the 月-木 slot. The honest estimate is that this is the larger
+piece of work of the two stages, and the user has said as much
+("かなりコストをかけて道具を準備しなければならない").
+
+### Item 3 stays on hold, with one exception worth naming
+
+The user: 髪/トップス/タイツ の単語化 has not started, so stage 2a waits.
+Noted that **2a-1 and 2a-2 need no vocabulary at all** -- a face box is a
+detector output and the histogram of fill positions relative to it is
+label-free; only the *naming* of the three peaks touches the word work. The
+histogram could therefore be run now and would either show three clusters or
+not. Held anyway, since the user's call was to wait.
