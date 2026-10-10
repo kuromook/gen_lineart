@@ -851,3 +851,106 @@ detector output and the histogram of fill positions relative to it is
 label-free; only the *naming* of the three peaks touches the word work. The
 histogram could therefore be run now and would either show three clusters or
 not. Held anyway, since the user's call was to wait.
+
+## 2026-10-10 Item 4, first result: the fit works, and the unit it works on is not a stroke
+
+`tools/evaluation/stroke_curves.py` and `check_stroke_curves.py` built and run
+on the ako5ver2 koma panels. Instrument checks first, as registered.
+
+### Instrument checks
+
+**IC-c1 synthetic strokes, PASS.** Rendered at the corpus's own 3px width and
+put through the same skeleton -> branch -> fit path as real data:
+
+| case | class | line rms | parabola rms | recovered a |
+|---|---|---:|---:|---:|
+| straight segment | `line` | 0.000 | 0.000 | - |
+| parabola, true a = 0.004 | `arc` | 27.399 | 0.322 | **0.00402** (0.5% off) |
+| 120-degree circular arc, R=200 | `unexplained` | 29.873 | 2.346 | - |
+
+The arc fits the parabola model **7.3x worse** than a parabola does, against a
+bar of 3x fixed before the run. Worth carrying: a 120-degree circular arc is
+*not* within 1.0px of a parabola, so `arc` in this tool means "parabola-like",
+and a real circular arc lands in `split` or `unexplained`. That is a property
+of the model, now measured rather than assumed.
+
+**IC-c2 anchor outside the pipeline, PASS.**
+`results/stroke_curves_20261010/ic_c2_skeleton_overlay.png` draws the branches
+over the **line PNG on disk**, which nothing in this chain produces. The
+skeleton sits on the ink.
+
+**IC-c3 amended, then PASS.** As registered it rotated the *image*, which
+compares 11,166 branches against 11,313 -- skeletonization is not exactly
+rotation-equivariant, so a 0.2-point difference says nothing about the fit.
+Rewritten to rotate the branch **coordinates** (same points, new frame) by 90
+and 37 degrees: 1,495 branches, worst residual difference **6.5e-13**. An
+image-axis fit would fail this and pass everything else. Amendment recorded
+because the check as first written could not do its job, not because it was
+inconvenient.
+
+**NC-c1 random walks, PASS and decisively.** Matched to the real branch-length
+distribution:
+
+| | real | random walk |
+|---|---:|---:|
+| explained, all branches >=10px | 97.0% | 45.0% |
+| explained, branches >=30px | **95.7%** | **15.8%** |
+
+### H-curve: passes as registered
+
+Registered bar: at least 70% of skeleton branch length explained as a straight
+line or a single parabola at RMS <= 1.0px, with `split` reported separately.
+
+| image | branches | subset | line | arc | split | **explained** |
+|---|---:|---|---:|---:|---:|---:|
+| rough | 22,894 | >=30px | 61.6% | 22.5% | 11.5% | **95.7%** |
+| line art | 20,091 | >=30px | 35.3% | 22.5% | 27.3% | **85.1%** |
+
+Both clear 70% and the control is 80 points below. **But the number must not
+be read as the user's hypothesis confirmed**, for the reason below.
+
+### What the number is actually about, and it is lesson 11 again
+
+The unit here is the **junction-to-junction fragment**, not the drawn stroke.
+Median branch length is **16px in the rough and 31px in the line art**, and
+the median end-to-end distance divided by path length is **1.00-1.02** -- a
+typical branch is a short, nearly straight piece. A short straight piece fits
+a straight line by construction, which is most of the 61.6%.
+
+Visible in the IC-c2 sheet: one drawn eyebrow is cut into several red
+fragments where other strokes cross it, and a single continuous eyelid arc
+comes out `unexplained` because it was cut mid-curve.
+
+So the honest statement is: **real ink is locally smooth in a way a random
+walk is not (NC-c1 settles that), and whether a drawn stroke has a recoverable
+equation is still untested**, because no drawn stroke has yet been assembled.
+This is lesson 11's warning arriving on schedule -- per-pixel, per-stroke and
+junction-chained are three different units and they do not agree.
+
+### A second finding, which decides how item 4 has to work
+
+In the line art, **48.6% of long-branch length lies inside the solid-fill
+mask**: it is the fill's medial axis, not a drawn stroke. In the rough the
+same figure is 10.6%, as expected, since the rough has few fills.
+
+And the fit does not see the difference:
+
+| line art, branches >=30px | explained |
+|---|---:|
+| outside the fill mask | 85.4% |
+| inside the fill mask | **84.9%** |
+
+A fill's spine is as parabola-like as a stroke. **Curvature therefore cannot
+be the thing that separates a line from a fill**; width has to be, with the
+curve used afterwards to decide where to cut. Item 4's design changes
+accordingly, before anything was built on the wrong assumption.
+
+### Next step, registered
+
+Chain fragments through junctions by curve continuity -- choose, at each
+junction, the continuation whose tangent and curvature agree -- and re-run
+H-curve at the stroke unit. This is required twice over: it is the only way
+to test the hypothesis the user actually stated, and it is the same operation
+item 2 needs, since continuing a stroke across a junction and continuing it
+across a gap are one mechanism. The item-2 pass criteria (enclosed >= 25% at
+tightness >= 0.30, NC-c2 at least 10 points below) are unchanged.
