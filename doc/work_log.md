@@ -2077,3 +2077,43 @@ occluder in another, and the arms at the node marked. Seed 20261010.
 shortcut: the diagnosis looks only at the node where the two parts meet, so a
 failure caused two nodes away is attributed to `topology`; raised if `topology`
 turns out to be a large bucket.
+
+### IC-j7 amendments, all made before any real panel was read
+
+The six constructed trials were built and run first; `--check` is a separate
+entry point from `--root` precisely so this order is forced. Each amendment
+and its reason is in the tool's docstring; in brief:
+
+- **A1** all five counterfactual levels are printed, but the *matched* test per
+  bucket stays the minimal one that targets its named cause (`gates`,
+  `force`, `drop_rival`). Reason, arithmetic rather than empirical:
+  `THETA_MAX / THETA0 = 60 / 30 = 2.0` is exactly the break-even, so a gated
+  angle is already past it and `gates` alone can essentially never flip a
+  `gate_theta` failure. Keeping the matched tests minimal is what keeps the
+  buckets distinguishable and NC-j7b a real control.
+- **A2** `wrong_arm_*`'s counterfactual is `drop_rival` (delete whatever arm
+  the true arm was actually linked to), not "delete the occluder": IC-j7 case
+  5's rival is an ordinary stroke and dropping the occluder changes nothing.
+- **A3** the fixture's occluder moved from 70 deg to -70 deg. At 70 deg it sits
+  10-20 deg from the second part of F on the bend cases, merges with it, and
+  the node stops existing. The fixture was broken, not the classifier; no
+  bucket threshold moved.
+- **A4** case 4 is a plain 45 deg bend (theta 45.0, d 2.06, cost 2.87) instead
+  of 55 deg with a 0.5px offset (2.17), which sat inside skeletonisation's own
+  few degrees of play around the 2.0 break-even. The three inequalities that
+  make it a `cost_break_even` by definition are asserted.
+- **A5** a fifth level `rival_force` is reported. Measured reason: in case 5,
+  removing the rival leaves the true pair at cost 2.90, still past break-even,
+  so it still does not rejoin. **For that failure no single-cause repair
+  exists.**
+- **A6** a sixth trial, case 1b, was added as a **finding**: the straight
+  crossing case 1 rejoins becomes `topology` at -55 deg because the skeleton
+  puts two junction clusters there with a 1px fragment between them, and
+  `fragments()` assigns both of that fragment's ends to the dominant cluster,
+  so `merge_nodes` cannot union them. Written up in doc/shortcuts.md. No
+  constant changed (C4).
+
+**IC-j7: PASS, 6/6**, every bucket as written down, with the flip pattern the
+amendments predicted: `gates` alone flips nothing gated, `force` flips the
+ungated-but-expensive case, `both` flips all the refusals, and only
+`rival_force` flips the wrong-arm case.

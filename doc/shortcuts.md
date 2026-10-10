@@ -29,3 +29,17 @@ raised with the date.
   near-collinear short segments; the class is decided by `line_rms` there, so
   it is noted rather than silenced. Raised if the piecewise fit is ever
   promoted out of "exploratory".
+
+- **Two junction clusters with a 1px bridge are never merged.** `fragments()`
+  records one node per fragment end (`max(sorted(hit), key=hit.get)`), so a
+  1px fragment lying between two junction clusters has *both* ends assigned to
+  the dominant cluster. `merge_nodes` then sees `n0 == n1`, cannot union, and
+  the arms on either side of the crossing sit at nodes no matching can reach
+  across. Measured on IC-j7 case 1b: a straight crossing at -55 deg splits
+  into node 1 and node 2 with a zero-length fragment between them, and the two
+  halves of one straight line cannot be rejoined. The same crossing at -70 deg
+  gives one node and rejoins.
+  *shortcut: a crossing whose skeleton yields two clusters bridged only by a
+  fragment that touches both is unjoinable; raised when `merge_nodes` is
+  rewritten to union every cluster a short fragment touches, rather than the
+  two its ends were assigned to.*
