@@ -6339,3 +6339,38 @@ the adversarial objective (the `msgan`/`cleanup` i2i line, a GAN term, another
 reading stands; if it fires, the reading is withdrawn and it goes in the
 headline rather than into a footnote. The notice carrying this was written by a
 fork of this session into the track's briefing.
+
+## 2026-10-10 (later still) The `ponytail` skill, considered and scoped
+
+The user raised `github.com/DietrichGebert/ponytail` (MIT) and asked whether use
+could be recommended per track, since cases like Track H's labelling UI are
+likely to grow. Read the skill itself rather than the README.
+
+**The premise needs correcting first**: it is not a web or game skill and it has
+no UI content at all. It is a general minimality ruleset -- a six-rung ladder
+(does it need to exist / reuse what is here / platform / installed dependency /
+one line / minimum that works), deletion preferred over addition, list every
+call site before writing, a one-line why-comment, and a knowing shortcut tagged
+`shortcut: <limit>, <when to upgrade>`, with three commands over the diff
+(`/ponytail-review`), the repo (`-audit`) and those tags (`-debt`). Three
+levels, `ultra` also pushing back on the request. So it will not help anyone
+*build* a UI; what it does is keep whatever is built small.
+
+**The decision, written into Working Discipline as rule 7**: recommend it for
+code no claim rides on -- labelling and review UIs, montage and figure scripts,
+one-off inspection scripts, shared `tools/` helpers -- and keep it off
+measurement code. The ladder's first rung is "skip unrequested features", and on
+the measurement side this project's rules deliberately ask for what nobody
+requested: an instrument check, four negative controls, a known-value cell, a
+no-training frequency table beside a learned number, pools kept apart instead of
+averaged. Those are the things every lesson here was bought with, and the
+companion rule on the other side already says a method is not scaled down for
+its runtime. Two pieces of the skill transfer to the measurement side on their
+own merits: the assert-based self-check for new non-trivial logic, which is
+discipline 2 under another name, and the `shortcut:` tag plus debt ledger, which
+is the known-limit binding discipline 1 asks for.
+
+Not installed. The install is a plugin marketplace plus two lifecycle hooks, and
+it is project-scoped in a track's own tree, which is what makes per-track
+adoption possible without the foundation carrying it. Whether to install is the
+user's to run.

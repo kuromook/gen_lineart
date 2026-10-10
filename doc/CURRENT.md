@@ -1104,6 +1104,33 @@ incident that actually happened here.
    their judgement -- and when a judgement is in doubt, pull the
    full-resolution crop instead of arguing from the montage. The cost here was
    not the misreading but the retraction built on top of it.
+7. **Minimality applies to the tooling, not to the instruments.** Added
+   2026-10-10, when the `ponytail` skill
+   (`github.com/DietrichGebert/ponytail`, MIT) was considered for adoption.
+   It is a general "take the first rung that works" ruleset -- ask whether the
+   code needs to exist, reuse what is there, prefer deletion, write the minimum,
+   and tag a knowing shortcut as `shortcut: <limit>, <when to upgrade>` -- with
+   `/ponytail-review`, `-audit` and `-debt` over the diff, the repo and those
+   tags. It is **not** web- or game-specific and contains nothing about UI,
+   which is worth stating because that is what it looks like from its README.
+   **Recommended** for code no claim rides on: labelling and review UIs
+   (Track H's `group_server.py`), montage and figure scripts, one-off
+   extraction and inspection scripts, and `tools/` helpers shared between
+   tracks. **Not to be applied to measurement code**, where this project's rules
+   deliberately ask for what the ladder would cut: an instrument check nobody
+   requested, four negative controls, a known-value cell, a no-training
+   frequency table beside a learned number, pools scored separately rather than
+   averaged. Those are unrequested by construction -- they exist to make a
+   result refusable -- and every lesson in this file was bought with one of
+   them. The matching rule on the other side is already in force: **a method is
+   never rejected or scaled down because of its runtime** (the four-day slot
+   exists for that). Two parts of the skill do fit the measurement side and can
+   be taken on their own: the assert-based self-check for new non-trivial logic
+   (discipline 2 by another name) and the `shortcut:` tag with a debt ledger,
+   which is a known-limit binding of exactly the kind discipline 1 asks for.
+   Per-track adoption is a briefing line, and the install is project-scoped in
+   that track's own tree, so a track can carry it without the foundation
+   carrying it.
 
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
