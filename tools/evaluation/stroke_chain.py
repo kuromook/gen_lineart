@@ -68,14 +68,25 @@ from stroke_curves import (LONG_BRANCH_PX, RESID_PX, SPLIT_GAIN, SPLIT_MARGIN,  
 R = Path("results/stroke_chain_20261010")
 SEED = 20261010
 
-TAN_WIN = 12        # px of each fragment end used to read its tangent/curvature
-TAN_SKIP = 0        # px of collar skipped at the tip before fitting; see the
+# Calibrated on IC-j6 (cut-and-rejoin on real ink, panels [40:171], 309
+# labelled trials), selection rule registered beforehand: highest
+# rejoin - wrong, ties toward the smaller change from the registered value.
+# Registered -> calibrated moved the score from 0.362 to 0.615.
+TAN_WIN = 20        # px of each fragment end used to read its tangent/curvature
+TAN_SKIP = 2        # px of collar skipped at the tip before fitting; see the
                     # IC-j6 calibration. Skeletonizing pulls ink toward a
                     # junction's centre, so the last few px of a fragment bend
                     # into the junction and a tangent read there is biased.
 THETA0 = 30.0       # deg; the cost unit for a kink
 D0 = 1.5            # px; the cost unit for a sideways offset
-W_KAPPA = 1.0
+# IC-j6 says the curvature term is worth NOTHING at junction scale: every
+# combination in the top band has W_KAPPA = 0, and all KAPPA_REF values tie
+# because the term is switched off. Curvature read over a 20px skeleton
+# window is quantisation noise, so "the continuation whose tangent AND
+# curvature agree" is half wrong -- only the tangent and the sideways offset
+# carry information here. Kept as a named constant, at zero, so the finding
+# is visible in the code rather than silently absent.
+W_KAPPA = 0.0
 KAPPA_REF = 200.0   # px; curvature floor, so two straight ends are not punished
 THETA_MAX = 60.0    # hard gate
 D_MAX = 3.0         # hard gate, px

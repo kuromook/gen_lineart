@@ -22,7 +22,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from fill_mask import ink_of  # noqa: E402
+from fill_mask import fill_mask, ink_of  # noqa: E402
 import stroke_chain as sc  # noqa: E402
 
 R = Path("results/stroke_chain_20261010")
@@ -87,11 +87,21 @@ def main():
         vis, stats, strokes = draw(ink, rng)
         out = R / f"icj4_{args.which}_{p.stem}.png"
         cv2.imwrite(str(out), vis)
-        y, x, s = busiest(ink, ZOOM)
+        # the busiest ink on a koma panel is usually a solid fill, whose
+        # skeleton is a medial-axis lattice and not drawn strokes at all. The
+        # zoom is chosen on line ink only, and a second one on the fill, so
+        # the two are compared rather than confused.
+        fill = fill_mask(ink)
+        y, x, s = busiest(ink & ~fill, ZOOM)
         z = cv2.resize(vis[y:y + s, x:x + s], (s * 2, s * 2),
                        interpolation=cv2.INTER_NEAREST)
-        outz = R / f"icj4_{args.which}_{p.stem}_zoom.png"
+        outz = R / f"icj4_{args.which}_{p.stem}_zoom_line.png"
         cv2.imwrite(str(outz), z)
+        if fill.any():
+            fy, fx, fs = busiest(fill, ZOOM)
+            zf = cv2.resize(vis[fy:fy + fs, fx:fx + fs], (fs * 2, fs * 2),
+                            interpolation=cv2.INTER_NEAREST)
+            cv2.imwrite(str(R / f"icj4_{args.which}_{p.stem}_zoom_fill.png"), zf)
         print(f"{p.name}: {len(strokes)} chains from {stats['frags']} fragments, "
               f"{stats['pairs']} joins -> {out.name}, {outz.name}")
 

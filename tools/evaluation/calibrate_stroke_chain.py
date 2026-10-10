@@ -44,6 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fill_mask import ink_of  # noqa: E402
 import stroke_chain as sc  # noqa: E402
 
+R_OUT = Path("results/stroke_chain_20261010/icj6_grid.csv")
 CROP = 160
 OCC_LEN = 36        # shorter than the first try: on dense line art a long
                     # occluder almost never finds a site clear of other ink
@@ -263,6 +264,14 @@ def main():
         results.append((s, rj, wr, n, dict(zip(keys, combo))))
     for k, v in base.items():
         setattr(sc, k, v)
+    import csv as _csv
+    with open(R_OUT, "w", newline="") as f:
+        w = _csv.writer(f)
+        w.writerow(keys + ["n", "rejoin", "wrong", "score"])
+        for s_, rj, wr, n, cfg in results:
+            w.writerow([cfg[k] for k in keys] + [n, round(rj, 4), round(wr, 4),
+                                                 round(s_, 4)])
+    print(f"saved every combination: {R_OUT}")
     results.sort(key=lambda r: -r[0])
     print(f"\ntop 12 of {len(results)} combinations, by rejoin - wrong:")
     for s, rj, wr, n, cfg in results[:12]:
