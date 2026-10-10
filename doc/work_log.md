@@ -1863,3 +1863,106 @@ into it, one from the left and one from below. Expected: 2 cut points, so the
 disc's contour becomes **exactly 2 open pieces**; both classed `arc` or
 `split` (a half-circle is not a line); and a disc with **no** line touching it
 produces **0 cut points and 1 `closed_uncut`**.
+
+## 2026-10-10 H-stroke-3 result: B PASSES, A fails again, and the reason is now isolated
+
+40 ako5ver2 koma panels. `results/stroke_three_way_20261010/`
+(`h3_line.txt`, `h3_rough.txt`, `three_way_ako5_*.csv`). IC-t1 passes on all
+three cases. Bar unchanged: >= 70% explained AND every control >= 10 points
+below.
+
+### Verdict
+
+| population | image | real | control 1 | control 2 | verdict |
+|---|---|---:|---:|---:|---|
+| **A** line ink, no fill contact | line | 94.4% | NC-j1 93.5% (**-1.0**) | NC-j2 92.2% (**-2.3**) | **FAIL** |
+| **A** | rough | 95.3% | NC-j1 94.4% (-0.9) | NC-j2 92.8% (-2.5) | **FAIL** |
+| **B** fill contours, cut at strokes | line | **76.7%** | NC-t2 62.8% (**-13.9**) | NC-d1 49.5% (**-27.2**) | **PASS** |
+| **B** | rough | 55.0% | NC-t2 47.9% (-7.1) | NC-d1 28.4% (-26.6) | **FAIL** |
+
+**The population I expected to be the problem is the one that passes.**
+
+### B passes, and it is the first clean pass in this thread
+
+On the finished line art, a fill region's outline -- cut where another stroke
+meets it -- is explained at 76.7% by the same model, same thresholds, same
+30px floor, with the cuts-shuffled control 13.9 points below and the
+random-closed-curve control 27.2 below. This is the pre-registered test the
+D1 entry said was needed before the contour route could be built on
+(registered at 7c008a8, before the tool existed and before any B number).
+
+D1's 2.24x "failure" and this pass are consistent: D1 compared closed loops
+against open chains and the loops paid for closure. Cut the loops where
+strokes meet them and the pieces are ordinary drawn curves.
+
+**So the fill's ink is recoverable as drawn curves.** Not by fixing the curve
+model, and not from the skeleton -- from the region's contour.
+
+The rough's B is a thin and strange population (97,274px against the line
+art's 658,751) because the rough has almost no fill. Its 55.0% is reported
+and is **not** read as a statement about contours in general.
+
+### A fails again -- and this time it is not contamination
+
+The near_fill distribution **inside the kept set**, the check the failed run
+lacked:
+
+| near_fill (within 4px of the fill mask) | line art | rough |
+|---|---:|---:|
+| exactly 0 | 40% | 77% |
+| 0 - 0.1 | 47% | 15% |
+| 0.1 - 0.5 | 12% | 8% |
+| >= 0.5 | 1% | 0% |
+
+87% / 92% of A's length is at 0.1 or below, so A is genuinely clean. The
+failure is structural and is the one registered after the first run:
+
+| line art, population A | real | NC-j1 | NC-j2 | share of length |
+|---|---:|---:|---:|---:|
+| all, as registered | 94.4% | -1.0 | -2.3 | 100% |
+| **single fragment** | 95.1% | **+0.0** | **-0.0** | **53.1%** |
+| 2+ fragments | 93.8% | -3.0 | -6.5 | 46.9% |
+| 3+ fragments | 90.2% | **-9.2** | **-15.9** | 13.1% |
+
+| rough, population A | real | NC-j1 | NC-j2 | share |
+|---|---:|---:|---:|---:|
+| single fragment | 96.5% | +0.3 | +0.3 | 62.2% |
+| 3+ fragments | 91.2% | -8.8 | -19.4 | 10.2% |
+
+Half the scored length is chains the chainer never joined, where the real arm
+and both controls are **identical by construction** -- the +0.0 gap is that
+identity showing up exactly as predicted. The treatment is applied to half
+the population and measured over all of it.
+
+On chains that were actually built, NC-j2 clears the 10-point gap on both
+images (-15.9, -19.4) and NC-j1 lands just under it (-9.2, -8.8). **The
+binding constraint remains the join rate, not the curve model** -- the same
+conclusion the first run registered, now on an uncontaminated population.
+
+### Other numbers the run prints
+
+- `closed_uncut`: **94 fill contours on the line art (10,831px)** are touched
+  by no stroke at all -- isolated blacked blobs. Counted and excluded from B,
+  never dropped silently. The rough has 0.
+- Cut-threshold sensitivity, line art: **25,371 cut points at 2px, 17,968 at
+  4px (used), 12,625 at 8px**. A 1.4x swing each way, so the choice is not a
+  knife edge but it is not negligible either; 4px is the fill mask's own
+  reach and was set from that, not fitted.
+- Medial axis excluded by construction: **653,022px (line art), 109,530px
+  (rough)** -- 51.6% and 11.1% of all skeleton length.
+
+### What this changes
+
+1. **The fill is not a dead end.** Its outline passes a pre-registered test
+   as a drawn curve. The representation for a fill is: the region, plus its
+   contour cut at the strokes that meet it. The medial axis is discarded.
+2. **A's criterion is still the wrong shape and I am not moving it.** An
+   absolute 10-point gap measured over a population that is half untreated
+   cannot be cleared by any chainer. The honest fix is not a softer bar but a
+   higher join rate; the registered next step (splitting IC-j6's 34.6%
+   failures into "refused by cost" and "joined to the wrong arm") is now the
+   critical path and not an afterthought.
+3. The user's hypothesis now has a measured answer on clean material: on line
+   ink that never touches a fill, 94.4% of length is a straight line, a single
+   parabola, or one breakpoint -- and on the chains long enough for the
+   question to mean anything, 90.2% with both controls well below.
