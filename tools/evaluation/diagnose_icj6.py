@@ -53,6 +53,29 @@ A5  A fifth level, `rival_force` (drop the rival AND force pairing), is
     rejoin -- a single-cause repair does not exist for that failure. The
     column is a diagnostic, never the matched test.
 
+A7  Two corrections made after the first real run and before its numbers were
+    read as anything but a diagnosis of the instrument. Neither touches a pass
+    threshold.
+
+    (a) `topology` was registered as "unflippable by construction". That was
+    wrong, and it matters, because `topology` is 77.6% of the failures: the
+    bucket's named cause -- two junction clusters bridged by a fragment whose
+    ends were both assigned to the dominant one (A6) -- can be removed and
+    tested like any other. A sixth level, `merge_touch`, rebuilds the whole
+    image's node map unioning every cluster a fragment of at most `MERGE_PX`
+    *touches*, using the full neighbour sets that `fragments()` throws away,
+    and re-runs every node's matching under it. It is the matched
+    counterfactual for `topology`. Nothing is adopted: `stroke_chain.py` is
+    not modified (C4).
+
+    (b) NC-j7b came back **0/0**, because the shuffled bucket was drawn from a
+    distribution that is 78% `topology` and `topology` had no counterfactual,
+    so almost every draw produced "no test". A control with no samples is not
+    a control, and the `+46.7 point` gap the first run printed is **not
+    evidence of anything**; it is reported here as the starved reading it was.
+    The draw is now restricted to buckets that have a counterfactual, and the
+    sample size is printed beside the rate.
+
 A6  A sixth constructed trial, case 1b, was added -- and it is a finding, not
     a fixture fix. The same straight crossing that case 1 rejoins becomes
     `topology` when the occluder sits at -55 deg. Mechanism, measured: the
@@ -91,14 +114,15 @@ OCC_DEG = -70.0          # A3
 BUCKETS = ("gate_theta", "gate_d", "gate_both", "cost_break_even",
            "wrong_arm_occluder", "wrong_arm_other", "over_max", "topology",
            "no_tangent", "residual")
-LEVELS = ("gates", "force", "both", "drop_rival", "rival_force")
+LEVELS = ("gates", "force", "both", "drop_rival", "rival_force",
+          "merge_touch")
 # the matched counterfactual per bucket: the MINIMAL intervention that
 # targets the bucket's named cause (A1). None = unflippable by construction,
 # reported as such rather than as a 0%.
 MATCHED = {"gate_theta": "gates", "gate_d": "gates", "gate_both": "gates",
            "cost_break_even": "force", "wrong_arm_occluder": "drop_rival",
-           "wrong_arm_other": "drop_rival", "over_max": None,
-           "topology": None, "no_tangent": None, "residual": None}
+           "wrong_arm_other": "drop_rival", "topology": "merge_touch",
+           "over_max": None, "no_tangent": None, "residual": None}
 
 
 # --------------------------------------------------------------------------
@@ -189,6 +213,73 @@ def node_view(frags, nodes):
     return nmap, absorbed, dict(arms_by_node), geo
 
 
+def touch_sets(frags, skel):
+    """Per fragment, the SET of junction clusters its two tips touch.
+
+    `fragments()` keeps only the dominant cluster per end, which is the defect
+    IC-j7 case 1b pins. The cluster labelling here is the same computation
+    `fragments()` performs, so the ids line up; that is asserted.
+    """
+    k = np.ones((3, 3), np.uint8)
+    k[1, 1] = 0
+    nb = cv2.filter2D(skel.astype(np.uint8), -1, k,
+                      borderType=cv2.BORDER_CONSTANT)
+    jmask = skel & (nb >= 3)
+    _, jlab = cv2.connectedComponents(jmask.astype(np.uint8), connectivity=8)
+    h, w = skel.shape
+    out = []
+    for p in frags:
+        s = set()
+        for tip in (p[0], p[-1]):
+            x, y = int(round(float(tip[0]))), int(round(float(tip[1])))
+            ys, xs = slice(max(0, y - 1), min(h, y + 2)), \
+                slice(max(0, x - 1), min(w, x + 2))
+            s.update(int(v) for v in np.unique(jlab[ys, xs]) if v > 0)
+        out.append(s)
+    return out
+
+
+def node_view_touch(frags, nodes, skel):
+    """The node view the proposed merge rule would produce. A7(a). Nothing in
+    stroke_chain.py is changed; this is a counterfactual only."""
+    touch = touch_sets(frags, skel)
+    for fi, (n0, n1) in enumerate(nodes):
+        for n in (n0, n1):
+            assert n < 0 or n in touch[fi], ("touch set must contain the node "
+                                             "fragments() recorded")
+    parent = {}
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for s in touch:
+        for n in s:
+            parent.setdefault(n, n)
+    absorbed = set()
+    for fi, p in enumerate(frags):
+        if sc.path_len(p) <= sc.MERGE_PX and len(touch[fi]) >= 2:
+            ids = sorted(touch[fi])
+            for a in ids[1:]:
+                ra, rb = find(ids[0]), find(a)
+                if ra != rb:
+                    parent[ra] = rb
+            absorbed.add(fi)
+    nmap = {n: find(n) for n in parent}
+    arms_by_node = defaultdict(list)
+    for fi, (n0, n1) in enumerate(nodes):
+        if fi in absorbed:
+            continue
+        if n0 >= 0:
+            arms_by_node[nmap[n0]].append((fi, 0))
+        if n1 >= 0:
+            arms_by_node[nmap[n1]].append((fi, 1))
+    geo = {a: sc.arm_geometry(frags[a[0]], a[1])
+           for arms in arms_by_node.values() for a in arms}
+    return nmap, absorbed, dict(arms_by_node), geo
+
+
 def node_pairs(arms, geo, rng, overrides=None, drop=()):
     keep = [i for i, a in enumerate(arms) if a[0] not in drop]
     g = [geo[arms[i]] for i in keep]
@@ -252,7 +343,8 @@ def analyse(trial, rng, verify=True):
     occ = set(op)
     row = {"ok": ok, "angle": ang, "node": nd, "bucket": None, "n_arms": 0,
            "theta": float("nan"), "d": float("nan"), "raw": float("inf")}
-    ctx = {"ink": ink2, "frags": frags, "fp": fp, "op": op, "node": nd,
+    ctx = {"ink": ink2, "frags": frags, "nodes": nodes, "skel": pre[2],
+           "fp": fp, "op": op, "node": nd,
            "geo": geo, "arms_by_node": arms_by_node,
            "pairs_by_node": pairs_by_node, "nf": len(frags),
            "a0": a0, "a1": a1, "rival": ()}
@@ -277,8 +369,16 @@ def analyse(trial, rng, verify=True):
 def flip(ctx, level, rng):
     """One counterfactual at the trial's own node: do the two true parts end
     in the same chain afterwards?"""
+    if level is None:
+        return None
+    if level == "merge_touch":
+        _, _, abn, geo = node_view_touch(ctx["frags"], ctx["nodes"],
+                                        ctx["skel"])
+        pbn = {n: node_pairs(a, geo, rng) for n, a in abn.items()}
+        return joined(ctx["nf"], link_from(pbn, abn),
+                      ctx["fp"][0], ctx["fp"][1])
     nd = ctx["node"]
-    if nd is None or level is None:
+    if nd is None:
         return None
     arms = ctx["arms_by_node"][nd]
     kw = {}
@@ -478,7 +578,8 @@ def run(root, which, lo, n_panels, per_panel):
         return f"{t[1] / t[0]:.0%}" if t and t[0] else "--"
 
     print(f"{'bucket':<20}{'n':>5}{'of fails':>9}  "
-          f"{'gates':>7}{'force':>7}{'both':>7}{'rival':>7}{'riv+frc':>8}  "
+          f"{'gates':>7}{'force':>7}{'both':>7}{'rival':>7}{'riv+frc':>8}"
+          f"{'merge':>7}  "
           f"{'theta':>7}{'d':>7}{'cost':>7}")
     for b in BUCKETS:
         if b not in lv:
@@ -507,12 +608,17 @@ def run(root, which, lo, n_panels, per_panel):
           f"{tot_k}/{tot_n} = {pooled:.1%}")
 
     # NC-j7b: each failure is given a bucket drawn from the observed mix
-    pool = [b for b in BUCKETS for _ in range(cnt.get(b, 0))]
+    # A7(b): draw only from buckets that have a counterfactual, or the control
+    # starves and prints 0/0
+    pool = [b for b in BUCKETS for _ in range(cnt.get(b, 0))
+            if MATCHED[b] is not None]
     shuf = random.Random(SEED + 1)
     nb_n = nb_k = 0
     for i, r in enumerate(rows):
         if r["bucket"] == "rejoined":
             continue
+        if not pool:
+            break
         f = flip(ctxs[i], MATCHED[shuf.choice(pool)], shuf)
         if f is not None:
             nb_n += 1
@@ -520,21 +626,26 @@ def run(root, which, lo, n_panels, per_panel):
     nb = nb_k / max(nb_n, 1)
     gap = pooled - nb
     print(f"NC-j7b shuffled attribution: {nb_k}/{nb_n} = {nb:.1%}  "
-          f"gap {gap * 100:+.1f} points")
+          f"gap {gap * 100:+.1f} points"
+          + ("   <-- STARVED, not evidence" if nb_n < 20 else ""))
 
     # NC-j7c: the same counterfactuals on trials that already rejoined
     c_n = c_k = 0
     for i, r in enumerate(rows):
         if r["bucket"] != "rejoined":
             continue
-        for level in ("both", "drop_rival"):
+        for level in ("both", "drop_rival", "merge_touch"):
             f = flip(ctxs[i], level, rng)
             if f is not None:
                 c_n += 1
                 c_k += (not f)
     print(f"NC-j7c on already-rejoined trials: {c_k}/{c_n} broken by a "
           f"counterfactual = {c_k / max(c_n, 1):.1%} "
-          f"(the price of the repair; registered as sensitivity, no bar)")
+          f"(the price of the repair; registered as sensitivity, no bar). "
+          f"NODE-LOCAL only: a\n  counterfactual applied at one node cannot "
+          f"measure damage done elsewhere in the\n  image, and merge_touch "
+          f"changes every node. The global price is IC-j6's own `wrong`\n  "
+          f"rate and is left to the repair's own registration.")
 
     print("\nC3: a bucket holding >=10% of failures must flip >=60% under its "
           f"own counterfactual, and NC-j7b must sit >=20 points below {pooled:.1%}")

@@ -2117,3 +2117,52 @@ and its reason is in the tool's docstring; in brief:
 amendments predicted: `gates` alone flips nothing gated, `force` flips the
 ungated-but-expensive case, `both` flips all the refusals, and only
 `rival_force` flips the wrong-arm case.
+
+### IC-j7 first run, and two corrections before it was read as more than a diagnosis
+
+Panels `[100:171]`, 182 usable trials, rejoin 0.632. **Result on record:**
+
+| bucket | n | of failures |
+|---|---:|---:|
+| `topology` | 52 | **77.6%** |
+| `gate_d` | 5 | 7.5% |
+| `cost_break_even` | 5 | 7.5% |
+| `wrong_arm_occluder` | 4 | 6.0% |
+| `gate_both` | 1 | 1.5% |
+
+C2 PASS (115 + 67 = 182, residual 0). C3 said **NOT ACTIONABLE**.
+
+The registered two-way split -- "refused by the cost break-even" versus
+"joined to the wrong arm" -- covers **22.4%** of the failures between them.
+The thing I registered as a residual catch-all is three quarters of the
+problem.
+
+Two corrections, **A7**, neither of which touches a pass threshold:
+
+- **(a)** `topology` was registered as "unflippable by construction". Wrong,
+  and it is 77.6% of the failures. Its named cause -- A6's two clusters
+  bridged by a fragment whose ends were both assigned to the dominant one --
+  is removable and testable like any other. A sixth level `merge_touch`
+  rebuilds the whole image's node map by unioning every cluster a fragment of
+  at most `MERGE_PX` *touches*, using the neighbour sets `fragments()`
+  discards, and re-runs every node. It flips IC-j7 case 1b (where the
+  mechanism is known by construction) and flips none of cases 2, 4, 5, so it
+  is specific. **Nothing is adopted; `stroke_chain.py` is untouched (C4).**
+- **(b)** NC-j7b printed **0/0**, because the shuffled bucket was drawn from a
+  distribution that is 78% `topology` and `topology` had no counterfactual, so
+  nearly every draw produced "no test". **The `+46.7 point` gap that run
+  printed is not evidence of anything** and is recorded here as the starved
+  reading it was. The draw now comes only from buckets that have a
+  counterfactual, the sample size prints beside the rate, and anything under
+  20 samples is labelled STARVED in the output itself.
+
+Also recorded from that run, and clean: **NC-j7c = 0/108.** No
+already-rejoined trial is broken by removing the gates and forcing a pair at
+its node. But this is **node-local**: a counterfactual at one node cannot see
+damage done elsewhere, and `merge_touch` changes every node. The global price
+is IC-j6's own `wrong` rate and belongs to the repair's registration, not
+here.
+
+The second run uses panels `[40:171]`, which is what the IC-j6 headline
+(rejoin 0.654 / wrong 0.039) was measured on, so the split is comparable to
+the number it is splitting. `[0:40]` stays untouched.
