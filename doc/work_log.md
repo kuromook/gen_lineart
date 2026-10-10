@@ -1498,3 +1498,70 @@ The stop rule is cleared: IC4 passes, so training is permitted.
   input, so an arm and its controls differ only by the named error. NC1
   (polarity) is the exception and must be recomputed, since the error being
   named is in the reading of the input.
+
+## 2026-10-10 D1 result: the registered bar FAILS, and the bar compared the wrong things
+
+40 ako5ver2 koma panels, `results/fill_contour_20261010/pieces.csv` and
+`d1.txt`. Pieces needed to bring every piece within RMS 1.0px, each piece
+fitted in its own PCA frame, cap 20.
+
+| population | n | total px | median len | **median pieces / 100px** | hit cap |
+|---|---:|---:|---:|---:|---:|
+| drawn chains outside the fill, >=30px | 4,631 | 600,055 | 80 | **1.54** | 0.0% |
+| fill-region contours | 3,583 | 952,023 | 90 | **3.44** | 3.7% |
+| NC-d1 random closed curve, matched perimeter and isoperimetric ratio | 3,583 | 952,023 | 90 | **5.78** | 4.5% |
+
+**fill contour / drawn chain = 2.24x against a registered bar of 2.00x, so
+D1 as registered FAILS.** The bar is not moved.
+
+NC-d1 reads: a fill's outline is far from shapeless -- 3.44 against 5.78 for
+a random closed curve of the same perimeter and the same blobbiness.
+
+### The defect, which is in my comparison and not in the material
+
+**I compared closed loops against open chains and did not control for
+closure.** A closed curve must turn 360 degrees in total; a short one is
+forced to spend pieces on that no matter how smooth it is. The floor is a
+circle, which this pipeline did not produce and cannot bend:
+
+| circumference | radius | pieces | per 100px |
+|---:|---:|---:|---:|
+| 35 | 5.6 | 2 | 5.67 |
+| 48 | 7.7 | 2 | 4.14 |
+| **90** (the median contour) | 14.2 | 3 | **3.35** |
+| 203 | 32.3 | 4 | 1.97 |
+| 498 | 79.2 | 4 | 0.80 |
+
+**The median fill contour needs 3.44 pieces per 100px; a perfect circle of
+the same circumference needs 3.35. The contour is at 1.03x the analytic floor
+for a closed curve of its size.**
+
+So the honest statement is in two parts, and both belong in the report:
+
+1. **D1 as registered failed**, and the criterion stays failed.
+2. **The criterion was mis-specified by me**, and the correctly anchored
+   measurement says the opposite of what the failed bar suggests: a fill's
+   outline is about as smooth as a circle, which is as good as a closed curve
+   of that size can be. The 2.24x is the price of closure, not of the fill.
+
+### What this does and does not license
+
+It does **not** license "対処可能" as a measured claim, because the 1.03x
+figure was computed after seeing the per-length table and no criterion was
+fixed in advance of it. What it licenses is dropping the lattice from the
+list of things that need a better curve model: the medial axis is an artefact
+of skeletonizing a filled region, and the drawn mark at a fill is its outline,
+which is already smooth.
+
+**Registered before the contour route is built on**: a fresh test with its
+bar fixed first -- contours cut into pieces, handed to the chainer's
+continuation model, and scored on held-out panels against NC-d1 with the same
+piece budget. Until that runs, the fill's representation stays open.
+
+### The 88.4% that frames all of this
+
+Of 23,868,453 ink pixels on these 40 panels, **21,100,383 (88.4%) are inside
+the fill mask**, but only 51.6% of skeleton length is -- fill is area-heavy
+and lines are thin. 60.3% of all unexplained length is inside the fill. Both
+readings are given because either alone misstates the size of the problem,
+as the foundation's second notice requires.
