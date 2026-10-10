@@ -1409,3 +1409,61 @@ from another panel, scaled to the same area. Named error: *pieces per 100px
 is just a function of how long and how blobby a closed curve is, and any
 closed region of this size would score the same.* No pass bar; it is there so
 the contour number can be read at all.
+
+## 2026-10-10 Stage 2 start: the two definitions the registration left open
+
+Fifth foundation notice (2026-10-10 20:00) directs M0/M1 to start; the GPU is
+idle and the chainer is CPU-only and shares no code path, so it continues in
+parallel. Before anything is built, two things the stage-2 registration named
+but never defined are fixed here, in advance of any score.
+
+Note on the notice's one correction, carried into every report from here:
+IC1's "best preproc" column is `preproc@32`'s **0.0002** and is used
+unchanged as a check value, but **the readable ceiling is 0.0000** -- that arm
+fell to its own negative control in stage 1, so 0.0002 is a control-failed
+arm's number, not a ceiling.
+
+### The region metric, defined
+
+    region := an 8-connected component of the solid-fill mask (the stage-1
+              definition, radius 4, unchanged) with area >= MIN_REGION_PX
+    match  := IoU >= MATCH_IOU between a predicted and a GT region,
+              assigned greedily one-to-one in descending IoU order
+    region-F1 := harmonic mean of  matched/n_pred  and  matched/n_gt
+
+    MIN_REGION_PX = 500   primary. Chosen because the closure analysis already
+                          used 500px for a 面 and reported 5-71 such regions
+                          per ako5 panel, which is a plausible count of 面;
+                          at 100px the count is 28-289 and dominated by pupils
+                          and hatching blobs.
+    MATCH_IOU = 0.5       primary.
+
+    Sensitivity, computed every run and printed, never used to pick a verdict:
+    MIN_REGION_PX in {0, 100, 500}  x  MATCH_IOU in {0.25, 0.5, 0.75}.
+
+A panel with zero GT regions and zero predicted regions scores F1 = 1.0; with
+zero GT and some predicted, 0.0. Panels are **not pooled**: region-F1 is
+computed per panel and reported as a per-family mean, with the near-blank and
+normal strata separate, as C5 requires.
+
+### The window grid and the stitching rule, defined
+
+    size 480, stride 480 - OVERLAP with OVERLAP = 64; the last row and column
+    are clamped to the panel edge rather than padded, so a window always
+    contains real image. A panel smaller than 480 in a dimension is padded to
+    480 with background white, and the pad is removed before scoring.
+
+    stitch(reduce="overwrite")  reproduces the input exactly -- this is what
+                                IC4 is run on
+    stitch(reduce="mean")       averages the overlapping predictions, then
+                                thresholds at 0.5. Registered now so it is not
+                                chosen after seeing which rule scores better.
+
+### The two practices the fourth notice asked for
+
+1. **One assert self-check per new non-trivial piece of logic**, with a known
+   value: the window grid, the stitcher and the region matcher each carry one,
+   run on import-time-cheap synthetic input.
+2. **Known limits are noted as `shortcut: <limit>, <when it is raised>` and
+   collected in one place** -- `doc/shortcuts.md`, which every stage-2 tool
+   appends to rather than burying the note in a docstring.
