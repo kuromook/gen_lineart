@@ -1104,33 +1104,47 @@ incident that actually happened here.
    their judgement -- and when a judgement is in doubt, pull the
    full-resolution crop instead of arguing from the montage. The cost here was
    not the misreading but the retraction built on top of it.
-7. **Minimality applies to the tooling, not to the instruments.** Added
-   2026-10-10, when the `ponytail` skill
-   (`github.com/DietrichGebert/ponytail`, MIT) was considered for adoption.
-   It is a general "take the first rung that works" ruleset -- ask whether the
-   code needs to exist, reuse what is there, prefer deletion, write the minimum,
-   and tag a knowing shortcut as `shortcut: <limit>, <when to upgrade>` -- with
+7. **Minimality is not the lever here, and two of its pieces are.**
+   Considered and **declined** 2026-10-10: the `ponytail` skill
+   (`github.com/DietrichGebert/ponytail`, MIT), a general "take the first rung
+   that works" ruleset -- ask whether the code needs to exist, reuse what is
+   there, prefer deletion, write the minimum, tag a knowing shortcut -- with
    `/ponytail-review`, `-audit` and `-debt` over the diff, the repo and those
    tags. It is **not** web- or game-specific and contains nothing about UI,
-   which is worth stating because that is what it looks like from its README.
-   **Recommended** for code no claim rides on: labelling and review UIs
-   (Track H's `group_server.py`), montage and figure scripts, one-off
-   extraction and inspection scripts, and `tools/` helpers shared between
-   tracks. **Not to be applied to measurement code**, where this project's rules
-   deliberately ask for what the ladder would cut: an instrument check nobody
-   requested, four negative controls, a known-value cell, a no-training
-   frequency table beside a learned number, pools scored separately rather than
-   averaged. Those are unrequested by construction -- they exist to make a
-   result refusable -- and every lesson in this file was bought with one of
-   them. The matching rule on the other side is already in force: **a method is
-   never rejected or scaled down because of its runtime** (the four-day slot
-   exists for that). Two parts of the skill do fit the measurement side and can
-   be taken on their own: the assert-based self-check for new non-trivial logic
-   (discipline 2 by another name) and the `shortcut:` tag with a debt ledger,
-   which is a known-limit binding of exactly the kind discipline 1 asks for.
-   Per-track adoption is a briefing line, and the install is project-scoped in
-   that track's own tree, so a track can carry it without the foundation
-   carrying it.
+   which is worth recording because that is what it looks like from its README.
+   Three reasons it is not adopted, in order of weight:
+   **(a) Nothing in this project's recorded damage is of the kind it prevents.**
+   Every incident in this file is a number travelling without its quantity or
+   configuration (`0.2582`, `cs2.5`, `line_width_p50 7.59`, the "16-20%", the
+   11,868 tiles), a void experiment, or an instrument measuring itself (Track G
+   lost four instrument checks in one day, all on the checking side). None of
+   them is over-building. The one case where excess did bite was a briefing that
+   grew past 900 lines and stopped working, which is documentation volume and
+   outside the skill's scope.
+   **(b) What the ladder's first rung cuts is this project's main asset.** On the
+   measurement side the rules deliberately ask for what nobody requested: an
+   instrument check, four negative controls, a known-value cell, a no-training
+   frequency table beside a learned number, pools kept apart instead of
+   averaged. Without lesson 14's frequency table the aspect-ratio leak would
+   still be read as placement structure; without an unrequested transpose and a
+   50px shift, `preproc@budget` would have passed as placement on its off-by-one
+   control alone. In a domain with no precedent, what makes a result refusable
+   is the work itself, not overhead on it. The companion rule already in force:
+   **a method is never rejected or scaled down because of its runtime.**
+   **(c) The scoping that would have made it safe cannot be implemented.** The
+   skill triggers on any coding task, so "tooling yes, instruments no" is not
+   expressible; `full` is the default and `ultra` argues with the request, which
+   runs against discipline 6 (on what a picture depicts, the author decides) and
+   against the author's framings being this project's steering input. It would
+   also sit as a fixed per-session cost in every track, and the cost that
+   actually bites here is long mixed-context sessions, not code volume.
+   **Two pieces are adopted on their own, without the skill**: an assert-based
+   self-check in any new non-trivial logic (discipline 2 under another name),
+   and a knowing shortcut tagged `shortcut: <limit>, <when to upgrade>` with
+   those tags collected somewhere, which is the known-limit binding discipline 1
+   asks for. **What would reopen this**: a UI that someone other than the author
+   has to use, or a track's tooling becoming a real maintenance burden. Then it
+   is installed project-scoped in that track's own tree, not by the foundation.
 
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken

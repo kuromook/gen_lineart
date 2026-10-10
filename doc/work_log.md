@@ -6374,3 +6374,22 @@ Not installed. The install is a plugin marketplace plus two lifecycle hooks, and
 it is project-scoped in a track's own tree, which is what makes per-track
 adoption possible without the foundation carrying it. Whether to install is the
 user's to run.
+
+**Decided the same day: not adopted.** The user's own reading, which the
+foundation agrees with and which replaces the scoping written a few hours
+earlier: the detours in this project's history have been paying for the outer
+moat, and pre-empting them is worth its token cost in formulaic work -- web,
+games -- but not in a domain with no precedent, and least of all in the
+line-art-to-words line. Three reasons went into Working Discipline rule 7, which
+is rewritten from "recommended for tooling" to "considered and declined": no
+recorded damage here is of the kind the skill prevents (every incident is a bare
+number, a void experiment, or an instrument measuring itself); the ladder's
+first rung -- skip what nobody requested -- would cut the instrument checks,
+negative controls, known-value cells and no-training frequency tables that every
+lesson in the file was bought with; and the file-class scoping that would have
+made it safe is not implementable, since the skill triggers on any coding task
+and its `ultra` level argues with the request, against discipline 6. Two pieces
+are kept as plain project habits without the skill: the assert-based self-check
+for new non-trivial logic, and the `shortcut: <limit>, <when to upgrade>` tag
+with those tags collected. Track H's briefing was corrected; it had carried the
+earlier recommendation for half a day.
