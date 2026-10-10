@@ -1565,3 +1565,47 @@ the fill mask**, but only 51.6% of skeleton length is -- fill is area-heavy
 and lines are thin. 60.3% of all unexplained length is inside the fill. Both
 readings are given because either alone misstates the size of the problem,
 as the foundation's second notice requires.
+
+## 2026-10-10 IC2 wired for real, with its bar fixed first
+
+Stage 1's `check_fill_instrument.py` already reproduces the external
+inventory's `fill_ratio` **exactly (delta 0.0000) for all 7 `shared/` pools**,
+both legs. What it never checked is the pools stage 2 actually uses: the
+koma-derived `trainlist:` rows. It already *gathers* them, because they
+consume the same shared RNG, but it only scores `shared/`.
+
+External anchor, produced by another track on 2026-09-11 and not by this
+pipeline:
+`../lineart-controlnet-sdxl-fidelity/results/pool_inventory_20260911/inventory.csv`,
+written by `inventory_pair_pools.py` from a 120-tile sample at seed 20260911.
+Its `fill_ratio` is defined as "the share of ink belonging to strokes wider
+than 8px" -- the same definition as ours, implemented in different code.
+
+### IC2a -- the published cell, with a bar
+
+Extend the check to every `trainlist:` koma pool the inventory publishes:
+
+    trainlist:clippairskoma   0.0917     trainlist:ako5ver2koma  0.1310
+    trainlist:fitnesskoma     0.1618     trainlist:gakuenkoma    0.1403
+    trainlist:hamlabikoma     0.1427     trainlist:houseikoma    0.1249
+
+**Pass: every pool within 0.002 of the published value on the replayed seeded
+sample**, the same tolerance stage 1 used, with the exact-EDT leg within 0.02
+as sensitivity and not as a bar. If the sampling cannot be replayed, the
+registered fallback is the all-tile mean with the published value inside
++/- 2 SE of a 120-tile draw.
+
+### IC2b -- the unit carry-over, descriptive, registered as having no bar
+
+Stage 2's corpus is koma **panels**; the published value is on 480 **tiles**
+from a different list. A difference between them is a measurement of the unit
+change, not a failure, so **IC2b carries no pass bar** and cannot fail IC2.
+Three numbers are printed together so the unit effect is measured instead of
+assumed:
+
+    published tile value (external)
+    our fill_ratio on clip_pairs_v3 koma panels
+    our fill_ratio on 480 windows cut from those same panels
+
+The third isolates the unit from the material: it is our own panels, read at
+the published value's unit. Registered before any of the three was computed.
