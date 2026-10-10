@@ -6330,3 +6330,12 @@ this corpus.
 non-adversarial segmentation model as outside the lesson-5 CNN+GAN prohibition,
 with its falsifier written down. That is a judgement about a standing
 prohibition, so it goes to the user before the four-day slot is spent.
+
+**User decision, same day**: the non-adversarial segmentation model is
+**outside** the lesson-5 CNN+GAN prohibition. Stage 2 may proceed and may spend
+the four-day slot. The prohibition narrowed by one reading, not by a family --
+the adversarial objective (the `msgan`/`cleanup` i2i line, a GAN term, another
+`--unpaired-weight` sweep) stays closed. Track J's registered falsifier for the
+reading stands; if it fires, the reading is withdrawn and it goes in the
+headline rather than into a footnote. The notice carrying this was written by a
+fork of this session into the track's briefing.

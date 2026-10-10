@@ -2272,10 +2272,14 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
    koma panels, split on **work family** with the `ako` series collapsed (9
    families, 969 panels, 19.3% held out, fixed before any score) because
    whether a character's hair is blacked in is a property of that character.
-   **One item is waiting on the user, not on the track**: Track J reads a
-   non-adversarial segmentation model as *outside* the CNN+GAN prohibition
-   (lesson 5), with its falsifier written down. That reading needs a yes or a
-   no before the four-day slot is spent.
+   **The one item that was waiting on the user is decided: yes, 2026-10-10.**
+   A **non-adversarial segmentation model is outside** the CNN+GAN prohibition,
+   stage 2 may proceed and may spend the four-day slot. What is still closed is
+   the adversarial objective itself -- the `msgan`/`cleanup` i2i family, a GAN
+   term, another `--unpaired-weight` sweep -- so the prohibition narrowed by
+   exactly one reading and not by a family. Track J's falsifier for that
+   reading stands as registered; if it fires, the reading is withdrawn and that
+   goes in the headline.
 6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
