@@ -1467,3 +1467,34 @@ normal strata separate, as C5 requires.
 2. **Known limits are noted as `shortcut: <limit>, <when it is raised>` and
    collected in one place** -- `doc/shortcuts.md`, which every stage-2 tool
    appends to rather than burying the note in a docstring.
+
+## 2026-10-10 Stage 2 instrument checks: all PASS, and the two fitting details
+
+### Checks, before any arm is read
+
+| check | what it anchors to | result |
+|---|---|---|
+| split self-check | the registration's own counts | **PASS** 33 families, 9 held, 969/4049 panels, held families identical |
+| IC3 GT as prediction | the matcher and the stitcher together | **PASS** 60/60 panels at region-F1 1.0 and pixel IoU 1.0 |
+| IC4 stitching | the panel **PNG on disk**, bit-identical | **PASS** 300/300 (6 panels under 480px are padded) |
+| IC5 region matcher | a hand-computed analytic value | **PASS** d=16px -> 2 matched, F1 1.0, disc IoU 0.598 vs analytic 0.596; d=30px -> 1 matched, F1 0.5, IoU 0.365 vs 0.364 |
+| smoke M0 / M1 | end to end on the GPU | **PASS** forward (1,1,480,480), holdout scored through the stitcher, checkpoint written |
+
+IC1 (re-scoring stage 1's 480 tiles through the new scorer) is the remaining
+one and runs with the baseline table. Carried into every report, per the fifth
+notice: **the readable preprocessor ceiling is 0.0000**; the 0.0002 used as
+IC1's check value is `preproc@32`'s, an arm that fell to its own negative
+control in stage 1.
+
+The stop rule is cleared: IC4 passes, so training is permitted.
+
+### Two fitting details the registration left open, fixed now
+
+- **`freq_table` is fitted on every 10th train panel by sorted name** (405 of
+  4049), and evaluated on the held side only. A mechanical subsample, chosen
+  for cost, fixed before the table was built.
+- **The negative controls are applied to an arm's already computed prediction
+  mask** (flip, 50px shift, off-by-one), not recomputed from a transformed
+  input, so an arm and its controls differ only by the named error. NC1
+  (polarity) is the exception and must be recomputed, since the error being
+  named is in the reading of the input.
