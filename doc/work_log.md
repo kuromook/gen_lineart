@@ -408,3 +408,196 @@ Consequences for stage 2, to be settled in its registration, not here:
    misalignment moves a region's boundary without changing which region is
    black. Whether that tolerance claim holds is itself measurable and should be
    registered as an instrument check, not assumed.
+
+## 2026-10-10 Stage 2 pre-registration: the region model
+
+Registered after stage 1's numbers existed, as the initial notice requires,
+and written before any stage-2 arm has been run. The criteria below are fixed
+and are not to be loosened afterwards; if one of them turns out to have been
+the wrong criterion, the registered outcome is "failed C_n, and here is why
+the criterion was wrong", not a new threshold.
+
+### What was measured first, and what it removed from the design
+
+The user's reading of the stage-1 montage finding -- "パネル単位からコマ単位に" --
+is adopted: **the unit of input is the koma panel, not the 480px window.**
+The closure table in the previous entry is the evidence (88-93% of fill area
+on a 480 grid tile belongs to a region whose boundary is outside the window,
+against 26-49% on a koma panel, at matched drawing scale).
+
+A second measurement, made before writing this, removed the architecture that
+"the unit of judgement is the 面" most obviously suggests. If a 面 is an
+enclosed area, it should be recoverable by taking the strokes and flood-filling
+what they enclose. It is not:
+
+    line_ink = ink & ~fill ; regions = components of ~line_ink (4-conn)
+
+    ako5ver2 koma   171 panels    202 regions >=500px    1.2 per panel
+    housei koma      74 panels     90 regions >=500px    1.2 per panel
+    clip_pairs_v3   400 panels   2295 regions >=500px    5.7 per panel
+
+and of those, **0 / 0 / 17 label as filled**, with 100% / 100% / 95% of the
+fill area landing outside any filled region. The reason is visible per panel:
+the largest background component is **100.0% of the background in every one of
+six panels inspected** -- the strokes do not close. Even keeping the fills as
+ink, the largest component is 82-100%.
+
+So a region proposer has no ground truth to be scored against on the GT side,
+before one even asks whether the rough could produce one. **Consequence: the
+面 is the fill connected component itself** (8-connected, 28-289 per ako5
+panel, 5-71 of them >=500px), the model stays pixel-wise, and only the *metric*
+is region-wise. This is the opposite of what stage 2 would have been designed
+as yesterday, and it cost one afternoon instead of the GPU slot.
+Tool: `tools/evaluation/region_decompose.py`, CSVs in
+`results/region_closure_20261010/`.
+
+### Corpus and split, fixed now
+
+Corpus: `dataset/regions_clip_pairs_v3_koma_panels_20260826`, **5018 paired koma
+panels, 57 work_ids, 1122 work-pages**, native scale, stroke width 1.91px
+(identical to the 480 pools, so the radius-4 fill definition carries over
+unchanged and stage 1's masks remain comparable).
+
+The six small per-source panel sets (ako5ver2 171, 4th 155, fitness 109,
+housei 74, hamlabi 58, gakuen 46) are **excluded**: clip_pairs_v3 contains
+`011_2017_ako5`, `066_2024_housei`, `069_2024b_fitness`, `063_2023b_hamlabi`
+and three `4th` works, so they are duplicate material under a different
+extraction and mixing them would put the same drawing on both sides.
+
+Split, mechanical, on the **work family**, not the page:
+
+    family(work_id) := third underscore field, lowercased, "-..." and a
+                       trailing "_color" dropped, trailing digits (plus one
+                       optional letter) stripped; anything starting with
+                       "ako" collapses to "ako"
+    held_out(family) := int(sha1(f"fillv2_{family}").hexdigest()[:8], 16) % 5 == 0
+
+33 families; **9 held out = 969 panels (19.3%), 189 work-pages**; 4049 train.
+Held: avbu 42, ben 89, china 69, gakusai 383, hero 93, housei 45, pink 107,
+poolsideidle 79, stoptime 62.
+
+Why the family and why the ako collapse: **whether a character's hair is
+blacked in is a property of that character**, so the leak that would inflate
+this task is character identity, not page adjacency. `ako3/ako5/.../ako10`,
+`akogoods`, `akokate`, `akocult` are one series and go to one side. Noted
+rather than hidden: that puts 1825 panels (36%) in train and makes the held
+side smaller than a page-level split would. The rule was chosen on panel
+counts only; no score has been computed on either side.
+
+### Arms
+
+Non-learned, all mandatory, all reported beside every model number:
+
+  `blank`            paint nothing
+  `all_black`        paint everything
+  `preproc@{128,32,otsu,budget}`  LineartAnimeDetector, the stage-1 ladder.
+                     Its stage-1 ceiling was micro IoU 0.0002; it is here
+                     because the initial notice forbids a number without it,
+                     and because the koma unit is a new unit for it too.
+  `rough_dark`       the rough's own dark ink, through `fill_mask`. **This is
+                     the arm that matters.** If roughs already mark hair with
+                     a dark scribble, the task is mostly solved with no model
+                     and the honest report says so.
+  `rough_dark@budget` the same, handed the GT's fill pixel count -- the
+                     placement-only reading, as in stage 1.
+  `freq_table`       lesson 14's required control: no training, a frequency
+                     table over one cheap descriptor of each `rough_dark`
+                     component (16 bins of normalised y-centre x 4 bins of
+                     log area), fitted on train, predicting filled/not.
+
+Learned, the GPU slot:
+
+  `M0`  window-only. 480px native-scale crop of the rough -> fill mask.
+        The current unit, carried forward so the koma unit has something to be
+        better than.
+  `M1`  window + context. The same crop, plus the whole koma downscaled to
+        480 as additional input channels and the crop's normalised position.
+        This is the registered experiment: **does seeing the whole 面 help
+        predict it?** M1 - M0 is the answer, and NC4 below is what says
+        whether the answer came from the context stream.
+
+Both are plain supervised segmentation (U-Net, BCE + Dice, no adversarial
+term, `scripts/train_fill_seg.py`, to be written). Outputs are stitched back
+to the panel at native scale and scored there; the window is an implementation
+detail of the network, not the unit of judgement.
+
+**On prohibition 2 (do not return to CNN+GAN).** Read as: do not return to the
+`cleanup`/msgan family -- adversarial line *generation* judged on line metrics,
+which is what lesson 5 closed. A non-adversarial mask predictor for a
+different target, judged region-wise, is a different thing. The falsifier is
+stated so this cannot drift: **if an adversarial term is added, or if the
+output is ever read as line art rather than as a mask, the prohibition has
+been violated.** Flagged for the user rather than decided quietly.
+
+Prohibition 1 stands untouched: no diffusion and no ControlNet arm appears
+here, and none may be added until an instrument that would falsify Track D's
+hypothesis 4 / lesson 8 is built and registered first.
+
+### Instrument checks (run and reported before any arm is read)
+
+  IC1  Re-score stage 1's `housei_test` and `ako5_held` 480 tiles through the
+       new scorer. The pixel micro-IoU must reproduce
+       0.0000 / 0.0002 / 0.0163 / 0.0939 (housei) and
+       0.0000 / 0.0001 / 0.0152 / 0.1201 (ako5) for blank / best preproc /
+       msgan / all_black, exactly. A new scorer that cannot reproduce the old
+       numbers where the two overlap is not measuring the same thing.
+  IC2  `fill_ratio` on clip_pairs_v3 panels against
+       `../lineart-controlnet-sdxl-fidelity` pool_inventory's published value
+       for the ako5 work -- one leg anchored outside this pipeline (lesson 12).
+  IC3  GT fed in as the prediction: region-F1 1.0, pixel IoU 1.0, by both the
+       matcher and the stitcher.
+  IC4  **The stitching check.** Cut a panel into windows, reassemble, and
+       compare against the panel PNG *on disk* -- not against my own tiling.
+       Must be bit-identical. This is the check lesson 12 says to anchor
+       outside; an off-by-one in the window grid is invisible in every metric.
+  IC5  The region matcher on a hand-computed synthetic case: two discs, one
+       displaced by a known amount, expected matches written down first.
+
+### Negative controls -- one named error each, with its expected score
+
+  NC1  polarity: the rough read as white-on-black. Expected: fill area ->
+       ~1.0, indistinguishable from `all_black`, as in stage 1.
+  NC2  off-by-one: panel i's prediction scored against panel i+1's GT.
+       Expected: every arm strictly above it. An arm that is not is not read.
+  NC3  **horizontal flip**, not transpose. Panels are not square, so a
+       transpose cannot pass silently here -- but a left-right flip can, and
+       it is the error this material actually invites, since manga pages are
+       read right-to-left and flipped copies exist. Expected: a localised arm
+       loses most of its score; an arm that does not is painting the right
+       *amount* in the wrong *place*, which is what caught `preproc@budget`.
+  NC4  **context shuffle**: M1 run with another panel's global context.
+       No pass bar on its own; it is the reading rule for C2.
+  NC5  50px shift. Sensitivity only, no bar.
+
+### Pass criteria, fixed
+
+  C1  **Does anything predict fills at all?** The best arm's region-F1 must
+      exceed `blank`, `all_black` and its own NC2 by >= 0.05 absolute, on the
+      held-out side, reported per family group, never pooled into one average.
+  C2  **Does the koma unit earn its cost?** M1 - M0 >= 0.03 region-F1 on the
+      held-out side AND M1's NC4 (shuffled context) must drop by >= 0.03.
+      Both, or the context stream is not what produced the difference.
+  C3  **Is a model needed?** If the best non-learned arm is within 0.05
+      region-F1 of the best model, the registered conclusion is *"no learned
+      model is needed for this"* and that is the headline, not a footnote.
+      Given lesson 6 this is the outcome to expect, and C3 exists so that
+      expecting it does not become a reason to avoid measuring it.
+  C4  Any arm failing NC2 or NC3 is excluded from every verdict, as
+      `preproc@budget` and `msgan` were in stage 1.
+  C5  Pixel micro-IoU is reported beside every region-F1, and the near-blank
+      and normal strata separately. No overall average is a headline number.
+
+Stop rules: if IC4 fails, nothing is trained. If `rough_dark` alone satisfies
+C1 and C3, the GPU slot is released rather than spent confirming it.
+
+Training discipline (lesson 7): `--eval-snapshot-steps` on from the first run,
+holdout scored at every snapshot, `PYTHONUNBUFFERED=1`. Training loss is not
+read as evidence of anything. Slot: the next 月-木 window, 2026-10-12 to
+2026-10-15.
+
+### What stage 2 will not do
+
+Line refinement. Diffusion or ControlNet in any role. Any claim about ツヤベタ
+(the texture case in the user's 2026-10-10 observation) -- the fill mask at
+radius 4 does not separate it from plain ベタ, and no arm here is asked to.
+Any number without `blank` and the preprocessor beside it.
