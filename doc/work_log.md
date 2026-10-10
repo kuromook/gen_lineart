@@ -1966,3 +1966,114 @@ conclusion the first run registered, now on an uncontaminated population.
    ink that never touches a fill, 94.4% of length is a straight line, a single
    parabola, or one breakpoint -- and on the chains long enough for the
    question to mean anything, 90.2% with both controls well below.
+
+---
+
+## 2026-10-10 Pre-registration: IC-j7, splitting IC-j6's 34.6% rejoin failures
+
+Written before `tools/evaluation/diagnose_icj6.py` exists. IC-j6 scores
+rejoin 0.654 / wrong 0.039 on the calibration panels; the 34.6% that fail to
+rejoin are one number covering several different repairs, and the H-stroke-3
+entry put splitting them on the critical path. Nothing in the chainer's
+constants is changed by this entry: it is a diagnosis, and any repair it
+suggests gets its own registration.
+
+**Where it runs.** The calibration panels `[100:171]` of `line`, the same set
+IC-j6 was calibrated on, seed 20261010. The measurement panels `[0:40]` stay
+untouched, so nothing here can reach the H-stroke number. 309 usable trials.
+
+### The buckets, fixed now
+
+For a failed trial, find the merged node holding one end of each of the two
+true parts of the cut fragment F. Classify by what happened to that pair at
+that node:
+
+| bucket | condition | the repair it implies |
+|---|---|---|
+| `gate_theta` | the true pair's `theta > THETA_MAX` (60 deg) | widen the angle gate |
+| `gate_d` | the true pair's `d > D_MAX` (3.0px) | widen the offset gate |
+| `gate_both` | both gates reject | both |
+| `cost_break_even` | ungated, but `raw cost >= 2.0` = `2 * C_UNMATCHED`, so the matcher prefers two unmatched arms | re-weight the cost or raise `C_UNMATCHED` |
+| `wrong_arm_occluder` | one of the two arms is linked to an arm of the occluder | the cost ranks a false continuation above the true one |
+| `wrong_arm_other` | one of the two arms is linked to some third piece of ink | same, different culprit |
+| `over_max` | the node carries more than `MAX_ARMS` = 8 arms and is skipped whole | raise the cap or decompose the node |
+| `topology` | the two parts share no merged node (a part was absorbed as a stub, or the cut produced two clusters that did not merge) | `MERGE_PX`, or the fragment unit itself |
+| `residual` | none of the above | **must be 0**; asserted, not reported |
+
+The two categories the H-stroke-3 entry named are
+`refused = gate_* + cost_break_even + over_max` and
+`wrong = wrong_arm_*`, with `topology` a third that the registered two-way
+split had no slot for. I am refining the registered split rather than forcing
+a third cause into one of two boxes.
+
+`rejoin + sum(buckets) == n` is asserted every run.
+
+### IC-j7, the instrument check: five constructed trials, buckets written down first
+
+Each is built by hand, not sampled, with the expected bucket recorded here
+before the tool runs:
+
+1. straight F, occluder at 70 deg, parts collinear -> **rejoined** (not a failure)
+2. F bent 80 deg at the cut (`theta` 80 > 60) -> **`gate_theta`**
+3. F's two parts offset sideways by 6px (`d` 6 > 3), tangents parallel -> **`gate_d`**
+4. F bent 55 deg with a 0.5px offset: `55/30 + 0.5/1.5 = 2.17 >= 2.0`, both
+   gates pass -> **`cost_break_even`**
+5. F straight, with a second straight stroke entering the node as a better
+   continuation of one part than the other part is -> **`wrong_arm_other`**
+
+C1: all five land in the written bucket, or nothing is read.
+
+### Counterfactual confirmation
+
+A bucket label is a claim about *cause*, so each is tested by removing exactly
+that cause at that node and re-running the node's matching:
+
+- `gate_*` -> `THETA_MAX = D_MAX = inf` for that node only
+- `cost_break_even` -> `C_UNMATCHED = 1e9` (pairing always beats leaving arms free)
+- `wrong_arm_*` -> delete the occluder's arms from the node
+- `topology`, `over_max` -> no intervention; reported as unflippable by construction
+
+**flip** = the two true parts end in the same chain afterwards.
+
+### Negative controls
+
+- **NC-j7b, shuffled attribution.** Each failed trial is given a bucket drawn
+  at random from the observed bucket distribution and receives *that*
+  intervention. Named error: the bucket is being read off something that
+  merely correlates with a trial's difficulty rather than the blocking cause,
+  in which case any intervention flips about as often as the right one.
+- **NC-j7c, intervention on trials that already rejoined.** Named error: the
+  intervention is just "join more things", which would also damage trials that
+  were never broken. Reported as the change in the `wrong` rate. No bar: this
+  is the price of the repair, and it is what the follow-up registration will
+  have to pay.
+- **NC-j7a is deliberately not run.** Applying bucket X's intervention to
+  bucket Y is a construction-zero in both directions -- relaxing a gate cannot
+  change a pair that was never gated, and raising `C_UNMATCHED` cannot make a
+  gated pair a candidate. A control whose answer is fixed by construction is
+  an identity, not evidence, and is named as one here rather than printed as a
+  pass.
+
+### Pass criteria, fixed now and not to be loosened
+
+- **C1** IC-j7: 5/5 constructed trials in the written bucket. Fail -> nothing read.
+- **C2** `rejoin + sum(buckets) == n` and `residual == 0`.
+- **C3** the split is **actionable** only if, for a bucket holding at least
+  10% of the failures, the matched intervention flips **>= 60%** of that
+  bucket **and** NC-j7b is **at least 20 points below** the matched flip rate
+  pooled over buckets. If the gap is under 20 points the entry reports "the
+  split is measured but not actionable" and no constant is changed from it.
+- **C4** no constant moves in this entry whatever the result. A repair is a
+  separate registration, scored on IC-j6's own `rejoin - wrong` on the
+  calibration set, with the predicted direction of the H-stroke change
+  written down before H-stroke is re-run.
+
+### Visual
+
+`results/stroke_chain_20261010/icj7_buckets.png`: one row per bucket, three
+sampled failures each, showing the cut site with F in one colour, the
+occluder in another, and the arms at the node marked. Seed 20261010.
+
+shortcut: the diagnosis looks only at the node where the two parts meet, so a
+failure caused two nodes away is attributed to `topology`; raised if `topology`
+turns out to be a large bucket.
