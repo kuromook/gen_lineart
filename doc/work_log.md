@@ -2436,3 +2436,79 @@ can see the split node. Per-trial rows: `icj8_topology.csv`. Run log:
 in IC-j7; a failure whose real cause is a node elsewhere in the panel is
 attributed here to the local structure. Raised when the chainer is scored
 end to end on whole panels rather than per cut site.*
+
+### IC-j8 amendments B1-B5, all made from code and arithmetic before the tool was written and before any real panel was read
+
+**B1 `t_touch_split` is decided by the touch *closure*, not by a single
+bridge.** Registered wording: "some fragment of length <= `MERGE_PX` touches
+both clusters". That misses a crossing whose skeleton yields three clusters
+chained by two short bridges, which is the same defect one step longer. The
+test is now: under the touch union (`node_view_touch`, the IC-j7 level), do
+the two halves share a node. It is still structural -- the union is computed
+from the touch sets alone, before any matching runs -- and it makes C5's
+anchor exact, since `merge_touch` can only flip a trial whose closure shares
+a node.
+
+**B2 `t_part_absorbed` is a construction zero and holds no criterion.**
+Arithmetic, written out: `parts_of` requires `PART_MIN_PX = 8` ordered
+pixels, `order_path` walks pixels and does not resample, so consecutive steps
+are at least 1px and a true part has `path_len >= 7.0`, while `MERGE_PX =
+6.0`. **Neither half of the cut stroke can ever be absorbed.** A bucket with
+no possible members is not a bucket, for the same reason NC-j7a was not a
+control. It stays in the enumeration as an **asserted zero** -- if it ever
+fires, this arithmetic is wrong and the run says so -- and `keep_absorbed` is
+struck with it.
+
+**B3 `t_no_node` and `t_disconnected` are expected near-zero, and are kept
+without a criterion.** The occluder is **added ink** (`ink | occ_mask` in
+`make_trial`), not an erasure, so each half necessarily touches the
+occluder's ink and a junction forms. No number is predicted; the expectation
+is recorded so that a large count is read as a surprise rather than as
+routine.
+
+**B4 the registered T4 was nearly a tautology, and splitting it is the
+substantive change.** `roots()` is transitive, so two halves chained through
+an *intermediate* fragment already count as a rejoin. The occluder crosses
+F by construction, so a path between the two halves almost always exists and
+"a path exists" would have swallowed the bucket. What a `topology` failure
+with a path actually means is that the relay was refused at a node. T4 is
+therefore two buckets, and the distinction is one IC-j6's own scoring forces:
+
+- **`t_relay_other`** -- a path exists that uses no occluder fragment.
+  Matched repair **`relay_force`**: gates off and pairing forced at *every*
+  node, which is strictly stronger than forcing only the path's nodes, so a
+  0% here is conclusive and a high rate is an upper bound, and it is
+  labelled as an upper bound wherever it is printed.
+- **`t_relay_occluder_only`** -- every path between the halves uses an
+  occluder fragment. **Rejoining through it is scored `wrong` by IC-j6's own
+  definition**, so for these trials "rejoin" and "clean" cannot both be had
+  by relaying, and the only repair is the direct one. No matched repair;
+  `all_levels` is its registered falsifier.
+
+Consequently **every flip is printed twice**: `flip` (the two halves end in
+one chain, the registered criterion, unchanged) and `flip_clean` (that, and
+no occluder fragment in the chain). Any divergence between the two goes in
+the result's headline.
+
+**B5 for the constructed trials the criterion is the structural label; the
+flip column is determinate only where the case's mechanism makes it so.**
+Cases A and C have a determinate expected flip and it is part of C1. For the
+relay and disconnected fixtures the matching's behaviour at a hand-drawn node
+is not determined by the mechanism under test, so their flips are printed as
+diagnostics with their measured reason, as A5 did for `rival_force`. No
+threshold moves; C1 is still 6/6 on the labels.
+
+**`merge_px_inf` stays a diagnostic and is never a matched repair**, since
+absorbing a bridge of any length is a constant change rather than a defect
+repair, and `all_levels` deliberately excludes it so that the falsifier is
+the strongest combination of *repairs*, not of constants. `free_end`'s radius
+is `FREE_R = 8.0` px, registered here, and it too is labelled a new
+mechanism.
+
+Final bucket list, in evaluation order: `t_part_absorbed` (asserted zero) ->
+`t_no_node` (`free_end`) -> `t_touch_split` (`merge_touch`) ->
+`t_relay_other` (`relay_force`) -> `t_relay_occluder_only` (falsifier only)
+-> `t_disconnected` (falsifier only) -> `t_residual`. The decision tree is
+exhaustive by construction, so **`t_residual` is a vacuous zero and is
+labelled as one**; the non-vacuous half of C2 is that the six buckets sum to
+the `topology` count.
