@@ -2257,3 +2257,182 @@ candidates to register against are: a true part absorbed as a stub under
 two clusters in one crossing. Pass criteria and controls to be fixed before
 the tool is written, and the conditional-gap form of C3 to be registered
 there.
+
+## 2026-10-11 Pre-registration: IC-j8, splitting IC-j7's `topology` (81.1% of the rejoin failures)
+
+Written before `diagnose_topology.py` exists. Nothing in this entry is
+measured; the only numbers below are the ones already on record and the bars
+derived from them.
+
+The previous entry's split put 90 of 111 rejoin failures in one bucket,
+`topology`: no merged node holds an arm of each half of the cut stroke, so no
+matching of any kind can join them. `merge_touch` flips 37.8% of it and has a
+named mechanism. The other 62% -- **about 50% of all IC-j6 rejoin failures**
+-- has no named cause, and that is the critical path.
+
+### The lesson from the last entry, applied in advance
+
+Three defects in my own IC-j7 registration are being paid for here, not
+repeated:
+
+1. **No bucket is declared "unflippable by construction" without a
+   falsifier.** `topology` was so declared and it was 81% of the data. Every
+   sub-bucket below gets a counterfactual, and the one whose claim *is*
+   structural gets `all_levels` (every repair at once) specifically so the
+   claim can fail.
+2. **Every sub-bucket is defined structurally, never by its outcome.** If
+   `t_touch_split` were defined as "merge_touch fixes it", its flip rate would
+   be 100% by construction. It is instead defined by the *signature* of the
+   mis-assignment (a short fragment touching two clusters). Its flip rate is
+   then a real measurement, and a trial that is merged and still refused on
+   cost is a new finding rather than a bookkeeping error.
+3. **C3 is registered in conditional form.** IC-j7's shuffled-label control
+   was unreachable because one bucket held 81% of the population, which
+   bounded the achievable gap at ~13 points against a 20-point bar. NC-j8b is
+   therefore a **within-bucket** contrast: for each sub-bucket, its own
+   matched repair against a repair drawn from the *other* sub-buckets, both
+   measured on the same trials. Dominance cannot reach that comparison.
+
+### The sub-buckets, fixed now, in this evaluation order
+
+A trial is in `topology` iff `shared_node()` returns None: no merged node
+carries an arm of f0 and an arm of f1. The cause is decided from `nodes`,
+`absorbed`, `nmap` and the touch sets -- all already computed -- in this
+order, and the order is part of the registration because T1 and T3 can
+co-occur:
+
+| # | bucket | structural definition | matched repair |
+|---|---|---|---|
+| T1 | `t_part_absorbed` | f0 or f1 is in `absorbed`: a true half of the stroke is at most `MERGE_PX` long and was swallowed into the node, so it has no arms at all | `keep_absorbed` |
+| T2 | `t_no_node` | f0 or f1 touches no junction cluster at either end: the occluder left a free tip instead of a crossing | `free_end` |
+| T3 | `t_touch_split` | both halves have nodes, the nodes are distinct, **and** some fragment of length <= `MERGE_PX` touches both clusters -- the signature of the `fragments()` mis-assignment (A6) | `merge_touch` |
+| T4 | `t_bridge_long` | distinct nodes, no such short bridge, but a path exists between the two clusters in the fragment graph: the topology is connected and only `MERGE_PX` refuses it | `merge_px_inf` |
+| T5 | `t_disconnected` | no path between the two clusters in the fragment graph | `all_levels`, as a falsifier |
+| -- | `t_residual` | anything the five do not cover. **Must be 0.** | none |
+
+### The repairs, and which of them are new mechanisms
+
+- `keep_absorbed` -- union the clusters as now, but keep the absorbed fragment
+  chainable, with both its arms at the merged node, instead of deleting it.
+  **A defect repair:** the bridge's ink is currently dropped from every chain.
+- `merge_touch` -- as built in IC-j7. **A defect repair.**
+- `merge_px_inf` -- absorb a bridging fragment regardless of length. **A
+  constant change, not a defect repair**, and it is labelled as one wherever
+  it is printed: a pass here does not license adopting it.
+- `free_end` -- match two free tips (node -1) to each other when they are
+  within `D_MAX` and `THETA_MAX`, via a synthetic node holding both. **A new
+  mechanism, not a defect repair**, and labelled as one. If T2 is large, the
+  honest finding is that the chainer's node-only design, not a bug, is the
+  limit.
+- `all_levels` -- all of the above at once. Diagnostic everywhere; the
+  registered falsifier for T5.
+
+`stroke_chain.py` is not modified (C4 carries over). `merge_px_inf` and
+`free_end` live in the diagnostic only.
+
+### IC-j8, the instrument check: six constructed trials, buckets written first
+
+Each is a crop drawn by hand, not a real panel, with the mechanism known by
+construction. Expected sub-bucket and expected flip are written here before
+the tool runs.
+
+| case | construction | expected bucket | expected flip |
+|---|---|---|---|
+| A | IC-j7 case 1b verbatim: straight crossing, occluder at -55 deg | `t_touch_split` | `merge_touch` yes |
+| B | straight stroke whose second half is 5px long (under `MERGE_PX`) between two clusters | `t_part_absorbed` | `keep_absorbed` yes |
+| C | occluder laid along the stroke's end so it covers the tip without crossing it | `t_no_node` | `free_end` yes, `merge_touch` no |
+| D | occluder at -20 deg, shallow, so the two crossings sit more than `MERGE_PX` apart along it | `t_bridge_long` | `merge_px_inf` yes, `merge_touch` no |
+| E | occluder wide enough to erase a 10px span: the halves are separate skeleton components | `t_disconnected` | nothing flips, **including `all_levels`** |
+| F | IC-j7 case 1 verbatim, occluder at -70 deg | not `topology` at all (rejoins); the sub-classifier must not be asked | n/a |
+
+The bucket decision function is pure (`sub_bucket(...)`, taking the same
+already-computed structures and no image), so every case above is also an
+assert cell, and one assert carries a hand-computed value as required.
+
+### The consistency check that anchors this to the previous run (lesson 12)
+
+Already measured, by different code, before these sub-buckets existed: 34 of
+the 90 `topology` trials flip under `merge_touch`. The touch union can only
+help when a short fragment touches two clusters, so:
+
+**Every trial that `merge_touch` flips must land in T3.** A flip landing in
+T4 or T5 means the sub-bucketing is wrong, and the run asserts it rather than
+printing it. This is the leg of the check that this tool did not produce.
+
+### Negative controls, one named error each
+
+- **NC-j8b, the within-bucket shuffle.** For each sub-bucket, apply a repair
+  drawn uniformly from the *other* sub-buckets' matched repairs, on the same
+  trials, same count. Named error: the sub-buckets are labels without
+  content, and any repair helps any bucket equally. Sample size prints beside
+  every rate; under 20 samples the tool itself prints **STARVED**, and a
+  starved control makes its criterion NOT ACTIONABLE, never a pass.
+- **NC-j8c, the local price.** All five repairs applied to the 200
+  already-rejoined trials. Named error: `keep_absorbed` / `free_end` /
+  `merge_px_inf` join things that currently chain correctly. Node-local, and
+  the caveat is reprinted with the number.
+- **NC-j8d, the global price.** The one NC-j7c could not see. A *copy*,
+  `stroke_chain_touch.py`, carrying the touch-merge repair and nothing else,
+  scored by `calibrate_stroke_chain.py` on the same panels `[40:171]` for
+  both of IC-j6's numbers. Named error: two genuinely distinct crossings
+  within `MERGE_PX` fuse into one node, so `wrong` rises while `rejoin` also
+  rises, and a recall-only reading would call that a win.
+- **No construction-zero is registered as a control.** An uncut trial has one
+  part, so f0 == f1 and the trial is degenerate; NC-j7a was excluded for the
+  same reason and is not reintroduced under a new name.
+
+### Pass criteria, fixed now and not to be loosened
+
+- **C1** 6/6 constructed trials in the sub-bucket written above, with the
+  expected flips -> else the classifier is not trusted and no real number is
+  read.
+- **C2** exhaustive: T1..T5 sum to the `topology` count and `t_residual` is
+  **0**.
+- **C3 (conditional form)** for every sub-bucket holding >= 10% of
+  `topology`: its own repair flips **>= 50%** of it, **and** each other
+  bucket's repair flips **<= 20%** of it. The 50 is below IC-j7's 60 by
+  deliberate choice and the reason is arithmetic, written before the fact: a
+  merged node is necessary but not sufficient, since the pair must still beat
+  the 2.0 break-even, and IC-j7 measured `force`-only flips at 100% on
+  `cost_break_even` -- so a structural repair can be correct and still lose
+  trials to cost. 50% is the point at which the structural cause is the
+  majority cause for that bucket.
+- **C3b** NC-j8b sits **>= 20 points** below the matched rate, within each
+  bucket of >= 20 trials. Buckets under 20 are STARVED and NOT ACTIONABLE.
+- **C4** `stroke_chain.py` byte-identical to the calibrated version; its
+  SHA-256 is printed by the run.
+- **C5** the anchor assert above holds.
+
+### The adoption bars for the touch merge, fixed here and now
+
+NC-j8d produces the numbers that decide whether the repair goes into
+`stroke_chain.py` in the *next* registration. The bars are fixed in this
+entry, before the measurement, so that they cannot be chosen to fit it.
+Derivation from numbers already on record: 34 of 311 trials flip, so rejoin
+has **+10.9 points** available if the repair were free; today's values on
+these panels are rejoin 0.643 (0.654 at n=309), wrong 0.039, score
+rejoin - wrong 0.615.
+
+- rejoin **>= 0.70** (half of the available +10.9 points survives)
+- wrong **<= 0.059** (today 0.039, an allowance of +2.0 points absolute)
+- score **>= 0.675** (today 0.615, so +0.06)
+
+**All three must hold.** If rejoin clears 0.70 but wrong exceeds 0.059, the
+repair is **not adopted** and the headline of that entry is that the touch
+merge buys recall with precision -- not a footnote.
+
+### Splits, and what stays untouched
+
+Panels `[40:171]`, `SEED = 20261010`, the same 311 trials the split above
+splits. `[0:40]` remains untouched and unread. No constant is swept.
+
+Visual, required before any number is quoted:
+`results/stroke_chain_20261010/icj8_topology.png`, one row per sub-bucket,
+three sampled trials each, with the two cluster labels drawn so the reader
+can see the split node. Per-trial rows: `icj8_topology.csv`. Run log:
+`icj8_line.txt`.
+
+*shortcut: the sub-bucket is decided from the trial's own crossing only, as
+in IC-j7; a failure whose real cause is a node elsewhere in the panel is
+attributed here to the local structure. Raised when the chainer is scored
+end to end on whole panels rather than per cut site.*
