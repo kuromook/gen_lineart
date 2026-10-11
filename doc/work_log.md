@@ -2512,3 +2512,41 @@ Final bucket list, in evaluation order: `t_part_absorbed` (asserted zero) ->
 exhaustive by construction, so **`t_residual` is a vacuous zero and is
 labelled as one**; the non-vacuous half of C2 is that the six buckets sum to
 the `topology` count.
+
+### IC-j8 amendment B6 and the instrument check: PASS
+
+**B6 `relay_only`, a sixth level, added because IC-j8 case D measured
+something the registration had assumed away: forcing a pair does not force
+the *right* pair.** Case D is two junctions with a bent relay of non-occluder
+ink between them, mechanism known by construction. `relay_force` -- gates off
+and pairing forced at every node, which B4 called an upper bound -- **does
+not** rejoin it: at a three-arm node the forced pair goes to the cheaper
+rival, not to the relay. So `relay_force` is an upper bound on *that* repair
+and not on "a relay chain could be formed". `relay_only` additionally drops
+every rival arm at the nodes along the shortest non-occluder path, and it
+flips case D. It is a diagnostic, never a matched repair, for the same reason
+`drop_rival` was: dropping the rivals needs knowledge the chainer does not
+have. No threshold moves; `t_relay_other`'s matched repair is still
+`relay_force`, and the two columns are printed side by side.
+
+Also measured on case A and recorded: `relay_force` leaves the trial unjoined
+**and dirty** -- the forced pair links a true half to the occluder. Forcing is
+not free, and the `flip_clean` column of B4 is what makes that visible.
+
+**IC-j8: PASS.** 5 constructed trials in the sub-bucket written down in the
+registration, plus the B2 arithmetic asserted:
+
+| case | construction | sub-bucket | criterion flip |
+|---|---|---|---|
+| A | straight crossing at -55 deg (IC-j7 case 1b) | `t_touch_split` | `merge_touch` Y |
+| C | 6px gap, occluder touching nothing | `t_no_node` | `free_end` Y |
+| D | two junctions, bent relay of other ink | `t_relay_other` | diagnostic (B5): `relay_force` n, `relay_only` Y |
+| E | two crossings in separate components | `t_disconnected` | nothing flips, `all_levels` included |
+| F | the same crossing at -70 deg (IC-j7 case 1) | not `topology` (rejoins) | n/a |
+
+Case E's first fixture was unusable, not misclassified: the crossing stroke
+was drawn through the middle of each half, which split it into two parts and
+gave 4 F parts instead of 2. The crossing now sits at each half's end. The
+fixture was broken, not the classifier, and no label or threshold moved.
+
+`stroke_chain.py` sha256 `e9e49267c339f885`, unmodified (C4).
