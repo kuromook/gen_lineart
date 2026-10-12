@@ -25,7 +25,8 @@ DATASET = Path("/home/sh1/deepl/lineart/dataset")
 LAB = ROOT / "labels"
 QUEUE = LAB / "face_queue_v1.csv"
 PORT = 8473
-LABELS = ["face.eye.open", "face.eye.closed", "face.brow", "face.nose", "face.mouth", "face.ear", "face.other"]
+LABELS = ["face.eye.open", "face.eye.closed", "face.brow", "face.nose", "face.mouth", "face.ear", "face.other", "glasses"]
+YAWS, DIRS, PITCHES = ("front", "oblique", "profile", "back"), ("left", "right"), ("level", "up", "down")
 VIEW_K, PICK_K, IMG_PX = 1.9, 1.5, 1500      # 表示の窓 / 選べる線の範囲(枠の何倍か)/ 背景の解像度
 
 lock = Lock()
@@ -105,7 +106,8 @@ def stats():
     done = sum(1 for d in f.values() if d["status"] == "done")
     skip = sum(1 for d in f.values() if d["status"] == "skip")
     nxt = next((o for o in range(len(S["queue"])) if o not in f), len(S["queue"]))
-    return dict(done=done, skip=skip, next=nxt, groups=sum(len(d["groups"]) for d in f.values() if d["status"] == "done"),
+    nop = sorted(o for o, d in f.items() if d["status"] == "done" and not d.get("pose"))
+    return dict(done=done, skip=skip, next=nxt, nopose=len(nop), nopose_first=nop[0] if nop else -1, groups=sum(len(d["groups"]) for d in f.values() if d["status"] == "done"),
                 mode="final" if S["save"].name == "face_groups.jsonl" else "trial")
 
 
@@ -122,9 +124,22 @@ def save(d, annotator):
         assert not (set(ids) & used), "同じ線が 2 つのグループに入っている"
         used |= set(ids)
         groups.append(dict(label=g["label"], strokes=ids, unsplit=bool(g.get("unsplit", False))))
+    broken = sorted({int(i) for i in d.get("broken", [])}) if d["status"] == "done" else []
+    assert set(broken) <= valid, "この顔で選べない線に「解体する線」の印が付いている"
+    pose = d.get("pose") if d["status"] == "done" else None
+    if pose:
+        assert pose.get("yaw") in YAWS and pose.get("pitch") in PITCHES, "向きの目印が不正"
+        need = pose["yaw"] in ("oblique", "profile")
+        assert (pose.get("dir") in DIRS) if need else (pose.get("dir") in DIRS + (None,)), "左右の向きが不正"
+        pose = dict(yaw=pose["yaw"], dir=pose.get("dir"), pitch=pose["pitch"])
     rec = dict(order=order, panel=int(q["panel"]), box=int(q["box"]), usage=q["usage"], status=d["status"],
-               groups=groups, n_strokes=len(valid), annotator=annotator, datetime=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+               groups=groups, broken=broken, pose=pose, n_strokes=len(valid), annotator=annotator, datetime=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
     with lock:
+        old = S["faces"].get(order)
+        if old and old["status"] == "done" and "broken" not in old and not broken:
+            del rec["broken"]                                    # 「解体する線」の印がなかった頃のレコードは、記録なしのまま保つ
+        if not pose:
+            del rec["pose"]
         S["faces"][order] = rec
         with open(S["save"], "a") as fh:
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -175,30 +190,39 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:1px 0}
   <div class="row" style="margin-top:6px" id="labBtns"></div>
   <div class="row" style="margin-top:6px">
    <button onclick="ungroup()"><kbd>X</kbd>選択をグループから外す</button>
-   <button onclick="toggleUnsplit()"><kbd>M</kbd>分けられない線あり</button></div></div>
+   <button onclick="toggleBroken()"><kbd>D</kbd>解体する線(つながりがおかしい)</button></div></div>
+ <div class="card"><div class="row" style="justify-content:space-between"><b>顔の向き</b><span id="poseInfo" class="mut small"></span></div>
+  <div class="row" style="margin-top:6px" id="yawBtns"></div>
+  <div class="row" style="margin-top:6px" id="pitchBtns"></div></div>
  <div class="card"><div class="row" style="justify-content:space-between"><b>グループ</b><span id="selInfo" class="mut small"></span></div>
   <div id="groups" style="margin-top:6px"></div></div>
  <div class="card"><div class="row">
    <button class="prim" onclick="finish('done')"><kbd>Enter</kbd>この顔は完了 → 次へ</button>
    <button onclick="finish('skip')"><kbd>K</kbd>飛ばす(顔でない・小さすぎ)</button></div>
   <div class="row" style="margin-top:6px"><button onclick="nav(-1)"><kbd>←</kbd>前の顔</button><button onclick="nav(1)"><kbd>→</kbd>次の顔</button>
-   <button onclick="go(st.next)"><kbd>N</kbd>未完了の先頭へ</button></div></div>
+   <button onclick="go(st.next)"><kbd>N</kbd>未完了の先頭へ</button>
+   <button id="nopBtn" onclick="go(st.nopose_first)"><kbd>P</kbd>向きが未入力の顔へ</button></div></div>
  <div class="card small mut"><b>使い方</b><ul>
   <li>クリック(タップ): 線を 1 本選ぶ / ダブルクリック(2 回タップ): いまのまとまりを丸ごと選ぶ</li>
   <li>タブレット: 指 1 本またはペンで選ぶ / 指 2 本で拡大・縮小と移動 / 追加・除外は「選び方」のボタン</li>
   <li>ドラッグ: 投げ縄(または矩形)で囲んだ線を選ぶ</li>
   <li>Shift を押しながら: 追加 / Alt を押しながら: 除外 / Esc: 選択を解除</li>
-  <li>線を選んで 1〜7: その目印のグループにする(左目と右目は別々に)</li>
+  <li>線を選んで 1〜8: その目印のグループにする(左目と右目は別々に)</li>
+  <li>メガネ(8): 顔のパーツではないが、目の位置の手がかりとして記録する。レンズと枠をまとめて 1 グループ。奥に目が描いてあれば、目は目として別のグループにする</li>
   <li>ホイール: 拡大・縮小 / 右ドラッグ(または Space+ドラッグ): 移動</li>
+  <li>つながりがおかしい線(別々のパーツが 1 本につながっている等): 選んで D。桃色の点線になる。もう一度 D で取り消し。グループに入れても入れなくてもよい</li>
+  <li>顔の向き: 左右は「画面の中で顔が向いている側」。煽り = 下から見上げた顔、俯瞰 = 上から見下ろした顔。完了には向きの 2 つ(左右の向き・上下)が必要</li>
   <li>グループにしなかった線は「それ以外」(髪・輪郭の外・背景)として扱います</li>
   <li>青い点線の枠 = 検出された顔。表示されている線はすべて選べます</li></ul></div>
 </div></div>
 <script>
-const DEF=[["1","face.eye.open","目(開)"],["2","face.eye.closed","目(閉)"],["3","face.brow","眉"],["4","face.nose","鼻"],["5","face.mouth","口"],["6","face.ear","耳"],["7","face.other","その他の顔"]];
+const DEF=[["1","face.eye.open","目(開)"],["2","face.eye.closed","目(閉)"],["3","face.brow","眉"],["4","face.nose","鼻"],["5","face.mouth","口"],["6","face.ear","耳"],["7","face.other","その他の顔"],["8","glasses","メガネ"]];
 const PAL=["#d1495b","#1f7a8c","#e09f3e","#5b8e3f","#7b4fa3","#c2577a","#2e6fb7","#8a6d3b","#3aa39a","#a03f2d","#5d6bd0","#6b8f23"];
 const $=id=>document.getElementById(id), cv=$("cv"), ctx=cv.getContext("2d");
 let F=null, bg=new Image(), bgOK=false, bgMode=0, st={done:0,skip:0,next:0,mode:""};
-let strokes=[], byId=new Map(), sel=new Set(), groups=[], gseq=0, hist=[], dirty=false, cur=0;
+let strokes=[], byId=new Map(), sel=new Set(), groups=[], gseq=0, hist=[], dirty=false, cur=0, broken=new Set(), pose={yaw:null,dir:null,pitch:null};
+const YAW=[["q","front",null,"正面"],["w","oblique","left","斜め・左向き"],["e","oblique","right","斜め・右向き"],["a","profile","left","横顔・左向き"],["s","profile","right","横顔・右向き"],["t","back",null,"後ろ"]];
+const PITCH=[["z","level","水平"],["c","up","煽り(見上げ)"],["v","down","俯瞰(見下ろし)"]];
 let view={s:1,ox:0,oy:0}, tool="lasso", drag=null, hover=null, spaceDown=false, SIZE=900, selMode="new", pinch=null, lastTap=null; const pts=new Map();
 
 function fit(){ const W=window.innerWidth,H=window.innerHeight,port=H>W*1.05; document.querySelector(".app").classList.toggle("port",port);
@@ -209,8 +233,8 @@ function w2s(x,y){ const b=base()*view.s; return [(x-F.win[0])*b+view.ox,(y-F.wi
 function s2w(px,py){ const b=base()*view.s; return [(px-view.ox)/b+F.win[0],(py-view.oy)/b+F.win[1]]; }
 function resetView(){ view={s:1,ox:0,oy:0}; draw(); }
 function groupOf(id){ for(const g of groups) if(g.strokes.has(id)) return g; return null; }
-function snapshot(){ hist.push(JSON.stringify({g:groups.map(g=>({id:g.id,label:g.label,unsplit:g.unsplit,strokes:[...g.strokes]})),s:[...sel]})); if(hist.length>200)hist.shift(); }
-function undo(){ if(!hist.length)return; const h=JSON.parse(hist.pop()); groups=h.g.map(g=>({...g,strokes:new Set(g.strokes)})); sel=new Set(h.s); dirty=true; refresh(); }
+function snapshot(){ hist.push(JSON.stringify({g:groups.map(g=>({id:g.id,label:g.label,unsplit:g.unsplit,color:g.color,strokes:[...g.strokes]})),s:[...sel],b:[...broken]})); if(hist.length>200)hist.shift(); }
+function undo(){ if(!hist.length)return; const h=JSON.parse(hist.pop()); groups=h.g.map(g=>({...g,strokes:new Set(g.strokes)})); sel=new Set(h.s); broken=new Set(h.b||[]); dirty=true; refresh(); }
 
 function path(s){ const p=s.p; ctx.beginPath(); let a=w2s(p[0],p[1]); ctx.moveTo(a[0],a[1]); for(let i=2;i<32;i+=2){ a=w2s(p[i],p[i+1]); ctx.lineTo(a[0],a[1]); } }
 function draw(){ if(!F)return; ctx.clearRect(0,0,SIZE,SIZE); ctx.fillStyle="#fff"; ctx.fillRect(0,0,SIZE,SIZE);
@@ -222,6 +246,7 @@ function draw(){ if(!F)return; ctx.clearRect(0,0,SIZE,SIZE); ctx.fillStyle="#fff
   for(const s of strokes){ if(gcol.has(s.id)||sel.has(s.id))continue; path(s); ctx.strokeStyle=(hover&&hover.c>=0&&s.c===hover.c)?"#111":"#6f6f6f"; ctx.lineWidth=(hover&&hover.c>=0&&s.c===hover.c)?2.2:1.2; ctx.stroke(); }
   for(const s of strokes){ if(!gcol.has(s.id)||sel.has(s.id))continue; path(s); ctx.strokeStyle=gcol.get(s.id); ctx.lineWidth=3.2; ctx.stroke(); }
   for(const s of strokes){ if(!sel.has(s.id))continue; path(s); ctx.strokeStyle="#111"; ctx.lineWidth=5.5; ctx.stroke(); path(s); ctx.strokeStyle=gcol.has(s.id)?gcol.get(s.id):"#ffb000"; ctx.lineWidth=3; ctx.stroke(); }
+  if(broken.size){ ctx.setLineDash([5,6]); ctx.lineCap="butt"; for(const s of strokes){ if(!broken.has(s.id))continue; path(s); ctx.strokeStyle="#fff"; ctx.lineWidth=4.5; ctx.stroke(); path(s); ctx.strokeStyle="#e6007e"; ctx.lineWidth=2.6; ctx.stroke(); } ctx.setLineDash([]); ctx.lineCap="round"; }
   ctx.font="12px system-ui"; ctx.textBaseline="bottom";
   for(const g of groups){ let x=0,y=1e9,n=0; g.strokes.forEach(id=>{const s=byId.get(id); for(let i=0;i<32;i+=2){const q=w2s(s.p[i],s.p[i+1]); x+=q[0]; n++; if(q[1]<y)y=q[1];}});
     if(!n)continue; const t=DEF.find(d=>d[1]==g.label)[2]+(g.unsplit?" *":""); const tw=ctx.measureText(t).width; x=x/n-tw/2; y-=4;
@@ -277,6 +302,13 @@ function nextColor(){ const used=new Set(groups.map(g=>g.color)); for(let i=0;i<
 function ungroup(){ if(!sel.size)return; snapshot(); for(const g of groups) sel.forEach(i=>g.strokes.delete(i)); groups=groups.filter(g=>g.strokes.size); dirty=true; refresh(); }
 function touched(){ return groups.filter(g=>[...sel].some(i=>g.strokes.has(i))); }
 function toggleUnsplit(){ const t=touched(); if(!t.length){ $("msg").textContent="印を付けるグループの線を選んでください"; return; } snapshot(); t.forEach(g=>g.unsplit=!g.unsplit); dirty=true; refresh(); }
+function toggleBroken(){ if(!sel.size){ $("msg").textContent="解体する線を選んでください"; return; } snapshot(); const all=[...sel].every(i=>broken.has(i));
+  sel.forEach(i=>all?broken.delete(i):broken.add(i)); sel=new Set(); dirty=true; $("msg").textContent=""; refresh(); }
+function setYaw(y,d){ pose.yaw=y; pose.dir=d; dirty=true; poseUI(); }
+function setPitch(p){ pose.pitch=p; dirty=true; poseUI(); }
+function poseUI(){ $("yawBtns").innerHTML=YAW.map(y=>`<button class="${pose.yaw==y[1]&&pose.dir==y[2]?"on":""}" onclick="setYaw('${y[1]}',${y[2]?`'${y[2]}'`:null})"><kbd>${y[0].toUpperCase()}</kbd>${y[3]}</button>`).join("");
+  $("pitchBtns").innerHTML=PITCH.map(p=>`<button class="${pose.pitch==p[1]?"on":""}" onclick="setPitch('${p[1]}')"><kbd>${p[0].toUpperCase()}</kbd>${p[2]}</button>`).join("");
+  $("poseInfo").textContent=(pose.yaw&&pose.pitch)?"":"未入力"; $("msg").textContent=""; }
 function delGroup(id){ snapshot(); groups=groups.filter(g=>g.id!=id); dirty=true; refresh(); }
 function selGroup(id){ const g=groups.find(g=>g.id==id); if(g){ sel=new Set(g.strokes); refresh(); } }
 function setTool(t){ tool=t; $("tLasso").className=t=="lasso"?"on":""; $("tRect").className=t=="rect"?"on":""; $("tPan").className=t=="pan"?"on":""; cv.style.cursor=t=="pan"?"grab":"crosshair"; }
@@ -285,26 +317,31 @@ function clearSel(){ sel=new Set(); refresh(); }
 function cycleBg(){ bgMode=(bgMode+1)%3; draw(); }
 function refresh(){ const t=new Set(touched().map(g=>g.id));
   $("groups").innerHTML=groups.length?groups.map(g=>`<div class="g ${t.has(g.id)?"cur":""}" onclick="selGroup(${g.id})"><span class="chip" style="background:${PAL[g.color%PAL.length]}"></span>${DEF.find(d=>d[1]==g.label)[2]}<span class="mut small">${g.strokes.size} 本${g.unsplit?"・分けられない線あり":""}</span><button class="x" onclick="event.stopPropagation();delGroup(${g.id})">×</button></div>`).join(""):'<span class="mut small">まだありません</span>';
-  const un=[...sel].filter(i=>!groupOf(i)).length; $("selInfo").textContent=sel.size?`選択 ${sel.size} 本(うち未グループ ${un})`:""; draw(); }
-async function loadStats(){ st=await (await fetch("/api/stats")).json(); $("mode").textContent=st.mode=="final"?"":"(試し)"; $("prog").textContent=`完了 ${st.done} 顔 / 飛ばし ${st.skip} / グループ ${st.groups}`; }
+  const un=[...sel].filter(i=>!groupOf(i)).length; $("selInfo").textContent=(sel.size?`選択 ${sel.size} 本(うち未グループ ${un})`:"")+(broken.size?` 解体する線 ${broken.size} 本`:""); draw(); }
+async function loadStats(){ st=await (await fetch("/api/stats")).json(); $("mode").textContent=st.mode=="final"?"":"(試し)"; $("prog").textContent=`完了 ${st.done} 顔 / 飛ばし ${st.skip} / グループ ${st.groups}`+(st.nopose?` / 向き未入力 ${st.nopose}`:""); $("nopBtn").style.display=st.nopose?"":"none"; }
 async function go(k){ if(k<0)return; if(dirty&&!confirm("この顔の変更は保存されていません。移動しますか?"))return;
   const r=await fetch(`/api/face?o=${k}`); if(!r.ok){ $("msg").textContent="これ以上ありません"; return; }
-  F=await r.json(); cur=F.order; strokes=F.strokes; byId=new Map(strokes.map(s=>[s.id,s])); sel=new Set(); groups=[]; gseq=0; hist=[]; dirty=false; hover=null; view={s:1,ox:0,oy:0};
+  F=await r.json(); cur=F.order; strokes=F.strokes; byId=new Map(strokes.map(s=>[s.id,s])); sel=new Set(); groups=[]; gseq=0; hist=[]; broken=new Set(); pose={yaw:null,dir:null,pitch:null}; dirty=false; hover=null; view={s:1,ox:0,oy:0};
   if(F.saved&&F.saved.status=="done") groups=F.saved.groups.map((g,i)=>({id:++gseq,label:g.label,unsplit:g.unsplit,strokes:new Set(g.strokes.filter(id=>byId.has(id))),color:i%PAL.length}));
+  if(F.saved&&F.saved.status=="done") broken=new Set((F.saved.broken||[]).filter(id=>byId.has(id)));
+  if(F.saved&&F.saved.pose) pose={yaw:F.saved.pose.yaw,dir:F.saved.pose.dir||null,pitch:F.saved.pose.pitch};
+  poseUI();
   $("pos").textContent=`${cur+1} 番目の顔`+(F.saved?(F.saved.status=="done"?"(完了済み)":"(飛ばし済み)"):"");
   $("info").textContent=`コマ p${F.panel} / ${F.work} / 線 ${strokes.length} 本 / 検出の信頼度 ${F.conf.toFixed(2)}`; $("msg").textContent="";
   bgOK=false; bg=new Image(); bg.onload=()=>{bgOK=true;draw();}; bg.src=`/img?o=${cur}`; refresh(); loadStats(); }
 function nav(d){ go(cur+d); }
-async function finish(status){ const body={order:cur,status,groups:groups.map(g=>({label:g.label,unsplit:g.unsplit,strokes:[...g.strokes]}))};
+async function finish(status){ if(status=="done"&&!(pose.yaw&&pose.pitch)){ $("msg").textContent="顔の向き(左右の向きと上下)を選んでください"; return; }
+  const body={order:cur,status,pose:status=="done"?pose:null,broken:[...broken],groups:groups.map(g=>({label:g.label,unsplit:g.unsplit,strokes:[...g.strokes]}))};
   if(status=="done"&&!groups.length&&!confirm("グループが 1 つもありません。パーツが 1 つも描かれていない顔として完了にしますか?"))return;
   const r=await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){ $("msg").textContent="保存に失敗: "+await r.text(); return; } dirty=false; go(cur+1); }
 document.addEventListener("keydown",e=>{ if(e.key==" "){spaceDown=true;e.preventDefault();return;}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="z"){undo();e.preventDefault();return;} if(e.ctrlKey||e.metaKey)return;
   const k=e.key.toLowerCase(); const d=DEF.find(d=>d[0]==k); if(d){makeGroup(d[1]);e.preventDefault();return;}
-  if(k=="enter"){finish("done");e.preventDefault();} else if(k=="k")finish("skip"); else if(k=="x")ungroup(); else if(k=="m")toggleUnsplit();
+  if(k=="enter"){finish("done");e.preventDefault();} else if(k=="k")finish("skip"); else if(k=="x")ungroup(); else if(k=="d")toggleBroken();
   else if(k=="l")setTool("lasso"); else if(k=="r")setTool("rect"); else if(k=="h")setTool("pan"); else if(k=="b")cycleBg(); else if(k=="f")resetView();
-  else if(k=="escape")clearSel(); else if(k=="arrowleft")nav(-1); else if(k=="arrowright")nav(1); else if(k=="n")go(st.next); });
+  else if(k=="escape")clearSel(); else if(k=="arrowleft")nav(-1); else if(k=="arrowright")nav(1); else if(k=="n")go(st.next); else if(k=="p")go(st.nopose_first);
+  else { const y=YAW.find(y=>y[0]==k); if(y)setYaw(y[1],y[2]); const p=PITCH.find(p=>p[0]==k); if(p)setPitch(p[1]); } });
 document.addEventListener("keyup",e=>{ if(e.key==" ")spaceDown=false; });
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("button"); if(b)b.blur(); });
 window.addEventListener("resize",fit);
