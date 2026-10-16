@@ -26,6 +26,7 @@ CACHE = TRACK_F / "results/panel_skeleton_20260917"
 DATASET = Path("/home/sh1/deepl/lineart/dataset")
 sys.path.insert(0, str(Path(__file__).resolve().parent))        # 複製
 sys.path.insert(0, str(TRACK_F / "tools/stroke"))               # 原本(読むだけ)
+sys.path.insert(0, "/home/sh1/deepl/lineart-solid-fill/tools/evaluation")   # Track J の器具
 CACHE = CACHE  # 未使用。pack は skeletonize をその場で行う経路から作られている
 
 # IC-k5b が落ちて判明(2026-10-16): 作者の線を作ったのは tokenize_panels.py ではなく
@@ -34,6 +35,7 @@ CACHE = CACHE  # 未使用。pack は skeletonize をその場で行う経路か
 THR, GROW = 128, 200
 MAX_BEND, MIN_LEN, RHO_BAR, P_BAR, NC_BAR = 35.0, 8, 0.30, 0.01, 0.10
 IC_K5B_BAR, N_IC_K5A, SEED = 0.95, 20, 20261016
+IN_FILL_BAR = 0.5     # B3: 橋 span の画素のこの割合以上がベタマスクの中なら in_fill
 W_KNEE = 2.0          # B1: max(3.0, 1.5w) の折れ点。ここ未満は閾値が定数
 RATIO_BAR = 0.90      # B1 主値 A: len/w の中央値がこれ以上で、かつ両帰無模型の帯の外なら支持
 N_NULL = 200          # 帰無模型の引き直し回数
@@ -47,7 +49,9 @@ def run_panel(t):
     from skimage.morphology import skeletonize
     from stroke_path import chain, span_paths
     import strokes_instrumented as SI
+    from fill_mask import fill_mask, ink_of          # B3: K1 と同じベタマスク
     ink = SI.ink_mask(g, thr=THR, grow=GROW)
+    fill = fill_mask(ink_of(g))                      # K1 と同一(gray<128、radius=4)
     dist = cv2.distanceTransform(ink.astype(np.uint8), cv2.DIST_L2, 5)
     sk = skeletonize(ink)
     wd = dist * 2
@@ -80,8 +84,11 @@ def run_panel(t):
     l1_n = l1_px = l2_n = l2_px = 0
     for s, npx, w, thr in extra["bridges"]:
         kept = bool(keep[sos[s - 1]])
+        rr, cc = spans[s - 1]
+        ov = float(fill[rr, cc].mean())              # B3: ベタマスクとの重なり率
         rows.append(dict(pid=pid, span=s, n_px=npx, ink_width=round(w, 3), thr=round(thr, 3),
-                         ratio=round(npx / thr, 4), kept=int(kept)))
+                         ratio=round(npx / thr, 4), kept=int(kept),
+                         fill_overlap=round(ov, 4), in_fill=int(ov >= IN_FILL_BAR)))
         if kept:
             l2_n += 1; l2_px += npx
         else:
@@ -95,7 +102,7 @@ def run_panel(t):
                 loss1_px_frac=round(l1_px / max(skel_px, 1), 5),
                 loss2_token_n=l2_n, loss2_token_px=l2_px,
                 loss2_px_frac=round(l2_px / max(skel_px, 1), 5),
-                n_two_node=len(two), ic_k5a_same=same)
+                n_two_node=len(two), fill_area_frac=round(float(fill.mean()), 5), ic_k5a_same=same)
     return dict(pid=pid, ok=True, prow=prow, rows=rows, two=[(pid, a, b) for a, b in two])
 
 
@@ -200,6 +207,29 @@ def main():
                missing_panels=len(bad))
     chk["passed"] = bool(ic5a_ok and ic5b_ok and nc_ok)
 
+    kept_f = np.array([r["kept"] for r in brows], int).astype(bool)
+    inf = np.array([r["in_fill"] for r in brows], int).astype(bool)
+    ovl = np.array([r["fill_overlap"] for r in brows], float)
+    n_tokens = int(sum(r["strokes"] for r in prows))
+    split_rows = {}
+    for nm, m in (("all_bridges", np.ones(len(inf), bool)), ("loss2_kept", kept_f), ("loss1_dropped", ~kept_f)):
+        split_rows[nm] = dict(
+            n=int(m.sum()),
+            in_fill=dict(n=int((m & inf).sum()), share=round(float((m & inf).mean() / max(m.mean(), 1e-9)), 4),
+                         ink_width_median=round(float(np.median(w[m & inf])), 2) if (m & inf).any() else None),
+            out_fill=dict(n=int((m & ~inf).sum()), share=round(float((m & ~inf).mean() / max(m.mean(), 1e-9)), 4),
+                          ink_width_median=round(float(np.median(w[m & ~inf])), 2) if (m & ~inf).any() else None),
+            overlap_pct=dict(p10=round(float(np.percentile(ovl[m], 10)), 3),
+                             median=round(float(np.median(ovl[m])), 3),
+                             p90=round(float(np.percentile(ovl[m], 90)), 3)),
+            w_le_8=int((m & (w <= 8)).sum()))
+    split_rows["token_denominator"] = dict(
+        n_tokens=n_tokens,
+        loss2_share_all=round(float(kept_f.sum()) / n_tokens, 5),
+        loss2_out_fill_share=round(float((kept_f & ~inf).sum()) / n_tokens, 5),
+        loss2_w_le_8_share=round(float((kept_f & (w <= 8)).sum()) / n_tokens, 5),
+        note="分母は 177 コマの全トークン。作者がグループに入れた線ではない(H6: グループは線の 20.7%)")
+
     def frac(key):
         v = np.array([r[key] for r in prows], float)
         return dict(median=round(float(np.median(v)), 5), p10=round(float(np.percentile(v, 10)), 5),
@@ -222,6 +252,7 @@ def main():
         side_bridges_only_rho=dict(by_ink_width=side_selected,
                                    note="選別規則 len<=max(3.0,1.5w) が範囲制限で正の相関を作るため、"
                                         "この ρ と入れ替え対照は人工物と信号を分離できない。記録のみ"),
+        in_fill_split=split_rows,
         loss_1_dropped=dict(n=int(sum(r["loss1_dropped_n"] for r in prows)),
                             px=int(sum(r["loss1_dropped_px"] for r in prows)), frac=frac("loss1_px_frac")),
         loss_2_spurious_token=dict(n=int(sum(r["loss2_token_n"] for r in prows)),
