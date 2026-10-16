@@ -3108,3 +3108,91 @@ is worse than painting nothing -- **the 2026-10-19..10-22 slot should be
 claimed.** The number to beat remains `blank`'s **0.0084**, the ceiling is
 IC3's **1.0**, and region-F1 and pixel IoU are read together for the reason
 above.
+
+## 2026-10-16 Pre-registration: IC-j9, the touch merge decided on the never-read holdout `[0:40]`
+
+Written before anything is run on `[0:40]`. The foundation routed back a
+reading correction (their `doc/CURRENT.md`, Known Tool Traps, 2026-10-16),
+**as a correction and not as an adoption request**:
+
+> A control the reference arm itself fails cannot discriminate. The leg was
+> meant to ask "does this repair cost precision" and in fact asked "does it
+> *improve* precision", which a zero-cost repair can never pass. **Write a
+> cost leg as a difference from the reference arm**
+> (`wrong_candidate - wrong_reference <= 0`), not as an absolute imported
+> from another population.
+
+I accept the prescribed form, which is stricter than the `+0.010` I had
+proposed myself. **The IC-j8 verdict is not edited: it stands at NOT ADOPTED
+under the bar that was registered then.** This is a new registration with a
+new bar, and the adoption decision belongs to it.
+
+### The procedural problem, and what is done about it
+
+**The measurement already exists.** On `[40:171]` the candidate scored
+rejoin 0.752 / wrong 0.061 / score 0.691 against the reference's 0.643 /
+0.061 / 0.582, trial by trial 34 gained, 0 lost, 0 newly wrong. Registering a
+delta bar now and then "reading" that number would be fitting the bar to the
+result, whoever proposed the form.
+
+So the bar is evaluated on **panels `[0:40]`, which have never been read in
+this thread** -- reserved since the IC-j6 registration for exactly this. From
+here on:
+
+- `[40:171]` (311 trials) is the **discovery set** and is labelled as such
+  wherever it appears. No bar is decided on it again.
+- `[0:40]` is the **holdout**, used **once**. Whatever it says is the verdict;
+  it is not re-read under a different bar, and if it refuses the repair the
+  repair is refused.
+
+### The bars, in the prescribed form, fixed now
+
+`SEED = 20261010` unchanged, both arms on the same trials with trial identity
+asserted, all 11 constants asserted identical between the two files.
+
+1. **Cost leg (the foundation's form).**
+   `wrong_candidate - wrong_reference <= 0`.
+   At this n the delta is a bar on counts, so the discrete form is registered
+   and is what is read: **`wrong_count_candidate <= wrong_count_reference`
+   AND `newly_wrong = 0` by set, not by count.** Stating it discretely is
+   stricter than the continuous form, not looser: `[40:171]` had ~2.37 usable
+   trials per panel, so `[0:40]` is expected to give roughly 95 trials, where
+   one trial is ~1.05 points of `wrong` and a continuous bar at 0 would be
+   indistinguishable from a bar at +0.01.
+2. **Recall leg.** `rejoin_candidate - rejoin_reference > 0`.
+3. **Figure-of-merit leg.** `score_candidate - score_reference >= +0.05`
+   (score = rejoin - wrong, IC-j6's own). The discovery set showed +0.109;
+   half of it is the bar, the same halving rule used for IC-j8's rejoin bar.
+4. **All three required.** Any one failing means NOT ADOPTED, and that is the
+   headline of the entry, not a footnote.
+
+### Pre-registered reasons to refuse to read it at all
+
+- **Power.** If `[0:40]` yields **fewer than 60 usable trials**, the holdout
+  is underpowered for a count-level cost leg and the entry says
+  "UNDERPOWERED, not actionable" instead of a verdict. The repair then stays
+  unadopted and waits for a larger reserved set.
+- **Comparability.** If the reference arm's rejoin on `[0:40]` falls outside
+  **0.643 +/- 0.10**, the two panel ranges are not the same kind of material
+  and the holdout cannot arbitrate a 10-point effect measured on the other
+  range. That is reported as a comparability failure, not as a verdict.
+  (Both thresholds are written here, before the run, precisely so that a
+  disappointing number cannot be reclassified as one of these afterwards.)
+
+### What is NOT claimed even if all three legs pass
+
+Adoption would mean `fragments()` keeps the full touch set and `merge_nodes`
+unions every cluster a short fragment touches, in `stroke_chain.py`. It would
+**not** mean:
+
+- that the 46% `t_relay_other` bucket is addressed -- it is not, and the ridge
+  sits 0.2 to 5.5px above `MERGE_PX`, whose sweep is a separate registration;
+- that `MERGE_PX` or `C_UNMATCHED` are justified -- neither has ever been
+  swept (972-combination grid, 6 axes, neither in it);
+- anything about deliberate gaps, which this construction cannot contain
+  (0 of 90 free-end cases) and which Track K now owns on real ink.
+
+Run log: `results/stroke_chain_20261010/icj9_holdout.txt`. Tool:
+`score_touch_merge.py`, extended with the delta-form bars and a
+`--discovery` flag that prints the discovery-set row beside the holdout row,
+both labelled.
