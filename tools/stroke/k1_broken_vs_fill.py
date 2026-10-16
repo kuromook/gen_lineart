@@ -53,24 +53,24 @@ def densify(poly):
     return np.vstack(out), float(ln.sum())
 
 
-def panel_fields(pid):
+def panel_fields(pid, radius=FILL_HALF_WIDTH_PX):
     """コマ 1 枚ぶん: ベタまでの距離、インク、面積割合。"""
     bgr = G.panel_img(pid)
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY) if bgr.ndim == 3 else bgr
     ink = ink_of(gray)
-    fill = fill_mask(ink, radius=FILL_HALF_WIDTH_PX)
+    fill = fill_mask(ink, radius=radius)
     dist = distance_transform_edt(~fill) if fill.any() else np.full(fill.shape, np.inf)
     return dist, ink, float(fill.mean()), float(ink.mean())
 
 
-def sample_rows(recs, out_csv):
+def sample_rows(recs, out_csv, radius=FILL_HALF_WIDTH_PX):
     """線ごとに 1 行。印の有無・ベタ距離の分布・長さ・位置合わせの確認を一度に取る。"""
     rows, faces = [], []
     cache_pid, cache = None, None
     for n, r in enumerate(recs, 1):
         pid = r["panel"]
         if pid != cache_pid:
-            cache, cache_pid = panel_fields(pid), pid
+            cache, cache_pid = panel_fields(pid, radius), pid
         dist, ink, panel_fill_frac, panel_ink_frac = cache
         H, W = ink.shape
         pl = G.face_payload(r["order"])
@@ -151,6 +151,8 @@ def main():
     ap.add_argument("--labels", required=True, help="固定した face_groups.jsonl の複製")
     ap.add_argument("--out", default="results/k1_broken_vs_fill_20261016")
     ap.add_argument("--limit", type=int, default=0, help="smoke test 用。先頭 n 顔だけ")
+    ap.add_argument("--fill-radius", type=float, default=FILL_HALF_WIDTH_PX,
+                    help="K1b(2026-10-16 宣言)。ベタマスクの半径だけを動かす。既定 = K1 の登録値 4.0")
     a = ap.parse_args()
     out = ROOT / a.out; out.mkdir(parents=True, exist_ok=True)
 
@@ -163,7 +165,7 @@ def main():
         recs = recs[:a.limit]
     print(f"対象 {len(recs)} 顔 / 手段が無かった {len(no_means)} 顔 / コマ {len({r['panel'] for r in recs})} 枚", flush=True)
 
-    rows, faces = sample_rows(recs, out / "per_stroke.csv")
+    rows, faces = sample_rows(recs, out / "per_stroke.csv", a.fill_radius)
     with open(out / "per_face.csv", "w", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(faces[0].keys())); wr.writeheader(); wr.writerows(faces)
 
@@ -228,7 +230,7 @@ def main():
                                      real_rr=main_tab["rr"], real_outside_band=outside))
     chk["passed"] = bool(ic1 and ic2 and ic3 == 0)
     summary = dict(registered=dict(ADJ_PX=ADJ_PX, ADJ_FRAC=ADJ_FRAC, SAMPLE_STEP=SAMPLE_STEP,
-                                   fill_radius=FILL_HALF_WIDTH_PX, seed=SEED, n_neg=N_NEG,
+                                   fill_radius=a.fill_radius, seed=SEED, n_neg=N_NEG,
                                    bars=dict(rr_support=RR_SUPPORT, p_support=P_SUPPORT, rr_refute=RR_REFUTE)),
                    population=dict(labels=str(a.labels), n_faces=len(recs), n_panels=len({r["panel"] for r in recs}),
                                    n_strokes=len(rows), n_marks=int(marked.sum()),
