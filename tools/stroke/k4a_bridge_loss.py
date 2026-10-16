@@ -206,7 +206,11 @@ def main():
                     p90=round(float(np.percentile(v, 90)), 5), mean=round(float(v.mean()), 5))
     summary = dict(
         registered=dict(max_bend=MAX_BEND, min_len=MIN_LEN, rho_bar=RHO_BAR, p_bar=P_BAR,
-                        nc_bar=NC_BAR, ic_k5b_bar=IC_K5B_BAR, seed=SEED),
+                        nc_bar=NC_BAR, ic_k5b_bar=IC_K5B_BAR, seed=SEED,
+                        w_knee=W_KNEE, ratio_bar=RATIO_BAR, n_null=N_NULL,
+                        w_provenance="dist*2, dist = distanceTransform(ink_mask(g, thr=128, grow=200)) "
+                                     "-- F の畳み込み閾値が使う ink_width と同一の配列",
+                        pipeline="export_panel_tokens_v2.py の経路(ヒステリシス + その場の skeletonize)"),
         population=dict(n_panels=len(prows), n_bridges=len(brows), n_two_node_spans=len(twos),
                         skel_px_total=int(sum(r["skel_px"] for r in prows))),
         primary_A_ratio=dict(n=int(prop.sum()), obs_median_len_over_w=round(obs_med, 4),
