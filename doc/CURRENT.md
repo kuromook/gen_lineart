@@ -1,6 +1,12 @@
 # Current Project State
 
-Updated: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
+Updated: 2026-10-16 JST. **Track K opened** by user approval: the 1px
+skeleton's connectivity, which is upstream of Tracks F, G and H. The error has
+two directions -- over-merge, which the author can mark, and under-connection,
+which has no mark and is the binding one (18.7% of arms joined). K1 registered
+before Track H's 300-face analysis returned.
+
+Previous: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
 trap** -- the `cy`/`cx` swap was a misdiagnosis -- and, later the same day,
 Track G's resumed placement question settled: the reference frame carries the
 win and lesson 13 now holds from both the classification and the prediction
@@ -583,6 +589,55 @@ work, and the stated expectation is that the pieces make each other easier.
   - One verdict is **held**, correctly: on `ako5r` (n=23) `msgan` lands at
     0.0664, between the registered bars, to be decided on the montage before
     stage 2 registers. n=23 cannot carry more than that.
+
+- `../lineart-stroke-topology` (branch `stroke-topology`, **Track K**) --
+  **opened 2026-10-16** by user approval, from the user's own observation after
+  finishing 300 faces in Track H: "the 1px thinning and the linking leave many
+  parts with wrong connectivity". The defect is **upstream of Tracks F, G and
+  H** -- the unit the words are made of is decided there -- and nobody could
+  own it: Track F wrote the rule but is sealed and must not be modified, Track
+  J measures it only as a side job to the fill, Track H is author-bound.
+  Notice: `../lineart-stroke-topology/doc/initial_notice.md`. Proposal:
+  `doc/track_k_stroke_topology_proposal_20261016.md`.
+  - **The error has two directions and they are not the same error.**
+    *Over-merge* (several things fused into one stroke) is what the author can
+    mark in Track H's UI (`broken`, the "stroke to take apart" mark the user
+    asked for on 2026-10-09). *Under-connection* (one drawn stroke left in
+    pieces) has **no mark at all** -- and that is the binding one: Track J's
+    calibrated chainer joins only **7,513 of 40,212 arms (18.7%)** in the line
+    art, 12.5% in the rough. So the data in hand covers the minority error.
+  - **What the author's mark already says**, from Track H's pre-registered
+    105-face count: of the 74 faces that could carry the mark, **42 (57%) have
+    at least one**; 90 marks in all, **0.9%** of the 10,204 strokes in those
+    faces, 65 of them inside a part (~3% of grouped strokes), 1-3 per face
+    typically and 7 at most. The 23 oldest production faces have no `broken`
+    field, which records that the mark was **unavailable**, not absent. "Many"
+    is 57% per face and 0.9% per stroke; both are the same fact.
+  - **The current rule, read out** (Track F `tools/stroke/strokes.py`, read
+    only): arms at a node are paired greedily by how close the outgoing
+    directions are to 180 deg, `max_bend=35`, `reach=10px`, `spur_max=6`,
+    `min_len=8`. It looks at the tangent angle alone -- no lateral offset, no
+    width continuity, no reference back to the ink before skeletonization. The
+    failures the author saw are predictable from the rule.
+  - **Inherited from Track J, calibrated**: curvature at a junction is
+    quantisation noise (`W_KAPPA=0` wins; only tangent agreement and lateral
+    offset carry anything), and **thinning pulls the line toward the junction
+    centre so the arm tips are deformed** -- skipping the last 2px leaves
+    recall at 0.654 and drops wrong joins from 0.104 to **0.039**. Near a fill
+    the skeleton is the fill's medial axis and not a drawn stroke at all.
+  - **Registered before Track H's 300-face analysis came back**: K1, the
+    over-merge marks are concentrated on strokes adjacent to a fill. Costs the
+    author no time -- marks and fill masks both exist -- so it is step 1, on
+    training-use faces only (H6's split), adjacency threshold printed before it
+    is read, with a random-mark negative control. **If K1 is falsified the
+    cause is in thinning generally** and the repair is not "take the contour
+    near fills".
+  - Step 2 is Track J's own registered next step run on IC-j6 (of the 34.6% of
+    trials the chainer fails to rejoin, how many were refused by the cost
+    break-even versus matched to the wrong arm -- different repairs), with the
+    chainer staying in Track J and the result shared. The track is explicitly
+    allowed to question 1px thinning itself and explicitly forbidden to shrink
+    into a `max_bend` sweep. No GPU for now; the measurements are CPU.
 
 ### Not part of either line
 
