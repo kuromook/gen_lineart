@@ -692,8 +692,39 @@ work, and the stated expectation is that the pieces make each other easier.
     measured above it. Falsified if the ridge length at marked strokes'
     crossings is indistinguishable from unmarked ones. Costs the author
     nothing; must be stratified by stroke length (124 of 185 marks are in the
-    longest quintile) and must use Track J's own instrument so that lesson
-    12's cross-implementation anchor still applies.
+    longest quintile).
+  - **K4's variable is Track F's threshold, not Track J's, and the foundation
+    named the wrong constant.** The author's marks sit on strokes that **Track
+    F's** tokenizer produced, so the operative rule is F's bridge collapse,
+    `len(span) <= max(3.0, 1.5 x median(local ink width))` in
+    `tools/stroke/strokes.py`, not the chainer's `MERGE_PX = 6.0`. Track K
+    caught this and registered `ratio = bridge span length / that threshold`,
+    with a support bar of **MH-RR >= 2.0** (chosen high because K1 came in at
+    1.487 against 1.5), KS p >= 0.05 as the falsifier, and a second leg -- the
+    sign must actually reverse between marked strokes and box-C candidates --
+    before anything is called two symptoms of one mechanism.
+  - **One correction back on the mechanism**: above F's threshold the crossing
+    is *not* structurally unjoinable the way it is in the chainer. A
+    non-bridge span keeps an arm at each node, so a relay through the ridge
+    needs two successive pairings, each within `max_bend = 35`. In F's
+    pipeline the over-split side is "two angle tests in series", not
+    "impossible" -- J's architecture must not be read into F's rule.
+  - **A third symptom, visible in F's own source comment**: "bridge spans are
+    not linked: they stay their own (short, usually dropped) token, so a thick
+    crossing leaves a gap of about one ink width". The collapsed ridge's ink
+    is dropped from every stroke, which is the same defect J's
+    `keep_absorbed` repair names. **Ink lost at thick crossings is measurable
+    with no labels at all** (bridge-span pixels over skeleton pixels) and is
+    the cheapest leg of K4.
+  - **Lesson 12 refined, by Track K on Track J's objection**: a
+    cross-implementation anchor only works on quantities that do **not** depend
+    on the pipeline's own construction. K's skeletons and J's are not the same
+    object -- F prunes spurs at 6px and reads a cached skeleton, J keeps every
+    short fragment and skeletonizes on the fly -- so fragment, node and arm
+    counts cannot be lined up between them, and K recorded that K2's box
+    counts will not be printed beside J's buckets. IC-k1 agreed to 0.99
+    because fill area does not depend on the skeleton at all. **Choose the
+    anchor quantity for construction independence, not for availability.**
   - Step 2 is Track J's own registered next step run on IC-j6 (of the 34.6% of
     trials the chainer fails to rejoin, how many were refused by the cost
     break-even versus matched to the wrong arm -- different repairs), with the
