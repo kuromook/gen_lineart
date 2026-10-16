@@ -2704,3 +2704,101 @@ Visual: `results/stroke_chain_20261010/icj8_topology.png`. Per-trial:
    node-local while the evidence (f0 -> ridge -> f1 is straight, f0 -> occluder
    is a corner) is chain-local. Registering that needs a two-node cost, and it
    is a design change, not a defect repair.
+
+## 2026-10-16 Stage 2 M0, read in the registered order: every non-learned arm falls to NC3, and none beats "don't paint"
+
+`results/fill_koma_20261010/per_panel_held.csv` (969 held panels, 13,566
+rows) completed 2026-10-11 and **had not been read until today**. Read now
+through `report_fill_koma.py`, which prints the negative controls before the
+arms (C4) and keeps the strata apart (C5). Run log:
+`results/fill_koma_20261010/report_held.txt`.
+
+### Normal stratum, 956 panels -- the controls, first
+
+| control | region-F1 | pixel IoU | pred area | named error |
+|---|---:|---:|---:|---|
+| `nc1_polarity` | 0.0035 | 0.0987 | 0.9467 | the rough read white-on-black |
+| `nc3_hflip:rough_dark` | 0.0063 | 0.0063 | 0.0069 | mirrored left-right |
+| `nc3_hflip:rough_dark@budget` | 0.0104 | 0.0311 | 0.0394 | mirrored left-right |
+| `nc3_hflip:freq_table` | 0.0084 | 0.0021 | 0.0000 | mirrored left-right |
+| `nc5_shift50:*` | 0.0063 / 0.0104 / 0.0084 | | | rolled 50px, sensitivity only |
+
+### Then the arms
+
+| arm | region-F1 | pixel IoU | pred area | GT area | pred ratio | GT ratio | verdict, with its threshold |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `blank` | 0.0084 | 0.0021 | 0.0000 | 0.1040 | 0.0406 | 0.5193 | **IDENTITY**: 0 unless the GT is empty |
+| `all_black` | 0.0037 | 0.1040 | 1.0000 | 0.1040 | 0.0406 | 0.5193 | **IDENTITY**: pixel IoU = \|G\|/\|P\| |
+| `rough_dark` | 0.0065 | 0.0139 | 0.0069 | 0.1040 | 0.0406 | 0.5193 | **falls to NC3** (gap +0.000 < 0.05) |
+| `rough_dark@budget` | 0.0110 | 0.0451 | 0.0394 | 0.1040 | 0.0406 | 0.5193 | **falls to NC3** (gap +0.001 < 0.05) |
+| `freq_table` | 0.0084 | 0.0021 | **0.0000** | 0.1040 | 0.0406 | 0.5193 | **falls to NC3** (gap +0.000 < 0.05) |
+
+- **C1 ("beats blank" := region-F1 - blank >= 0.05): all three arms FAIL.**
+  `rough_dark` is 0.0065 against blank's 0.0084, i.e. **-0.0019: worse than
+  painting nothing.** `rough_dark@budget` is +0.0026 and `freq_table` +0.0000,
+  both far under the 0.05 margin.
+- **`freq_table` is an identity and must be labelled as one.** Its predicted
+  area is **0.0000**: no (y bin, area bin) cell ever reached 0.5, so the arm
+  predicts nothing and *is* `blank`. Its exact tie with blank at 0.0084 is
+  that identity, not a result. Lesson 14's required no-training control
+  therefore returned "no cell is more often filled than not", which is
+  itself the informative part.
+- **The arm that mattered has answered: roughs do not mark the fill.** The GT
+  is **10.4% of panel area and 52.0% of the ink** (both readings, together),
+  while the rough's own dark ink is **0.69% of the area**. There is a great
+  deal of fill to predict and the rough does not carry it. The stop rule's
+  release condition -- "if `rough_dark` alone satisfies C1 and C3, the GPU
+  slot is released" -- is **not met**, so the slot is not released.
+
+### NC2 is void: a control with no samples is not a control
+
+**`nc2_offbyone` produced 0 rows of 13,566.** The scorer skips the pair when
+`pred.shape != gt.shape` ("panels differ in size; skip, do not pad" -- my own
+registered choice), and no two consecutive held panels share a shape. So
+"panel i's prediction against panel i+1's GT" is **unmeasured**, and nothing
+in this entry rests on it. This is the second control of this family to come
+back starved after NC-j7b's 0/0, and the same rule applies: it is reported as
+void, not as a pass. Repair for the next registration: pair each panel with
+the nearest *same-shape* held panel by sorted name, or crop both to the common
+top-left overlap -- and whichever is chosen, print the sample count beside the
+rate.
+
+### Near-blank stratum, 13 panels, kept apart (C5)
+
+`blank` 0.6923, `rough_dark@budget` 0.6923, `freq_table` 0.6923,
+`rough_dark` 0.3846, `all_black` 0.0000. The three at 0.6923 all predict
+nothing here, so this is the same identity again: most near-blank panels have
+no fill and painting nothing is right 9 of 13 times. The hflip controls score
+identically for the same reason. **No verdict is read from this stratum**, and
+it is never averaged with the 956.
+
+### What this changes
+
+1. **Training is warranted and the registered gate is now passed in the only
+   direction it could be: nothing non-learned predicts fill regions.** The
+   number to beat is `blank`'s **0.0084**, with the instrument's ceiling at
+   **1.0** (IC3, GT as prediction, 60/60 panels).
+2. **But the whole non-learned table lives between 0.0037 and 0.0110**, and
+   the mirrored control sits inside that range. Before a four-day slot is
+   spent, one pre-flight is required and is registered here: **IC6, can
+   region-F1 at `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5` see a partial win?**
+   Feed the GT with a known fraction of its regions deleted (keep 25%, 50%,
+   75%) and with each region eroded by a known radius, expected values
+   written down first (keeping half the regions and matching all of them is
+   precision 1.0, recall 0.5, region-F1 0.667). If a half-correct prediction
+   does not land near 0.667, the metric cannot grade the thing being trained
+   and the trainer waits. **No GPU time is spent before IC6 is read.**
+3. The GPU slot of 2026-10-12..10-15 (Mon-Thu) **passed unused**. The next
+   standard slot is **2026-10-19..10-22**. The operational cause is recorded
+   in the entry below, not excused.
+
+### Why this sat for five days, recorded as a process failure
+
+H-stroke-3 put splitting IC-j6's failures on the critical path, so taking up
+the chainer was a registered choice, not drift. Reading this CSV was not:
+`report_fill_koma.py` costs seconds, it is the gate that decides whether the
+GPU slot is needed at all, and it existed since 2026-10-10. It should have
+been run before the chainer work, and the four-day slot was lost to that
+ordering. Recorded here so the ordering rule is explicit: **a cheap gate that
+can release or claim a scheduled slot is read before any expensive branch,
+regardless of what the critical path says.**
