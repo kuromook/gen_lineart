@@ -32,6 +32,14 @@ import calibrate_stroke_chain as cal  # noqa: E402
 
 BAR_REJOIN, BAR_WRONG, BAR_SCORE = 0.70, 0.059, 0.675
 
+# IC-j9 (doc/work_log.md, 2026-10-16, commit b29b4c4): the same decision in
+# the difference form the foundation prescribed, read ONCE on the never-read
+# holdout [0:40]. The absolute bars above belong to IC-j8 and to the
+# discovery set [40:171]; they are not re-decided.
+J9_SCORE_GAIN = 0.05          # half of the discovery set's +0.109
+J9_MIN_TRIALS = 60            # below this: UNDERPOWERED, no verdict
+J9_REF_REJOIN, J9_REF_TOL = 0.643, 0.10   # outside this: not comparable
+
 
 def per_trial(trials, chainer):
     """(rejoin set, wrong set) by trial index, so the two arms can be
@@ -62,7 +70,13 @@ def main():
     ap.add_argument("--which", default="line")
     ap.add_argument("--from-index", type=int, default=40)
     ap.add_argument("--n-panels", type=int, default=131)
+    ap.add_argument("--holdout", action="store_true",
+                    help="read the IC-j9 difference-form bars instead of "
+                         "IC-j8's absolute ones. Use once, on [0:40].")
     args = ap.parse_args()
+    if args.holdout:
+        print("IC-j9: the HOLDOUT reading. [40:171] is the discovery set and "
+              "is not re-decided here.\n")
 
     print(f"stroke_chain.py       sha256 {sha(sc.__file__)}  (calibrated, "
           f"unmodified)")
@@ -124,6 +138,40 @@ def main():
           f"{len(bad0 - bad1)}")
     print(f"  an identical count is not an identical set; the two numbers "
           f"above are what decides it.")
+
+    if args.holdout:
+        print("\nIC-j9 bars, fixed before this run (commit b29b4c4):")
+        if n < J9_MIN_TRIALS:
+            print(f"  {n} usable trials < {J9_MIN_TRIALS} -> **UNDERPOWERED, "
+                  f"NOT ACTIONABLE**. The repair stays unadopted and waits "
+                  f"for a larger reserved set. No leg is read.")
+            return 0
+        lo, hi = J9_REF_REJOIN - J9_REF_TOL, J9_REF_REJOIN + J9_REF_TOL
+        if not (lo <= r <= hi):
+            print(f"  reference rejoin {r:.3f} outside {J9_REF_REJOIN:.3f} "
+                  f"+/- {J9_REF_TOL:.2f} -> **NOT COMPARABLE**. The two panel "
+                  f"ranges are not the same kind of material; this is a "
+                  f"comparability failure, not a verdict. No leg is read.")
+            return 0
+        print(f"  comparability: reference rejoin {r:.3f} inside "
+              f"{lo:.3f}..{hi:.3f}, and {n} trials >= {J9_MIN_TRIALS} -> both "
+              f"preconditions met, the legs are read")
+        nw = len(bad1 - bad0)
+        l1 = len(bad1) <= len(bad0) and nw == 0
+        l2 = r2 - r > 0
+        l3 = s2 - s >= J9_SCORE_GAIN
+        print(f"  cost     wrong count {len(bad1)} vs reference {len(bad0)}, "
+              f"newly wrong {nw} -> {'PASS' if l1 else 'FAIL'}  "
+              f"(bar: count <= reference AND newly wrong = 0)")
+        print(f"  recall   rejoin {r2 - r:+.3f} -> "
+              f"{'PASS' if l2 else 'FAIL'}  (bar: > 0)")
+        print(f"  merit    score {s2 - s:+.3f} -> "
+              f"{'PASS' if l3 else 'FAIL'}  (bar: >= {J9_SCORE_GAIN:+.2f})")
+        v = "ADOPT" if (l1 and l2 and l3) else "NOT ADOPTED"
+        print(f"  all three required -> **{v}**")
+        print(f"  this holdout is used once; it is not re-read under another "
+              f"bar.")
+        return 0
 
     ok_r, ok_w, ok_s = r2 >= BAR_REJOIN, w2 <= BAR_WRONG, s2 >= BAR_SCORE
     print(f"\nNC-j8d adoption bars, fixed before this measurement:")
