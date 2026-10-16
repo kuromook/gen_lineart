@@ -1320,6 +1320,26 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   reference arm** (`wrong_candidate - wrong_reference <= 0`), not as an
   absolute imported from another population. This is the fourth way a control
   is born meaningless, after the three already in the `moat` ledger.
+- **The cached intermediate is not always the one that made the data, and the
+  foundation approved the wrong path** (caught 2026-10-16 by Track K's IC-k5b,
+  which failed 0 of 6 before anything was read). Track K's K2 registration --
+  approved here -- pointed at the cached skeletons in
+  `panel_skeleton_20260917/`, built with a plain `ink_mask` at threshold 128.
+  The strokes the author actually labelled came from
+  `export_panel_tokens_v2.py`, which uses **hysteresis ink**
+  (`ink_mask(thr=128, grow=200)`: a pixel joins if it is below 200 and its
+  8-connected component reaches below 128), skeletonizes that mask on the fly,
+  and passes `dist * 2` as the width field. **Track F's own docstring says so
+  in one line** -- "the skeleton has to be recomputed because the ink rule
+  changed, so this script caches it alongside the tokens rather than reading
+  the 2026-09-17 cache" -- and records why it matters: one panel goes from 258
+  components at 128 to **64** at grow 200, because a plain cut breaks faint
+  anti-aliased lines into dots. **How the ink breaks apart is exactly what a
+  connectivity measurement is about**, so the cache would have measured
+  different lines from the ones the author saw. After the path was matched,
+  IC-k5b passed 6/6 with no difference in a single stroke. **Check which code
+  path produced the labels, not which artefact is on disk**, and read the
+  producing script's docstring before reusing a cache.
 - **A control that removes the artifact along with the signal cannot separate
   them** (caught 2026-10-16 in Track K's K4a, before it was run). K4a proposed
   Spearman rho >= 0.30 between a collapsed bridge's length and the local ink
