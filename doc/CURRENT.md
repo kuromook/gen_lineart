@@ -1320,6 +1320,26 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   reference arm** (`wrong_candidate - wrong_reference <= 0`), not as an
   absolute imported from another population. This is the fourth way a control
   is born meaningless, after the three already in the `moat` ledger.
+- **A control that removes the artifact along with the signal cannot separate
+  them** (caught 2026-10-16 in Track K's K4a, before it was run). K4a proposed
+  Spearman rho >= 0.30 between a collapsed bridge's length and the local ink
+  width, with the control being a shuffle of the widths among bridges inside a
+  panel. But a span *is* a bridge only if `len <= max(3.0, 1.5 x median
+  width)`, so within the selected set the length is bounded above by a linear
+  function of the width and a positive rho follows from the cut itself. The
+  shuffle destroys that selection-induced pairing exactly as it destroys a
+  real effect, so it falls to ~0 either way. **The separating control is a null
+  model, not a shuffle**: redraw each bridge's length uniformly on
+  `(0, max(3.0, 1.5w)]` -- the world where only the cut operates -- and require
+  the real rho to clear that band. Two cheaper forms work as well: drop the
+  selection and measure over every two-node span with the cut drawn as a line,
+  or test the claim's own magnitude, since `len / width` piling at 1.5 is the
+  cut while mass near 1.0 is the source comment's "about one ink width".
+  **Also watch the kink**: below a median ink width of 2.0px that threshold is
+  the constant 3.0 and carries no width dependence at all, and the project's
+  measured fill-excluded widths (1.91 housei, 2.74 ako5) sit on top of the
+  kink, so the two regimes must be reported apart or the kink reappears as a
+  correlation.
 - **An instrument built from artificial damage cannot contain damage the
   material never shows** (found 2026-10-16, Track K reading Track J's IC-j6).
   Cut-and-rejoin trials made by drawing an occluder over real ink contain **no
