@@ -725,6 +725,56 @@ work, and the stated expectation is that the pieces make each other easier.
     counts will not be printed beside J's buckets. IC-k1 agreed to 0.99
     because fill area does not depend on the skeleton at all. **Choose the
     anchor quantity for construction independence, not for availability.**
+  - **K4a came in on 2026-10-16 and both registered primary values are
+    refuted, which is the point of it.** Instrument checks 4/4, including
+    IC-k5b matching the stroke pack 177/177 with no difference in a single
+    stroke. Re-derived here from `per_panel.csv` and `per_bridge.csv`: strokes
+    90,111 = pack = reproduction, bridges 35,799, two-node spans 91,567,
+    skeleton 8,969,812px.
+    - **A: refuted.** The median `len / ink_width` of a collapsed bridge is
+      0.600 and the **empirical** null model's band is [0.596, 0.607] -- the
+      observation sits inside it. F's source comment "a thick crossing leaves
+      a gap of about one ink width" is **not supported**: the collapsed
+      bridges are indistinguishable from the two-node span length distribution
+      truncated at the threshold. "About one ink width" was the selection rule
+      restated, not a property of the material.
+    - **B: not supported.** Over all 91,567 two-node spans, rho(width, length)
+      is **0.0205** against a bar of 0.30, and the shuffle control is 0.0443,
+      i.e. *higher* than the observation.
+    - **The side arm is the false positive this foundation's intervention
+      prevented.** On the selected bridges alone rho is **0.6521**, and the
+      track's first registration would have reported that as strong support.
+      Selection on a function of both variables measures the cut, not the
+      material.
+  - **But K4a's headline needs the fill split before it is written, and this
+    file supplied the number that shows why.** The loss-2 bridges -- the ones
+    that survive as their own stroke -- have a median local ink width of
+    **26.8px** and p90 **127.1px**; 92.7% exceed 8px. A drawn line in this
+    material is about **2.7px** wide, and that figure is window-invariant:
+    2.828 at koma scale against 2.828 on 480px tiles outside the fill mask,
+    against 18.03 and 4.47 over all ink (this file, 2026-10-10). So the 7x
+    width the track attributed to the native panel scale **is the fill, not
+    the scale**, and most of loss 2 is a solid area's medial axis rather than
+    anything inside a line crossing. Only ~7.3% of loss 2 sits at a width two
+    crossing lines could produce. **The 21.2% is real and its name was wrong**:
+    it is the share of the 90,111 stroke tokens in those panels that are
+    collapsed-bridge fragments, dominated by fills.
+  - **K5, registered before measuring, which reconciles K1 with K4a**: the
+    loss-2 fragments are **depleted inside the author's part groups** and
+    concentrated outside them, and within the groups the one- and two-stroke
+    groups (175 of 489 in H6) are enriched in them relative to groups of three
+    or more. The author marks what they tried to use for a part, and faces are
+    not fills, which is why K1's marks are not explained by fill adjacency
+    (AFe 0.248) while the token population is mostly fill-derived. Falsified
+    if the loss-2 share is indistinguishable inside and outside the groups --
+    in which case the 21.2% cannot be used to support the notice's premise
+    that the word's unit is being eroded here. Needs IC-k7 first: IC-k5b
+    checked counts, not stroke ids, and the track registered the id check as
+    its own gate before any measurement that uses them.
+  - **A sealed track's docstring can be quantitatively wrong**: F's
+    `strokes.py` says a bridge span stays "their own (short, usually dropped)
+    token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
+    rather than fixed, because Track F's files are not modified.
   - Step 2 is Track J's own registered next step run on IC-j6 (of the 34.6% of
     trials the chainer fails to rejoin, how many were refused by the cost
     break-even versus matched to the wrong arm -- different repairs), with the
