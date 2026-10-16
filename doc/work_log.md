@@ -2550,3 +2550,157 @@ gave 4 F parts instead of 2. The crossing now sits at each half's end. The
 fixture was broken, not the classifier, and no label or threshold moved.
 
 `stroke_chain.py` sha256 `e9e49267c339f885`, unmodified (C4).
+
+## 2026-10-12 IC-j8 result: the 46% is the crossing's own middle ridge, and `MERGE_PX` was never swept
+
+Panels `[40:171]`, the same 311 trials, rejoin 0.643, 111 failures, 90
+`topology` (81.1%). **IC-j8 PASS** (5 constructed trials in the sub-bucket
+written in the registration, plus the B2 arithmetic asserted). **C2 PASS**
+(sub-buckets sum 90 = topology 90; `t_residual` 0 is VACUOUS and
+`t_part_absorbed` 0 is B2's asserted construction zero). **C5 anchor PASS**
+(0 violations: every `merge_touch` flip landed in `t_touch_split`, which was
+measured by different code four days earlier).
+
+| sub-bucket | n | of topology | of all failures | matched repair | flip / flip_clean |
+|---|---:|---:|---:|---|---|
+| `t_touch_split` | 37 | 41.1% | 33.3% | `merge_touch` | **92% / 92%** |
+| `t_relay_other` | 51 | **56.7%** | **46.0%** | `relay_force` | 10% / 10% |
+| `t_relay_occluder_only` | 1 | 1.1% | 0.9% | none, by registration | 100% / **0%** |
+| `t_disconnected` | 1 | 1.1% | 0.9% | none | 0% / 0% |
+| `t_no_node` | 0 | -- | -- | -- | B3's expectation held |
+| `t_part_absorbed` | 0 | -- | -- | -- | B2 construction zero, asserted |
+
+### Verdicts, with their thresholds
+
+- **C3 conditional, `t_touch_split`: PASS.** Own repair 91.9% (bar 50%),
+  every other bucket's repair 0.0% (bar 20%), NC-j8b within-bucket shuffle
+  **0/37**, gap **+91.9 points** (bar 20). This is the first time a control of
+  this family has cleared its bar in this thread, and the reason is the form,
+  not the data: the contrast is inside the bucket, so the 81% dominance that
+  made IC-j7's C3 unreachable cannot reach it.
+- **C3 conditional, `t_relay_other`: NOT ACTIONABLE**, on the own-rate leg
+  only -- 9.8% against a 50% bar. Its specificity leg is clean (0.0%).
+- **C4** `stroke_chain.py` sha256 `e9e49267c339f885`, unmodified.
+
+### Where the relay is -- the question the bucket's definition could not answer
+
+`t_relay_other` says only that *some* non-occluder path exists, and two very
+different things satisfy that: the crossing's own middle ridge (the right
+join) or a detour through the rest of the drawing (which would satisfy
+IC-j6's success test by connectivity, not by the join we want). The
+registration did not distinguish them. **Measured, as a distribution:**
+
+| | min | q25 | median | q75 | max |
+|---|---:|---:|---:|---:|---:|
+| fragments on the path | 1.0 | 1.0 | **1.0** | 1.0 | 1.0 |
+| their length (px) | 6.2 | 7.7 | 8.1 | 9.2 | 11.5 |
+| farthest stray from the cut (px) | 3.4 | 3.9 | 4.5 | 5.1 | 6.8 |
+| gap between the facing tips (px) | 11.2 | 13.0 | 14.8 | 17.1 | 19.9 |
+
+**51/51 are a single fragment, and 51/51 lie within 20px of the cut.** The
+detour reading is refuted: every one of them is the crossing's own middle
+ridge -- the piece where F's ink and the occluder's ink fused, which
+`parts_of` classifies as neither part (it is not 80% inside either mask), so
+it is invisible to the trial's ground truth and sits between the two halves.
+Chaining f0 -> ridge -> f1 is the correct join and it is clean.
+
+### The finding this turns into: `MERGE_PX` was never swept
+
+The ridge is **6.2 to 11.5px** long. `MERGE_PX = 6.0`. These 51 failures are
+fragments that missed the absorption threshold by between 0.2 and 5.5px.
+
+And the calibration grid (972 combinations, `GRID` in
+`calibrate_stroke_chain.py`) swept `TAN_SKIP`, `TAN_WIN`, `KAPPA_REF`,
+`THETA_MAX`, `D_MAX`, `W_KAPPA`. **`MERGE_PX` and `C_UNMATCHED` are not in
+it.** The two constants that now look load-bearing -- the absorption
+threshold and the break-even that IC-j7 showed makes the angle gate
+redundant -- have never been varied, and the calibrated values are the ones
+they were written with.
+
+This is not a licence to raise it. `merge_px_inf` (absorb a bridge of any
+length) flips 45% of `t_relay_other` but **breaks 111 of the 200 trials that
+already rejoin**, because it absorbs real strokes. An unbounded loosening is
+refused by measurement. A *bounded* sweep is the next registration.
+
+### NC-j8c, the price, corrected
+
+| level | breaks | newly dirty |
+|---|---:|---:|
+| `merge_touch` | 0/200 | 0/200 |
+| `free_end` | 0/200 | 0/200 |
+| `relay_force` | 0/200 | 0/200 |
+| `relay_only` | 0/200 | 0/200 |
+| `merge_px_inf` | **111/200 = 55.5%** | 2/200 |
+| `all_levels` | 0/200 | 1/200 |
+
+The first run printed `relay_only` breaking 126/200 = 63%. **That was my
+artifact, not a price:** on a trial whose halves already share a node there is
+no relay path, the function returned "no path", and the control read it as a
+breakage. Corrected to "drop the rivals at the shared node and force a pair",
+which is the defined intervention there. Recorded because the 63% was printed
+once and is not evidence of anything.
+
+### NC-j8d, the global price of the touch merge: NOT ADOPTED
+
+Same 311 trials (asserted: same fragments, same F parts, same occluder
+parts), all 11 constants identical in both files (asserted).
+`stroke_chain_touch.py` sha256 `091539ea88cfe012`.
+
+| arm | n | rejoin | wrong | score |
+|---|---:|---:|---:|---:|
+| `stroke_chain` (calibrated) | 311 | 0.643 | 0.061 | 0.582 |
+| **+ touch merge (candidate)** | 311 | **0.752** | 0.061 | **0.691** |
+| `force`, gates off (**IDENTITY**) | 311 | 0.714 | 0.193 | 0.521 |
+
+Trial by trial, not only by count: **rejoined gained 34, LOST 0; wrong newly
+0, no longer wrong 0.** The repair is strictly additive on this trial set.
+
+- rejoin 0.752 vs bar >= 0.700 -> PASS
+- wrong 0.061 vs bar <= 0.059 -> **FAIL**
+- score 0.691 vs bar >= 0.675 -> PASS
+- all three required -> **NOT ADOPTED**
+
+**The bar that failed is one the baseline itself cannot clear, and that is my
+error, recorded rather than repaired.** `wrong <= 0.059` was derived as
+"0.039 + 2.0 points", and the 0.039 came from `icj6_grid` at **n = 309**, a
+different trial set. On these 311 trials the baseline's `wrong` is **0.061**.
+The candidate's effect on `wrong` is **zero by set, not merely by count**,
+and it still fails, because the comparison point was imported from another
+measurement. **This is the third instance of one defect class:**
+
+1. H-stroke-3 population A -- an absolute gap over a population one category
+   dominates;
+2. IC-j7 C3's second leg -- unreachable at 81% dominance, bound ~13 points
+   against a 20-point bar;
+3. here -- a bar derived from a number measured on a different trial set.
+
+**The bar does not move and the verdict stands at NOT ADOPTED.** The
+measurement already exists; what the next entry registers is the bar in the
+form it should have had -- a delta against the *same-trial* baseline
+(`wrong - wrong_base <= +0.010`) -- and the adoption decision belongs to that
+entry, not to this one.
+
+Also on record from that run: the candidate beats the trivial solution on
+both axes (rejoin 0.752 > 0.714, `wrong` 0.061 against 0.193, a third), and
+IC-j7's node-local prediction of "+10.9 points if free" came out at exactly
++10.9 with **LOST 0**, so a node-local counterfactual was a sound predictor
+of a global change here.
+
+Visual: `results/stroke_chain_20261010/icj8_topology.png`. Per-trial:
+`icj8_topology.csv`. Logs: `icj8_line_v2.txt`, `icj8_ncd_v2.txt`.
+
+### The next registration, named and not yet written
+
+1. **`MERGE_PX` as a swept axis**, bounded (6, 8, 10, 12, 16), crossed with
+   the touch merge on/off, both of IC-j6's numbers plus the absorbed-px total,
+   because absorbed ink joins no stroke and that damage is invisible to
+   `rejoin`. `C_UNMATCHED` joins the sweep for the same reason: it was never
+   varied either.
+2. **The `wrong` bar in delta form**, as above, with the touch-merge adoption
+   decided under it.
+3. **The relay repair is not a `merge_nodes` fix.** `match_node` already
+   enumerates every pairing at the node exhaustively up to `MAX_ARMS`, so it
+   is optimal *there*; the ridge loses to the occluder's arm on a cost that is
+   node-local while the evidence (f0 -> ridge -> f1 is straight, f0 -> occluder
+   is a corner) is chain-local. Registering that needs a two-node cost, and it
+   is a design change, not a defect repair.

@@ -216,6 +216,13 @@ def relay_path(nodes, nmap, r0, r1, occ):
     adj = defaultdict(set)
     for (a, b) in edge:
         adj[a].add(b)
+    if r0 & r1:
+        # the halves already share a node: there is nothing to relay, so the
+        # intervention is "drop the rivals at that node and force a pair".
+        # Without this, relay_only returned "not joined" for every trial that
+        # already rejoins and NC-j8c read it as a 63% breakage. Corrected
+        # 2026-10-12 and recorded in doc/work_log.md.
+        return set(), set(r0 & r1)
     prev, q = {c: None for c in r0}, deque(sorted(r0))
     hit = None
     while q and hit is None:
@@ -237,6 +244,43 @@ def relay_path(nodes, nmap, r0, r1, occ):
     chain.reverse()
     frs = {edge[(chain[i], chain[i + 1])] for i in range(len(chain) - 1)}
     return frs, set(chain)
+
+
+def relay_stats(ctx):
+    """How far away the relay is. Added 2026-10-12, before the result was
+    read as anything but a diagnosis of the instrument.
+
+    A `t_relay_other` trial says only that SOME non-occluder path exists.
+    Two very different things satisfy that: the crossing's own middle ridge,
+    a few px between the two halves, which is the right join; or a detour
+    through the rest of the drawing, which would satisfy IC-j6's success
+    test (`roots` equal) without being the join we want. These three numbers
+    separate them and are printed as a distribution, never pooled into one
+    mean:
+
+      n_frags  fragments on the shortest non-occluder path
+      px       their total length
+      reach    the farthest any path pixel strays from the midpoint between
+               the two halves' facing tips
+    """
+    frags, nodes = ctx["frags"], ctx["nodes"]
+    f0, f1 = ctx["fp"]
+    nmap, _, _ = sc.merge_nodes(frags, nodes)
+    r0 = {nmap[n] for n in nodes[f0] if n >= 0}
+    r1 = {nmap[n] for n in nodes[f1] if n >= 0}
+    frs, _ = relay_path(nodes, nmap, r0, r1, set(ctx["op"]))
+    if not frs:
+        return None
+    # the facing tips: the closest pair of ends of the two halves
+    best, m = None, None
+    for i in (0, -1):
+        for j in (0, -1):
+            d = float(np.hypot(*(frags[f0][i] - frags[f1][j])))
+            if best is None or d < best:
+                best, m = d, (frags[f0][i] + frags[f1][j]) / 2.0
+    px = sum(sc.path_len(frags[fi]) for fi in frs)
+    reach = max(float(np.hypot(*(q - m))) for fi in frs for q in frags[fi])
+    return {"n_frags": len(frs), "px": px, "reach": reach, "tip_gap": best}
 
 
 def relink(ctx, level, rng):
@@ -447,6 +491,29 @@ def run(root, which, lo, cnt, limit=0):
           "for forming a relay chain. `merge_px_inf` is a CONSTANT CHANGE, "
           "not a repair.")
 
+    print("\nwhere the relay is (t_relay_other), as a distribution and not "
+          "a mean:")
+    rs = [relay_stats(ctxs[i]) for i in topo if sub[i] == "t_relay_other"]
+    rs = [r for r in rs if r is not None]
+    if rs:
+        for k, unit in (("n_frags", ""), ("px", "px"), ("reach", "px"),
+                        ("tip_gap", "px")):
+            v = sorted(r[k] for r in rs)
+            q = lambda f: v[min(len(v) - 1, int(f * len(v)))]  # noqa: E731
+            print(f"  {k:<8} min {v[0]:>6.1f}{unit}  q25 {q(0.25):>6.1f}  "
+                  f"median {q(0.5):>6.1f}  q75 {q(0.75):>6.1f}  "
+                  f"max {v[-1]:>6.1f}")
+        one = sum(r["n_frags"] == 1 for r in rs)
+        near = sum(r["reach"] <= 20.0 for r in rs)
+        print(f"  a single relay fragment: {one}/{len(rs)} = "
+              f"{one / len(rs):.1%};  the whole path within 20px of the cut: "
+              f"{near}/{len(rs)} = {near / len(rs):.1%}")
+        print("  a short, near path is the crossing's own middle ridge and the "
+              "join is the right one;\n  a long, far path would satisfy "
+              "IC-j6's success test by connectivity elsewhere in the\n  "
+              "drawing, which is a different claim. Both are printed because "
+              "the bucket's\n  definition does not distinguish them.")
+
     # C3, conditional form: within each bucket >= 10% of topology
     print("\nC3 (conditional): a sub-bucket holding >= 10% of `topology` must "
           "flip >= 50% under its own repair and <= 20% under each other "
@@ -465,10 +532,15 @@ def run(root, which, lo, cnt, limit=0):
                   f"{sum(flips[i]['all_levels'][0] and flips[i]['all_levels'][1] for i in idx) / len(idx):.1%})")
             continue
         f = sum(flips[i][lv][0] for i in idx) / len(idx)
+        # C3's specificity leg is "each OTHER BUCKET's repair", so the pool
+        # is the matched repairs only. `relay_only` and `merge_px_inf` are
+        # diagnostics matched to no bucket and are excluded; including
+        # relay_only would have failed this leg with a number that is close
+        # to an identity. Corrected 2026-10-12, recorded in the work log; the
+        # bars did not move.
+        pool_m = sorted({l for l in MATCHED.values() if l is not None})
         others = [sum(flips[i][o][0] for i in idx) / len(idx)
-                  for o in ("merge_touch", "free_end", "relay_force",
-                            "relay_only")
-                  if o != lv]
+                  for o in pool_m if o != lv]
         good = f >= 0.50 and max(others) <= 0.20
         own[b] = f
         print(f"  {b:<24} {len(idx):>4} trials  own {lv} {f:.1%} (bar 50%)  "

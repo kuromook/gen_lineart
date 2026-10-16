@@ -43,3 +43,31 @@ raised with the date.
   fragment that touches both is unjoinable; raised when `merge_nodes` is
   rewritten to union every cluster a short fragment touches, rather than the
   two its ends were assigned to.*
+
+- **IC-j6 measures crossings only. Deliberate gaps are not in it at all.**
+  `make_trial` draws the occluder as *added* ink (`ink | occ_mask`), so the
+  paper is never blank between the two halves and a junction always forms.
+  Measured consequence: `t_no_node` (neither half touches a junction) is
+  **0 of 90** topology failures. The chainer has no mechanism for a free tip
+  either -- `build_links` only ever collects arms whose node id is >= 0, so a
+  tip with no junction is not a matching candidate at all, and a drawn-on-
+  purpose gap is unjoinable at **0%**, not "sometimes missed". `free_end`
+  exists only as an IC-j8 counterfactual.
+  *shortcut: the deliberately broken stroke is unmeasured and unjoinable;
+  raised when free tips are censused on real ink and a gap instrument is
+  registered (this is item 2's thread).*
+
+- **`wrong` only counts contamination by the artificial occluder.** A real
+  drawing joins separate strokes on purpose, and there is no ground truth for
+  that in this trial set, so "joined things that should stay apart" is
+  measured only through a proxy.
+  *shortcut: precision is a proxy; raised when a stroke-level ground truth for
+  intentional joins exists.*
+
+- **`MERGE_PX` and `C_UNMATCHED` were never swept.** The 972-combination grid
+  covers `TAN_SKIP`, `TAN_WIN`, `KAPPA_REF`, `THETA_MAX`, `D_MAX`, `W_KAPPA`
+  only. IC-j8 then measured that 46% of the rejoin failures are ridges 6.2 to
+  11.5px long against `MERGE_PX = 6.0`, and IC-j7 that `THETA_MAX / THETA0`
+  equals the `C_UNMATCHED` break-even exactly.
+  *shortcut: the two constants that look load-bearing carry their as-written
+  values; raised by the bounded sweep registered 2026-10-12.*
