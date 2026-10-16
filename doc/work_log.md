@@ -2974,3 +2974,137 @@ painting. Erosion only probes a prediction that is too small; a dilated
 prediction survives `IoU >= 0.5` while `d <= 0.414R`, and that leg is not in
 this registration. Displacement is already probed by NC3 and NC5 in the
 stage-2 table. Both are for a later entry.
+
+### IC6 amendments E1-E2, made from the assert cell before any real panel was read
+
+**E1 the assert cell's disc case at e = 6 was a knife-edge and is replaced by
+e = 8.** The cell failed on its first run, which is what it is for. Measured
+reason: `dist > e` *is* the correct morphological erosion by a disc of radius
+e, but cv2's `DIST_L2` maskSize-3 transform is an approximation --
+`fill_mask.py` documents this on its own legs -- and the **effective erosion
+measures e - 0.25px**, calibrated at R in {20, 40, 80} for e in 1..12
+(e = 1 -> 0.91, e = 2 -> 1.83, e = 4 -> 3.76, e = 6 -> 5.72, e = 8 -> 7.84,
+e = 12 -> 12.00). Measured IoU therefore sits 0.01-0.02 **above**
+`((R-e)/R)^2`, and at R = 20, e = 6 that moves 0.4901 to **0.5099**, across
+the matching threshold. The assert now uses e = 5 (analytic 0.5625, must
+match) and e = 8 (analytic 0.3600, must not), and the calibration itself is
+asserted as a **bounded** claim -- effective erosion in [e-0.5, e] at R = 40
+-- rather than as a point value. **No pass criterion moves.**
+
+**E2 the erosion table prints a calibrated column beside the registered
+prediction.** Boundary `e - 0.25 <= 0.2929R` instead of `e <= 0.2929R`. The
+**registered column stays the comparison of record**; C3 is on monotonicity,
+so no bar moves. The column exists so that a known 0.25px offset is not
+quietly absorbed into "the disc model overshoots".
+
+## 2026-10-16 IC6 result: region-F1 CAN grade a half-correct prediction, and it is harsh on boundary accuracy
+
+`region_metrics.py` sha256 `8d9fd437ec7641e0`, `fill_mask.py` sha256
+`d914087a44e2c64e`, both unmodified. Run log
+`results/fill_koma_20261010/ic6_run.txt`.
+
+**956 normal panels, 13 near-blank skipped, 8 normal panels with 0 regions
+excluded** (their region-F1 of 1.0 is the "no GT and no prediction" identity
+and has nothing to do with partial credit). **948 panels used, 22,602
+regions, median area 1500px.**
+
+### Leg 1, retention -- the identity, realised exactly
+
+| k | measured | registered expectation | nominal 2k/(1+k) | \|diff\| | C1b max deviation |
+|---|---:|---:|---:|---:|---:|
+| 0.25 | **0.3885** | 0.3885 | 0.400 | **0.0000** | 5.6e-17 |
+| 0.50 | **0.6552** | 0.6552 | 0.667 | **0.0000** | 1.1e-16 |
+| 0.75 | **0.8602** | 0.8602 | 0.857 | **0.0000** | 1.1e-16 |
+
+- **C1 PASS** (within 0.02 of the registered per-panel expectation, over
+  >= 200 panels: 948 used, diff 0.0000 at every level).
+- **C1b PASS** (every panel exactly on `2*n_keep/(n+n_keep)`; the largest
+  deviation anywhere is machine epsilon).
+- **C2 PASS**: gaps **0.267** and **0.205**, both >= 0.15.
+
+**What is and is not an identity here, stated plainly.** The retention values
+are arithmetic: a pixel-exact subset of GT components gives
+`2*n_keep/(n+n_keep)` provably, and C2's *separation* follows from that
+arithmetic too. Neither is a discovery. What is **not** an identity is C1b --
+that the implementation realises the identity on all 948 real panels, with
+the `>= 500px` filter, the greedy matcher and `score_panel`'s plumbing in the
+path -- and that is now established at machine epsilon. And C2's informative
+half is not the separation but the **distance to the measured floor**:
+`blank` **0.0084** and `nc3_hflip:rough_dark` **0.0063** sit **0.380 and
+0.382 below the lowest retention level.** So the stage-2 band of
+0.0037-0.0110 is **not** the metric being blind in that range; it is the arms
+genuinely predicting almost no correct region.
+
+### Leg 2, erosion -- the leg that measures, and the disc model fails in the registered direction
+
+| e | measured F1 | predicted (registered) | calibrated (E2) | match rate | pred/gt regions | diff |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 0.9091 | 1.000 | 1.000 | 0.856 | 0.895 | -0.091 |
+| 2 | 0.8223 | 1.000 | 1.000 | 0.719 | 0.778 | -0.178 |
+| 4 | 0.3821 | 0.908 | 0.983 | 0.255 | 0.525 | **-0.526** |
+| 6 | 0.2546 | 0.545 | 0.577 | 0.147 | 0.376 | -0.291 |
+| 8 | 0.1986 | 0.363 | 0.380 | 0.105 | 0.313 | -0.165 |
+| 12 | 0.1438 | 0.209 | 0.216 | 0.068 | 0.253 | -0.066 |
+
+- **C3 PASS**: the match rate is monotonically non-increasing in e.
+- **Half the regions stop matching at e <= 4px**, against the registered
+  prediction of **6.40px**. (The median `0.2929R` over the regions actually
+  used is 6.40px, identical to the registration, so the two columns are
+  comparing the same region set.)
+- **`pred/gt regions` is below 1 at every radius and falls monotonically,
+  0.895 -> 0.253.** Of the two unmodelled effects named in the registration,
+  **vanishing happened and splitting did not**: eroded regions drop below the
+  `>= 500px` filter rather than breaking into pieces. At e = 1 -- a single
+  pixel -- **10.5% of regions have already vanished and 14.4% no longer
+  match.**
+
+The disc model overshoots by up to **0.526** in F1, far beyond E2's 0.25px
+calibration, and the reason is visible in the montage: the regions that die
+first are the **long thin sweeps** -- hair, folds -- whose equivalent-disc
+radius badly overstates their width. This was registered as the expected
+direction and its size is now measured.
+
+### Verdict
+
+**region-F1 at `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5` CAN grade a
+half-correct prediction, measured on 948 normal-stratum panels: a prediction
+holding half the regions scores 0.655 against `blank`'s 0.0084.** The
+instrument is not the reason the stage-2 table is flat.
+
+**But it is harsh on boundary accuracy, and the trainer must be told so:** a
+prediction whose regions are all in the right place but uniformly 4px thin
+scores **0.382**, having lost 74.5% of its matches, and 1px thin already
+costs 14.4%. `score_panel` emits pixel IoU beside region-F1 and **both must
+be read**, because region-F1 alone will under-report a model that finds the
+right regions with slightly tight boundaries. This is a property of the
+metric at these thresholds, not a defect, and the sensitivity grid
+`{0,100,500} x {0.25,0.5,0.75}` already in every row is where a looser
+reading lives if one is ever wanted -- it is never used to pick a verdict.
+
+### The near-blank stratum, reported as unsupported rather than as a number
+
+Its 13 panels hold region counts `[0,0,1,1,0,0,0,0,0,3,3,0,0]`: nine have no
+regions at all and the four that do cannot carry a retention fraction.
+**No IC6 number is printed for it**, and none should be quoted.
+
+### What this does not cover
+
+**Over-painting is untested.** Erosion probes only a prediction that is too
+small; a dilated prediction survives `IoU >= 0.5` while `d <= 0.414R`, and
+given how badly the disc model failed for erosion, that boundary should be
+measured and not assumed. Displacement is already probed by NC3 and NC5 in
+the stage-2 table. Both belong to a later entry.
+
+Visual: `results/fill_koma_20261010/ic6_degradation.png` (one row per level,
+GT beside the degraded prediction). Per-panel:
+`results/fill_koma_20261010/ic6_per_panel.csv`, 948 rows.
+
+### Consequence for the GPU slot
+
+IC6's pre-flight condition from the stage-2 entry is **met**: region-F1 can
+grade a partial win, so the metric can grade a trained model. Together with
+that entry's finding -- every non-learned arm falls to NC3 and `rough_dark`
+is worse than painting nothing -- **the 2026-10-19..10-22 slot should be
+claimed.** The number to beat remains `blank`'s **0.0084**, the ceiling is
+IC3's **1.0**, and region-F1 and pixel IoU are read together for the reason
+above.
