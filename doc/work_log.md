@@ -510,3 +510,25 @@ J の `stroke_chain.py` は sha256 `e9e49267c339f885` でバイト同一。
 
 **K2(A1〜A5 反映後)→ K4 の第 1 脚と第 2 脚**、K3 は作者のラベル待ちで並行。
 作者への依頼は K2 の数が出てから。
+
+## 2026-10-16 比較可能性の注記(Track J の3度目の返信。K4 と K2 の読み方に効く)
+
+**K の骨格と J の骨格は同じ対象ではない。** 確かめた:
+
+- **Track F は剪定する**: `strokes_from_skeleton` 手順 2 が `spur_max=6` と局所インク幅で
+  自由端のヒゲを骨格から落とす(`skel[r, c] = False`)
+- **Track J は剪定しない**: `stroke_chain.fragments()` の docstring に
+  "Short pieces are KEPT -- dropping a 4px fragment would sever a stroke that runs
+  through it"。短い破片を節点に吸収する唯一の経路は `merge_nodes` の `MERGE_PX = 6.0` で、
+  吸収した分は `absorbed_px` として報告され消えない
+- さらに **F はキャッシュ済み骨格**(`panel_skeleton_20260917`)を読み、
+  **J はその場で `skeletonize(ink)`** する
+
+→ **破片数・節点数・腕の本数は、同じ画像でも両 track で一致しない。**
+K2 の箱 A/B/C の数を J の箱(`topology` 90 件など)と並べてはならない。
+K4 が J の `MERGE_PX` ではなく **Track F の畳み込み閾値**を変数に選んだのは
+この理由による(データを実際に作った閾値で測る)。
+
+**IC-k1 が Track J と比 0.99 で一致したのは、ベタ面積という骨格に依存しない量を
+選んだからである。骨格由来の量では同じようには合わない。** これは
+「どの量なら他 track と照合できるか」の判断基準として、今後も使う。
