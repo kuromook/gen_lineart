@@ -24,7 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(TRACK_F / "tools/stroke"))
 
 THR, GROW, MAX_BEND = 128, 200, 35.0
-DIST_BAR, SHARE_BAR = 2.0, 0.99
+DIST_BAR, SHARE_BAR = 2.0, 0.99        # 旧形(画素集合までの距離)。記録として併記する
+PT_BAR = 0.01                          # 修正 C1: 16 点の最大ずれ [px]。主の棒
 
 
 def work(t):
@@ -33,7 +34,8 @@ def work(t):
     if g is None:
         return dict(pid=pid, ok=False)
     from skimage.morphology import skeletonize
-    from stroke_path import chain, span_paths
+    from stroke_path import chain, resample, span_paths
+    from train_infill import POINTS, to16
     import strokes_instrumented as SI
     ink = SI.ink_mask(g, thr=THR, grow=GROW)
     dist = cv2.distanceTransform(ink.astype(np.uint8), cv2.DIST_L2, 5)
@@ -42,7 +44,7 @@ def work(t):
     groups = {}
     for i in range(len(spans)):
         groups.setdefault(int(sos[i]), []).append(i)
-    mine = []                                        # export と同じ順序で (y, x) 画素
+    mine, mine16, nspan = [], [], []                 # export と同じ順序
     for k, mem in groups.items():
         if not keep[k]:
             continue
@@ -51,19 +53,31 @@ def work(t):
             continue
         rr = np.concatenate([spans[i][0] for i in mem]); cc = np.concatenate([spans[i][1] for i in mem])
         mine.append(np.stack([rr, cc], 1).astype(np.float64))
+        q = resample(path, 8.0, 8, 64)               # export と同一の手順
+        mine16.append(np.asarray(to16(np.asarray(q, np.float32), len(q)), np.float64))
+        nspan.append(len(mem))
     arr = np.load(PACK / "strokes.npy", mmap_mode="r")
     block = np.asarray(arr[start:start + n])
     pts = block[:, :32].reshape(n, 16, 2)            # pack は (y, x) のまま
     if len(mine) != n:
         return dict(pid=pid, ok=False, n_mine=len(mine), n_pack=n)
-    med, med_nc = [], []
+    med, med_nc, pt, pt_nc = [], [], [], []
     trees = [cKDTree(m) for m in mine]
+    ns = np.asarray(nspan)
     for i in range(n):
         med.append(float(np.median(trees[i].query(pts[i])[0])))
         med_nc.append(float(np.median(trees[(i + 1) % n].query(pts[i])[0])))
+        pt.append(float(np.abs(mine16[i] - pts[i]).max()))
+        pt_nc.append(float(np.abs(mine16[(i + 1) % n] - pts[i]).max()))
+    med, pt = np.asarray(med), np.asarray(pt)
+    one = ns == 1
     return dict(pid=pid, ok=True, n=n,
-                hit=int(sum(1 for d in med if d <= DIST_BAR)),
+                pt_hit=int((pt <= PT_BAR).sum()), pt_nc_hit=int((np.asarray(pt_nc) <= PT_BAR).sum()),
+                pt_p50=float(np.median(pt)), pt_p99=float(np.percentile(pt, 99)),
+                hit=int((med <= DIST_BAR).sum()),
                 nc_hit=int(sum(1 for d in med_nc if d <= DIST_BAR)),
+                hit_1span=int((med[one] <= DIST_BAR).sum()), n_1span=int(one.sum()),
+                hit_multispan=int((med[~one] <= DIST_BAR).sum()), n_multispan=int((~one).sum()),
                 med_p50=float(np.median(med)), med_p99=float(np.percentile(med, 99)),
                 nc_p50=float(np.median(med_nc)))
 
@@ -92,12 +106,19 @@ def main():
             if i % 25 == 0 or i == len(tasks):
                 print(f"  {i}/{len(tasks)}", flush=True)
     tot = sum(r["n"] for r in rows)
-    hit = sum(r["hit"] for r in rows)
-    nc = sum(r["nc_hit"] for r in rows)
-    share, nc_share = hit / tot, nc / tot
+    g = lambda k: sum(r[k] for r in rows)
+    share, nc_share = g("pt_hit") / tot, g("pt_nc_hit") / tot
     chk = dict(n_panels=len(rows), failed_panels=len(bad), n_strokes=tot,
-               match_share=round(share, 5), bar=SHARE_BAR, dist_bar=DIST_BAR,
-               nc_k7_match_share=round(nc_share, 5),
+               primary_C1_16pt=dict(bar_px=PT_BAR, match_share=round(share, 5), share_bar=SHARE_BAR,
+                                    nc_match_share=round(nc_share, 5)),
+               side_old_distance=dict(bar_px=DIST_BAR, match_share=round(g("hit") / tot, 5),
+                                      nc_match_share=round(g("nc_hit") / tot, 5),
+                                      one_span=dict(n=g("n_1span"),
+                                                    share=round(g("hit_1span") / max(g("n_1span"), 1), 5)),
+                                      multi_span=dict(n=g("n_multispan"),
+                                                      share=round(g("hit_multispan") / max(g("n_multispan"), 1), 5)),
+                                      note="pack の 16 点は隙間を跨ぐ鎖の弧長標本なので、"
+                                           "隙間に落ちた点は骨格画素から必ず遠い。番号の誤りではない"),
                passed=bool(not bad and share >= SHARE_BAR and nc_share <= 1 - SHARE_BAR))
     out = ROOT / a.out; out.mkdir(parents=True, exist_ok=True)
     json.dump(chk, open(out / "ic_k7.json", "w"), indent=1, ensure_ascii=False)
