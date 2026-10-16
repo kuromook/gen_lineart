@@ -2802,3 +2802,175 @@ been run before the chainer work, and the four-day slot was lost to that
 ordering. Recorded here so the ordering rule is explicit: **a cheap gate that
 can release or claim a scheduled slot is read before any expensive branch,
 regardless of what the critical path says.**
+
+## 2026-10-16 Pre-registration: IC6, can region-F1 grade a partially correct prediction?
+
+Written before `check_region_f1_partial.py` exists. The stage-2 entry above
+registered this as a pre-flight and the condition stands: **no GPU time is
+spent before IC6 is read.** The reason it is needed: the entire non-learned
+table sits between 0.0037 and 0.0110 with the mirrored control inside that
+band, so nothing yet shows that region-F1 at `MIN_REGION_PX = 500` /
+`MATCH_IOU = 0.5` can put a half-correct prediction anywhere between
+`blank`'s 0.0084 and IC3's ceiling of 1.0.
+
+`region_metrics.py` (sha256 `8d9fd437ec7641e0`) and `fill_mask.py` (sha256
+`d914087a44e2c64e`) are used unmodified and their hashes are printed by the
+run. Built on the real held-side GT fill masks, not synthetic discs: IC5
+already did discs, and what is in question here is the real region-size
+distribution.
+
+### The census the expectations are built on, measured first
+
+This is a **descriptive census with no pass criterion**. It fixes the x-axis
+of the erosion sweep and the per-panel arithmetic, and nothing else; it grades
+no arm and no hypothesis. Measured on the held side, `fill_mask(ink_of(line))`
+exactly as `score_fill_koma.py` builds it:
+
+- **956 normal panels, 13 near-blank** (the stage-2 strata, unchanged).
+- **22,602 regions >= 500px** in the normal stratum. Per panel: mean 23.64,
+  median 17, max 187. **948 panels have >= 1 region; 8 have none.**
+- Region area percentiles, with the equivalent disc radius
+  `R = sqrt(A/pi)` and the analytic half-match radius `0.2929R` beside each:
+
+| percentile | area | R | 0.2929R |
+|---|---:|---:|---:|
+| p0 | 500px | 12.62 | 3.70 |
+| p25 | 796px | 15.92 | 4.66 |
+| **p50** | **1500px** | **21.85** | **6.40** |
+| p75 | 4058px | 35.94 | 10.53 |
+| p90 | 17187px | 73.96 | 21.67 |
+| p100 | 3948154px | 1121.04 | 328.47 |
+
+- **GT fill area living in sub-500px components: 8,398,055 / 417,412,042 =
+  2.0%.** The `>= 500px` filter therefore grades 98.0% of the fill *area*,
+  and this is the bound on what any trained model can score through this
+  metric. It is small, which is the answer to "does the filter grade only
+  large regions": by area it does not.
+- **The near-blank stratum cannot support this check and no number will be
+  printed for it.** Its 13 panels hold region counts
+  `[0,0,1,1,0,0,0,0,0,3,3,0,0]`: nine have no regions at all, so there is
+  nothing to retain or erode, and the four that do cannot carry a retention
+  fraction. It is reported as unsupported, not as a value.
+
+### Leg 1, retention -- and it is an IDENTITY, stated before it is run
+
+Of the GT regions surviving the `>= 500px` filter, keep a fraction k and use
+the kept components, pixel-exact, as the prediction.
+
+- Selection rule, fixed mechanically: the region ids sorted ascending, then
+  shuffled by `random.Random(f"IC6:{panel_name}")`, then the first `n_keep`
+  taken. Seeded per panel, so it depends on nothing global and on no ordering
+  of the panel list.
+- `n_keep = int(round(k * n))`, Python's round-half-to-even. Note in advance:
+  a panel with n = 1 at k = 0.50 keeps **zero** regions, because
+  `round(0.5) == 0`. 33 panels keep zero at k = 0.25 and 19 at k = 0.50;
+  nothing is special-cased for them and the per-panel expectation already
+  accounts for it.
+- The 8 panels with n = 0 score region-F1 **1.0** by `match`'s "no GT and no
+  prediction" rule. **That is an identity**, it has nothing to do with partial
+  credit, and those panels are excluded from the retention statistics and
+  reported separately by count.
+
+**This leg is an identity and must be labelled as one wherever it is
+printed.** A pixel-exact subset of GT components gives, provably without
+running: `n_pred = n_keep` (every kept component was already >= 500px), each
+kept component overlaps only its own GT component (components are disjoint)
+and at IoU 1.0, so `matched = n_keep`, `precision = 1.0`,
+`recall = n_keep / n`, and
+
+    region-F1 = 2 * n_keep / (n + n_keep)
+
+So this leg does **not** discover anything about the metric; it checks that
+the implementation -- the `>= 500px` filter, `regions`, the greedy matcher,
+`score_panel`'s plumbing -- actually realises that identity. That is what an
+instrument check is for, and it would catch a filter that drops a kept
+region, a matcher that fails to pair a region with its own copy, or a shape
+bug. Expected values, computed by hand from the census before the run:
+
+| k | nominal 2k/(1+k) | per-panel mean over the 948 panels with n >= 1 | panels keeping zero |
+|---|---:|---:|---:|
+| 0.25 | 0.400 | **0.3885** | 33 |
+| 0.50 | 0.667 | **0.6552** | 19 |
+| 0.75 | 0.857 | **0.8602** | 0 |
+
+The per-panel figures differ from the nominal ones **only** by the rounding of
+`k * n` at small n; that is arithmetic, not a discrepancy, and it is written
+here so it cannot be read as one later.
+
+### Leg 2, erosion -- the leg that actually answers the question
+
+Erode every GT region by a disc of radius e. This prediction is *not* a subset
+of components, so nothing is pinned at 1.0 and the result is a real
+measurement.
+
+Analytic model, written first: a disc of radius R eroded by e has
+`IoU = ((R-e)/R)^2`, so it survives `IoU >= 0.5` while
+`e <= R(1 - 1/sqrt(2)) = 0.2929R`. A region therefore stops matching when its
+area falls below `pi*(e/0.2929)^2`. With `n_pred = n` and `matched = m`,
+precision and recall are both `m/n`, so **predicted region-F1 = the fraction
+of regions still matching.** Radii chosen to straddle the measured median's
+0.2929R = 6.40px and the quartiles' 4.66 and 10.53:
+
+| e | area threshold | predicted still matching | predicted region-F1 |
+|---:|---:|---:|---:|
+| 1 | 37px | 100.0% | 1.000 |
+| 2 | 146px | 100.0% | 1.000 |
+| 4 | 586px | 90.8% | 0.908 |
+| 6 | 1318px | 54.5% | 0.545 |
+| 8 | 2344px | 36.3% | 0.363 |
+| 12 | 5273px | 20.9% | 0.209 |
+
+**Predicted half-match radius: e = 6.40px**, which is `0.2929 *` the median R
+by construction.
+
+**Expected deviations, with their direction, written before the run.** Real
+fill regions are not discs -- hair strands and clothing folds are elongated --
+and an elongated region loses its match at a far smaller e than its
+equivalent-disc radius implies. Two further effects are not in the model at
+all: an eroded region can **fall below 500px** and vanish from the prediction
+(`n_pred` drops, precision rises, recall falls) and it can **split** into
+several components (`n_pred` rises, precision falls). So the measurement is
+expected to sit **below** the table above, and by how much is the finding.
+Vanish and split counts are printed per radius. **The deviation is reported
+against the prediction; agreement is not asserted.**
+
+### Pass criteria, fixed now and not to be loosened
+
+- **C1** at each retention level, the measured mean region-F1 is within
+  **0.02** of the per-panel expectation above, over **>= 200** normal-stratum
+  panels. Otherwise region-F1 is not grading what it is assumed to grade and
+  the trainer waits.
+- **C1b**, additionally and more strictly, since the expectation is an
+  identity: **0 panels** may deviate from `2*n_keep/(n+n_keep)` at all. C1
+  stays as written; C1b is reported beside it and a C1b failure names the
+  panels.
+- **C2** the three retention levels are strictly ordered and separated by
+  **>= 0.15** (the expectations are 0.267 and 0.190 apart). This is what "can
+  see a partial win" means operationally. For the record, fixed here:
+  `blank` scores **0.0084** and the mirrored control `nc3_hflip:rough_dark`
+  **0.0063**, so all three retention levels sit **more than 0.37 above the
+  entire 0.0037-0.0110 band**. If C2 passes, that band is not the metric's
+  floor being insensitive -- it is the arms genuinely predicting almost no
+  correct region.
+- **C3** the erosion match rate is **monotonically non-increasing in e**, and
+  the radius at which half the regions stop matching is reported beside the
+  predicted **6.40px**. No bar is set on the *distance* between measured and
+  predicted, because the disc model is known to be wrong for real shapes;
+  the bar is on monotonicity, which a working metric must have.
+- **One assert cell with hand-computed values** runs at import: a 40x40 square
+  (1600px, above the filter) kept and dropped, giving region-F1 exactly 2/3
+  for 1 of 2 kept; and a disc of R = 20 eroded by e = 6 giving
+  `IoU = (14/20)^2 = 0.49 < 0.5` so it must stop matching, while e = 5 gives
+  `(15/20)^2 = 0.5625 >= 0.5` so it must survive.
+
+### Visual, and what is not tested
+
+Montage `results/fill_koma_20261010/ic6_degradation.png`: one row per
+retention level and per erosion radius, GT beside the degraded prediction, so
+that the degradation is visibly what it claims to be.
+
+**Not tested here, and named so it is not mistaken for covered:** over-
+painting. Erosion only probes a prediction that is too small; a dilated
+prediction survives `IoU >= 0.5` while `d <= 0.414R`, and that leg is not in
+this registration. Displacement is already probed by NC3 and NC5 in the
+stage-2 table. Both are for a later entry.
