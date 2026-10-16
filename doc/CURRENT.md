@@ -632,6 +632,68 @@ work, and the stated expectation is that the pieces make each other easier.
     is read, with a random-mark negative control. **If K1 is falsified the
     cause is in thinning generally** and the repair is not "take the contour
     near fills".
+  - **K1 came in the same day and was re-derived here from the track's own
+    `per_stroke.csv` before being folded in: the 2x2 (140/45 against
+    12,671/12,234, RR 1.4876), the length-stratified MH-RR (1.5463) and the
+    radius-12 share (64/185 adjacent) all reproduce exactly**, because the
+    adjacency definition was registered and printed (`ADJ_PX=4.0`,
+    `ADJ_FRAC=0.25`). **RR 1.487 against a registered bar of 1.5: 0.013 short,
+    held, bar not moved.** Instrument checks 4/4, and the fake-mark control's
+    95% band is [0.899, 1.155], far below the real 1.487.
+  - **But K1b falsified the mechanism, which was this file's own prediction.**
+    The decisive leg is the attributable fraction, not the ratio: AFe =
+    P(exposed | marked) x (RR-1)/RR is **0.248** at fill radius 4, 0.136 at 8
+    and 0.110 at 12 (re-derived here: 140/185 x 0.4876/1.4876 and so on, all
+    three agree). **Read as fully causal, the loosest definition still leaves
+    75.2% of the marks unexplained, and 89.0% once the mask is narrowed to
+    black regions** -- at radius 12, 65.4% of the marked strokes touch no
+    black region at all. The track's first version led with "RR stays flat
+    across the radius", and **Track J's objection that a flat RR is not
+    decisive on its own is correct**: a ratio can survive a narrowing of the
+    exposure definition while the contribution collapses. What the
+    measurement reads is adjacency to **thick ink**, not to a fill. Fixing the
+    contour near fills does not reach most of the author's over-merge marks,
+    and the fill-adjacency line is closed. The association itself survives
+    (p ~ 7e-12, outside the control band); only its name changed.
+  - Step 2 was already done, twice, by Track J while this track was being
+    opened: **IC-j7** (2026-10-11) and **IC-j8** (2026-10-12, committed
+    2026-10-16 as `0b5c9e9`). Of the chainer's rejoin failures, refusal by
+    cost is 3.6% and the wrong arm 7.2% -- **11.8% together**, so the question
+    the foundation routed was the minority. 81.1% are topology, and IC-j8
+    splits those: `t_touch_split` 41% (repair flips 92%) and `t_relay_other`
+    57%, whose **51/51 are the crossing's own fused middle ridge, 6.2-11.5px
+    long against `MERGE_PX = 6.0`** -- fragments that missed absorption by
+    0.2 to 5.5px, on a constant the 972-point calibration grid never varied.
+    **The binding constraint on under-connection is fragment merging, not the
+    angle.** The obvious repair is already refused by measurement:
+    `merge_px_inf` flips 45% of `t_relay_other` and **breaks 111 of the 200
+    trials that already rejoin (55.5%)**, absorbing real strokes. Only a
+    bounded sweep is left, and it belongs to Track J.
+  - **The artificial-cut instrument has a named blind spot, and it is a
+    constructional one.** None of IC-j6's 311 trials contains a deliberate gap
+    (`t_no_node` was 0 of 90), because an occluder is drawn by *adding* ink, so
+    no white paper is left behind; and the current rule only collects arms
+    whose node id is >= 0, so a free end is never even a candidate. A
+    deliberate gap therefore joins at **0%, by architecture rather than by
+    tuning**. The notice's "the weakness of artificial cuts is that their
+    distribution may differ from real crossings" is upgraded for gaps to **will
+    differ**, and the author's 300 real-ink faces are the only population that
+    covers it. Track K registered amendment A1 before measuring: count
+    free-end-to-free-end pairs at `GAP_MAX=24px` in a **separate box**, never
+    added to the same-node count.
+  - **K4, registered here before it is measured**: over-merge and
+    under-connection are **two symptoms of one mechanism**, the fused ridge at
+    a thick crossing. Below `MERGE_PX` the ridge is absorbed, the crossing
+    becomes one node and any two arms may pair -- separate things fuse.
+    Above it the two halves stay at distinct nodes and nothing can pair -- one
+    stroke stays cut. The prediction is therefore **opposite in sign on the
+    same variable**: the author's marks should sit at crossings whose ridge is
+    at or below `MERGE_PX`, while `t_relay_other`'s ridges are already
+    measured above it. Falsified if the ridge length at marked strokes'
+    crossings is indistinguishable from unmarked ones. Costs the author
+    nothing; must be stratified by stroke length (124 of 185 marks are in the
+    longest quintile) and must use Track J's own instrument so that lesson
+    12's cross-implementation anchor still applies.
   - Step 2 is Track J's own registered next step run on IC-j6 (of the 34.6% of
     trials the chainer fails to rejoin, how many were refused by the cost
     break-even versus matched to the wrong arm -- different repairs), with the
@@ -1214,6 +1276,30 @@ this file currently quotes and check each still carries its configuration and a
 traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
+
+- **A control the reference arm itself fails cannot discriminate** (found
+  2026-10-16 in Track J's NC-j8d, routed back as a reading correction, not an
+  adoption request). The touch-merge adoption bar was `wrong <= 0.059`, taken
+  from an earlier trial set where the calibrated chainer scored 0.039. On the
+  311 trials actually used, the **reference arm scores 0.061** and so breaks
+  the bar by itself, while the candidate scores an identical 0.061 (trial by
+  trial: 34 gained, 0 lost). The leg was meant to ask "does this repair cost
+  precision" and in fact asked "does it *improve* precision", which a
+  zero-cost repair can never pass. **Write a cost leg as a difference from the
+  reference arm** (`wrong_candidate - wrong_reference <= 0`), not as an
+  absolute imported from another population. This is the fourth way a control
+  is born meaningless, after the three already in the `moat` ledger.
+- **An instrument built from artificial damage cannot contain damage the
+  material never shows** (found 2026-10-16, Track K reading Track J's IC-j6).
+  Cut-and-rejoin trials made by drawing an occluder over real ink contain **no
+  deliberate gaps at all** -- 0 of 90 free-end cases -- because an occluder is
+  drawn by adding ink and leaves no white paper; and the chainer collects only
+  arms with a node id >= 0, so a free end is not even a candidate and a
+  deliberate gap joins at **0% by architecture**. "The artificial distribution
+  *may* differ from the real one" is the general caution; for a defect the
+  construction cannot produce, it **will** differ, and only real material
+  covers it. Name the defect classes the construction excludes, before
+  reading the instrument's headline.
 
 Collected 2026-09-13..17 from `inbox/`. Every one of these was hit by a track
 that had no way to know, and several were hit twice. **Two are unfixed bugs**
