@@ -3196,3 +3196,95 @@ Run log: `results/stroke_chain_20261010/icj9_holdout.txt`. Tool:
 `score_touch_merge.py`, extended with the delta-form bars and a
 `--discovery` flag that prints the discovery-set row beside the holdout row,
 both labelled.
+
+## 2026-10-17 IC-j9 result: **ADOPT** -- the touch merge passes all three bars on the holdout `[0:40]`
+
+Run log: `results/stroke_chain_20261010/icj9_holdout.txt` (finished 2026-10-16
+23:03; read 2026-10-17 14:03, which is a delay of 15 hours on a number that
+was already on disk -- see the process note at the end). Registration
+`b29b4c4`, scorer `7b5273d`. The holdout is used **once**; this entry is that
+one reading.
+
+### Both refusal preconditions, checked before any leg was read
+
+- **Power.** 97 usable trials from 40 panels (2.43 per panel, against the
+  2.37 per panel the registration predicted from the discovery set, which is
+  why ~95 was written down). `97 >= 60` -> not underpowered.
+- **Comparability.** Reference rejoin on `[0:40]` is **0.619**, inside the
+  registered `0.643 +/- 0.10` band `0.543..0.743` -> comparable.
+
+Both were fixed in advance precisely so a disappointing number could not be
+reclassified afterwards as one of them. Neither fired.
+
+### The three arms, same 97 trials asserted (same fragments, same F parts, same occluder parts)
+
+| arm | n | rejoin | wrong | score |
+|---|---:|---:|---:|---:|
+| `stroke_chain` (calibrated, sha256 `e9e49267c339f885`) | 97 | 0.619 | 0.072 | 0.546 |
+| **+ touch merge** (sha256 `091539ea88cfe012`) | 97 | **0.711** | 0.072 | **0.639** |
+| `force`, gates off (**IDENTITY**) | 97 | 0.711 | 0.196 | 0.515 |
+
+The third row is the trivial solution and is labelled an identity: pairing
+everything reaches the same rejoin and pays 0.196 of `wrong` for it, which is
+exactly what the cost leg refuses. The candidate reaches that rejoin for
+0.072, the same `wrong` as the reference.
+
+**Trial by trial, which is what decides it and not the counts:**
+rejoined base 60 -> candidate 69, **gained 9, LOST 0**;
+wrong base 7, candidate 7, **newly wrong 0, no longer wrong 0**.
+An identical count is not an identical set; the set is identical too. The
+repair is strictly additive here, as it was on the discovery set.
+
+### The three legs
+
+| leg | registered bar | measured | verdict |
+|---|---|---:|---|
+| cost | `wrong_count_cand <= wrong_count_ref` AND `newly_wrong = 0` by set | 7 vs 7, newly wrong 0 | **PASS** |
+| recall | `rejoin_cand - rejoin_ref > 0` | **+0.093** | **PASS** |
+| merit | `score_cand - score_ref >= +0.05` | **+0.093** | **PASS** |
+
+All three required, all three pass -> **ADOPT**.
+
+### The trap this holdout demonstrates a second time
+
+IC-j8's failed bar was the absolute `wrong <= 0.059`, imported from
+`icj6_grid` at n=309. On this holdout **the reference arm scores 0.072**, so
+that absolute bar would have failed the reference itself by 1.3 points -- the
+foundation's "a control the reference arm itself fails cannot discriminate",
+now measured on a second, independent trial set. The difference form
+(`cand - ref <= 0`) reads 0.000 and discriminates. **IC-j8's NOT ADOPTED
+verdict is still not edited**; it stands under the bar registered then, and
+this adoption belongs to IC-j9's bar.
+
+### Discovery set beside the holdout, both labelled
+
+| set | n | ref rejoin | cand rejoin | delta | ref score | cand score | delta |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `[40:171]` discovery (no bar decided on it again) | 311 | 0.643 | 0.752 | +0.109 | 0.582 | 0.691 | +0.109 |
+| `[0:40]` **holdout** (the verdict) | 97 | 0.619 | 0.711 | +0.093 | 0.546 | 0.639 | +0.093 |
+
+The holdout effect is 1.6 points smaller than the discovery effect and in the
+same direction. The verdict is the holdout's.
+
+### What is NOT claimed, carried forward from the registration unchanged
+
+- The **46%** `t_relay_other` bucket is **not** addressed. The touch merge
+  repairs `t_touch_split` (41% of topology failures); the ridge cases sit
+  0.2-5.5px above `MERGE_PX` and need a two-node cost, a design change under
+  a separate registration.
+- `MERGE_PX = 6.0` and `C_UNMATCHED = 1.0` remain **unjustified**: neither was
+  in the 972-combination grid. The bounded sweep is still unwritten.
+- Nothing about **deliberate gaps**. This construction cannot contain them
+  (0 of 90 free-end cases, and a deliberately broken stroke is unjoinable at
+  **0% by architecture**, `doc/shortcuts.md`). Track K owns that on real ink.
+- `wrong` counts only contamination by the **artificial** occluder.
+  Intentional joins are unmeasured; precision here is a proxy.
+
+### Process note, recorded because it is the second instance of one habit
+
+The run finished at 23:03 and was read at 14:03. The same shape as the
+`per_panel_held.csv` failure (completed 10-11 01:01, read 10-16): **a result
+already on disk is not a result until it is read.** The rule written then --
+*a cheap gate that can release or claim a scheduled slot is read before any
+expensive branch* -- is widened: **a finished run's log is read in the same
+session it finishes in, before any new registration is drafted.**
