@@ -3880,3 +3880,47 @@ at its registered value (0.5 refuted as a direction, 2.0 never clears a cost
 leg). And it says nothing about deliberate gaps.
 
 Log: `results/stroke_chain_20261010/icj12_verify.txt`.
+
+### 2026-10-17 Amendment H1: NC2's first repair is refuted by measurement before it was ever read as a control
+
+The repair registered on 2026-10-16 for NC2's void run was "pair with the
+nearest same-shape panel by sorted name, or crop to a common overlap, and
+print sample counts". The first option was implemented and then **measured
+before being used**:
+
+| held panels | distinct shapes | panels alone in their shape | panels in a pairable group |
+|---:|---:|---:|---:|
+| 969 | **920** | **894** | 75 (**7.7%**) |
+
+Group sizes: 894 shapes of size 1, 3 of size 2, 23 of size 3. Panel area runs
+from 418,383 to 31,191,649 px, median 3,215,382 -- these are cropped manga
+panels, so a shared pixel shape is близко to an accident.
+
+**The same-shape repair would have produced 49 NC2 rows per arm instead of
+0**: void -> useless. It is not used, and the measurement is recorded here so
+the next person does not try it again.
+
+**So the registration's second option is taken: crop to the common overlap.**
+Consecutive panels in sorted name order are paired (the original intent -- a
+neighbouring panel of the same work is the most similar wrong answer
+available) and both are **centre**-cropped to `(min h, min w)`. Centre and
+not top-left, because a top-left crop would systematically keep one corner of
+every panel and manga panels carry content throughout.
+
+The objection that made cropping the second choice -- an arm's NC2 row would
+no longer be comparable to the arm's own row -- is answered by **scoring the
+arm on the same crop too**, emitted as `arm@nc2crop`. NC2 is read against
+that row and never against the full-panel row.
+
+Guard fixed before the run: **if the overlap is under 25% of the smaller
+panel's area the pair is skipped and counted**, because a tall-by-wide pair
+can overlap in a sliver that is not a panel. The overlap distribution and the
+skip count are printed.
+
+**Verified on the first 40 held panels, against the 2026-10-11 CSV: 560
+non-NC2 rows compared, 0 differ.** The pairing change moves NC2 and nothing
+else.
+
+This matters beyond NC2's own row: **C1 requires the best arm to beat its
+NC2, and C4 excludes any arm that fails NC2.** With NC2 void, neither could
+be read, so M1's verdict was blocked on it. It is unblocked now.
