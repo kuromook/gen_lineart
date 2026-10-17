@@ -13,6 +13,8 @@
   node_root 畳み込み後の節点代表 `nuf.find(n)`(K2 の箱 A と箱 C の区別に必要)
   arms      畳み込み後の節点 -> [(span 番号, 腕の単位ベクトル)] —— 原本が対を作るのに使う候補集合
   linked_pairs 原本が実際に対にした span 対(K2 の条件 (d)「規則が対にしなかった」に必要)
+  linked_at    その対がどの(畳み込み後の)節点で作られたか(K4 の「橋を通るか」に必要)
+  merge_bridges 畳み込み後の節点 -> その節点を畳んだ橋 span の記録(K4 の尾根長)
 原本 `strokes_from_skeleton` の該当箇所に行を足しただけで、判定の式には触れていない。
 """
 
@@ -186,7 +188,7 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
         v = arm_direction(np.stack([r, c], 1).astype(np.float32), ar, ac, reach)
         arms.setdefault(nuf.find(n), []).append((s, v))
     suf = UF(ns + 1)
-    linked_pairs = set()                                                   # K: 記録だけ
+    linked_pairs = set(); linked_at = {}                                   # K: 記録だけ
     cos_lim = -np.cos(np.deg2rad(max_bend))  # straight continuation: dot = -1
     n_links = 0
     for node, lst in arms.items():
@@ -206,6 +208,8 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
             used.update((i, k)); suf.union(lst[i][0], lst[k][0]); n_links += 1
             linked_pairs.add((min(lst[i][0], lst[k][0]),
                               max(lst[i][0], lst[k][0])))                  # K: 記録だけ
+            linked_at[(min(lst[i][0], lst[k][0]),
+                       max(lst[i][0], lst[k][0]))] = int(node)             # K: 記録だけ
     # bridge spans are not linked: they stay their own (short, usually dropped)
     # token, so a thick crossing leaves a gap of about one ink width
     root = np.array([suf.find(s) for s in range(ns + 1)])
@@ -215,6 +219,9 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
     info = {"spurs_removed": removed, "spans": ns, "nodes": nn, "links": n_links,
             "bridges": int(bridge.sum()), "strokes": int(keep.sum()),
             "spans_kept": int(sum(1 for r, _ in spans if len(r) >= min_len))}
+    merge_bridges = {}                     # K: 畳み込み後の節点 -> そこを畳んだ橋(複数可)
+    for b_ in bridges:
+        merge_bridges.setdefault(int(nuf.find(nodes_of[b_[0]][0][0])), []).append(b_)
     spans_all = [(int(len(r)), float(np.median(ink_width[r, c])),
                   len({n for n, _, _ in nodes_of.get(i + 1, [])}))         # K: 相異なる節点の数
                  for i, (r, c) in enumerate(spans)]                        # K: 記録だけ
@@ -224,5 +231,7 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
              "node_root": {int(n_): int(nuf.find(n_)) for n_ in range(nn + 1)},
              "arms": {int(k_): [(int(s_), (float(v_[0]), float(v_[1])))
                                 for s_, v_ in lst_] for k_, lst_ in arms.items()},
-             "linked_pairs": sorted(linked_pairs)}
+             "linked_pairs": sorted(linked_pairs),
+             "linked_at": {f"{a}-{b}": n for (a, b), n in linked_at.items()},
+             "merge_bridges": merge_bridges}
     return spans, stroke_of_span, keep, info, extra
