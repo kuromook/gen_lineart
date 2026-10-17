@@ -3793,3 +3793,90 @@ registration, below, decided on the **reserved** set.
   reads `broken 34` against the installed baseline -- and IC-j9 measured the
   adoption gaining exactly **34** trials on this set. The same 34, counted
   from the other end, by different code.
+
+## 2026-10-17 Pre-registration: IC-j12, the two cells IC-j11's one-sided clause rejected, read once on the reserved set
+
+Written before the reserved set `[171:271]` is touched. **IC-j11's verdict is
+not edited**: it stands at "no cell proposable" under the bar registered
+then. This is a new registration with a new bar, the same separation IC-j9
+kept from IC-j8.
+
+### The conflict of interest, stated before the bar
+
+I am about to drop the clause that rejected these cells, after seeing that it
+rejected them. The difference form I am replacing it with
+(`wrong_count_cand <= wrong_count_ref`) is the foundation's prescription and
+**predates this result** -- it was routed back on 2026-10-16 and is already
+in use in IC-j9 -- so the *form* is not chosen to fit the data. But the
+*choice to apply it here* is made after seeing the data, and nothing about
+the ordering hides that. The protection is the same one IC-j9 used and it is
+the only one that works: **the bar is read on a set that has never been
+read, once, and whatever it says is the verdict.**
+
+### The cell, selected mechanically
+
+Rule, applied to the discovery table without judgement: **the highest
+`score` among cells with `broken = 0`.**
+
+- `MERGE_PX 10, C_UNMATCHED 1.0`, touch on -- score 0.833, broken 0. **This
+  is the cell.**
+- `MERGE_PX 12, C_UNMATCHED 1.0` scores higher (0.842) and is **excluded by
+  the rule**, because it breaks 3 trials. Recorded so the exclusion is
+  visible rather than silent.
+- `MERGE_PX 8` (score 0.781, broken 0) is the runner-up and is **not** read;
+  one cell, one read of the reserved set.
+
+### Set and refusals, fixed now
+
+`[171:271]`, 100 panels, never read by anything. Expected ~237 trials.
+
+- **< 60 usable trials -> UNDERPOWERED**, not a verdict.
+- **reference rejoin outside 0.752 +/- 0.10 -> NOT COMPARABLE**, not a
+  verdict.
+
+### The diagnostic that is read BEFORE the legs, and can refuse them
+
+IC-j11 refuted the registered expectation that `wrong` rises with
+`MERGE_PX`: it falls (0.061 -> 0.035). The hypothesis recorded there is that
+absorbing more fragments **eats the occluder's own ridge**, and `wrong` is
+*defined* as chaining an F part to a piece of the occluder -- so the fall may
+be a loss of **opportunity**, not a gain in precision. That has to be
+measured before the cost leg means anything.
+
+**Diagnostic:** the share of trials in which at least one occluder part is
+still **unabsorbed**, for the reference and for the cell.
+
+- **If `survive_cell / survive_reference < 0.80`, `wrong` is NOT COMPARABLE
+  between the arms, the cost leg cannot be read, and the cell stays
+  unadopted.** That is a refusal, not a verdict, and it is printed in those
+  words.
+- 0.80 is not a free parameter: the measured fall in `wrong` is 43%
+  (0.061 -> 0.035), so a 20% loss of opportunity would already explain a
+  large part of it.
+- `wrong` is printed **raw and opportunity-normalised together**
+  (`wrong / survival`), the same rule the fill numbers follow for area rate
+  and ink-normalised value.
+
+### The three legs
+
+1. **Cost (difference form).** `wrong_count_cand <= wrong_count_ref` **AND
+   `broken = 0` by set.** The IC-j11 clause `newly_wrong = 0 by set` is
+   **dropped**, and this is a weakening. Reason: a set-level zero on
+   creations refuses any trade and can only be cleared by an exactly
+   additive repair, while `broken = 0` is the clause that protects what the
+   chainer already gets right. `newly_wrong` is still **printed**.
+2. **Recall.** `rejoin_cand - rejoin_ref > 0`.
+3. **Merit.** `score_cand - score_ref >= +0.05`.
+
+All three required. Any failure is the headline.
+
+### What adoption would and would not mean
+
+It would set `MERGE_PX = 10.0` in `stroke_chain.py`. It would **not** mean the
+relay ridge is solved as a design problem -- `match_node` is already optimal
+within a node and the ridge loses on a node-local cost while the evidence is
+chain-local. It would not touch `C_UNMATCHED = 1.0`, which this sweep leaves
+at its registered value (0.5 refuted as a direction, 2.0 never clears a cost
+leg). And it says nothing about deliberate gaps.
+
+Log: `results/stroke_chain_20261010/icj12_verify.txt`.

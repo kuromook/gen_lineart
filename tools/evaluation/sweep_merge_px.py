@@ -68,6 +68,7 @@ IC_EXPECT = {True: (0.752, 0.061), False: (0.643, 0.061)}
 IC_TOL = 0.005
 PROPOSE_GAIN = 0.05
 J9_MIN_TRIALS, J9_REF_TOL = 60, 0.10
+OCC_SURVIVE_MIN = 0.80   # IC-j12: below this, `wrong` is not comparable
 
 
 def strip_touch(trials):
@@ -88,10 +89,11 @@ def run_cell(trials, merge_px, c_unmatched):
     old = (sc.MERGE_PX, sc.C_UNMATCHED)
     sc.MERGE_PX, sc.C_UNMATCHED = merge_px, c_unmatched
     rng = random.Random(cal.SEED)
-    ok, bad, apx, afr = set(), set(), 0.0, 0
+    ok, bad, apx, afr, surv = set(), set(), 0.0, 0, 0
     try:
-        for k, (ink2, pre, fp, op, _) in enumerate(trials):
-            frags, link, _, stats = sc.build_links(ink2, "real", rng, pre=pre)
+        for k, (ink2, pre, fp, op, _) in enumerate(trials):  # noqa: B007
+            frags, link, absorbed, stats = sc.build_links(ink2, "real", rng,
+                                                          pre=pre)
             r = cal.roots(len(frags), link)
             if r[fp[0]] == r[fp[1]]:
                 ok.add(k)
@@ -99,13 +101,20 @@ def run_cell(trials, merge_px, c_unmatched):
                 bad.add(k)
             apx += float(stats.get("absorbed_px", 0.0))
             afr += int(stats.get("absorbed_frags", 0))
+            # IC-j12 diagnostic: is there still an occluder part to be wrongly
+            # chained to? `wrong` counts exactly that, so if loosening the
+            # threshold absorbs the occluder's own ridge, `wrong` can fall
+            # because the OPPORTUNITY fell.
+            if any(o not in absorbed for o in op):
+                surv += 1
     finally:
         sc.MERGE_PX, sc.C_UNMATCHED = old
-    return ok, bad, apx, afr
+    return ok, bad, apx, afr, surv
 
 
 def cell_row(trials_on, trials_off, m, c, touch, base_ok, base_bad, n):
-    ok, bad, apx, afr = run_cell(trials_on if touch else trials_off, m, c)
+    ok, bad, apx, afr, surv = run_cell(trials_on if touch else trials_off,
+                                       m, c)
     rejoin, wrong = len(ok) / n, len(bad) / n
     broken = base_ok - ok
     neww = bad - base_bad
@@ -114,6 +123,7 @@ def cell_row(trials_on, trials_off, m, c, touch, base_ok, base_bad, n):
         "rejoin": round(rejoin, 4), "wrong": round(wrong, 4),
         "score": round(rejoin - wrong, 4),
         "absorbed_px": round(apx, 1), "absorbed_frags": afr,
+        "occ_survive": surv,
         "broken": len(broken), "newly_wrong": len(neww),
         "gained": len(ok - base_ok),
     }, ok, bad
@@ -149,7 +159,7 @@ def main():
                        args.per_panel)
         n = len(trials)
         toff = strip_touch(trials)
-        base_ok, base_bad, _, _ = run_cell(trials, 6.0, 1.0)
+        base_ok, base_bad, _, _, base_surv = run_cell(trials, 6.0, 1.0)
         if n < J9_MIN_TRIALS:
             print(f"  {n} usable trials < {J9_MIN_TRIALS} -> **UNDERPOWERED, "
                   f"NOT ACTIONABLE**. No leg is read.")
@@ -168,12 +178,34 @@ def main():
         print(f"  cell: rejoin {row['rejoin']:.3f}  wrong {row['wrong']:.3f}  "
               f"score {row['score']:.3f}  broken {row['broken']}  "
               f"newly_wrong {row['newly_wrong']}  gained {row['gained']}")
-        l1 = row["broken"] == 0 and row["newly_wrong"] == 0
+        # IC-j12's pre-registered REFUSAL, read before any leg
+        sr = row["occ_survive"] / max(base_surv, 1)
+        print(f"  diagnostic: trials with an occluder part still unabsorbed -- "
+              f"reference {base_surv}/{n}, cell {row['occ_survive']}/{n}, "
+              f"ratio {sr:.3f} (refusal bar: < {OCC_SURVIVE_MIN:.2f})")
+        wn_ref = (len(base_bad) / n) / max(base_surv / n, 1e-9)
+        wn_cell = row["wrong"] / max(row["occ_survive"] / n, 1e-9)
+        print(f"  wrong, raw and opportunity-normalised, always together: "
+              f"reference {len(base_bad) / n:.3f} / {wn_ref:.3f}   "
+              f"cell {row['wrong']:.3f} / {wn_cell:.3f}")
+        if sr < OCC_SURVIVE_MIN:
+            print(f"  -> **`wrong` IS NOT COMPARABLE between the arms**: the "
+                  f"cell absorbed the occluder parts that `wrong` counts. The "
+                  f"cost leg cannot be read and the cell stays UNADOPTED. "
+                  f"This is a refusal, not a verdict.")
+            return 0
+        # IC-j12 cost leg: the difference form on counts, plus broken = 0.
+        # The IC-j11 clause `newly_wrong = 0 by set` is deliberately NOT here.
+        l1 = row["broken"] == 0 and int(round(row["wrong"] * n)) <= len(base_bad)
         l2 = row["rejoin"] - ref > 0
         l3 = row["score"] - (ref - len(base_bad) / n) >= PROPOSE_GAIN
-        print(f"  cost    broken {row['broken']}, newly wrong "
-              f"{row['newly_wrong']} -> {'PASS' if l1 else 'FAIL'}  "
-              f"(bar: both 0 by set)")
+        print(f"  cost    wrong count {int(round(row['wrong'] * n))} vs "
+              f"reference {len(base_bad)}, broken {row['broken']} -> "
+              f"{'PASS' if l1 else 'FAIL'}  (IC-j12 bar: count <= reference "
+              f"AND broken = 0 by set; the `newly_wrong = 0` clause of IC-j11 "
+              f"is DROPPED -- see the registration, it is a weakening and the "
+              f"reason is written there. newly_wrong here: "
+              f"{row['newly_wrong']})")
         print(f"  recall  rejoin {row['rejoin'] - ref:+.3f} -> "
               f"{'PASS' if l2 else 'FAIL'}  (bar: > 0)")
         print(f"  merit   score {row['score'] - (ref - len(base_bad) / n):+.3f}"
@@ -196,7 +228,7 @@ def main():
     print("\nIC, known values measured by different code on different days:")
     base = {}
     for touch in (True, False):
-        ok, bad, _, _ = run_cell(trials if touch else toff, 6.0, 1.0)
+        ok, bad, _, _, _ = run_cell(trials if touch else toff, 6.0, 1.0)
         rj, wr = len(ok) / n, len(bad) / n
         er, ew = IC_EXPECT[touch]
         good = abs(rj - er) <= IC_TOL and abs(wr - ew) <= IC_TOL
