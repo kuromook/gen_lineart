@@ -3894,7 +3894,7 @@ before being used**:
 
 Group sizes: 894 shapes of size 1, 3 of size 2, 23 of size 3. Panel area runs
 from 418,383 to 31,191,649 px, median 3,215,382 -- these are cropped manga
-panels, so a shared pixel shape is близко to an accident.
+panels, so a shared pixel shape is close to an accident.
 
 **The same-shape repair would have produced 49 NC2 rows per arm instead of
 0**: void -> useless. It is not used, and the measurement is recorded here so
