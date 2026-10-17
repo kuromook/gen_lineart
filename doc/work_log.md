@@ -3559,3 +3559,116 @@ in it. Log: `results/fill_koma_20261010/icj10_radius.txt`, per-panel CSV
 beside it. Montage of the same panel at every `r` to
 `results/fill_koma_20261010/icj10_radius.png` -- numbers cite a visual
 artefact under `results/`, never `/tmp`.
+
+## 2026-10-17 Pre-registration: IC-j11, the bounded `MERGE_PX` / `C_UNMATCHED` sweep
+
+Written before the tool exists. The second CPU item of the approved order.
+
+### Why, and why "bounded" is in the name
+
+`MERGE_PX = 6.0` and `C_UNMATCHED = 1.0` were written down by eyeball and
+**were never in the 972-combination grid** (6 axes: `TAN_SKIP`, `TAN_WIN`,
+`KAPPA_REF`, `THETA_MAX`, `D_MAX`, `W_KAPPA`). IC-j8 then measured that
+`MERGE_PX` is the rate limiter on the remaining failures: the relay ridge
+sits at **6.2 / 7.7 / 8.1 / 9.2 / 11.5 px** (min, q25, median, q75, max over
+51 cases), i.e. **0.2 to 5.5px above the threshold**, and all 51 are a single
+fragment within 20px of the cut.
+
+**Unbounded loosening is already refused by measurement.** NC-j8c:
+`merge_px_inf` flips 45% of `t_relay_other` and **breaks 111 of 200
+already-rejoining trials (55.5%)**. So the sweep exists to find whether there
+is a *bounded* value that gains without breaking, and the quantity that
+decides it is **`broken`**, not `rejoin`.
+
+### Grid
+
+- `MERGE_PX` in **{6, 8, 10, 12, 16}** (6 is the current value; 16 is past the
+  ridge maximum of 11.5)
+- `C_UNMATCHED` in **{0.5, 1.0, 2.0}** (1.0 is current; `THETA0 = 30` costs
+  1.0, so at 0.5 the angle gate alone can exceed the unmatched price and at
+  2.0 it cannot -- the two sides of the break-even that made `THETA_MAX = 60`
+  exactly redundant)
+- touch merge **on / off** (on is now the adopted chainer; off is the
+  pre-adoption path, still reachable as `merge_nodes(..., touch=None)`)
+
+30 cells. Trials are built **once** -- the cut, its ground truth and the
+skeleton of the cut image do not depend on any swept constant, which is the
+same property IC-j6's grid relied on.
+
+### Which panels, and the one thing a sweep must not do
+
+- **Exploration: `[40:171]`**, the labelled discovery set, 311 trials.
+  **No cell is adopted from this set.** A sweep is a tuning operation and
+  tuning on the set that produced the hypothesis is how the 0.2582 happened.
+- **Reserved verification: `[171:271]`, 100 panels, never read by anything.**
+  Registered here, unread. At 2.37 usable trials per panel it should give
+  **~237 trials**. It is read **once**, only if a cell is proposable, and
+  whatever it says is the verdict.
+- Panels `[0:40]` (the IC-j9 holdout) and `[100:171]` (the original
+  calibration set, which lies *inside* the discovery range -- recorded here
+  because it is a real overlap in the existing numbers) are **not** reused.
+
+### Instrument check, with known values
+
+The two cells that are the current chainer must reproduce numbers measured by
+different code on different days, on `[40:171]`:
+
+- `MERGE_PX = 6, C_UNMATCHED = 1.0, touch ON` -> **rejoin 0.752, wrong 0.061**
+- `MERGE_PX = 6, C_UNMATCHED = 1.0, touch OFF` -> **rejoin 0.643, wrong 0.061**
+
+Asserted to +/- 0.005 (the trial set is identical, so exact equality is
+expected and the tolerance exists only for float formatting). **If either
+fails the sweep is not read at all** -- it would mean the grid is not
+scoring the chainer that is installed.
+
+### Expected shapes, written down first so a surprise is visible
+
+1. `rejoin` **rises** with `MERGE_PX` and **flattens by 12**, because the
+   ridge maximum is 11.5px.
+2. `wrong` **rises monotonically** with `MERGE_PX`.
+3. `absorbed_px` (the total ink absorbed into nodes, which the chainer
+   already returns rather than letting it vanish) **rises monotonically**.
+   Not asserted: absorption depends on node ids that cascade as merges
+   happen, so a non-monotone cell is possible and **violations are printed
+   and counted** rather than assumed away.
+4. At `MERGE_PX = 12`: `rejoin >= baseline + 0.05`. The 51 ridge cases are
+   16.4% of the 311 trials, so a threshold past the ridge should recover a
+   large part of them; **failing this floor means the ridge is not actually
+   blocked by `MERGE_PX`** and the two-node-cost design becomes the only
+   route.
+5. `broken > 0` at some `MERGE_PX` in the grid, because `merge_px_inf` broke
+   55.5%. If **no** cell breaks anything, the grid is too narrow and that is
+   said rather than read as a free win.
+
+### Bars, fixed now
+
+**`broken` is the decisive quantity.** For a cell to be **proposable**
+(not adopted -- proposable):
+
+- `broken_count = 0` **by set**: no trial that rejoins under the installed
+  chainer stops rejoining;
+- `newly_wrong = 0` **by set**;
+- `score - score_baseline >= +0.05` on `[40:171]`.
+
+**Adoption requires the reserved `[171:271]` read once**, under the same
+three legs in difference form (the foundation's prescription), with the same
+two refusal preconditions as IC-j9: **< 60 usable trials -> UNDERPOWERED**;
+**reference rejoin outside its `[40:171]` value +/- 0.10 -> NOT COMPARABLE**.
+
+If **no cell is proposable**, that is the result, it is the headline, and
+`MERGE_PX = 6` stands as the value that survived a sweep rather than the
+value nobody tested.
+
+### What is not claimed either way
+
+Nothing about deliberate gaps (Track K owns them on real ink; this
+construction cannot contain them). Nothing about intentional joins -- `wrong`
+counts only contamination by the artificial occluder. And a proposable cell
+would not address the relay ridge *as a design problem*: the ridge loses on
+a node-local cost while the evidence is chain-local, and `match_node` is
+already optimal within a node.
+
+Tool: `tools/evaluation/sweep_merge_px.py`, new. Log:
+`results/stroke_chain_20261010/icj11_sweep.txt`, CSV beside it, montage of
+the cells that change a trial's outcome to
+`results/stroke_chain_20261010/icj11_cells.png`.
