@@ -4066,3 +4066,205 @@ The sentence in the H1 entry stands as written. The process failure is that
 it stood before it was earned, and it is the same shape as the two logged
 earlier this week: **a claim must cite the run it came from, and the log of
 the run a claim cites must have been read.**
+
+## 2026-10-18 IC-j10 result: the stage-2 verdict is **ROBUST TO r** -- and the registration's second expected value cites a measurement that does not exist
+
+969 held panels, every radius in `{2,3,4,6,8}` plus `r = 0` as the instrument
+check. Tool `tools/evaluation/sens_fill_radius.py`. Log
+`results/fill_koma_20261010/icj10_radius.txt`, 14,535 per-panel rows in
+`results/fill_koma_20261010/icj10_radius.csv`, montage
+`results/fill_koma_20261010/icj10_radius.png`.
+
+### IC and C1, read before any sensitivity number, in the registered order
+
+- **IC `r = 0` is the identity**: 0 differing pixels expected on every panel,
+  **0 panels failed**, asserted not eyeballed. **PASS.**
+- **C1, cv2 maskSize-3** (the approximation every published Track J fill
+  number has used): violating pixels **median 95.0 per panel, max 8160**; as
+  a share of `fill(r=2)` area, **median panel 0.00036** against the
+  registered headline bar of **> 0.01**. **28x below the bar**: the published
+  fill numbers do not depend on the approximation more than on the constant.
+- **C1, exact EDT**, amendment F1's asserted form: violations confined to a
+  **1.00px rim**, bar `<= 1.0px`. **PASS (asserted).**
+
+### D1, the decisive leg: **ROBUST TO r**, and the words carry their thresholds
+
+Normal stratum, 956 panels. `blank` is the "don't paint" baseline and is
+printed beside every number, as the standing rule requires.
+
+| r | GT area mean | median | GT fill_ratio (ink-norm.) | regions/panel | `blank` | `rough_dark` | `nc3_hflip` | rough - blank | rough - nc3 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0.1177 | 0.0851 | 0.6630 | 31.92 | 0.0010 | 0.0013 | 0.0010 | **+0.0003** | +0.0003 |
+| 3 | 0.1098 | 0.0743 | 0.5680 | 29.07 | 0.0042 | 0.0034 | 0.0031 | -0.0008 | +0.0003 |
+| **4** | 0.1040 | 0.0665 | 0.5193 | 23.64 | 0.0084 | 0.0065 | 0.0063 | -0.0019 | +0.0002 |
+| 6 | 0.0971 | 0.0604 | 0.4605 | 17.03 | 0.0188 | 0.0151 | 0.0146 | -0.0037 | +0.0005 |
+| 8 | 0.0934 | 0.0563 | 0.4211 | 13.60 | 0.0324 | 0.0246 | 0.0241 | -0.0078 | +0.0006 |
+
+Area rate and ink-normalised value printed together throughout, as C5
+requires.
+
+**"robust to r"**, with its registered threshold: *at every `r` in
+{2,3,4,6,8}, both `region_F1(rough_dark) - region_F1(blank)` and
+`region_F1(rough_dark) - region_F1(nc3_hflip:rough_dark)` stay below
+**+0.05***. The largest of the ten gaps is **+0.0003**, which is **167x
+below the bar**. **The stage-2 verdict is not an artefact of
+`FILL_HALF_WIDTH_PX = 4`.** It is not withdrawn, and M1's target definition
+is not reopened.
+
+**This does not say `r = 4` is right.** Nothing in IC-j10 can select `r`; the
+registration said so before the run and the measurement did not change it.
+
+### `blank`'s whole score is an identity, and it is verified rather than assumed
+
+`blank` predicts nothing, so its region-F1 is 1.0 exactly when the GT has no
+region and 0 otherwise. Checked against the data:
+
+| r | `blank` mean region-F1 | share of normal panels with 0 GT regions |
+|---:|---:|---:|
+| 2 | 0.001046 | 1/956 = 0.001046 |
+| 3 | 0.004184 | 4/956 = 0.004184 |
+| 4 | 0.008368 | 8/956 = 0.008368 |
+| 6 | 0.018828 | 18/956 = 0.018828 |
+| 8 | 0.032427 | 31/956 = 0.032427 |
+
+Identical to six decimals at every radius. **So the "don't paint" baseline
+does not improve with `r` because not painting gets better; it improves
+because the target disappears** -- at `r = 8`, 31 of 956 normal panels have
+no gradeable region left. Every "rough_dark loses to blank" in the table
+above is, numerically, "rough_dark fails to find a region on panels where
+there is one to find, while blank is paid for the panels where there is not".
+
+### Pixel IoU beside region-F1, because IC6 said both must be read -- and here they disagree in sign
+
+| r | `blank` | `rough_dark` | `nc3_hflip` | rough - blank | rough - nc3 |
+|---:|---:|---:|---:|---:|---:|
+| 2 | 0.0000 | 0.0284 | 0.0121 | **+0.0284** | +0.0163 |
+| 3 | 0.0000 | 0.0188 | 0.0077 | +0.0188 | +0.0111 |
+| **4** | 0.0021 | 0.0139 | 0.0063 | **+0.0118** | +0.0076 |
+| 6 | 0.0073 | 0.0094 | 0.0060 | +0.0020 | +0.0034 |
+| 8 | 0.0167 | 0.0134 | 0.0119 | -0.0033 | +0.0015 |
+
+`blank`'s pixel IoU is the same kind of identity at a different threshold --
+it equals the share of panels with **zero fill pixels** (0, 0, 2/956, 7/956,
+16/956 = 0.0000, 0.0000, 0.0021, 0.0073, 0.0167), exact at every radius.
+
+**On pixel IoU, `rough_dark` beats both controls at `r = 4`** (+0.0118 over
+don't-paint, +0.0076 over its own mirror), where on region-F1 it beats
+neither. **The two metrics disagree in sign and the disagreement is
+reported, not resolved by picking one.** What it means, stated conservatively:
+the rough's dark ink does land inside GT fill more often than a mirrored copy
+of it would, so there is a weak pixel-level signal -- **and it is nowhere near
+enough to produce one matched region.** At `r = 4` the absolute value is
+0.0139 IoU; IC6 measured that a prediction holding half the regions scores
+0.655 region-F1. The verdict stands on region-F1, which is the registered
+metric and the one the stage-2 bars are written in; the pixel-IoU column is
+recorded because it is the one place a future learned arm might first show
+life, and because hiding a control-beating number would be the exact failure
+this log exists to prevent.
+
+### The montage says what the table cannot: `r` is not a dial, it is the line/fill separator
+
+`results/fill_koma_20261010/icj10_radius.png`, panel
+`koma_02361_027_2019_ben__ben__page0007_p5.png` (median `gt_area_frac` of the
+normal stratum at `r = 4`), top row GT fill at every `r`, bottom row
+`rough_dark`.
+
+- At **`r = 2` the "fill" mask is the line drawing** -- shirt folds, chair
+  rails, outlines, all of it. `gt_fill_ratio` 0.663 says the same thing
+  numerically: two thirds of all ink is counted as core.
+- At **`r = 4`** the lines are gone and what survives is the hair, plus
+  debris on the shoe and skirt.
+- At **`r = 6` and `r = 8`** only the hair survives.
+
+So the single radius at which `rough_dark` beats "don't paint" on region-F1
+is **`r = 2`, by +0.0003, and it is the radius at which the target has
+degenerated into the lineart** -- the thing Track J exists not to predict.
+That is not a win to bank; it is the sensitivity analysis showing where the
+definition stops meaning "ベタ".
+
+It also sharpens what M1 is being asked for: at `r >= 4` on this panel the
+target is **hair**, which is where stage 2a (髪/トップス/タイツ の語化,
+on hold by the user's decision) was pointed.
+
+### D2 is OUTSIDE its band -- and the band's source is not in this repository
+
+Registered: *core area at `r=8` / core area at `r=4` = 0.63, band +/- 0.10*,
+sourced to *"an `r`-census on 60 held panels, recorded 2026-10-14"*.
+
+**Measured, pooled over the 956 normal panels as the tool computes it:
+346,871,774 -> 297,906,229 core px, ratio 0.8588. OUTSIDE the band.**
+
+Two things have to be said about that, and the second is the one that
+matters.
+
+**1. The reading depends on a form the registration never fixed.** Pooled,
+the ratio is **0.8588**; the **per-panel median is 0.7951** and the
+**per-panel mean is 0.6753**, which is *inside* the band. The tool was
+committed (`31fe8db`) before the run with the pooled form in it, so the
+pooled number is the registered one and **D2 is OUTSIDE**. The per-panel mean
+is recorded here because suppressing a form that would have passed is worse
+than printing it, and it is **not** used to change the verdict -- choosing
+the aggregation after seeing which one passes is precisely the move the
+pre-registration exists to block.
+
+**2. The 60-panel census of 2026-10-14 does not exist in the record.** I went
+looking for it to reread the numbers derived from it, as the registration
+instructed. There is **no 2026-10-14 entry in this log, no commit on that
+date (the history goes 2026-10-11 -> 2026-10-16), and no results file
+containing 0.628 or 0.429**. The IC-j10 registration (`a106025`, written
+2026-10-17) cited a prior measurement I cannot produce.
+
+**So D2 did not refute a census. D2 refuted an unsourced number that I
+registered as if it were a measurement**, and the failure is mine and is
+upstream of the result. The honest consequence:
+
+- **0.63 +/- 0.10 is withdrawn as a registered expectation.** It never had
+  the standing a registered expectation is supposed to have.
+- **No other number in this log derives from it** -- the only occurrences of
+  0.628/0.429 anywhere in `doc/` are the two lines of that registration, and
+  they are now struck. IC6's census is a separate, 956-panel, logged
+  measurement and is untouched.
+- The quantity itself is now measured properly, on 956 panels, and is written
+  above: **pooled 0.8588, per-panel median 0.7951, mean 0.6753.** If it is
+  ever wanted as a bar, that is the number it is set from.
+- **D1 is unaffected.** D2 was registered as a second, independent
+  expectation about the *material*, and carried no part of the verdict. The
+  verdict's bar is D1's +0.05 and it is met by a factor of 167.
+- Rule, added for myself: **a registered expected value must cite the entry
+  or results file it comes from.** A date and a sample size are not a
+  citation. `doc/shortcuts.md` carries it.
+
+### Amendment F3: the cv2-vs-exact comparison in the run log is arithmetically false
+
+The log prints:
+
+> exact 11070 vs cv2 215324 violating pixels over the SAME 49 panels -> the
+> maskSize-3 approximation is not the cause; the lattice is
+
+**Both halves are wrong.** `cvn` summed `cv2_viol` over **all 969 panels**
+while `ev` summed `exact_viol` over its **49-panel subsample**, so "over the
+SAME 49 panels" is false by construction. And the sentence was a hard-coded
+string, written when the smoke run happened to show 356 vs 375; it was never
+recomputed, so the printed conclusion contradicts the printed numbers it
+stands next to (11070 is 5% of 215324, not a majority).
+
+The tool is fixed: both sides are now accumulated on the same `exact_n`
+panels (`cv2_sub`), and **the sentence is computed from the ratio with its
+threshold** (lattice share `>= 50%` -> the lattice is the main cause, else
+the approximation is), instead of being asserted. A paired re-measurement on
+those same 49 panels is running and also measures the **cv2 rim distance**,
+which the original run never did -- rim confinement is currently established
+for the exact masks only. Its numbers will be appended to this entry.
+
+**What this does not change:** C1's headline bar is the cv2 violation share
+of `fill(r=2)` area on the median panel, **0.00036 vs a bar of 0.01**, and
+that leg is computed per panel and is unaffected by the summing bug. C1
+passes either way, and no fill number in Track J moves.
+
+### Consequence for the GPU slot
+
+**M1 is not blocked by IC-j10.** D1 says the target definition is not what
+makes the stage-2 table flat, so the slot is used as planned. The two
+findings that travel with it into M1: the don't-paint baseline's score is
+entirely the vanishing-target identity above, and **pixel IoU and region-F1
+disagree in sign on `rough_dark`**, so M1's reading must print both.
