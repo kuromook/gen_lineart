@@ -112,3 +112,8 @@ raised with the date.
   withdrawn as a registered expectation in the IC-j10 result entry and the
   quantity is re-registered from the 956-panel measurement if it is ever
   wanted again.
+- shortcut: a registered expected value may cite only a date and a sample
+  size, with no entry or results file behind it -- IC-j10's D2 did, and the
+  measurement it named could not be found afterwards. **When it is raised:**
+  now, as a rule -- every registered expected value names the entry or the
+  file it comes from, and one that cannot is not registered.
