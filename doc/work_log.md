@@ -3672,3 +3672,32 @@ Tool: `tools/evaluation/sweep_merge_px.py`, new. Log:
 `results/stroke_chain_20261010/icj11_sweep.txt`, CSV beside it, montage of
 the cells that change a trial's outcome to
 `results/stroke_chain_20261010/icj11_cells.png`.
+
+### 2026-10-17 Two amendments, both made before any result of their own run was read
+
+**F2 (IC-j10, sampling).** The registration said: if a radius costs more than
+40 minutes, subsample mechanically every k-th panel by sorted name. Measured
+cost on the full run: **15.6 s/panel, 969 panels, ~4.2 h, i.e. ~50 min per
+radius -- over the registered 40.** No subsample was taken and the run is
+reading all 969 panels. Reason, recorded rather than left implicit: that rule
+was written to stop a CPU job eating the GPU slot, and this one lands on an
+idle Saturday with nothing waiting on it. **Using more panels than registered
+is a strengthening, not a loosening**, and the decisive D1 bars are untouched.
+If it had been the other direction -- fewer panels than registered -- it would
+have needed k and n printed, which the tool does print.
+
+**G1 (IC-j11, a blind spot in the registered expectation).** A plumbing test
+on an **unregistered** 4-panel fixture `[300:304]` (not any registered set; no
+number read from it) showed the touch switch moving `absorbed_frags`
+(12->13, 3->4, 7->8) and the count of distinct merged nodes (5->4, 9->8)
+while `absorbed_px` stayed **identical to one decimal**. Cause, found in the
+code: the fragments the adoption additionally absorbs are **single-pixel
+fragments, whose `path_len` is 0.0 by construction** (`path_len` returns 0.0
+for a one-point path). Registered expected shape 3 was written on
+`absorbed_px` alone and is blind to them, so **`absorbed_frags` is swept and
+printed beside it**. No bar changes.
+
+G1 is worth more than its size: `absorbed_px` was introduced so that absorbed
+ink would be *reported rather than vanish*, and it cannot see a zero-length
+absorption at all. The same blindness applies to any earlier reading of
+`absorbed_px`.
