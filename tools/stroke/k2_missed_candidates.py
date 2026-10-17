@@ -199,6 +199,7 @@ def work(t):
                                  theta=th, dperp=d, passed=int(ok),
                                  linked=int((min(si, sj), max(si, sj)) in linked),
                                  ink_on_seg=-1, ink_on_seg_plain=-1, crossed=-1,
+                                 seg_n=0, collar=float("nan"),
                                  br0=int(bridge_flag[si]), br1=int(bridge_flag[sj]),
                                  f_dot=round(fdot, 4), f_would=int(fdot <= cos_lim),
                                  f_arm_used=int(si in used_here or sj in used_here)))
@@ -224,7 +225,7 @@ def work(t):
                 rows.append(dict(box="C", t0=ti, t1=tj, s0=i, s1=j, e0=ei, e1=ej,
                                  node0=int(ni), node1=int(nj), gap=gap, theta=th, dperp=d,
                                  passed=int(ok), linked=0, ink_on_seg=-1,
-                                 ink_on_seg_plain=-1, crossed=-1,
+                                 ink_on_seg_plain=-1, crossed=-1, seg_n=0, collar=float("nan"),
                                  br0=int(bridge_flag[i + 1]), br1=int(bridge_flag[j + 1]),
                                  f_dot=float("nan"), f_would=-1, f_arm_used=-1))
             elif ni is None and nj is None:
@@ -233,7 +234,7 @@ def work(t):
                 pa, pb = pts[a], pts[b]
                 col = max(2.0, 0.5 * max(tip_w(i, ei), tip_w(j, ej)))
                 v = pb - pa; L = float(np.hypot(*v))
-                nink = nink_p = -1
+                nink = nink_p = -1; seg_n = 0
                 if L > 2 * col + 1e-6:
                     u = v / L
                     q0, q1 = pa + u * col, pb - u * col
@@ -241,6 +242,7 @@ def work(t):
                     rr = np.clip(np.round(sp[:, 0]).astype(int), 0, H - 1)
                     cc = np.clip(np.round(sp[:, 1]).astype(int), 0, W - 1)
                     nink = int(ink[rr, cc].sum()); nink_p = int(ink_plain[rr, cc].sum())
+                    seg_n = len(sp)
                 # A7-1: 第三の token の骨格が線分のすぐ脇を通るか
                 crossed = 0
                 if sk_tree is not None:
@@ -252,6 +254,7 @@ def work(t):
                                  node0=-1, node1=-1, gap=gap, theta=th, dperp=d,
                                  passed=int(ok), linked=0, ink_on_seg=nink,
                                  ink_on_seg_plain=nink_p, crossed=crossed,
+                                 seg_n=seg_n, collar=round(col, 2),
                                  br0=int(bridge_flag[i + 1]), br1=int(bridge_flag[j + 1]),
                                  f_dot=float("nan"), f_would=-1, f_arm_used=-1))
 
@@ -379,8 +382,29 @@ def main():
                 e["bridge_side"] = sum(1 for x in num if x["br0"] or x["br1"])
             d[lab] = e
         rs, ra = d["same_part"]["rate"], d["across_parts"]["rate"]
-        d["nc_k2"] = dict(factor=round(rs / ra, 3) if ra else float("nan"), bar=NC_FACTOR,
-                          passed=bool(ra and rs / ra >= NC_FACTOR))
+        na, da = d["across_parts"]["numerator"], d["across_parts"]["denominator"]
+        ns, ds = d["same_part"]["numerator"], d["same_part"]["denominator"]
+        from scipy.stats import beta as _beta, fisher_exact as _fe
+        # またぎの率の 95% 片側上限(Clopper-Pearson)。0/84 のような分母の小ささを隠さない
+        up = 1.0 if da == 0 else (1.0 if na == da else
+                                  float(_beta.ppf(0.95, na + 1, da - na)))
+        _, pf = _fe([[ns, ds - ns], [na, da - na]], alternative="greater") if da else (0, float("nan"))
+        if da == 0:
+            fac, verdict = float("nan"), "判定できない(またぎの対が 0 件)"
+        elif ra == 0:
+            fac = float("inf")
+            verdict = ("合格(点推定では無限。ただし分母が小さいので検出力に注意)"
+                       if ns else "判定できない(どちらも 0 件)")
+        else:
+            fac = round(rs / ra, 3)
+            verdict = "合格" if fac >= NC_FACTOR else "不合格(2.0 倍を下回る)"
+        d["nc_k2"] = dict(factor=fac, bar=NC_FACTOR,
+                          across_rate_upper95=round(up, 5),
+                          # 厳しい版(登録より厳しいので、緩めたことにはならない)
+                          separation_established=bool(up > 0 and rs / 2.0 >= up),
+                          fisher_p_one_sided=float(f"{pf:.3e}") if da else float("nan"),
+                          verdict=verdict,
+                          passed=bool(verdict.startswith("合格")))
         res[b] = d
 
     # A2: 箱 B の墨画素数の分布(0 の山と非 0 の山が分かれるか)
@@ -389,7 +413,12 @@ def main():
                      {"6-10": int(sum(1 for x in v if 6 <= x <= 10)),
                       "11-20": int(sum(1 for x in v if 11 <= x <= 20)),
                       "21+": int(sum(1 for x in v if x > 20)), "n": len(v)}
-    inkd = dict(grow200=hist([x["ink_on_seg"] for x in Bp if x["ink_on_seg"] >= 0]),
+    fr = [x["ink_on_seg"] / x["seg_n"] for x in Bp if x["ink_on_seg"] >= 0 and x["seg_n"] > 0]
+    frac = {f"{lo:.1f}-{lo+0.1:.1f}": int(sum(1 for v in fr if lo <= v < lo + 0.1 + (1e-9 if lo >= 0.9 else 0)))
+            for lo in [i / 10 for i in range(10)]}
+    inkd = dict(fraction_of_segment=frac | {"n": len(fr)},
+                seg_n=dict(median=float(np.median([x["seg_n"] for x in Bp if x["seg_n"] > 0])) if Bp else None),
+                grow200=hist([x["ink_on_seg"] for x in Bp if x["ink_on_seg"] >= 0]),
                 plain=hist([x["ink_on_seg_plain"] for x in Bp if x["ink_on_seg_plain"] >= 0]),
                 note="門を通った同部位の箱 B 候補の、襟で切った線分上の墨画素数。"
                      "0 の山と非 0 の山が分かれなければ襟の取り方が悪い(A2)")
