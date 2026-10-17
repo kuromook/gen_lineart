@@ -100,11 +100,13 @@ raised with the date.
   raised:** if a *learned* arm is ever evaluated through
   `calibrate_stroke_chain`, at which point the ranges must be re-cut through
   `koma_split`.
-- shortcut: IC-j10's cv2 nesting violations are counted but their rim
+- ~~shortcut: IC-j10's cv2 nesting violations are counted but their rim
   distance is not asserted; rim confinement (<= 1.0px) is established for the
-  exact-EDT masks only. **When it is raised:** by the paired C1
-  re-measurement recorded in the IC-j10 result entry, which measures the cv2
-  rim distance on the same panels.
+  exact-EDT masks only.~~ **RAISED 2026-10-18** by the paired C1
+  re-measurement (`tools/evaluation/c1_paired_nesting.py`,
+  `results/fill_koma_20261010/icj10_c1_paired.txt`): cv2's worst rim distance
+  is **1.00px** on the same 49 panels, and the lattice accounts for 98.9% of
+  cv2's violation count.
 - shortcut: the IC-j10 registration's second expected value (core area
   `r=8 / r=4` = 0.63) cites "an r-census on 60 held panels, recorded
   2026-10-14" that is **not in this repository** -- no entry, no commit, no

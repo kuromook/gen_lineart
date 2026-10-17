@@ -52,6 +52,7 @@ from region_metrics import MIN_REGION_PX, regions, score_panel  # noqa: E402
 
 OUT = Path("results/fill_koma_20261010")
 NEAR_BLANK_INK = 0.002
+NC2_MIN_OVERLAP = 0.25   # H1 guard: below this the overlap is not a panel
 FREQ_Y_BINS, FREQ_A_BINS = 16, 4
 FREQ_EVERY = 10          # every 10th train panel by sorted name
 
@@ -133,6 +134,71 @@ def arms_for(name, table, root=ROOT):
     return preds, gt, gt_ink, r_ink
 
 
+def nc2_census(names):
+    """NC2's repair, second attempt. AMENDMENT H1, 2026-10-17.
+
+    The first repair -- "pair with the nearest same-shape panel by sorted
+    name" -- was registered on 2026-10-16 and is REFUTED by measurement
+    before it was ever read as a control: over the 969 held panels there are
+    **920 distinct shapes**, 894 panels are the only one of their shape, and
+    only 75 panels (7.7%) sit in a pairable group. It would have produced
+    **49 NC2 rows per arm instead of 0** -- an improvement from void to
+    useless. Measured, printed here, and recorded in doc/work_log.md rather
+    than discovered later.
+
+    So the registration's OTHER option is taken: **crop to the common
+    overlap**. Consecutive panels in sorted name order are paired, which is
+    the original intent (a neighbouring panel of the same work is the most
+    similar wrong answer available), and both are centre-cropped to
+    `(min(h), min(w))`.
+
+    Centre, not top-left: a top-left crop would systematically keep one
+    corner of every panel, and manga panels carry content throughout.
+
+    The objection that made cropping the second choice -- "an arm's NC2 row
+    would no longer be comparable to the arm's own row" -- is answered by
+    scoring the arm on the SAME crop as well, emitted as `arm@nc2crop`. The
+    comparison is then within one geometry and NC2 is read against that row,
+    never against the full-panel row.
+
+    Guard, fixed before the run: if the overlap is less than 25% of the
+    smaller panel's area the pair is skipped and counted, because a
+    tall-by-wide pair can overlap in a sliver that is not a panel.
+    """
+    shapes = []
+    for n in sorted(names):
+        g = cv2.imread(str(Path(ROOT) / "line" / n), cv2.IMREAD_GRAYSCALE)
+        shapes.append(None if g is None else g.shape)
+    fr, skip = [], 0
+    for a, b in zip(shapes, shapes[1:]):
+        if a is None or b is None:
+            skip += 1
+            continue
+        ov = min(a[0], b[0]) * min(a[1], b[1])
+        f = ov / float(min(a[0] * a[1], b[0] * b[1]))
+        fr.append(f)
+        if f < NC2_MIN_OVERLAP:
+            skip += 1
+    fr.sort()
+    print(f"NC2 pairing (H1, common-overlap crop): {len(names)} panels, "
+          f"{len(set(shapes))} distinct shapes -- the same-shape repair would "
+          f"have given only {sum(1 for c in set(shapes) if shapes.count(c) >= 2)} "
+          f"groups, so it is not used")
+    if fr:
+        print(f"  overlap as a share of the smaller panel: min {fr[0]:.3f}  "
+              f"q25 {fr[len(fr) // 4]:.3f}  median {fr[len(fr) // 2]:.3f}  "
+              f"max {fr[-1]:.3f}")
+    print(f"  pairs skipped by the {NC2_MIN_OVERLAP:.0%} overlap guard or a "
+          f"missing image: {skip}; expected NC2 rows per arm "
+          f"{len(names) - 1 - skip}")
+
+
+def centre_crop(m, h, w):
+    y = (m.shape[0] - h) // 2
+    x = (m.shape[1] - w) // 2
+    return m[y:y + h, x:x + w]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--side", default="held", choices=("held", "train"))
@@ -145,6 +211,7 @@ def main():
     fam = {n: f for n, _, f in split["train"] + split["held"]}
     if args.limit:
         names = names[:args.limit]
+    nc2_census(names)
     table, _ = fit_freq_table([n for n, _, _ in split["train"]])
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -174,14 +241,26 @@ def main():
                 rows.append({**meta, "arm": f"{nc}:{arm}",
                              **score_panel(mutated, gt, r_ink, gt_ink)})
         if pending is not None:
-            pmeta, ppreds = pending
-            for arm in ("rough_dark", "rough_dark@budget", "freq_table", "all_black"):
-                if ppreds[arm].shape != gt.shape:
-                    continue           # panels differ in size; skip, do not pad
-                rows.append({**meta, "arm": f"nc2_offbyone:{arm}",
-                             **score_panel(ppreds[arm], gt, r_ink, gt_ink)})
+            pmeta, ppreds, pshape = pending
+            ch, cw = min(pshape[0], gt.shape[0]), min(pshape[1], gt.shape[1])
+            ov = (ch * cw) / float(min(pshape[0] * pshape[1], gt.size))
+            if ov >= NC2_MIN_OVERLAP:
+                gtc = centre_crop(gt, ch, cw)
+                gic = centre_crop(gt_ink, ch, cw)
+                ric = centre_crop(r_ink, ch, cw)
+                for arm in ("rough_dark", "rough_dark@budget", "freq_table",
+                            "all_black"):
+                    # the arm on the SAME crop, so NC2 is read against one
+                    # geometry and never against the full-panel row (H1)
+                    rows.append({**meta, "arm": f"{arm}@nc2crop",
+                                 **score_panel(centre_crop(preds[arm], ch, cw),
+                                               gtc, ric, gic)})
+                    rows.append({**meta, "arm": f"nc2_offbyone:{arm}",
+                                 **score_panel(centre_crop(ppreds[arm], ch, cw),
+                                               gtc, ric, gic)})
         pending = (meta, {a: preds[a] for a in
-                          ("rough_dark", "rough_dark@budget", "freq_table", "all_black")})
+                          ("rough_dark", "rough_dark@budget", "freq_table",
+                           "all_black")}, gt.shape)
         if (k + 1) % 25 == 0:
             print(f"{k + 1}/{len(names)}", flush=True)
 

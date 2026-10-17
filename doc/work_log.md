@@ -4268,3 +4268,37 @@ makes the stage-2 table flat, so the slot is used as planned. The two
 findings that travel with it into M1: the don't-paint baseline's score is
 entirely the vanishing-target identity above, and **pixel IoU and region-F1
 disagree in sign on `rough_dark`**, so M1's reading must print both.
+
+### 2026-10-18 F3's re-measurement: the conclusion survives, its evidence did not
+
+`tools/evaluation/c1_paired_nesting.py`, log
+`results/fill_koma_20261010/icj10_c1_paired.txt`. The same 49 panels (every
+20th of the sorted 969 held, the rule the original run used), both mask
+families built per panel, both counted and both rim-measured:
+
+| masks | violating pixels | worst rim distance |
+|---|---:|---:|
+| cv2 maskSize-3 | **11,198** | **1.00px** |
+| exact EDT (scipy) | **11,070** | **1.00px** |
+
+- **Lattice share of cv2's count: 98.9%.** The computed sentence now reads
+  "the maskSize-3 approximation is NOT the main cause; the lattice is", with
+  its threshold (lattice share `>= 50%`) printed beside it.
+- **So the original conclusion was right and its evidence was not.** The
+  sentence it was drawn from compared 49 panels against 969 and would have
+  said the opposite had it been read literally (11,070 is 5% of 215,324).
+  A hard-coded conclusion that happens to be true is still a hard-coded
+  conclusion; it is now computed, and the 98.9% is the first number that
+  actually supports it.
+- **Rim confinement holds for cv2 too, at 1.00px**, measured rather than
+  assumed. The limit recorded in `doc/shortcuts.md` ("cv2 violations are not
+  distance-checked") is **closed by this measurement**, and the entry there
+  is marked raised.
+- cv2 violations as a share of `fill(r=2)` area, median of these 49 panels:
+  **0.00030**, against the full-969 median of 0.00036 and the bar of 0.01.
+  The subsample is representative on the quantity C1's headline is read from.
+
+**Nothing in C1's verdict moves.** The approximation that every published
+Track J fill number used adds 128 violating pixels over 49 panels on top of
+the 11,070 the pixel lattice produces by itself, and all of them sit inside a
+one-pixel rim.

@@ -171,6 +171,7 @@ def main():
           f"of 969); exact-EDT C1 leg on every {args.exact_every}th of those")
 
     rows, ic_fail, cv2_viol, exact_viol, exact_n = [], [], [], [], 0
+    cv2_sub = []   # cv2 violations on the SAME panels the exact leg uses
     for idx, name in enumerate(names):
         rg = cv2.imread(str(Path(ROOT) / "rough" / name), cv2.IMREAD_GRAYSCALE)
         gg = cv2.imread(str(Path(ROOT) / "line" / name), cv2.IMREAD_GRAYSCALE)
@@ -189,10 +190,12 @@ def main():
         for r in RADII:
             gtm[r] = fill_mask(gt_ink, r)
             cores[r] = core_of(gt_ink, r)
-        cv2_viol.append((nesting_violations(gtm), int(gtm[RADII[0]].sum())))
+        cvv = nesting_violations(gtm)
+        cv2_viol.append((cvv, int(gtm[RADII[0]].sum())))
         if idx % args.exact_every == 0:
             em = {r: fill_mask_exact(gt_ink, r) for r in RADII}
             exact_viol.append(nesting_violations(em, rim=True))
+            cv2_sub.append(cvv)
             exact_n += 1
 
         for r in RADII:
@@ -239,7 +242,7 @@ def main():
           f"(bar for the headline: > 0.01)")
     ev = sum(v for v, _ in exact_viol)
     ew = max((w for _, w in exact_viol), default=0.0)
-    cvn = sum(v for v, _ in cv2_viol)
+    cvn = sum(cv2_sub)
     print(f"C1  nesting, exact EDT on {exact_n} panels: {ev} violating pixels, "
           f"worst distance from the smaller mask {ew:.2f}px")
     print(f"      AMENDMENT F1: the registered expectation of 0 was "
@@ -247,9 +250,24 @@ def main():
           f"asserted form is rim confinement: <= 1.0px.")
     assert ew <= 1.0, f"violations are NOT a one-pixel rim: {ew:.2f}px"
     print(f"      PASS (asserted)")
-    print(f"      exact {ev} vs cv2 {cvn} violating pixels over the SAME "
-          f"{exact_n} panels -> the maskSize-3 approximation is not the "
-          f"cause; the lattice is")
+    # AMENDMENT F3 (2026-10-18): this comparison used to sum cv2 over ALL
+    # panels while the exact leg had only its subsample, so the printed
+    # "over the SAME n panels" was false and the conclusion drawn from it
+    # was unsupported. Both sides are now the same `exact_n` panels, and the
+    # sentence is COMPUTED from the ratio instead of hard-coded.
+    share = ev / max(cvn, 1)
+    print(f"      paired on the SAME {exact_n} panels: exact {ev} vs cv2 "
+          f"{cvn} violating pixels; the lattice alone accounts for "
+          f"{share:.1%} of cv2's count")
+    if share >= 0.5:
+        print(f"      -> the maskSize-3 approximation is NOT the main cause; "
+              f"the lattice is (bar: lattice share >= 50%)")
+    else:
+        print(f"      -> the maskSize-3 approximation adds "
+              f"{cvn - ev} pixels on top of the lattice's {ev}, i.e. most of "
+              f"the violations ARE the approximation (bar: lattice share "
+              f"< 50%). The cv2 violations are NOT distance-checked, so "
+              f"rim confinement is asserted for the exact masks only.")
 
     with open(OUT / "icj10_radius.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
