@@ -71,3 +71,17 @@ raised with the date.
   equals the `C_UNMATCHED` break-even exactly.
   *shortcut: the two constants that look load-bearing carry their as-written
   values; raised by the bounded sweep registered 2026-10-12.*
+
+- shortcut: IC-j6's `rejoin` figure of record changed on 2026-10-17 when
+  IC-j9 adopted the touch merge into `stroke_chain.py`
+  (sha `e9e49267c339f885` -> `53b8406cfbb4f4d1`). Pre-adoption 0.643
+  (`[40:171]`) / 0.619 (`[0:40]`); post-adoption 0.752 / 0.711, `wrong`
+  unchanged. Raised when: any entry quoting 0.643 is re-read -- it is a
+  pre-adoption reading and stays as written. `score_touch_merge.py` now
+  refuses to print a verdict unless its reference arm is the pre-adoption
+  sha, because with the repair installed both its arms are one code path.
+- shortcut: the post-adoption failure buckets have NOT been re-measured.
+  `t_relay_other` at 66.2% of remaining failures is arithmetic on IC-j8's
+  measured parts (111 failures, 34 gains all inside `t_touch_split`), not a
+  measurement. Raised when: a registration needs the post-adoption profile --
+  it must re-run the bucket classifier, not cite that number.

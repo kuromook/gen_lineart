@@ -40,6 +40,15 @@ J9_SCORE_GAIN = 0.05          # half of the discovery set's +0.109
 J9_MIN_TRIALS = 60            # below this: UNDERPOWERED, no verdict
 J9_REF_REJOIN, J9_REF_TOL = 0.643, 0.10   # outside this: not comparable
 
+# The reference arm's identity, not its behaviour, is what every bar in this
+# file was written against. IC-j9 ADOPTED the touch merge on 2026-10-17, so
+# stroke_chain.py now carries the repair and this tool would be comparing the
+# candidate against itself. A self-comparison reads as "gained 0, LOST 0,
+# newly wrong 0", which is indistinguishable from a repair that does nothing
+# -- so the verdict is refused rather than printed. Run the pre-adoption file
+# (commit 1a82ea5) as the reference to reproduce IC-j8/IC-j9.
+PRE_ADOPT_SHA = "e9e49267c339f885"
+
 
 def per_trial(trials, chainer):
     """(rejoin set, wrong set) by trial index, so the two arms can be
@@ -138,6 +147,16 @@ def main():
           f"{len(bad0 - bad1)}")
     print(f"  an identical count is not an identical set; the two numbers "
           f"above are what decides it.")
+
+    if sha(sc.__file__) != PRE_ADOPT_SHA:
+        print(f"\n**NO VERDICT.** The reference arm is {sha(sc.__file__)}, not "
+              f"the pre-adoption chainer {PRE_ADOPT_SHA} that every bar in "
+              f"this file was written against.\n  IC-j9 adopted the touch "
+              f"merge into stroke_chain.py on 2026-10-17, so the two arms "
+              f"above are the same code path and\n  their agreement is an "
+              f"IDENTITY, not evidence. To reproduce IC-j8 or IC-j9, check "
+              f"out the pre-adoption file (commit 1a82ea5).")
+        return 0
 
     if args.holdout:
         print("\nIC-j9 bars, fixed before this run (commit b29b4c4):")

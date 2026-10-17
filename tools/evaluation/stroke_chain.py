@@ -45,6 +45,15 @@ rather than by luck (amendment recorded in the work log with its reason).
 
 Usage:
   stroke_chain.py --root <panel dir> --which line --label ako5 --limit 40
+
+ADOPTED 2026-10-17 (IC-j9, doc/work_log.md): `fragments()` keeps the full set
+of junction clusters each fragment touches, and `merge_nodes` unions every
+cluster a fragment of at most MERGE_PX touches, instead of only the dominant
+cluster per end. No constant is altered. Decided on the never-read holdout
+`[0:40]`: rejoin +0.093, 9 trials gained and 0 lost, `wrong` 7 vs 7 with 0
+newly wrong by set, score +0.093 against a +0.05 bar. The pre-adoption file
+(sha256 e9e49267c339f885), which every C4 anchor before this date cites, is
+recoverable at commit 1a82ea5.
 """
 
 import argparse
@@ -131,12 +140,14 @@ def fragments(ink):
     h, w = skel.shape
     frags, nodes = [], []
     stats = {"blobs": 0, "ends_two_nodes": 0}
+    touch = []
     for pix in by.values():
         p = order_path(pix, min_px=1)
         if p is None:
             stats["blobs"] += 1
             continue
         ends = []
+        seen = set()
         for tip in (p[0], p[-1]):
             x0, y0 = int(round(tip[0])), int(round(tip[1]))
             hit = defaultdict(int)
@@ -151,8 +162,11 @@ def fragments(ink):
                 if len(hit) > 1:
                     stats["ends_two_nodes"] += 1
                 ends.append(max(sorted(hit), key=lambda n: hit[n]))
+            seen |= set(hit)
         frags.append(p)
         nodes.append(ends)
+        touch.append(seen)
+    stats["touch"] = touch
     return frags, nodes, skel, stats
 
 
@@ -160,7 +174,7 @@ def path_len(p):
     return float(np.hypot(*(np.diff(p, axis=0).T)).sum()) if len(p) > 1 else 0.0
 
 
-def merge_nodes(frags, nodes):
+def merge_nodes(frags, nodes, touch=None):
     """Union junction clusters bridged by a fragment of at most MERGE_PX. The
     bridge itself is absorbed into the node (its ink joins no stroke), so the
     absorbed length is returned and reported rather than vanishing."""
@@ -176,12 +190,23 @@ def merge_nodes(frags, nodes):
         for n in (n0, n1):
             if n >= 0:
                 parent.setdefault(n, n)
+    if touch is not None:
+        for s in touch:
+            for n in s:
+                parent.setdefault(n, n)
     absorbed, apx = set(), 0.0
     for fi, (n0, n1) in enumerate(nodes):
-        if n0 >= 0 and n1 >= 0 and n0 != n1 and path_len(frags[fi]) <= MERGE_PX:
-            ra, rb = find(n0), find(n1)
-            if ra != rb:
-                parent[ra] = rb
+        if touch is None:
+            ids = [n0, n1] if (n0 >= 0 and n1 >= 0 and n0 != n1) else []
+        else:
+            # THE REPAIR: every cluster the fragment touches, not the two its
+            # ends were assigned to. See doc/work_log.md IC-j7 A6 / IC-j8.
+            ids = sorted(touch[fi]) if len(touch[fi]) >= 2 else []
+        if ids and path_len(frags[fi]) <= MERGE_PX:
+            for a in ids[1:]:
+                ra, rb = find(ids[0]), find(a)
+                if ra != rb:
+                    parent[ra] = rb
             absorbed.add(fi)
             apx += path_len(frags[fi])
     return {n: find(n) for n in parent}, absorbed, apx
@@ -426,7 +451,7 @@ def build_links(ink, mode, rng, pre=None):
     any of the swept constants."""
     frags, nodes, skel, stats = pre if pre is not None else fragments(ink)
     stats = dict(stats)
-    nmap, absorbed, apx = merge_nodes(frags, nodes)
+    nmap, absorbed, apx = merge_nodes(frags, nodes, stats.get("touch"))
     stats["absorbed_frags"] = len(absorbed)
     stats["absorbed_px"] = apx
     arms_by_node = defaultdict(list)   # merged node -> [(frag, end)]

@@ -3288,3 +3288,61 @@ already on disk is not a result until it is read.** The rule written then --
 *a cheap gate that can release or claim a scheduled slot is read before any
 expensive branch* -- is widened: **a finished run's log is read in the same
 session it finishes in, before any new registration is drafted.**
+
+### 2026-10-17 The adoption carried into the code, and what it moves
+
+`stroke_chain.py` now carries the repair. sha256 **`e9e49267c339f885` ->
+`53b8406cfbb4f4d1`**. The pre-adoption file is recoverable at commit
+`1a82ea5` and a copy was kept while the swap was verified.
+
+Verification, before anything was re-measured:
+
+- **Assert (byte identity).** The adopted file's body, with the module
+  docstring stripped by `ast`, is **byte-identical to the candidate that was
+  measured** (22,783 bytes). The adoption is not a re-implementation of the
+  candidate; it *is* the candidate, with the original docstring restored and
+  an adoption paragraph appended.
+- **Assert (constants).** All 10 swept/registered constants identical across
+  the swap: `TAN_SKIP 2, TAN_WIN 20, KAPPA_REF 200.0, THETA_MAX 60.0,
+  D_MAX 3.0, W_KAPPA 0.0, MERGE_PX 6.0, C_UNMATCHED 1.0, THETA0 30.0,
+  MAX_ARMS 8`. **`SPUR_PX` was named and found absent in both** -- J has no
+  spur constant because J does not prune, which is the cross-track
+  comparability note already recorded against Track F's `spur_max = 6`.
+- **Installation check, on the discovery set, not the holdout.** With the
+  repair installed the two arms of `score_touch_merge.py` are the same code
+  path, and on panels `[40:60]` (36 trials) they read **gained 0, LOST 0,
+  newly wrong 0** -- which is what an identical code path must read.
+
+That last reading is also a hole, so it was closed rather than noted: a
+self-comparison reads exactly like a repair that does nothing. **A
+`PRE_ADOPT_SHA` guard was added to `score_touch_merge.py`: if the reference
+arm is not `e9e49267c339f885`, the tool prints `NO VERDICT` and returns
+before any bar is read**, naming the commit to check out to reproduce IC-j8
+or IC-j9. Verified by running it with `--holdout` and watching it refuse.
+
+**Figures of record that this moves.** IC-j6's `rejoin` is now the
+post-adoption number wherever the current tool is run:
+
+| set | pre-adoption (figure of record until 2026-10-17) | post-adoption |
+|---|---:|---:|
+| `[40:171]` discovery | 0.643 | **0.752** |
+| `[0:40]` holdout | 0.619 | **0.711** |
+
+`wrong` is unchanged on both sets (0.061 / 0.072). Every entry before today
+citing 0.643 or sha `e9e49267c339f885` is a pre-adoption reading and stays as
+written.
+
+**What the remaining failure profile becomes -- ARITHMETIC, not a new
+measurement.** On the discovery set: 111 failures, 34 newly rejoined, so 77
+remain. All 34 gains land in `t_touch_split` (34 of its 37 is the 92% flip
+rate IC-j8 measured, and C5's anchor found 0 `merge_touch` flips outside that
+bucket). Then `t_relay_other`'s 51 cases are **66.2% of what is left**, up
+from 46.0% of all failures. This is division on measured parts and is
+labelled as such; the post-adoption buckets have not been re-measured, and
+the next registration that needs them must measure them.
+
+**`t_relay_other` is now the whole remaining problem and it is unaddressed.**
+It needs a two-node cost (the ridge loses on a node-local cost while the
+evidence is chain-local), which is a design change under its own
+registration, and the bounded `MERGE_PX` / `C_UNMATCHED` sweep -- the ridge
+sits 0.2-5.5px above `MERGE_PX = 6.0` -- is still unwritten.
