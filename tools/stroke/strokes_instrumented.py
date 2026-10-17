@@ -9,6 +9,10 @@
 `extra` に入るもの(K4a が数えるために必要で、原本が外に出していないもの):
   bridges   畳み込まれた橋 span ごとの (span 番号, 画素数, 局所インク幅の中央値, 畳み込み閾値)
   spans_all 全 span の (画素数, 局所インク幅の中央値, 付いている節点の数)
+  att       (span 番号, 節点番号, 付着点 row, 付着点 col) —— 原本の `attachments` の出力そのまま
+  node_root 畳み込み後の節点代表 `nuf.find(n)`(K2 の箱 A と箱 C の区別に必要)
+  arms      畳み込み後の節点 -> [(span 番号, 腕の単位ベクトル)] —— 原本が対を作るのに使う候補集合
+  linked_pairs 原本が実際に対にした span 対(K2 の条件 (d)「規則が対にしなかった」に必要)
 原本 `strokes_from_skeleton` の該当箇所に行を足しただけで、判定の式には触れていない。
 """
 
@@ -182,6 +186,7 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
         v = arm_direction(np.stack([r, c], 1).astype(np.float32), ar, ac, reach)
         arms.setdefault(nuf.find(n), []).append((s, v))
     suf = UF(ns + 1)
+    linked_pairs = set()                                                   # K: 記録だけ
     cos_lim = -np.cos(np.deg2rad(max_bend))  # straight continuation: dot = -1
     n_links = 0
     for node, lst in arms.items():
@@ -199,6 +204,8 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
             if i in used or k in used:
                 continue
             used.update((i, k)); suf.union(lst[i][0], lst[k][0]); n_links += 1
+            linked_pairs.add((min(lst[i][0], lst[k][0]),
+                              max(lst[i][0], lst[k][0])))                  # K: 記録だけ
     # bridge spans are not linked: they stay their own (short, usually dropped)
     # token, so a thick crossing leaves a gap of about one ink width
     root = np.array([suf.find(s) for s in range(ns + 1)])
@@ -211,5 +218,11 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
     spans_all = [(int(len(r)), float(np.median(ink_width[r, c])),
                   len({n for n, _, _ in nodes_of.get(i + 1, [])}))         # K: 相異なる節点の数
                  for i, (r, c) in enumerate(spans)]                        # K: 記録だけ
-    extra = {"bridges": bridges, "spans_all": spans_all, "bridge_flag": bridge.copy()}
+    extra = {"bridges": bridges, "spans_all": spans_all, "bridge_flag": bridge.copy(),
+             # K2 が必要とするもの(いずれも記録だけ。規則は 1 行も変えていない)
+             "att": [(int(s_), int(n_), float(ar_), float(ac_)) for s_, n_, ar_, ac_ in att],
+             "node_root": {int(n_): int(nuf.find(n_)) for n_ in range(nn + 1)},
+             "arms": {int(k_): [(int(s_), (float(v_[0]), float(v_[1])))
+                                for s_, v_ in lst_] for k_, lst_ in arms.items()},
+             "linked_pairs": sorted(linked_pairs)}
     return spans, stroke_of_span, keep, info, extra
