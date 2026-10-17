@@ -3701,3 +3701,95 @@ G1 is worth more than its size: `absorbed_px` was introduced so that absorbed
 ink would be *reported rather than vanish*, and it cannot see a zero-length
 absorption at all. The same blindness applies to any earlier reading of
 `absorbed_px`.
+
+## 2026-10-17 IC-j11 result: **no cell is proposable** -- `MERGE_PX = 6` survives a sweep, and the bar that rejected the rest is the one worth looking at
+
+Log: `results/stroke_chain_20261010/icj11_sweep.txt`, every cell in
+`icj11_sweep.csv`. Registration `c9074ad`, tool `ccdda59`. Discovery set
+`[40:171]`, **311 trials**, 30 cells. The reserved set `[171:271]` is
+**still unread.**
+
+### IC, both legs
+
+| cell | rejoin | expected | wrong | expected | |
+|---|---:|---:|---:|---:|---|
+| `MERGE_PX 6, C_UNMATCHED 1.0`, touch **on** | 0.752 | 0.752 | 0.061 | 0.061 | PASS |
+| the same, touch **off** | 0.643 | 0.643 | 0.061 | 0.061 | PASS |
+
+Exact to three decimals against values measured by different code on
+different days. The grid is scoring the chainer that is installed.
+
+### The registered verdict
+
+**0 proposable cells** (bar: `broken = 0` by set AND `newly_wrong = 0` by set
+AND `score - 0.691 >= +0.05`). Under the bar registered before the run,
+`MERGE_PX = 6.0` **stands as the value that survived a sweep** rather than
+the value nobody tested. That is the headline.
+
+### Which bar did the rejecting -- and the reading that follows
+
+Two cells fail on **one clause only**, and it is not `broken` and not
+`score`:
+
+| cell (touch on) | rejoin | wrong | score | vs baseline | broken | newly_wrong |
+|---|---:|---:|---:|---:|---:|---:|
+| baseline `MERGE_PX 6, C_UNMATCHED 1.0` | 0.752 | 0.061 | 0.691 | -- | 0 | 0 |
+| `MERGE_PX 8, C_UNMATCHED 1.0` | 0.830 | **0.048** | 0.781 | **+0.090** | **0** | **1** |
+| `MERGE_PX 10, C_UNMATCHED 1.0` | 0.868 | **0.035** | 0.833 | **+0.142** | **0** | **3** |
+
+Both **lower the `wrong` rate** (0.061 -> 0.048 -> 0.035, i.e. roughly 19
+contaminated trials -> 15 -> 11) while creating 1 and 3 new ones. They break
+**nothing**. They fail because I registered `newly_wrong = 0` **by set**.
+
+That bar is not the foundation's trap -- the reference passes it trivially,
+by definition -- but it is a **different one-sided reading error, and it is
+mine**: *a set-level zero on creations cannot see a net improvement.* It
+refuses any **trade**, and only an exactly additive repair can clear it.
+IC-j9's repair happened to be exactly additive (gained 9, lost 0, newly wrong
+0), so the conjunction cost nothing there and I carried it over without
+noticing that it is a different kind of bar.
+
+**The verdict is not changed by noticing this.** The bar was registered, it
+rejected these cells, and the entry says so. What follows is a *new*
+registration, below, decided on the **reserved** set.
+
+### Expected shapes: one confirmed, one refuted, one confirmed at scale
+
+1. **Confirmed.** `rejoin` rises with `MERGE_PX` and flattens by 12: 0.752,
+   0.830, 0.868, 0.878, 0.868 (touch on, `C_UNMATCHED 1.0`) -- the peak is at
+   12 and 16 is slightly worse, which is what a ridge maximum of 11.5px
+   predicts.
+4. **Met.** `rejoin` at `MERGE_PX = 12` is **+0.125** against the registered
+   floor of +0.05. **So the ridge IS reachable by the threshold** -- the
+   relay failures are not structurally out of reach, they are priced out.
+5. **Confirmed.** 960 broken trials over the grid, so the grid was wide
+   enough to contain the damage; this is not a free win anywhere.
+2. **REFUTED, and this is the surprise.** `wrong` was registered to rise
+   monotonically with `MERGE_PX`. It **falls**: 0.061, 0.048, 0.035, 0.035,
+   0.035. `wrong monotone False` in all six rows, in the opposite direction
+   to the one registered.
+   **Mechanism, labelled a hypothesis and not measured here:** absorbing more
+   fragments into nodes removes *the occluder's own middle ridge* as a rival
+   arm, and `wrong` is defined as chaining an F part to a piece of the
+   occluder. Loosening the threshold eats the thing that `wrong` counts. If
+   that is right, the falling `wrong` is partly an artefact of the artificial
+   construction rather than a real precision gain -- which is a reason to
+   read the reserved set, not a reason to assume either way.
+3. **`absorbed_px` monotone everywhere; and G1 confirmed at scale.** At
+   `MERGE_PX = 6` the touch switch moves absorbed fragments **1662 -> 2373
+   (+711)** while `absorbed_px` stays at **4578.6 in both arms, identical to
+   one decimal**. 711 fragments absorbed, 0 pixels of ink: they are all
+   single-pixel fragments with `path_len = 0.0`. Any earlier reading of
+   `absorbed_px` is blind to them.
+
+### Two readings that fall out for free
+
+- **`C_UNMATCHED = 0.5` is refuted as a direction.** It breaks 42-46 trials
+  (touch on) and 68-71 (touch off) while driving `wrong` to 0.006: at half
+  the break-even price the chainer stops pairing at all. The 30 degree angle
+  gate costing 1.0 against a break-even of 2.0 was already recorded; this
+  measures what happens on the other side of it.
+- **An internal identity.** Touch **off** at `MERGE_PX = 6, C_UNMATCHED 1.0`
+  reads `broken 34` against the installed baseline -- and IC-j9 measured the
+  adoption gaining exactly **34** trials on this set. The same 34, counted
+  from the other end, by different code.
