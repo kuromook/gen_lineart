@@ -3924,3 +3924,113 @@ else.
 This matters beyond NC2's own row: **C1 requires the best arm to beat its
 NC2, and C4 excludes any arm that fails NC2.** With NC2 void, neither could
 be read, so M1's verdict was blocked on it. It is unblocked now.
+
+## 2026-10-18 IC-j12 result: **NOT ADOPTED** -- the weakening bought nothing, and the quantity I selected the cell on is the one that failed to transfer
+
+Reserved set `[171:271]`, **used once**, read against the bar registered in
+commit `4cbc6de` before the set was touched. Log:
+`results/stroke_chain_20261010/icj12_verify.txt`.
+
+100 panels -> 1186 candidate sites -> **379 usable trials** (registration
+expected ~237; more, not fewer).
+
+### Preconditions, read first
+
+- **379 >= 60** usable trials -> not underpowered.
+- reference rejoin **0.710** against the discovery set's 0.752, inside
+  `+/- 0.10` -> **comparable**. Both legs may be read.
+
+### The diagnostic that could have refused the legs did not fire -- and it refutes IC-j11's mechanism hypothesis
+
+| arm | trials with an occluder part still unabsorbed | ratio to reference |
+|---|---:|---:|
+| reference (`MERGE_PX 6`, touch on) | 379 / 379 | -- |
+| cell (`MERGE_PX 10`, touch on) | 379 / 379 | **1.000** |
+
+Refusal bar was `< 0.80`. The ratio is **1.000**: at `MERGE_PX = 10` the
+occluder's ridge is still present as a chainable arm in **every single
+trial**, so `wrong` is measuring the same opportunity in both arms.
+
+`wrong`, raw and opportunity-normalised together, as registered:
+**reference 0.061 / 0.061, cell 0.042 / 0.042** -- identical, because
+survival is 1.000 in both arms.
+
+**This refutes the mechanism hypothesis IC-j11 recorded** (labelled there as
+unmeasured): the fall in `wrong` as `MERGE_PX` loosens is **not** a loss of
+opportunity. The occluder ridge is not eaten. The fall is a real precision
+gain, and the IC-j11 entry's "shape 2 refuted, mechanism unknown" now has a
+mechanism it is **not**: absorption.
+
+### The three legs
+
+| leg | bar | measured | verdict |
+|---|---|---|---|
+| cost | `wrong_count_cand <= wrong_count_ref` **AND `broken = 0` by set** | wrong **16 vs 23**, **broken 2** | **FAIL** |
+| recall | `rejoin_cand - rejoin_ref > 0` | **+0.113** (0.710 -> 0.823) | PASS |
+| merit | `score_cand - score_ref >= +0.05` | **+0.132** (0.649 -> 0.781) | PASS |
+
+All three required. **NOT ADOPTED.** `newly_wrong` printed as registered: 4.
+`gained` 45.
+
+The reserved set is used once and is **not re-read under another bar.**
+
+### The two readings that matter, and the second one is about me
+
+**1. `broken` did not transfer.** This cell was selected by one mechanical
+rule -- *the highest `score` among discovery cells with `broken = 0`* -- and
+on the discovery set `[40:171]` it broke **0** of 311 trials. On the reserved
+set it breaks **2** of 379. The quantity the selection rule was built on is
+the quantity that failed to replicate. That is the substantive result, and it
+is the argument for a reserved set stated as a measurement rather than as a
+principle: the cost half of a 30-cell table is the half a discovery set
+cannot be trusted on, because selecting the minimum of a noisy count is
+exactly how a zero is manufactured.
+
+**2. The weakening bought nothing, and that is the cleanest answer available
+to my own conflict of interest.** I dropped `newly_wrong = 0 by set` after
+seeing it reject two cells, recorded the conflict, and relied on the reserved
+set as the only protection. The cell then failed on the clause I **kept**.
+So the weakening did not reach into the verdict: had `newly_wrong = 0` still
+been in the bar, the verdict would be the same four-letter word. The
+protection held.
+
+### The clause worth naming, with no third registration attached to it
+
+`broken = 0 by set` is zero-tolerance on a regression count, and it has now
+rejected a cell that is better on **every aggregate** (`rejoin` +0.113,
+`wrong` -7 trials, `score` +0.132) at a cost of 2 trials in 379. That is the
+same family as the one-sided bar IC-j11 found. **Twice now a zero-tolerance
+clause of mine has bitten after the fact.**
+
+What I am **not** doing is registering IC-j13 to re-read this cell under a
+tolerance. Two things stop it: the reserved set is used, and the pattern
+itself -- a bar weakened once per failure is not a bar. Recorded instead as a
+**standing design question, to be fixed before any new set exists**: should a
+cost leg on a count admit a bounded regression (e.g. `broken <= 1% of
+trials`), and if so the number goes into the registration **before** the
+material does. `doc/shortcuts.md` carries it.
+
+### What stands
+
+**`MERGE_PX = 6.0` has now survived a bounded sweep (IC-j11, 30 cells, 0
+proposable) and a reserved-set verification of its best challenger (IC-j12,
+cost leg failed).** It is the installed value and no evidence yet displaces
+it. `C_UNMATCHED = 1.0` likewise: 0.5 was refuted as a direction and 2.0
+never cleared a cost leg.
+
+What is **not** settled is the relay ridge itself. IC-j11 measured that
+`MERGE_PX = 12` reaches it (+0.125 rejoin), and IC-j12 now measures that
+loosening does not cost opportunity -- the ridge is **priced out at a
+node-local cost, not out of reach**. That is an argument for the relay repair
+as a two-node cost, which is registered-but-unwritten and remains so.
+
+### Comparability note, recorded because the word "reserved" is doing work here
+
+`calibrate_stroke_chain.load_crops` indexes the **raw 5018-file `line/`
+directory** of
+`dataset/regions_clip_pairs_v3_koma_panels_20260826`, not `koma_split`'s
+`held` 969. So `[0:40]`, `[40:171]` and `[171:271]` are reserved **within
+Track J's chainer work only** -- they are not disjoint from the koma
+`train` split that the fill tracker's `freq_table` arm is fitted on. For a
+non-learned instrument that is irrelevant, and it is written down so the word
+is not read as more than it is. 4747 panel indices remain unread.
