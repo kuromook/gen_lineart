@@ -3351,3 +3351,91 @@ It needs a two-node cost (the ridge loses on a node-local cost while the
 evidence is chain-local), which is a design change under its own
 registration, and the bounded `MERGE_PX` / `C_UNMATCHED` sweep -- the ridge
 sits 0.2-5.5px above `MERGE_PX = 6.0` -- is still unwritten.
+
+## 2026-10-17 Owed entries: the cross-track instrument agreement, and two comparability notes
+
+These were agreed with Track K on 2026-10-16 and recorded there and in
+`../lineart/inbox/`, but not here. Written now, with the numbers recomputed
+from the CSV rather than carried in prose.
+
+### (c) IC-k1: one instrument, two tracks, 0.99 -- a lesson-12 anchor
+
+Track K measured koma-wide GT solid-fill area at `r = 4` independently, on
+their own code path, and reports a median of **0.0646**. Recomputed from
+`results/fill_koma_20261010/per_panel_held.csv` on my side (969 panels, one
+row per panel, `gt_area_frac`):
+
+| stratum | n | area_frac mean | **median** | q25 | q75 | ink-normalised `fill_ratio` mean / median |
+|---|---:|---:|---:|---:|---:|---:|
+| all panels | 969 | 0.1027 | **0.0655** | 0.0238 | 0.1455 | 0.5143 / 0.5622 |
+| normal | 956 | 0.1040 | **0.0665** | 0.0246 | 0.1476 | 0.5193 / 0.5666 |
+| near-blank | 13 | reported separately, no verdict read | | | | |
+
+**0.0646 / 0.0655 = 0.986.** Two tracks, two code paths, the same definition
+of the target: agreement to 1.4%. This is the leg lesson 12 asks for -- one
+anchor to something this pipeline did not produce -- and it is the first time
+a Track J number has been reproduced from outside Track J.
+
+**What it does NOT establish, stated because it is the easy misreading:**
+it confirms that *the same constant gives the same value*. It says nothing
+about whether **`FILL_HALF_WIDTH_PX = 4.0` is the right half-width.** Both
+tracks used 4.0. The sensitivity analysis of that constant is registered
+separately below and is not a re-tune.
+
+**The skew caveat, which the agreement itself nearly hid.** My stage-2
+headline is the **mean 0.1040**; the quantity K matched is the **median
+0.0665**. The distribution is strongly right-skewed (mean / median = 1.56,
+q25 0.0246 vs q75 0.1476, a 6x spread across the middle half). **Medians are
+compared to medians and means to means**, and any cross-track figure must say
+which it is. A mean-to-median comparison here would have read as a 61%
+disagreement and would have been wrong.
+
+### (c2) J does not prune; Track F does. Fragment, node and arm counts are not comparable between tracks
+
+- **Track J**: `stroke_chain.fragments()` calls `skeletonize(ink)` in place
+  and **keeps short pieces**. There is no spur constant -- `SPUR_PX` was
+  named and found absent when the chainer was swapped (entry above). The only
+  absorption is `merge_nodes` at `MERGE_PX = 6.0`, and the absorbed length is
+  returned and reported as `absorbed_px` rather than vanishing.
+- **Track F**: prunes with `spur_max = 6` and reads a **cached** skeleton
+  (`panel_skeleton_20260917`).
+
+So for **the same image** the two tracks do not agree on how many fragments,
+nodes or arms there are. Any table that places a J fragment count beside an F
+or K one is comparing two different decompositions. Track K recorded this and
+will not place K2's bucket counts beside J's.
+
+**The second-order consequence, which Track K got right and I got wrong.**
+I warned them that `GAP_MAX = 24px` would admit my 51 ridge cases (facing
+tips 11.2-19.9px apart *with ink between*). That was wrong: those 51 have
+nodes at both ends, so they never enter their free-end box at all. **Their
+mechanism is the real one**: `spur_max = 6` pruning removes free ends from
+the *skeleton* while **the ink stays in the image**, so pruned sites produce
+free-end pairs facing each other across ink. They added the condition "no ink
+on the segment between the tips" (sampled 1px along, collar
+`max(2.0, local ink width / 2)` at each end) and will **print the
+distribution of ink-pixel counts** with a stop rule if the 0 and non-0 peaks
+do not separate.
+
+### (c3) K2's numbers cannot be compared to IC-j6's rejoin -- the mirror of K's own note
+
+Track K registered "K2 の数は IC-j6 の rejoin と比較できない". The same holds
+in this direction and is recorded here so neither side has to remember it:
+
+- IC-j6's `rejoin` is measured on **artificial damage**: a straight occluder
+  is *added* across a real fragment, so the ground truth is known by
+  construction. K2 works on **real ink** with no known ground truth per site.
+- IC-j6 therefore cannot contain the defect K2 is built for. 0 of 90
+  topology failures were free-end cases, and **a deliberately broken stroke
+  is unjoinable at 0% by architecture** (`build_links` only collects arms
+  with node id >= 0), not "sometimes missed". This is the foundation's fifth
+  control trap -- an instrument built from artificial damage cannot contain
+  damage the material never shows.
+- The decompositions differ as well, per (c2).
+
+Division of labour as agreed, unchanged: **deliberate gaps on real ink ->
+Track K**; **gap closing (item 2) -> Track J**; **chainer and the bounded
+`MERGE_PX` / `C_UNMATCHED` sweep -> Track J**. Track K changed K4's variable
+from J's `MERGE_PX = 6.0` to Track F's bridge-collapse threshold
+`max(3.0, 1.5 x median(local ink width))`, because Track F produced the lines
+the author actually marked.
