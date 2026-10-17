@@ -85,3 +85,30 @@ raised with the date.
   measured parts (111 failures, 34 gains all inside `t_touch_split`), not a
   measurement. Raised when: a registration needs the post-adoption profile --
   it must re-run the bucket classifier, not cite that number.
+
+- shortcut: a cost leg on a regression count uses zero tolerance
+  (`broken = 0 by set`, and IC-j11's `newly_wrong = 0 by set`), which refuses
+  any trade and has now twice rejected a candidate better on every aggregate
+  -- IC-j12's cell gained 45 trials and lost 2 of 379. **When it is raised:**
+  in the registration that precedes the next unread chainer set, with the
+  tolerance written as a number before the material is touched; never by
+  re-reading a set already used.
+- shortcut: the chainer's "reserved" index ranges (`[0:40]`, `[40:171]`,
+  `[171:271]`) are over the raw 5018-file `line/` directory, so they are
+  reserved within Track J's chainer work only and are not disjoint from the
+  koma `train` split the fill tracker fits `freq_table` on. **When it is
+  raised:** if a *learned* arm is ever evaluated through
+  `calibrate_stroke_chain`, at which point the ranges must be re-cut through
+  `koma_split`.
+- shortcut: IC-j10's cv2 nesting violations are counted but their rim
+  distance is not asserted; rim confinement (<= 1.0px) is established for the
+  exact-EDT masks only. **When it is raised:** by the paired C1
+  re-measurement recorded in the IC-j10 result entry, which measures the cv2
+  rim distance on the same panels.
+- shortcut: the IC-j10 registration's second expected value (core area
+  `r=8 / r=4` = 0.63) cites "an r-census on 60 held panels, recorded
+  2026-10-14" that is **not in this repository** -- no entry, no commit, no
+  results file on that date. **When it is raised:** it is not; the number is
+  withdrawn as a registered expectation in the IC-j10 result entry and the
+  quantity is re-registered from the 956-panel measurement if it is ever
+  wanted again.

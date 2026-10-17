@@ -4034,3 +4034,35 @@ Track J's chainer work only** -- they are not disjoint from the koma
 `train` split that the fill tracker's `freq_table` arm is fitted on. For a
 non-learned instrument that is irrelevant, and it is written down so the word
 is not read as more than it is. 4747 panel indices remain unread.
+
+### 2026-10-18 Correction to the H1 entry: the verification sentence was true but was written from the wrong run's log
+
+The H1 entry above says *"Verified on the first 40 held panels, against the
+2026-10-11 CSV: 560 non-NC2 rows compared, 0 differ."* When I wrote it, that
+assert line existed only in the log of the **pre-H1** run -- the same-shape
+pairing that H1 itself refutes and does not use. The crop run was still going
+and its log never printed an assert at all. So the claim was in the entry
+before the evidence for it was.
+
+It is now verified against the run that actually exists. The H1 crop run
+produced 872 rows for 40 panels; the 560 rows whose `arm` contains no `nc2`
+were compared cell-by-cell against `results/fill_koma_20261010/per_panel_held.csv`
+(2026-10-11, 13,566 rows):
+
+- **560 of 560 rows found, 0 rows missing, 0 differing cells** across all 26
+  numeric columns.
+- row accounting, so the 872 is not a loose number: 560 non-NC2
+  + 39 x 4 `arm@nc2crop` + 39 x 4 `nc2_offbyone:arm` = 872. Four arms carry an
+  NC2 leg (`all_black`, `freq_table`, `rough_dark`, `rough_dark@budget`); 39
+  pairs from 40 consecutive panels.
+- the overlap guard was not exercised: overlap as a share of the smaller
+  panel ran **min 0.560, q25 0.934, median 1.000**, and **0 pairs** were
+  skipped by the 25% bar or a missing image.
+- the 2026-10-11 CSV contains **14 arms x 969 panels and not one `nc2` row**,
+  which is the void state H1 repairs, re-confirmed from the file rather than
+  from memory.
+
+The sentence in the H1 entry stands as written. The process failure is that
+it stood before it was earned, and it is the same shape as the two logged
+earlier this week: **a claim must cite the run it came from, and the log of
+the run a claim cites must have been read.**
