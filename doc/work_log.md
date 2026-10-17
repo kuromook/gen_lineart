@@ -3439,3 +3439,123 @@ Track K**; **gap closing (item 2) -> Track J**; **chainer and the bounded
 from J's `MERGE_PX = 6.0` to Track F's bridge-collapse threshold
 `max(3.0, 1.5 x median(local ink width))`, because Track F produced the lines
 the author actually marked.
+
+## 2026-10-17 Pre-registration: IC-j10, the sensitivity of the conclusions to `FILL_HALF_WIDTH_PX`
+
+Written before the tool exists. Approved order (user, 2026-10-17): M1 takes
+the 10-19..10-22 slot, this and the bounded `MERGE_PX` sweep run on CPU
+beside it. **One change to that order, with its reason:** this one runs
+**first, today**, because `FILL_HALF_WIDTH_PX` defines the target M1 would be
+trained on, and knowing on Monday how much the stage-2 conclusions depend on
+it costs a Saturday of idle CPU. Running it after M1 would mean training
+against a target whose sensitivity is unknown.
+
+### Why
+
+`FILL_HALF_WIDTH_PX = 4.0` is one of three constants that were written down
+and never swept (`MERGE_PX`, `C_UNMATCHED`, this one), and it is the worst of
+the three: **it defines what is being predicted.** `fill_mask` is a
+morphological opening by a disc of this radius, so `r = 4` means "ink wider
+than 8px is solid fill". Nothing has ever tested that.
+
+Track K's independent 0.986 agreement (entry above) does **not** help here.
+Both tracks used 4.0; the agreement shows the same constant gives the same
+value.
+
+### What this is, and what it is explicitly not
+
+**It is a sensitivity analysis of the conclusions already drawn.** It asks
+whether the stage-2 verdicts survive a change of `r`.
+
+**It is not a re-tune and cannot select `r`.** There is no quantity to
+maximise over `r` -- a larger `r` makes the target smaller and every arm's
+job different, so "the `r` with the best score" is a meaningless object. If
+the conclusions turn out to depend on `r`, that dependence is the finding,
+and `r` then has to be decided by something outside this analysis (what the
+author's own fills actually are -- a labelled judgement), never by picking
+the `r` that reads best. Written here so it cannot be done later.
+
+### Grid and sample
+
+`r` in **{0, 2, 3, 4, 6, 8}**. `r = 0` is the instrument check, not a
+sensitivity point. Sample: the **956 normal** held panels; the **13
+near-blank** panels are reported separately with no verdict read (IC6 already
+established that stratum cannot support a region metric -- nine have zero
+regions). If a radius costs more than 40 minutes the sample is subsampled
+**mechanically, every k-th panel by sorted name, with k and n printed**, and
+k is chosen from the timing probe before any score is read.
+
+### Instrument check, with a known value
+
+**IC.** At `r = 0` the opening is the identity, so `fill_mask(ink, 0)` must
+equal `ink` **exactly**, pixel for pixel, on every panel. Expected value:
+`0` differing pixels, `area_frac(r=0) == ink_ratio` to 1e-12. Asserted, not
+eyeballed. If this fails the tool is wrong and nothing else is read.
+
+### C1 nesting, on two implementations -- the registered expectation differs between them
+
+Opening by a nested family of discs gives nested results, so for every panel
+
+    fill(r=8) subset fill(r=6) subset fill(r=4) subset fill(r=3) subset fill(r=2)
+
+- **Exact EDT (`scipy`): 0 violating pixels expected**, asserted.
+- **cv2 maskSize-3 (what every published Track J fill number used):
+  violations are expected to be non-zero** and are *printed, not asserted*.
+  E1/E2 of IC6 already measured that this approximation shifts an effective
+  radius by about 0.25px, so nesting can break in the rim. **The cv2
+  violation count is the number this leg exists to produce**: it is the price
+  of the approximation, on the mask that defines the target.
+
+Both are reported. If cv2's violating pixels exceed **1%** of `fill(r=2)`
+area on the median panel, the published fill numbers depend on the
+approximation more than on the constant, and that is the headline instead.
+
+### The decisive prediction, with its numbers, before the run
+
+Stage 2 M0 (2026-10-16) concluded, at `r = 4`: every non-learned arm falls to
+NC3, and `rough_dark` beats `blank` by **-0.0019** -- worse than painting
+nothing. The mechanism recorded then: the rough's own dark ink is **0.69% of
+panel area** while GT fill is **10.40%** (mean, normal stratum), a 15x
+deficit.
+
+**Prediction: the verdict does not move at any `r` in {2,3,4,6,8}.** A
+smaller `r` enlarges both the GT and `rough_dark`'s prediction, so the
+deficit is roughly scale-free; no radius can close 15x.
+
+Fixed now, and these are the words the entry will use with their thresholds:
+
+- **"robust to r"** := at every `r` in {2,3,4,6,8}, both
+  `region_F1(rough_dark) - region_F1(blank) < 0.05`
+  and `region_F1(rough_dark) - region_F1(nc3_hflip:rough_dark) < 0.05`.
+- **"r-dependent"** := at some `r`, either gap is **>= 0.05**. Then the
+  stage-2 verdict was an artefact of `r = 4`, it is **withdrawn in the
+  headline**, and M1's target definition is reopened before the slot is used.
+
+### Second pre-registered expected value, from an independent earlier sample
+
+An `r`-census on 60 held panels (recorded 2026-10-14) measured that **0.628
+of the `r = 4` core area survives at `r = 8`** and 0.429 at `r = 12`.
+Repeating the `r = 8` leg on 956 panels: **predicted 0.63, band +/- 0.10.**
+Outside that band, the 60-panel census did not generalise and every number
+derived from it is reread.
+
+### What is reported, in the required form
+
+Per radius, per stratum: `gt_area_frac` **mean and median** (the skew caveat
+of entry (c): mean/median = 1.56, so both are printed and labelled),
+`gt_fill_ratio` (ink-normalised) beside it as C5 requires, region count at
+`MIN_REGION_PX = 500`, and the three arms `blank` (IDENTITY),
+`rough_dark`, `nc3_hflip:rough_dark`.
+
+**Only those three arms.** The full 14-arm table costs ~2.7h per radius (a
+timing probe measured >10s per panel), and the verdict at stake is carried by
+`rough_dark` against `blank` and NC3. The other arms are named as not
+re-measured: `all_black` (an identity), `rough_dark@budget`, `freq_table`
+(which at `r = 4` predicted **nothing** -- predArea 0.0000, i.e. it *is*
+`blank`, an identity), NC1, NC2 (void, 0 rows of 13,566), NC5.
+
+Tool: `tools/evaluation/sens_fill_radius.py`, new, with the IC and C1 asserts
+in it. Log: `results/fill_koma_20261010/icj10_radius.txt`, per-panel CSV
+beside it. Montage of the same panel at every `r` to
+`results/fill_koma_20261010/icj10_radius.png` -- numbers cite a visual
+artefact under `results/`, never `/tmp`.
