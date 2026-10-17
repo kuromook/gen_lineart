@@ -3306,8 +3306,13 @@ Verification, before anything was re-measured:
   the swap: `TAN_SKIP 2, TAN_WIN 20, KAPPA_REF 200.0, THETA_MAX 60.0,
   D_MAX 3.0, W_KAPPA 0.0, MERGE_PX 6.0, C_UNMATCHED 1.0, THETA0 30.0,
   MAX_ARMS 8`. **`SPUR_PX` was named and found absent in both** -- J has no
-  spur constant because J does not prune, which is the cross-track
-  comparability note already recorded against Track F's `spur_max = 6`.
+  spur constant because J does not prune. The cross-track comparability note
+  that follows (Track F prunes with `spur_max = 6` and reads a cached
+  skeleton, J calls `skeletonize(ink)` in place, so fragment, node and arm
+  counts are **not comparable between tracks for the same image**) was
+  recorded with Track K and in `../lineart/inbox/`, and **not** in this log.
+  Correcting the claim rather than leaving it: it was not "already recorded"
+  here, and writing it here is one of the owed entries listed below.
 - **Installation check, on the discovery set, not the holdout.** With the
   repair installed the two arms of `score_touch_merge.py` are the same code
   path, and on panels `[40:60]` (36 trials) they read **gained 0, LOST 0,
