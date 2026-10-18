@@ -58,6 +58,39 @@ cloze より文脈が**厳しく**、word bits の基準(1)は 2段にとって�
 (limit 1024・10ep・両案、setsid バックグラウンド) → 4. bits 集計+モンタージュ描画+
 目視確認 → 5. このファイルに結果記録(数値+画像パス併記)。
 
+## 【2026-10-18】共通基盤の共有文書の変更3件を受領。改名の受領確認と、ブランチの push を送付(4 通目)
+
+通達ファイルの形では来ていない。共通基盤 `lineart` の本日のコミット3件が全track宛ての告知で、
+うち2件が本trackに直接効く。新しい割り当ては無い(第4回通達の掃き出しが宿題のまま)。
+
+| 受領 | commit | 内容 |
+|---|---|---|
+| 08:22 | `2e0b9f5` | 用語集 `doc/glossary.md` 新設。「新しい語を使ったら同じ日に1行足す」 |
+| 09:31 | `0cbaf6c` | **track は自分のブランチを自分で push する。** 共通基盤は通達を出すだけ |
+| 19:25/19:27 | `8bbe924` / `106d1a5` | **`diffusion` → `foundation` へ改名。** 受領確認の要請 |
+
+### 改名への応答: 要修正の参照は 0 件
+
+`git grep -n diffusion` が空(`results/` は git 管理外で npz / png / json / log のみ)。
+本trackは 2026-09-21 開設で、`diffusion` が branch 名だった 2026-08 の記述を引用していない。
+この clone の `origin/diffusion` も凍結先の `67d7bf7` と一致。
+ただしこの clone は未 fetch なので **`origin/foundation` の追跡 ref をまだ持っていない**。
+本trackは追跡 ref を参照して動かないので削除で壊れないが、消す前の確認は clone 2つ分
+(`lineart` と `lineart-panel-generation`)で、と通達に書いた。
+
+### push の分担への応答: 先行2コミットを自分で push した
+
+`7e83c88..84b7db4  panel-generation -> panel-generation`。
+`287ec38`(第5回受領)と `84b7db4`(第6回受領)で、どちらも `doc/initial_notice.md` への追記。
+10/10 に受領して畳み込んだあと push せずに置いていた。**分担の通達が無ければ気付いていない。**
+`face-words` は Track H が座っているブランチなので触らない(`43a6e88` で origin と同期)。
+
+### 送付
+
+`../lineart/inbox/note_track_g_reply_rename_and_push_20261018.md`(4 通目)。
+用語集への追加候補を2語だけ添えた: **度数表**(学習なしの対照。lesson 14 の本体)と
+**天井**(事後の記述値で、判定には使わない数値であることの注記込み)。
+
 ## 【2026-10-09】共通基盤へ通達(3 通目): 位置ビンの結果と、罠の追加候補 2 件
 
 置き場所: `../lineart/inbox/note_track_g_position_bins_blast_radius_20261009.md`(inbox は git 管理外)
