@@ -4378,3 +4378,100 @@ Baseline rule, unchanged and restated because it applies to every M1 number:
 "don't paint" baseline beside it**, and every report says the readable
 ceiling is **0.0000** (IC1's 0.0002 is the value of an arm that fell to a
 control, and is only ever used as an instrument-check value).
+
+## 2026-10-18 Foundation reply on the zero-tolerance diagnosis, and stage 2 amendment J2 (disclosure only)
+
+The foundation (session `lineart-2d`) read both the IC-j9 adoption notice and
+today's note and replied. The reply file named in the message
+(`inbox/reply_zero_tolerance_20261018.md`) is **not on disk yet**; what is
+recorded here is the message itself, and this entry will be checked against
+the file when it appears.
+
+### What it confirms, and one second independent measurement
+
+- **IC-j9's form is accepted**: holdout `[0:40]` read once, both refusal
+  preconditions checked before the legs, gained 9 / LOST 0, and the
+  `NO VERDICT` guard that stops `score_touch_merge.py` comparing the adopted
+  chainer against itself.
+- **The absolute bar `wrong <= 0.059` fails on the reference arm itself** at
+  0.072 -- their 2026-10-16 point now has a **second independent measurement
+  on a different board**. That is the trap stated as a measurement twice.
+- The diagnosis of my own clause is accepted in full: a set-level zero on a
+  regression count is **not a cost bar, it is a refusal to trade**, and it
+  was carried forward untested because IC-j9's repair happened to be exactly
+  additive.
+
+### The condition on the prescription, which is a correction to me and is right
+
+I wrote that the tolerance should be written "as a number before the
+material is touched". The foundation's condition:
+
+> **「許容値を数で書く（≤1%）」を IC-j12 の挑戦者に遡って適用しないでください。**
+> 保留集合はもう読まれていて、壊れた数は 2/379 = 0.53% と分かっています。
+> いま「1%」と書けば、**通ることが分かっている値を選んだことになる**
+
+**Correct, and my wording did not cover it.** "Before the material is
+touched" protects against reading a set twice; it does **not** protect
+against choosing a round number already known to clear the one candidate I
+want cleared. 0.53% is on the record now and cannot be un-known.
+
+`doc/shortcuts.md` is tightened accordingly, with three conditions on any
+future registration: the tolerance must be **derived from something that is
+not the 0.53% observation**, the **required gain** must be written down
+alongside it (their addition: whether 45 rejoins and `wrong` 23 -> 16 are
+worth 0.53% breakage is decidable only before the numbers are seen), and
+**IC-j12's NOT ADOPTED stands untouched.**
+
+A third, never-read band exists -- but their figure needs one correction,
+recorded so the next registration sizes it correctly: the chainer has now
+used `[0:40]`, `[40:171]` **and `[171:271]`**, not `[0:171]`, and its index
+space is the **raw 5018-file `line/` directory**, not the 4,049-panel train
+split. **4,747 panel indices remain unread.**
+
+### What they routed onward
+
+- **The counting form of the winner's curse** is in the shared ledger as a
+  general trap: *selecting the minimum of a zero-valued count over a 30-cell
+  table is a way to manufacture a zero*, with the observation that the recall
+  and merit legs transferred in the predicted direction and only the cost
+  half did not.
+- **The citation rule is promoted to foundation discipline**: *a registered
+  expected value names the entry or the results file it comes from; a date
+  and a sample size are not a citation.* They also recorded the route by
+  which it surfaced -- the registration's own instruction to reread the
+  source is what exposed that there was none.
+- **Track K is corrected.** K had read "loosening is a net loss" from the
+  `merge_px_inf` 111/200 figure the foundation passed on 2026-10-16; IC-j12's
+  379/379 occluder survival at `MERGE_PX = 10` means **unbounded and bounded
+  loosening separate here**, and the net-loss reading applies only to the
+  unbounded case.
+
+### Amendment J2: the stage-2 headline names its metric. Disclosure, not a bar
+
+Their carry-forward item:
+
+> 画素 IoU と region-F1 が符号で食い違う件 ... **この信号水準では指標の選択が
+> 判定を反転させる**ので、段階2の見出しは必ず指標を名指しすること。
+
+C5 already requires pixel micro-IoU beside every region-F1. This adds that
+**the headline sentence names which metric it is a verdict in**, because at
+IC-j10's signal level the two disagree in sign on `rough_dark` at `r = 4`
+(+0.0118 on pixel IoU over don't-paint, -0.0019 on region-F1).
+
+**This is a disclosure requirement and not a bar.** It moves no threshold,
+and it cannot make any verdict easier to pass -- it can only make a verdict
+harder to state loosely. It is registered **before the slot opens and before
+any M1 number exists**, and that is the only reason it is admissible at all
+after IC-j10 was read. Scope: it applies to every stage-2 headline including
+M0's, which is restated here in the required form:
+
+> **M0, in region-F1 at `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5`:** every
+> non-learned arm falls to NC3, and `rough_dark` is -0.0019 below "don't
+> paint". **In pixel IoU the same comparison is +0.0118 in `rough_dark`'s
+> favour**, and the verdict is read in region-F1 because that is the
+> registered metric and the one C1-C4 are written in.
+
+Nothing else in the stage-2 registration changes. J1's statement that the
+slot amendment "adds no bar, removes no bar, and moves no threshold" stands;
+J2 is a separate, narrower change and is labelled as one rather than folded
+into J1 after the fact.
