@@ -1289,9 +1289,41 @@ work, and the stated expectation is that the pieces make each other easier.
     holding two bands must not become two attempts, and **disagreement between
     them is itself a finding**: panel confirming while series fails would make
     the mechanism style-specific. K7 and registration A, both label-derived,
-    are registered **at the same time and read in the same pass**, because
-    coming back to the same band with a later idea is the dullest way to spend
-    it.
+    are registered **at the same time**, because coming back to the same band
+    with a later idea is the dullest way to spend it.
+    **Registered 2026-10-18, and only (0) opens the band.** Two things settled
+    it. First, **(i) cannot be answered by the holdout at all**: its outcome is
+    the author's skipped-versus-faint judgment, which exists only for K10's 40
+    cases, all of them in train -- the foundation had asserted it could ride the
+    holdout, its third material claim of the day made without reading, and
+    again stopped by the track quoting the file. Second, **the proportionate
+    abstention condition needs only n and the exposure prevalence, so it can be
+    computed without reading the outcome** -- which means a registration can be
+    abstained from *without opening the band*, leaving the record that removes
+    any later reason to reopen it and spending nothing.
+    So: **registration A abstains on structure** (the holdout holds 8 + 12 = 20
+    `face.other` groups against train's 55; a median difference with a
+    face-clustered CI cannot reach the supportive side there), and stays a
+    description on read material with face 267 named, printed at `thr` only and
+    with grow per the standing constraint. Its `residue_frac` predicate is
+    approved as written.
+    **K7's question abstains and also leaves the confirmatory queue.** It does
+    not reach: computed here from 4.42 pairs per panel, a box-B share of 0.233,
+    mouth prevalence 0.1867 and the discovery MH-RR of 1.3418, test_panel has
+    ~51 box-B cases and a supportive CI of **[0.78, 2.32]**, test_series ~31
+    and **[0.66, 2.72]** -- **the CI includes 1 even if the effect replicates
+    exactly**, and lowering the bar to fit the power is choosing the bar from
+    the material. The deeper reason is that **no decision depends on the
+    answer**: the mouth is already known to be 4th of 8 on read material
+    (0.343, behind `face.other` 0.782, glasses 0.545 and `face.ear` 0.388),
+    nothing is repaired per part, and the author's actual claim -- that skipped
+    lines are concentrated in mouths -- was answered by K10's 40
+    (`face.mouth` 8 skipped / 1 faint / 5 can't-tell of 14). So K7 closes as
+    description. **Its registration is kept, not discarded**, because it was
+    written before any read, and the material it would need is now quantified:
+    **about 247 box-B cases** to put the CI above 1 at MH-RR 1.3418, against
+    the discovery's 182 -- the number to hand the user if they ever ask whether
+    more labelling pays.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2095,6 +2127,19 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **A registration earns reserved material only by naming the decision its
+  answer changes** (ruled 2026-10-18, retiring K7's confirmatory leg). K7 asks
+  whether the mouth predicts box-B membership. On read material the mouth is
+  **4th of 8** parts, nothing is repaired per part, and the author's own claim
+  -- skipped lines concentrated in mouths -- was already answered by the 40
+  judgments. Confirming a weak fourth-place enrichment would change nothing,
+  and the holdout cannot reach it anyway (the supportive CI includes 1 even at
+  the discovery effect size). **A question whose answer changes no decision
+  closes as description and does not spend reserved material.** The companion
+  rule, from the same ruling: **the proportionate abstention condition is
+  computable from n and the exposure prevalence alone, so a registration can be
+  abstained from without opening the band** -- the printed computation leaves
+  the same durable record at no cost to the reserve.
 - **The foundation cites the file when it states a fact about a track's
   material** (its own failure, twice on 2026-10-18). It prescribed a
   confirmation band borrowed from another track without checking where the
