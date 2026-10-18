@@ -125,7 +125,10 @@ def main():
     key = {str(it["display_id"]): dict(kind=it["kind"], uid=it["uid"], panel=it["panel"],
                                        order=it["order"], label=it["label"], box=it["box"],
                                        gap=round(float(it["gap"]), 2),
-                                       thread=int(it["contiguous"] == "1" and it["comp_same"] == "1"),
+                                       # 1 画素の糸は箱 B の所見。箱 A(錨)は構成上必ず
+                                       # contiguous かつ comp_same なので 0 を入れる
+                                       thread=int(it["box"] == "B" and it["contiguous"] == "1"
+                                                  and it["comp_same"] == "1"),
                                        s0=it["s0"], s1=it["s1"])
            for it in items if it["display_id"] in tiles}
     json.dump(dict(registered=dict(seed=SEED, n_sample=N_SAMPLE, n_repeat=N_REPEAT,
