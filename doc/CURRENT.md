@@ -1249,17 +1249,49 @@ work, and the stated expectation is that the pieces make each other easier.
     bound below 0.30 as a refutation; the null value is MH-RR 1 under permuting
     marks within length decile, and the pre-read prints are the crude
     two-formula agreement, the stratum contributions, and the abstention counts.
-  - **The reserve for this confirmation is not an unread panel band, and that
-    was the foundation's oversight.** The outcome is the author's `broken`
-    mark, which exists only on labelled faces: the read material holds 184 of
-    the 185 marks. **Adding panels adds no marks.** The prescription to confirm
-    on `[171:]` was borrowed from Track J's chainer bands without checking
-    where the outcome comes from. The real reserve is **the author's next
-    marks**, which is the material K3 was already registered to wait for (40
-    new faces, 40 new marks), so the registration is written now and run when
-    Track H delivers. **The same question applies to K7**, whose outcome and
-    exposure are both label-derived, so the "confirm on the unread band"
-    routing needs revisiting there too.
+  - **The reserve exists and was designed for this on 2026-10-04 -- the
+    foundation got this wrong twice, both times by reasoning about the material
+    instead of reading it.** First it prescribed confirming on Track J's
+    chainer band `[171:]` without checking that the outcome, the author's
+    `broken` mark, comes from labels and not from panels. Then it concluded no
+    reserve existed at all and that only the author's future marks could serve
+    -- without opening `labels/holdout_plan.json`, which has held one since
+    2026-10-04: seed 20261004, **test_panel 35 faces / 63 marks / 29 panels**
+    and **test_series 35 faces / 72 marks / 24 panels**, 10 whole works set
+    aside for the second, **70 marked faces and 135 marks entirely outside the
+    177 panels K4 read**. **The foundation cites the file when it states a fact
+    about a track's material**, now in the traps. (Also recorded: the `broken`
+    arrays contain duplicates, 246 entries collapsing to 185 unique
+    (order, sid), so K4's 185 is the right count and no labelled mark is
+    missing from `per_stroke.csv`.) **No new demand on the author is needed**,
+    and K3 stays stopped -- `face_groups.jsonl` is identical to K1's snapshot,
+    so no labels have been added.
+  - **The abstention condition was written on the wrong basis, and the fix is
+    not a relaxation of the bar.** The condition said "at least 20 expected
+    exposed marks under the null", which at prevalence 0.1667 gives 10.5 and
+    12.0 in the two bands and would abstain. But **requiring precision under
+    the null asks for it in the scenario that needs it least**: if the null
+    holds, refuting only needs the PAF CI's upper bound under 0.30, which a
+    small exposed cell delivers, while precision matters on the supportive
+    side, where the exposed cell is three times the null expectation. Computed
+    here at ~269 tokens per panel and the discovery effect of MH-RR 4.8785:
+    test_panel reaches a **PAF lower bound of 0.329** if the effect replicates
+    and a **PAF upper bound of 0.135** under the null; test_series, **0.334**
+    and **0.124**. Both directions land in both bands, so the condition is
+    replaced by the thing the 20 stood for -- **before the material is read,
+    compute and print that the registered bar is reachable both ways at this
+    band's n and prevalence; a band where it is not is not read** -- and **the
+    bar itself does not move**. Margin is thin: 0.329 and 0.334 sit just over
+    0.30, so **a held verdict is a live outcome and is to be reported as held**,
+    not as nearly cleared. The two bands are **not pooled** -- test_panel asks
+    about reproduction within the same art style, test_series about
+    generalisation across works -- are **read once, simultaneously**, since
+    holding two bands must not become two attempts, and **disagreement between
+    them is itself a finding**: panel confirming while series fails would make
+    the mechanism style-specific. K7 and registration A, both label-derived,
+    are registered **at the same time and read in the same pass**, because
+    coming back to the same band with a later idea is the dullest way to spend
+    it.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2063,6 +2095,14 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **The foundation cites the file when it states a fact about a track's
+  material** (its own failure, twice on 2026-10-18). It prescribed a
+  confirmation band borrowed from another track without checking where the
+  outcome variable came from, then declared that no holdout existed without
+  opening the plan file that had described one since 2026-10-04. Both were
+  reasoning about material instead of reading it, and the second would have
+  sent a needless request to the author. A session whose job is recording and
+  routing has no standing to assert a fact about material it has not read.
 - **A PAF bar is meaningless unless the exposure is the narrowest set the
   repair would touch** (ruled 2026-10-18 on Track K's exposure choice). PAF
   grows with exposure prevalence even at a weak risk ratio, so a wide exposure
