@@ -128,3 +128,26 @@ raised with the date.
   measurement it named could not be found afterwards. **When it is raised:**
   now, as a rule -- every registered expected value names the entry or the
   file it comes from, and one that cannot is not registered.
+- shortcut: a full-held region-F1 pass costs **hours**, and the cost is set by
+  a handful of multi-million-pixel panels rather than by the panel count. Three
+  measurements: the 2026-10-18 arm scoring ran **7h26m at 27.6 s/panel** over
+  969 panels (`results/fill_koma_20261010/per_panel_held_nc2repaired.csv`,
+  21,302 rows); IC6 ran in **under 49 min** (registration committed 22:05,
+  artefacts written 22:54 on 2026-10-16); IC7 is measuring **12.1 s/panel**
+  (200/969 in 40m15s, pid 709204). **No size guard is installed, and that is a
+  decision, not an omission** -- dropping the large panels would bias the
+  sample toward low-fill material and break comparability with the 969-panel
+  reference, so the cost is paid instead. **When it is raised:** when a
+  *learned* arm has to be scored more than once inside a GPU slot. The cut is
+  then **caching, not subsampling**: `region_metrics.match` calls
+  `regions(gt)` on every invocation, so a 22-row panel rebuilds the GT's
+  connected components 22 times. To be measured before it is believed.
+- shortcut: a wall-time estimate taken with `--limit N` **is not a sample**.
+  IC7's registered "~90 min" came from 12 panels at 3.2 s/panel, but those are
+  the first 12 by sorted name and the real rate is **12.1 s/panel (~3h15m)** --
+  the registration's own fallback applies (the run is still read and the
+  overrun becomes this entry, never a reason to cut panels). Same family as
+  the F3 defect, where 49 panels were compared against 969. **When it is
+  raised:** now, as a rule -- a cost estimate either uses a mechanical spread
+  (every k-th panel, as IC-j10's exact-EDT leg did) or is written down as an
+  unverified guess.
