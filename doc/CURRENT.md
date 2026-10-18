@@ -867,7 +867,10 @@ work, and the stated expectation is that the pieces make each other easier.
     band or reread the failure as a property of the material. The diagnosis is
     right and the numbers check out here: mouth 50 of 146 = 0.3425, non-mouth
     132 of 636 = 0.2075, crude RR **1.6501** (CI 1.1137-2.7537), AFe **0.3940**
-    (CI 0.1021-0.6369), Fisher p 7.4e-4, permutation p 0.044; the per-part
+    (CI 0.1021-0.6369) -- which is `(RR-1)/RR`, the fraction among the exposed;
+    the share of all box-B cases a perfect repair would remove is
+    **PAF 0.1082**, Levin and Miettinen agreeing, so K7 is framed in the asked
+    direction and passes the two-formula check, Fisher p 7.4e-4, permutation p 0.044; the per-part
     table also reconciles to box B's 182. **The error was the pairing, not the
     band**: a within-stratum permutation has null value 1 for **MH-RR** and
     "whatever composition alone produces" for the **crude** RR, so [0.95, 1.05]
@@ -1091,12 +1094,17 @@ work, and the stated expectation is that the pieces make each other easier.
     re-measurement is recorded. Numbering was checked too: `sid_not_found = 0`,
     and 25,090 rows against 25,035 unique (panel, sid) because one panel can
     carry several faces.
-    **The bars, written here under today's division**: the primary is **AFe,
-    bar 0.30**, chosen from what a repair must achieve -- K1 was refuted at AFe
-    0.248 on the same marks, so a rival mechanism at that level is not support,
-    and the repair is a cross-track change to an ink rule whose removal
-    fragmented a panel from 64 components back toward 258. AFe and MH-RR are
-    one bar written twice, through **AFe = p(RR-1)/(p·RR+1-p)**, so
+    **The bars, written here under today's division**: the primary is the
+    **population attributable fraction, PAF, bar 0.30** (written as "AFe" when
+    it was first sent, which the vocabulary entry below corrects), chosen from
+    what a repair must achieve -- the repair is a cross-track change to an ink
+    rule whose removal fragmented a panel from 64 components back toward 258,
+    so a mechanism worth that discussion must be one whose perfect repair
+    removes about a third of the marks. (The second justification offered at
+    the time, that K1 was refuted at 0.248, is **suspended**: that number is
+    consistent only if fill adjacency at radius 4 has a population prevalence
+    near 0.6766, which has not been printed.) PAF and MH-RR are
+    one bar written twice, through **PAF = p(RR-1)/(p·RR+1-p)**, so
     **RR\* = (0.3+0.7p)/(0.7p)**: at p = 0.4700 the companion bar is
     **MH-RR >= 1.912** (p 0.30 -> 2.429, 0.20 -> 3.143, 0.15 -> 3.857, 0.10 ->
     5.286), and a changed predicate means re-reading RR\* off that formula
@@ -1158,13 +1166,18 @@ work, and the stated expectation is that the pieces make each other easier.
   - **Two bars of different shapes are being applied to the same marks, and
     the surviving mechanism is K4.** K4's main leg was **held** at MH-RR
     1.8435 against its registered bar of 2.0 -- **that verdict stands and is
-    not reopened** -- but its **AFe is 0.331**, above the 0.30 the foundation
-    set for D hours later, and above K1's refuted 0.248. So K4 remains the
-    largest explanation of the author's marks that anyone has. The resolution
-    is not to re-read a held verdict as support but to **register the AFe test
-    for the unread band before opening it**: bar **AFe >= 0.30**, with the
-    read material's AFe reported as an estimate and still owing a
-    face-clustered bootstrap CI. **This also answers whether the band has a
+    not reopened**. **The 0.331 this file quoted beside it is invalid**, and
+    Track K caught it within hours: see the vocabulary entry below. K4's RR has
+    **exposure and outcome swapped** relative to the question, so no
+    attributable fraction computed from it means anything, and the comparison
+    "K4 0.331 against D 0.0404" put a mis-framed number beside a correctly
+    framed one. What stands is that K4 must be **recomputed in the asked
+    direction** -- exposure = passes a collapsed bridge, outcome = marked,
+    MH over length deciles, the same design as D -- before any bar is
+    registered for it. Crude, in that direction, the RR is **13.136** and PAF
+    is **0.6692** by both formulas, but direction 2 fell from 4.456 to 1.8435
+    under stratification, so direction 1 will fall materially too and is not
+    to be guessed. **This also answers whether the band has a
     companion -- it does.** One opening of `[171:]` carries three things: K4's
     AFe confirmation, the part-versus-gap-length discrimination designed so it
     cannot confirm both, and registration A's confirmation if A produces a
@@ -1183,6 +1196,15 @@ work, and the stated expectation is that the pieces make each other easier.
     registration A. The threshold is registered as a number before the band is
     opened. This is the "measure a computable axis before asking the judge"
     rule run backwards: **the judge's answers calibrating a computable axis.**
+    **Measured, and the suspicion was right.** On the 31 decided answers the
+    gap-length AUC is 0.8232 with a best threshold of 5.39px and 5 errors, but
+    the rule is **one-sided** -- it catches 22 of 22 skipped lines and 4 of 9
+    faint -- and dropping `face.other` leaves **2** faint cases, so the 0.8864
+    AUC on 24 is not usable, while `face.other` alone is 0 of 7 skipped. What
+    can be written: the gap-length threshold **cannot be separated from the
+    fact that 7 of the 9 faint answers are `face.other`**. What cannot: that
+    gap length repairs anything, or that an AUC of 0.886 predicts anything.
+    **The repair's location moves to registration A.**
   - **The pruning-residue mechanism and the continuity mechanism are separate
     registrations, and bundling them was the foundation's error.** Face 267 --
     the stratum holding 19.3% of the MH weight, 70 pairs, box B rate 0.429 --
@@ -1966,6 +1988,26 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **"AFe" was naming three different quantities, and two of them were one
+  quantity fed an RR from the wrong direction** (found by Track K, 2026-10-18,
+  which stopped before registering a bar because the definition flipped the
+  verdict). The vocabulary, fixed here: **AFe = (RR-1)/RR**, the fraction among
+  the exposed; **PAF = p(RR-1)/(p(RR-1)+1) = p_case(RR-1)/RR**, the share of
+  *all* cases a perfect repair would remove. The two PAF formulas are
+  algebraically the same, so **computing both and checking they agree to the
+  printed digits is the instrument check** -- and it is the check that fires
+  here. K4's pool table compares P(bridge | marked) 0.7243 with
+  P(bridge | unmarked) 0.1625 and calls the ratio 4.456 an RR: that is an RR
+  with **marked as the exposure and bridge as the outcome**, a fine descriptive
+  statement that cannot carry an attributable fraction. In the asked direction
+  the RR is (134/4182)/(51/20908) = **13.136** and both PAF formulas return
+  **0.6692** exactly. Fed direction 2's RR, they return **0.1233 and 0.3314**,
+  disagreeing by 0.2082 -- which is how the error announces itself. D, by
+  contrast, was framed correctly and its two formulas agree at 0.0404 exactly,
+  so **the refutation of D is untouched**. Every attributable fraction reported
+  from here prints both formulas. Standing items: K1's 0.248 is valid only if
+  fill adjacency at radius 4 has prevalence near 0.6766, which is one number to
+  print, and K7 passes.
 - **An identity key must be derived from the thing identified, not from its
   position in the output** (Track K, found while scoring, 2026-10-18). The
   sheet's `uid` was assigned after the tiles were shuffled, so a repeated tile
