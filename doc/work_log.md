@@ -4613,3 +4613,181 @@ amendment J1 -- *M1 trains anyway but no C1/C4 verdict is printed until the
 rescoring lands* -- **does not need to be invoked**: the rescoring finished
 2026-10-18 15:25, before the 2026-10-19 slot opens. M1 starts with all four
 criteria readable.
+
+## 2026-10-18 IC7 pre-registration: does region-F1 grade a prediction that is too LARGE, and where is the tolerance boundary?
+
+Written and committed **before `tools/evaluation/check_region_f1_overpaint.py`
+exists**. IC6 (2026-10-16, `4e0e498` / `b15eb59`) named this leg as **not
+covered** in its own registration, in these words: "Erosion only probes a
+prediction that is too small; a dilated prediction survives `IoU >= 0.5` while
+`d <= 0.414R`, and that leg is not in this registration." That sentence is a
+**prediction nobody measured**, and IC6 then showed the same disc model wrong
+by **-0.526** on the erosion side at e = 4. Carrying it unmeasured into the
+2026-10-19..10-22 slot would mean reading a learned arm's region-F1 with one
+direction of boundary error calibrated and the other assumed.
+
+**What this cannot do, fixed before the run:** IC7 **cannot release and cannot
+block the slot**. Stage 2's C1-C5 do not move. It produces a reading caveat for
+a learned arm's region-F1 and nothing else.
+
+### The question
+
+Region-F1 at `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5`, on the held normal
+stratum: a prediction that covers every GT region but is **d px too fat** --
+does the metric grade it, and at which d does it stop matching? And, at the
+**same radius**, is over-painting cheaper or dearer than under-painting?
+
+### Construction
+
+`pred = (distance_to_gt <= d)`, where the distance transform is cv2
+`DIST_L2` maskSize-3 on `~gt` -- **the same approximate transform IC6 used**,
+so that "radius" means the same thing on both legs and the two tables can be
+read against each other. The known maskSize-3 offset (IC6's E1: effective
+erosion `e - 0.25px`) is handled the same way, as a **bounded** assert
+(`|effective - d| <= 0.5` at R = 40) rather than a point value, and a
+calibrated column is printed beside the registered one.
+
+**The dilation is NOT intersected with `ink`.** The real target is
+`fill = (dist_to_core <= r) & ink`, but the failure mode being probed is a
+model painting past a region's boundary onto white paper, which is exactly
+what `& ink` would hide. Dilation is clipped only by the panel bounds.
+
+Panels: `koma_split` held side, near-blank stratum (`ink.mean() < 0.002`)
+**skipped as unsupported** -- IC6 established nine of its 13 panels have zero
+regions -- and normal panels with 0 regions excluded, where region-F1 = 1.0 is
+an **IDENTITY**. IC6's run on the same rule used **948** panels.
+
+### Radii, and why there are two grids
+
+- **The sqrt(2) grid**, d in **(1.414, 2.828, 5.657, 8.485, 11.314, 16.971)**.
+  Here the registered prediction needs no new census, because the two legs are
+  related by an exact identity, derived by hand now:
+  a region survives erosion while `e <= (1 - 1/sqrt2) R = 0.29289R`, i.e.
+  `A >= pi e^2 / 0.29289^2 = 36.62 e^2`; it survives dilation while
+  `d <= (sqrt2 - 1) R = 0.41421R`, i.e. `A >= pi d^2 / 0.41421^2 = 18.31 d^2`.
+  The ratio of the two area thresholds is exactly **2**, since
+  `0.29289 / 0.41421 = 1/sqrt2`. Therefore
+  **`predicted_dilate(d) = predicted_erode(d / sqrt2)`**, and the registered
+  column at these six radii **is IC6's registered erosion column**, cited from
+  `results/fill_koma_20261010/ic6_run.txt`:
+
+  | d (px) | registered predicted match fraction | source |
+  |---|---|---|
+  | 1.414 | 1.000 | IC6's e = 1 |
+  | 2.828 | 1.000 | IC6's e = 2 |
+  | 5.657 | 0.908 | IC6's e = 4 |
+  | 8.485 | 0.545 | IC6's e = 6 |
+  | 11.314 | 0.363 | IC6's e = 8 |
+  | 16.971 | 0.209 | IC6's e = 12 |
+
+- **The integer grid**, d in **(1, 2, 4, 6, 8, 12)**, IC6's erosion radii, so
+  that over-painting and under-painting can be compared **at equal radius**.
+  Its predicted column is **computed in-run from the measured area census and
+  is labelled as computed, not registered.**
+
+**Registered half-match radius: 9.05px.** By hand: IC6's census gives median
+region area **1500px** (`ic6_run.txt`), so median equivalent-disc radius
+`R = sqrt(1500/pi) = 21.85px` and `0.41421 x 21.85 = 9.05px`. Cross-check,
+asserted in the cell: `6.40 x sqrt2 = 9.05`, where 6.40px is IC6's registered
+erosion half-match. The two derivations must agree to 0.01px.
+
+**Expected deviations, with their direction, written before the run.** The
+disc model is expected to **overshoot** again, by two effects named now:
+
+1. **Merging.** The census is ~23.6 regions per panel at median 1500px, and
+   adjacent hair strands and folds sit within a few px of each other. Dilation
+   makes neighbours **touch and become one component**; a merged component's
+   IoU against each of its GT regions collapses, so F1 falls faster than the
+   model says. This is the dilation analogue of IC6's "vanishing".
+2. **Elongation.** A thin region of width w gains area ~perimeter x d, which
+   is proportionally far more than a disc of the same area gains -- the same
+   shape fact that made IC6's elongated hair sweeps die first.
+
+Splitting cannot occur under dilation (it is monotone in the mask), so
+`n_pred > n_gt` would be a bug, not an effect; `n_pred / n_gt` is printed per
+radius and **< 1 means merging**.
+
+### Pass criteria, fixed now and not to be loosened
+
+- **C1 (instrument check, an IDENTITY)** at **d = 0** the prediction is the GT,
+  so region-F1 must be exactly **1.000 on every used panel: 0 panels may
+  differ**. This checks plumbing only and is labelled an identity wherever it
+  is printed. Paired with it, the non-identity half: at d = 1 the prediction
+  must differ from the GT on **at least one panel**, and **mean predicted area
+  must increase strictly with d** -- otherwise the "dilation" is a no-op.
+  **Stop rule: C1 fails -> no verdict is read and nothing else in this entry
+  is quoted.**
+- **C2 (monotonicity)** the pooled match rate is **monotonically
+  non-increasing** across the 12 radii in ascending order. No tolerance; a
+  working metric must have this.
+- **C3 (does it grade over-painting at all)** at least one radius yields a
+  pooled mean region-F1 inside **[0.20, 0.80]**, and that value sits
+  **>= 0.15** above both `blank` **0.0084** and the mirrored control
+  `nc3_hflip:rough_dark` **0.0063** (normal stratum, 956 panels, cited from
+  `results/fill_koma_20261010/report_held_nc2repaired.txt`, 2026-10-18).
+  This is a **weak gate** and is labelled as one: it says the metric returns
+  intermediate values in this direction, not that it returns the right ones.
+- **C4 (the asymmetry, registered with its direction)** the measured dilation
+  half-match radius -- the first grid radius whose pooled match rate is
+  **<= 0.5** -- must be **>= 4px**, which is IC6's *measured* erosion bracket
+  (`ic6_run.txt`), against a registered prediction of 9.05px. Verdict words
+  carry the threshold: **"ASYMMETRIC AS PREDICTED (dilation tolerated to
+  >= 4px, erosion's measured bracket)"** or **"REFUTED: over-painting is
+  punished at a smaller radius than under-painting"**. The second outcome is
+  the one the trainer must know, so it is written here as an outcome, not as a
+  failure.
+- **C4b (the paired form)** at **all six** shared integer radii,
+  `F1_dilate >= F1_erode` (IC6's column: 0.9091, 0.8223, 0.3821, 0.2546,
+  0.1986, 0.1438 at e = 1, 2, 4, 6, 8, 12). One radius violating it refutes
+  C4b, and the violating radii are named.
+- **C5 (the mechanism, with a number fixed in advance)** at **d = 8.485**,
+  `n_pred / n_gt < 0.90` -- merging fired. If it is **>= 0.90**, the
+  prediction above is **refuted** and any overshoot is elongation alone. The
+  alternative is named so it cannot be claimed afterwards: regions may simply
+  be far enough apart that these radii never merge them, leaving the ratio at
+  1.000.
+- **One assert cell with hand-computed values**, run at import. A disc
+  R = 20, area 1257px (above the 500px filter): dilated by **d = 6** the
+  prediction has `IoU = (20/26)^2 = 0.5917 >= 0.5` and **must match**; by
+  **d = 10**, `IoU = (20/30)^2 = 0.4444 < 0.5` and **must not**. Both are
+  chosen off the knife-edge on purpose -- E1's lesson -- since d = 8 gives
+  0.5102 and a +-0.5px transform offset would cross the threshold, while 6 and
+  10 survive that offset (0.5694 and 0.4597). Plus: the identity at d = 0; the
+  two half-match derivations agreeing to 0.01px; and the bounded calibration
+  `|effective dilation - d| <= 0.5` at R = 40 for d in (2, 6, 12).
+
+### Negative controls, each naming one concrete error
+
+- **NC-d0, "the distance transform is taken on the wrong array"** -- `dist`
+  computed inside the mask instead of on `~gt`, which would make every
+  "dilated" prediction the GT itself. Detector: the C1 pair above -- identical
+  F1 at every d, and predicted area constant in d, fires it.
+- **NC-iou, "`rm.match` thresholds on coverage, not IoU"** -- if a pred
+  component is accepted for merely containing the GT region, an over-painted
+  prediction is never wrong and this whole leg is vacuous. Detector: the
+  R = 20 / d = 10 assert must **fail to match**.
+- **NC-hflip, "the intermediate values are size statistics, not placement"** --
+  region-F1 at d > 0 might come from the prediction having components of
+  roughly the right count and area *anywhere* in the panel. Detector: the
+  dilated prediction **mirrored left-right**, scored at d in
+  (2.828, 8.485) -- identical component count and areas, wrong positions.
+  Bar: mirrored region-F1 **<= 0.05** at both radii. Above it, C3's graded
+  band carries no positional information and C3 is withdrawn.
+
+### Artefacts, and the cost written down first
+
+Run log `results/fill_koma_20261010/ic7_run.txt`, per-panel
+`ic7_per_panel.csv`, montage **`results/fill_koma_20261010/ic7_overpaint.png`**
+-- one row per radius, GT beside the dilated prediction, on panel
+**`koma_00003_001_2015_gakusai3__tmp3_gakusai3__page0034_p1.png`**, fixed here
+because it is the panel IC6's montage used, so the two legs are visually
+comparable. No `/tmp`.
+
+**Expected wall time, registered so the actual can be compared:** IC6 ran 9
+masks per panel over 948 panels in ~55 min; IC7 runs 15 (d = 0, twelve radii,
+two mirrored controls), so **~90 min**. If it exceeds 150 min the run is still
+read, and the overrun becomes a `doc/shortcuts.md` entry rather than a reason
+to cut panels -- skipping the large panels would bias the sample toward
+low-fill material, which is the same reason the 2026-10-18 full rescoring was
+left ungated.
+
