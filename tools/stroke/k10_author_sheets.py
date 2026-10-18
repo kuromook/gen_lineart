@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import k2_box_b_gray as K
 
 SEED, N_SAMPLE, N_REPEAT, N_ANCHOR = 20261018, 40, 8, 8
+ANCHOR_MIN_GAP = 8.0     # 訂正 2: 錨は隙間 8px 以上の箱 A から隙間長を対応させて引く
 TILE, ZOOM, PER_PAGE, NCOL = 150, 2, 8, 4
 
 
@@ -38,13 +39,40 @@ def main():
     idx = rng.permutation(len(answerable))[:N_SAMPLE]
     sample = [dict(answerable[i], kind="main") for i in idx]
     rep = [dict(sample[i], kind="repeat") for i in rng.permutation(N_SAMPLE)[:N_REPEAT]]
-    ai = rng.permutation(len(boxa))[:N_ANCHOR]
-    anchors = [dict(boxa[i], kind="anchor") for i in ai]
+    # 訂正 2: 錨は箱 A の隙間 8px 以上から、標本 40 件の隙間分布に対応させて引く。
+    # そのまま引くと隙間 2〜8px に偏り、作者は長さだけで錨を見分けられる。
+    pool = sorted((r for r in boxa if float(r["gap"]) >= ANCHOR_MIN_GAP),
+                  key=lambda r: float(r["gap"]))
+    sg = np.sort([float(r["gap"]) for r in sample])
+    targets = [float(np.quantile(sg, (k + 0.5) / N_ANCHOR)) for k in range(N_ANCHOR)]
+    used, anchors = set(), []
+    for t in targets:
+        best = min((k for k in range(len(pool)) if k not in used),
+                   key=lambda k: abs(float(pool[k]["gap"]) - t))
+        used.add(best)
+        anchors.append(dict(pool[best], kind="anchor"))
+    print("錨の隙間:", [round(float(r["gap"]), 1) for r in anchors])
+    print("標本の隙間(分位):", [round(t, 1) for t in targets])
     items = sample + rep + anchors
     for n, it in enumerate(items):
         it["uid"] = n
-    order = rng.permutation(len(items))
-    items = [items[i] for i in order]
+    # 訂正 3: 反復の 2 回目は初出と 2 枚以上(位置で PER_PAGE*2 以上)離す
+    for _try in range(4000):
+        order = rng.permutation(len(items))
+        cand = [items[i] for i in order]
+        pos = {}
+        ok = True
+        for n, it in enumerate(cand):
+            key = (it["panel"], it["s0"], it["s1"], it["e0"], it["e1"])
+            if key in pos and abs(n - pos[key]) < PER_PAGE * 2:
+                ok = False
+                break
+            pos[key] = n
+        if ok:
+            items = cand
+            break
+    else:
+        raise SystemExit("反復を離して並べられない")
     for n, it in enumerate(items):
         it["display_id"] = n + 1
 
@@ -103,7 +131,17 @@ def main():
     json.dump(dict(registered=dict(seed=SEED, n_sample=N_SAMPLE, n_repeat=N_REPEAT,
                                    n_anchor=N_ANCHOR, pool=len(answerable),
                                    excluded_55="襟の合計が隙間より長い(出力で隙間が見えない)",
-                                   note="作者には main/repeat/anchor の区別を知らせない"),
+                                   anchor_min_gap=ANCHOR_MIN_GAP,
+                                   options=["飛ばし線", "かすれ", "切れていない(繋がって見える)",
+                                            "判断できない"],
+                                   bands=dict(repeat="一致 >= 6/8 かつ周辺分布からの偶然一致を上回る。"
+                                                     "1 つの選択肢が 7 割以上なら判定不能",
+                                              anchor="(3) 切れていない >= 6/8 かつ (1) 飛ばし線 <= 1/8"),
+                                   reading=dict(mostly_intentional=">= 28/40",
+                                                mostly_missed="<= 12/40",
+                                                both="その間。F の規則をどちらかに寄せて直せない"),
+                                   note="作者には main/repeat/anchor の区別を知らせない。"
+                                        "作者は本セッションで口の仮説を見ているので盲検ではない"),
                    pages=pages, key=key), open(out / "key.json", "w"), indent=1, ensure_ascii=False)
     print(f"用紙 {len(pages)} 枚 / タイル {len(tiles)} 枚")
     for p in pages:
