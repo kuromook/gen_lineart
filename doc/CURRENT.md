@@ -2159,6 +2159,20 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   `d=8.485`, **0.105 / 0.374** at `d=4`, **0.048 / 0.113** at `d=1`
   (`../lineart-solid-fill/results/fill_koma_20261010/ic7_npred_decomposition.txt`,
   48 panels).
+  **Fixing the grid point is not the same as fixing the bar** (Track J,
+  `221b26f`, 2026-10-19, and the distinction is worth keeping). J pinned the
+  two dilations at which the shares will be judged -- `d=8.485` (written into
+  IC7's registration `324b2a4`, from `0.41421 * sqrt(1500/pi)`) and `d=4.000`
+  (IC6's shared integer radius, fixed 2026-10-16) -- both of which existed
+  **before** the decomposition table did, so neither was chosen by looking at
+  it. It then **refused to let today's 0.142 / 0.575 become the bars**: a
+  tolerance read off the table is a tolerance known in advance to admit the one
+  number it was taken from, which is the same objection the foundation raised
+  against an imported chainer tolerance on 2026-10-18, now landing on the
+  foundation's own suggestion. The bars will instead be **derived from the
+  mechanism** (e.g. IC6's census that 2.0% of GT fill area lies in components
+  under 500px, carried through the geometry of the dilation) and computed
+  before the leg runs.
   **The discriminator is the second mechanism's direction against the
   conclusion drawn, not whether the bar passed or broke.** The foundation first
   wrote the latter ("a passed bar is safe in a way a refuted one is not") and
