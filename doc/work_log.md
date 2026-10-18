@@ -4933,3 +4933,28 @@ scored panels of 969 read), against a registered ~90 min -- inside the 150 min
 ceiling, so the registration's fallback did not need to be invoked. The
 `--limit 12` estimate that produced the ~90 min figure is recorded as a
 limit in `doc/shortcuts.md`.
+
+### IC7 follow-up, registered now so the radius cannot be chosen later
+
+The foundation's condition on the two-bar form (2026-10-19,
+`inbox/reply_j_trap16_correction_20261019.md`) is correct and is adopted:
+**`merges/n_gt` and `crossers/n_pred` both fall as d falls, so the d at which
+each bar sits has to be fixed at registration or the bar can be slid onto a
+friendlier radius afterwards.** Fixed here, with provenance that predates any
+of today's numbers:
+
+- **d = 8.485** -- the registered half-match grid point from the IC7
+  registration (`324b2a4`), chosen before the run from
+  `0.41421 x sqrt(1500/pi)`.
+- **d = 4.000** -- IC6's shared integer radius, fixed on 2026-10-16.
+
+Both were written down before the decomposition existed, so neither is a
+choice made on the table.
+
+**The bar VALUES are not fixed here, and today's 0.142 / 0.575 may not become
+them.** That would be a tolerance picked because it is known to clear the one
+number it has to clear -- the same objection the foundation raised against the
+chainer tolerance on 2026-10-18, and it applies to me here. A bar on either
+share has to come from a stated mechanism (e.g. the sub-500px share of GT fill
+area, 2.0% from IC6's census, carried through the dilation geometry), computed
+and written down before the leg runs.
