@@ -1440,6 +1440,33 @@ work, and the stated expectation is that the pieces make each other easier.
     and unregistered: a repair that **does not decide** -- carrying both
     tokenisations downstream instead of committing to one -- which is an
     architecture change, not a threshold change.
+  - **The cost ratio is algebraically precision, and the identity held across
+    all 21 arms** (verified by the track, 2026-10-19: broken/fixed equals
+    (1-precision)/precision to rounding in every arm). So the sweep carried one
+    number per arm, and its **floor was computable from the four-cell table
+    before it ran** -- precision 3.20% implies a ratio of 30.2 for any rule
+    acting on the whole exposure. What it did add, and what was not knowable in
+    advance, is **how much a width gate could raise precision: 0.56 points,
+    3.20% to 3.76%**. Worth carrying as a design habit: **before sweeping,
+    check whether the target metric is an algebraic function of something
+    already measured** -- that part is already answered, and only the rest
+    needs the sweep.
+  - **Where Track K stands, 2026-10-19 (read this instead of the bullets
+    above).** *Established*: the connectivity error has two directions and only
+    over-merge is markable; the author's marks concentrate on tokens passing a
+    collapsed bridge (PAF 0.4855, CI [0.3245, 0.6400], confirmed on ten
+    held-out works) and that mechanism is **not style-specific**; fill
+    adjacency is a second, weaker and roughly independent factor; F's docstring
+    is quantitatively wrong (53.4% of bridges survive); K4a's 21.2% is fills.
+    *Dead*: box B's gray axis, the continuity mechanism, the hysteresis bridge
+    as an explanation of the marks, and any repair keyed on collapsed-bridge
+    passage (precision ceiling ~4% against the >50% a cost bar needs).
+    *Two statements of what must not be done*, both from labels: unconditional
+    loosening is refuted by the author's 40 judgments, and the collapse rule
+    cannot be retuned to exploit the confirmed mechanism. *Left*: a repair that
+    does not decide -- carrying both tokenisations downstream -- unmeasured and
+    unregistered; and a precision-raising feature, which needs new marks (K3)
+    and must clear a 13x specification written before any search begins.
   - **Two corrections the foundation owes on this leg.** The "23 oldest faces
     without a `broken` field" was carried over from a 2026-10-16 note and never
     checked; **measured, it is 14 faces and 7,173 tokens**. And the track's own
