@@ -2142,6 +2142,47 @@ traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
 
+- **A bar placed on a ratio can be refuted while the mechanism it was placed
+  to test is actually happening** (Track J, IC7, reported 2026-10-19; the
+  sibling of Track K's "the ratio was precision all along"). The leg asked
+  whether fusion could be scored, with the bar `npred/ngt < 0.90`. The measured
+  ratio was **1.777**, so the bar was broken -- and **fusion was nevertheless
+  occurring**: 14.2% of the GT area sat inside a fused part. A **second**
+  mechanism was moving the same ratio the other way: already-dilated small
+  blobs that appear across the 500px filter (`d=8.485`, 57.5% of the predicted
+  area). Two mechanisms, opposite signs, one ratio, and the ratio reported
+  neither. **A criterion that tests a mechanism names the counting
+  decomposition, not a ratio** -- how many of what land where, each side
+  printed separately.
+  The foundation audited Track K's own two ratio bars against this shape on
+  2026-10-19, since K had bars on an attributable fraction and on a cost ratio:
+  - The **PAF >= 0.30 bar was passed** (0.4855). Every dilution known in that
+    table -- all-case strata, marks arising in the unexposed arm -- pulls MH-RR
+    toward 1, so a hidden second mechanism can only *understate* it. **A passed
+    bar is safe from this trap in a way a refuted one is not**, which is worth
+    stating because it is the whole reason J's leg failed and K's did not.
+  - The **cost bar `broken/fixed < 1` was refuted**, which is J's shape
+    exactly. It survives for an algebraic reason: the ratio is
+    `(1 - precision) / precision` identically, a strictly monotone function of
+    **one** counted quantity, so there is no numerator and denominator for two
+    mechanisms to move apart; and the decomposition was printed per arm (four
+    arms, precision 0.0243 to 0.0376).
+  - Where the trap **does** bite: that precision is pooled over the whole
+    exposed set, so a sub-population inside it with high precision would be
+    invisible in the 3.8%. That is exactly what K's registered requirement
+    specification already demands of any new search (a feature that lifts
+    precision from 3.8% past 50%), so **J's lesson and K's spec are one
+    instruction in two vocabularies**: name the split of the exposed set, not
+    the ratio over it.
+- **Do not repair a renamed reference with a repository-wide `sed`** (Track J,
+  2026-10-18). `sed s/diffusion/foundation/` across this repo would rewrite the
+  dozen-plus `BASE_CKPT=$HOME/disk/checkpoint/Stable-diffusion/...` lines in
+  `experiments/*.sh` and `scripts/*.py` into paths that do not exist, and
+  nothing reports it until a job is launched. The `diffusion` -> `foundation`
+  rename needed six operative lines, all in `doc/worktree_policy.md`; the other
+  hits are citations, a *technique* name inside a prohibition clause, the
+  separate branch `diffusion-controlnet`, and that checkpoint path. See
+  `doc/worktree_policy.md`'s tail section for the four kinds.
 - **A control the reference arm itself fails cannot discriminate** (found
   2026-10-16 in Track J's NC-j8d, routed back as a reading correction, not an
   adoption request). The touch-merge adoption bar was `wrong <= 0.059`, taken

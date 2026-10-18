@@ -170,13 +170,45 @@ What the rename did and did not touch:
 - **`origin/diffusion` is left in place, frozen at `67d7bf7`**, so a live
   session that still has it configured does not break mid-run. It is not
   pushed to again. Delete it once the live tracks (J, K, H) have acknowledged.
-  **Acknowledged so far: Track H (2026-10-18), with 0 references to fix and
-  `face-words` in sync at `43a6e88`.** Awaiting J and K.
-  Worth knowing while chasing those references: **`lineart-panel-generation` is
-  a second clone of the same GitHub repository**, not a worktree of this one,
-  and `lineart-face-words` is a worktree *of that clone*. So the two clones
-  each carry their own remote-tracking refs, which is another reason
-  `origin/diffusion` is being left in place rather than deleted today.
+  **All three have now acknowledged, each with its own audit** (2026-10-18):
+  - **Track H**, 0 references to fix, `face-words` in sync at `43a6e88`.
+  - **Track K**, 1 reference (this file's copy on `stroke-topology`), fixed,
+    with a line naming `../lineart/doc/worktree_policy.md` (`8bbe924`) as the
+    source of truth. Citations in its `work_log.md` left alone.
+  - **Track J**, 0 references to fix, from a `git grep` over all tracked
+    files: **no place resolves the branch name at run time** — `diffusion`
+    appears in no `checkout` / `merge` / `rebase` / `push` / `worktree add` /
+    `origin/...` form. The remaining hits are four kinds, each of which must
+    *not* be changed: (1) citations of where a 2026-08 entry was written,
+    (2) **the name of a technique** in Track J's prohibition 1
+    ("do not try to draw fills with diffusion / ControlNet",
+    `doc/initial_notice.md:28` and three places in its `work_log.md`) — this
+    is a method, not a branch, and replacing it breaks the clause,
+    (3) the separate branch `diffusion-controlnet`, (4) the file path
+    `~/disk/checkpoint/Stable-diffusion/`.
+  Its reply is `inbox/note_track_j_reply_foundation_rename_20261018.md`;
+  it sat unread here for a day, which is the foundation's own miss.
+  **What still holds the deletion is not a track**: `lineart-panel-generation`
+  is **a second clone of the same GitHub repository**, not a worktree of this
+  one, and `lineart-face-words` is a worktree *of that clone*, so the two
+  clones carry their own remote-tracking refs. Delete `origin/diffusion` once
+  that clone has been pushed from and re-fetched; it is recoverable either way,
+  since `67d7bf7` is an ancestor of `foundation`.
+- **Do not fix these references with a repo-wide `sed`** (warning from Track J,
+  2026-10-18, asked to be carried to the other tracks). `experiments/*.sh` and
+  `scripts/*.py` hold `BASE_CKPT=$HOME/disk/checkpoint/Stable-diffusion/...` in
+  a dozen or more places, so `sed s/diffusion/foundation/` over the repository
+  points **every checkpoint path at a directory that does not exist** — and
+  nothing says so until a job is launched. The rename needed exactly six
+  operative lines changed, all in this file; it was never a string
+  substitution.
+- Track J asks, and the answer is yes: a track **does not** fix this file's old
+  wording in its own tree. This file is the foundation's copy of record, and
+  `8bbe924` rewrote 52 of its lines here; editing the same lines on a track
+  only produces a conflict when that track catches up. The correct path is that
+  the source of truth arrives with the merge. (Track K took the other route and
+  edited its copy, which is why that one will conflict; it also added the
+  pointer line, so the conflict resolves toward this file.)
 - `main` was **not** used: from the 2026-07-29 split point (`00b2739`) `main`
   carries 13 commits this branch does not have and this branch carries 86, so
   making `main` the foundation is a separate reconciliation job, not a rename.
