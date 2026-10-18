@@ -4791,3 +4791,145 @@ to cut panels -- skipping the large panels would bias the sample toward
 low-fill material, which is the same reason the 2026-10-18 full rescoring was
 left ungated.
 
+
+## 2026-10-18 IC7 result: region-F1 does grade an over-painted prediction, the asymmetry is NOT uniform, and the criterion I wrote for the mechanism measured the wrong thing
+
+`region_metrics.py` sha256 `8d9fd437ec7641e0`, `fill_mask.py` sha256
+`d914087a44e2c64e`, both unmodified. Run log
+`results/fill_koma_20261010/ic7_run.txt`, per-panel `ic7_per_panel.csv`,
+montage `results/fill_koma_20261010/ic7_overpaint.png`. Registration
+`324b2a4`, tool `1a1bc0c`. **948 normal-stratum panels** (956 normal, 13
+near-blank skipped as unsupported, 8 with 0 regions excluded as an identity),
+22,602 regions, median area 1500px -- the same panels and the same census as
+IC6, so the two legs are comparable panel by panel.
+
+**C1 PASS** -- d = 0 is region-F1 exactly 1.000 with **0 of 948 panels
+differing** (an IDENTITY; it checks plumbing only), and the non-identity half
+holds: d = 1 changes the mask on 948/948 and mean predicted area rises
+strictly with d, so NC-d0 ("the distance transform taken on the wrong array")
+did not fire. **C2 PASS** -- the match rate is monotone across all twelve
+radii.
+
+| d | grid | region-F1 | pixel IoU | match rate | predicted | npred/ngt |
+|---|---|---|---|---|---|---|
+| 1.000 | integer | 0.9027 | 0.9287 | 0.939 | (1.000) | 1.081 |
+| 1.414 | **registered** | 0.8588 | 0.9017 | 0.914 | 1.000 | 1.131 |
+| 2.000 | integer | 0.8125 | 0.8715 | 0.878 | (1.000) | 1.172 |
+| 2.828 | **registered** | 0.7316 | 0.8293 | 0.814 | 1.000 | 1.259 |
+| 4.000 | integer | 0.5888 | 0.7757 | 0.662 | (1.000) | 1.357 |
+| 5.657 | **registered** | 0.2857 | 0.7129 | 0.293 | 0.908 | 1.528 |
+| 6.000 | integer | 0.2645 | 0.7049 | 0.265 | (0.846) | 1.530 |
+| 8.000 | integer | 0.1580 | 0.6439 | 0.149 | (0.589) | 1.711 |
+| 8.485 | **registered** | 0.1453 | 0.6319 | 0.137 | 0.545 | 1.777 |
+| 11.314 | **registered** | 0.1097 | 0.5727 | 0.093 | 0.363 | 1.764 |
+| 12.000 | integer | 0.1038 | 0.5573 | 0.086 | (0.335) | 1.718 |
+| 16.971 | **registered** | 0.0828 | 0.4844 | 0.058 | 0.209 | 1.492 |
+
+Parenthesised predictions are computed in-run and were never registered.
+
+**C3 PASS, and it reads placement.** Four radii land in the registered
+[0.20, 0.80] band (2.828, 4, 5.657, 6), all of them far above `blank` 0.0084
+and `nc3_hflip:rough_dark` 0.0063. The control that could have emptied it did
+not fire: the **same** prediction mirrored left-right scores **0.0111** at
+d = 2.828 and **0.0094** at d = 8.485 against a bar of 0.05 -- identical
+component count and areas, wrong positions, and the metric collapses to the
+stage-2 control level. So the graded band is placement, not size statistics,
+and C3 is not withdrawn.
+
+**C4 PASS as written, and the disc model overshoots for the third time.** The
+measured half-match bracket is **d <= 5.657px**, at or above IC6's measured
+erosion bracket of 4px, so the registered verdict word applies: **ASYMMETRIC
+AS PREDICTED (dilation tolerated to >= 4px, erosion's measured bracket)**.
+But the registered *prediction* was **9.05px**, and the measurement is 5.657
+or below. The disc model has now overshot on both legs -- -0.526 at e = 4
+(IC6) and the same direction here.
+
+### C4b FAILS, and it is the leg that touches the trainer
+
+At equal radius, on the 948 panels both runs used (the instrument assert
+passed: recomputed IC6 erosion means reproduce `ic6_run.txt` to <0.0015 at all
+six radii):
+
+| radius | dilate F1 | erode F1 | dilate - erode | C4b |
+|---|---|---|---|---|
+| 1 | 0.9027 | 0.9091 | **-0.0064** | VIOLATED |
+| 2 | 0.8125 | 0.8223 | **-0.0098** | VIOLATED |
+| 4 | 0.5888 | 0.3821 | +0.2068 | ok |
+| 6 | 0.2645 | 0.2546 | +0.0099 | ok |
+| 8 | 0.1580 | 0.1986 | **-0.0405** | VIOLATED |
+| 12 | 0.1038 | 0.1438 | **-0.0401** | VIOLATED |
+
+**Four of six radii violate it.** "Over-painting is cheaper than
+under-painting" is **false as a general statement**: it holds in a window
+around 4-6px and fails on both sides of that window. C4 passing and C4b
+failing are not in conflict -- C4 compares brackets, C4b compares values --
+and **C4b is the one a trainer reads**, because a model's boundary error is a
+radius, not a bracket.
+
+### L1: the registration's claim that `npred > ngt` would be a bug is WRONG, and the run shows it on every row
+
+The registration says: "Splitting cannot occur under dilation (it is monotone
+in the mask), so `n_pred > n_gt` would be a bug, not an effect". The ratio is
+**above 1 at every one of the twelve radii**, 1.081 to 1.777. Monotonicity is
+not in doubt; the sentence forgot the **500px filter**. `regions()` counts
+only components >= `MIN_REGION_PX`, so a GT blob *below* that threshold grows
+*above* it when dilated and appears as a predicted region with no counted GT
+region behind it. IC6's own census said 2.0% of GT fill area sits in sub-500px
+components, so the material for this was already measured and I did not
+connect it.
+
+**Measured, not assumed** (`tools/evaluation/ic7_npred_decomposition.py`,
+`results/fill_koma_20261010/ic7_npred_decomposition.txt`, every 20th held
+panel = 48 panels, the IC-j10 spread; assert cell hand-computed: a 400px blob
+dilated by 2 crosses the filter as a crosser, two squares 4px apart dilated by
+3 become one carrier holding 2 GT regions):
+
+| d | n_gt | n_pred | carriers | merges | crossers | crossers/n_pred | merges/n_gt |
+|---|---|---|---|---|---|---|---|
+| 1.000 | 1215 | 1289 | 1143 | 58 | 146 | 0.113 | 0.048 |
+| 4.000 | 1215 | 1622 | 1016 | 128 | 606 | 0.374 | 0.105 |
+| 8.485 | 1215 | 2146 | 911 | 172 | 1235 | 0.575 | 0.142 |
+
+At d = 8.485 **57.5% of predicted regions have no counted GT region behind
+them.** That is the missing effect, and it explains C4b's violations at d = 1
+and 2 as well: the crossers are already 11.3% of `n_pred` at d = 1, and they
+cost precision while erosion at the same radius costs nothing yet.
+
+### L2: C5 is REFUTED as registered, and the sentence it printed must not be quoted
+
+C5 fixed its bar on `npred/ngt < 0.90` at d = 8.485. The measurement is
+**1.777**, so C5 is refuted and the run printed the alternative I had written
+into the tool: *"regions are far enough apart that these radii do not merge
+them; any overshoot is elongation alone"*. **That sentence is false and is
+withdrawn.** The decomposition above shows merging does fire -- **172 of 1215
+GT regions sit in a merged carrier at d = 8.485 (14.2%), 128 (10.5%) at
+d = 4** -- it was simply hidden, because crossers push the same ratio up
+faster than merging pushes it down.
+
+The defect is mine and it is in the registration, not in the run: **a
+criterion fixed on a ratio cannot test a mechanism when a second mechanism
+moves the same ratio the other way.** The registered form should have been the
+decomposition. The pass criteria stand as written and as failed; the tool now
+prints the decomposition pointer instead of the withdrawn conclusion.
+
+### What this changes for M1, and what it does not
+
+As registered, **IC7 cannot release or block the slot, and does not.** Stage
+2's C1-C5 do not move. It leaves three readings:
+
+1. **Region-F1 does grade an over-painted prediction** (0.59 at 4px too fat,
+   0.26 at 6px) and the grading is positional (NC-hflip collapses to 0.011).
+2. **Neither direction is safe.** A learned arm 4px too thin reads 0.382
+   (IC6); 4px too fat reads 0.589; 8px too fat reads 0.158, *below* the same
+   error in the thin direction. Over-painting is not the cheap failure.
+3. **Report `npred/ngt` beside every region-F1 for a learned arm.** At these
+   radii the precision term is dominated by components that are near the
+   500px filter rather than by the fill. A learned arm whose region-F1 is low
+   while `npred/ngt` is high is being scored on speckle, and that is a
+   different defect from not knowing where the fill is.
+
+Cost, against the registered estimate: **1h39m** (19:14:21 to 20:53, 948
+scored panels of 969 read), against a registered ~90 min -- inside the 150 min
+ceiling, so the registration's fallback did not need to be invoked. The
+`--limit 12` estimate that produced the ~90 min figure is recorded as a
+limit in `doc/shortcuts.md`.
