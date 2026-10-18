@@ -200,11 +200,15 @@ What the rename did and did not touch:
   So **nothing anywhere resolves that branch name at run time**, and deleting
   it is recoverable: `67d7bf7` is an ancestor of `foundation` and exists in
   every clone.
-  **The delete itself has not been run from the foundation session**: it is a
-  destructive remote operation and this session's permission mode refused it.
-  The command, for the user to run, is `git push origin --delete diffusion`,
-  followed by `git remote prune origin` in `lineart` and in
-  `lineart-panel-generation` so neither clone keeps the ghost ref.
+  **Done, 2026-10-19: the user ran the delete** (`git push origin --delete
+  diffusion`, then `git remote prune origin` in both clones). The foundation
+  session's permission mode refuses a destructive remote operation, so it
+  recorded the audit and handed over the command rather than running it.
+  Verified afterwards: `origin` carries no `diffusion` head, and both clones
+  hold only `origin/diffusion-controlnet`, which is a different branch and was
+  never in scope. **The rename is closed.** It remains recoverable --
+  `67d7bf7` is an ancestor of `foundation` and still exists in every clone --
+  but nothing references it.
 - **Do not fix these references with a repo-wide `sed`** (warning from Track J,
   2026-10-18, asked to be carried to the other tracks). `experiments/*.sh` and
   `scripts/*.py` hold `BASE_CKPT=$HOME/disk/checkpoint/Stable-diffusion/...` in
