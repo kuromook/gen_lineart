@@ -1364,6 +1364,48 @@ work, and the stated expectation is that the pieces make each other easier.
     the fill-axis check. The bar is written before the sweep, and **a
     coefficient chosen from the sweep is a design choice, not a confirmed
     value** -- confirming it needs new marks, the K3 material.
+    **The fragment-to-part correspondence rule is removed rather than
+    written** (2026-10-18; the track asked for it and was right that such a
+    rule manufactures its own result). The foundation's first phrasing --
+    *fixed* = a marked token's pieces land in different part groups --
+    **demanded information the labels do not contain**: `broken` says the token
+    should be taken apart and never says *where*, and the author assigned the
+    fused token a single part. So the definitions become **split or not**:
+    *fixed* = a token carrying `broken` splits at this coefficient, *broken* =
+    a token without the mark splits, since the author had the tool and did not
+    use it. The part groups drop out of the primary and become the cost's
+    breakdown, where an unmarked token that sat wholly inside one group is the
+    strongest cost. No pixel correspondence and no voting are needed, because
+    **the skeleton is unchanged across the sweep** -- skeletonisation is
+    upstream and only the span-to-token assembly moves -- so "did this token
+    split" is decided on one fixed pixel universe. One degree of freedom fewer.
+    **Required exclusion**: only faces where the `broken` field exists may
+    supply controls; the 23 oldest faces record the mark as **unavailable, not
+    absent**, and leaving them in the denominator dilutes the cost with
+    material that could not carry a mark. Secondary: the fragment-count
+    distribution in both arms, since a marked token splitting into 2 and into 7
+    are the same "fixed" and different phenomena.
+  - **The cost bar is demanding, and the foundation registers a prediction that
+    the unconditional sweep fails.** With about 24,850 unmarked tokens, an
+    unmarked split rate of 0.5% already gives 124 broken against 148 fixed at
+    80% of marks (ratio 0.84), and 1.0% gives 249 against 148 (1.68). So
+    **bar < 1.0 requires holding the unmarked split rate under roughly 0.5%
+    while splitting most marked tokens**, which no global lowering of the
+    coefficient can do, because a global threshold splits unmarked tokens at
+    the same rate. **Registered before the sweep: no uniform coefficient clears
+    the bar.**
+  - **So the arm the mechanism actually implies rides the same sweep: a width
+    gate.** K4a established that the collapsed bridges are mostly a fill's
+    medial axis -- local ink width median 26.8px, 92.7% over 8px -- against a
+    drawn line's ~2.7px, window-invariant. The repair the mechanism points to
+    is therefore not a lower threshold but **collapse only bridges whose local
+    ink width is at line scale, and never at fill scale**, which is a
+    **narrowing** rather than a loosening and adds one degree of freedom whose
+    value comes from an existing measurement. Arms: coefficient
+    {0, 0.75, 1.0, 1.25, **1.5 current**, 2.0, 3.0, inf} x {no gate, width gate
+    W} -- same bar, same reference, same prints, **one sweep**, so that nothing
+    comes back for a second pass. The over-8px secondary doubles as the check
+    that the gate is working.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2167,6 +2209,17 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **A ground-truth label answers only the question it was collected for**
+  (ruled 2026-10-18, the foundation correcting its own cost design). The
+  author's `broken` mark means "this token should be taken apart" and carries
+  no information about **where** the split belongs, and the author assigned the
+  fused token one part group. A metric phrased as "the fragments land in
+  different part groups" therefore demands information the labels do not hold,
+  and the fragment-to-part correspondence it needs would have been a new
+  degree of freedom invented to supply it. Phrased as **split or not**, the
+  metric needs no correspondence at all. Related exclusion from the same
+  ruling: a face whose `broken` field does not exist records the mark as
+  **unavailable, not absent**, so it cannot serve as a control.
 - **An append-only log read as a set of rows double-counts its keys** (Track
   K, 2026-10-18, found and fixed by the track before it read anything).
   `labels/face_groups.jsonl` carries up to three rows per `order` -- 417 rows
