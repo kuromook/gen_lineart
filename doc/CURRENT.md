@@ -1451,6 +1451,14 @@ work, and the stated expectation is that the pieces make each other easier.
     check whether the target metric is an algebraic function of something
     already measured** -- that part is already answered, and only the rest
     needs the sweep.
+  - **Track K's own summary of 2026-10-18/19**:
+    `inbox/note_track_k_day_summary_20261019.md`. It records, besides the
+    results, that the author spent **one session of 56 judgments** in total,
+    that instruments stopped the work **5 times** (twice preventing a reported
+    pass), that this foundation's readings were stopped **twice** and its
+    circular check once, and that material was mis-identified 3 times by the
+    foundation and twice by the track -- **every one of them before a result
+    was published**. Track K is quiet until new marks exist.
   - **Where Track K stands, 2026-10-19 (read this instead of the bullets
     above).** *Established*: the connectivity error has two directions and only
     over-merge is markable; the author's marks concentrate on tokens passing a
