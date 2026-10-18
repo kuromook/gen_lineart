@@ -15,14 +15,19 @@ common project context.
 Keep the current repository as the integration / main working tree:
 
 - `/home/sh1/deepl/lineart`
-  - branch: `diffusion`
+  - branch: `foundation` (renamed from `diffusion` on 2026-10-18; the old name no longer
+    described what the branch is. `origin/diffusion` is frozen at `67d7bf7` and will be
+    deleted once the live tracks acknowledge. Historical references to the `diffusion`
+    branch in work logs are provenance and are **not** rewritten.)
   - role: current integration branch and shared documentation
   - `doc/CURRENT.md` here is the authoritative project status document
+  - the authoritative copy of this file is `../lineart/doc/worktree_policy.md`
+    (the rename and the reason `main` was not used are recorded there, commit `8bbe924`)
 
-Branch new tracks off `diffusion`:
+Branch new tracks off `foundation`:
 
 ```bash
-git worktree add ../lineart-<topic> -b <topic> diffusion
+git worktree add ../lineart-<topic> -b <topic> foundation
 ```
 
 ## Active Worktrees

@@ -127,18 +127,34 @@ def profile(g, pa, pb, col):
 
 
 def own_ink_mask(P, sp, vals, i, j):
-    """B'-1: 標本ごとに『自分の墨』か判定する。
-    半径 max(2.0, 局所インク幅/2 + 1.0) 以内に候補の 2 span の骨格があり、
-    **かつ他のどの span の骨格も無い**ときだけ『自分の墨』。帰属不明は『他の墨』(除外しない)。"""
+    """B'-1b: 標本ごとに『自分の墨』か判定する。
+    半径 max(2.0, iw[最近傍の自分の骨格画素]/2 + 1.0) 以内に候補の 2 span の骨格があり、
+    **かつ他のどの span の骨格も無い**ときだけ『自分の墨』。帰属不明は『他の墨』(除外しない)。
+
+    半径の素は **標本点の `iw` ではなく、最も近い「自分の骨格画素」の `iw`**(B'-1b、
+    2026-10-18 登録)。根拠は定義: 画素がその線の body に属するかはその線の太さで決まり、
+    線の太さは線の性質であって画素の位置の性質ではない。`iw` は距離変換の 2 倍なので
+    縁で 0〜2 に潰れ、弦が掠めるのは必ず縁 → 半径が最小になる場所が半径を最も要る場所
+    という向きの逆転が起きていた。最近傍 40 画素に自分の骨格が無ければ半径内にも無いので
+    『自分の墨』にはしない。"""
     own = np.zeros(len(vals), bool)
     if P["sp_tree"] is None:
         return own
     H, W = P["iw"].shape
+    kq = min(40, len(P["sp_idx"]))
     for k in range(len(vals)):
         if vals[k] > G_PAPER:
             continue
         q = sp[k]
-        w = float(P["iw"][int(np.clip(q[0], 0, H - 1)), int(np.clip(q[1], 0, W - 1))])
+        _dd, mm = P["sp_tree"].query(q, k=kq)
+        w = None
+        for m_ in np.atleast_1d(mm):
+            if int(P["sp_idx"][m_]) in (i, j):
+                y, x = P["sp_tree"].data[m_]
+                w = float(P["iw"][int(np.clip(y, 0, H - 1)), int(np.clip(x, 0, W - 1))])
+                break
+        if w is None:                      # 最近傍 40 画素に自分の骨格が無い
+            continue
         r = max(2.0, w / 2.0 + 1.0)
         idx = P["sp_tree"].query_ball_point(q, r)
         if not idx:
@@ -380,6 +396,10 @@ def main():
     ap.add_argument("--snapshot", default="results/k1_broken_vs_fill_20261016/labels_snapshot.jsonl")
     ap.add_argument("--out", default="results/k2_box_b_gray_20261018")
     ap.add_argument("--workers", type=int, default=5)
+    ap.add_argument("--band", choices=["a", "b"], default="b",
+                    help="a=診断の帯(置換の 0..299、検査ではない) / b=検査の帯(置換の 300..599)")
+    ap.add_argument("--pool-start", type=int, default=None, help="既定は帯から決まる")
+    ap.add_argument("--pool-n", type=int, default=N_SITE_POOL)
     a = ap.parse_args()
     out = ROOT / a.out
     out.mkdir(parents=True, exist_ok=True)
@@ -436,13 +456,19 @@ def main():
     # --- 構成した標的 ---
     rng = np.random.default_rng(SEED)
     sites.sort()
-    order = rng.permutation(len(sites))[:N_SITE_POOL] if len(sites) else []
-    pick = [(rank, sites[k]) for rank, k in enumerate(order)]
+    perm = rng.permutation(len(sites)) if len(sites) else np.zeros(0, int)
+    # 帯は **1 本の置換の連続した区間**で割る(独立な第 2 seed では帯が重なるため)。
+    # 帯(a)=0..299(診断、検査ではない) / 帯(b)=300..599(検査)。素集合は構成として保証される。
+    start = a.pool_start if a.pool_start is not None else (0 if a.band == "a" else N_SITE_POOL)
+    order = perm[start:start + a.pool_n]
+    pick = [(rank, sites[k]) for rank, k in enumerate(order, start=start)]
     bys = defaultdict(list)
     for rank, s_ in pick:
         bys[s_[0]].append((rank, s_))
     ttasks = [(p, P[p]["source"], P[p]["name"], ss) for p, ss in bys.items()]
-    print(f"標的: site {len(sites)} 候補から {len(pick)} 個を試し、構成できた順に "
+    band_role = "診断(検査ではない)" if a.band == "a" else "検査(棒はこの帯で判定)"
+    print(f"帯({a.band}) {band_role}: 置換の {start}..{start + len(order) - 1} 番目、"
+          f"site {len(sites)} 候補から {len(pick)} 個を試し、構成できた順に "
           f"{N_PER_KIND} を採る(B'-3)", flush=True)
     tg = []
     with Pool(a.workers) as pool:
@@ -532,12 +558,18 @@ def main():
         registered=dict(g_paper=G_PAPER, g_ink=G_INK, win=WIN, blob_d=BLOB_D, crop=CROP,
                         n_target=N_TARGET, seed=SEED, clean_r=CLEAN_R, min_span=MIN_SPAN,
                         collar="per_pair.csv の collar 列をそのまま(襟は動かさない)",
-                        note="停止条件は構成した標的のみ。素材の分布の形は合否に使わない"),
+                        own_radius="B'-1b: max(2.0, iw[最近傍の自分の骨格画素]/2 + 1.0)",
+                        band=a.band, band_role=band_role,
+                        band_slice=[int(start), int(start + len(order))],
+                        note="停止条件は構成した標的のみ。素材の分布の形は合否に使わない。"
+                             "帯(a) は診断で検査ではない。棒の判定は帯(b) のみ。2 帯を合算しない"),
         instrument=dict(targets_4rows=rows4, stop_condition_passed=stop_ok, internal=chk,
                         j_sha_ok=sha == J_SHA, j_head=j_head),
         material_description=desc,
-        verdict=("器具の停止条件に合格(各 30 件を構成し、全部正しい箱に入った)" if stop_ok
-                 else "**止める**: 登録した「各 30 件がすべて正しい箱に入る」を満たしていない"))
+        verdict=(("診断の帯なので合否は出さない(帯 a)" if a.band == "a" else
+                  "器具の停止条件に合格(各 30 件を構成し、全部正しい箱に入った)") if stop_ok
+                 else ("診断の帯なので合否は出さない(帯 a)" if a.band == "a" else
+                       "**止める**: 登録した「各 30 件がすべて正しい箱に入る」を満たしていない")))
     json.dump(summary, open(out / "summary.json", "w"), indent=1, ensure_ascii=False)
     print(json.dumps(summary, ensure_ascii=False, indent=1))
 
