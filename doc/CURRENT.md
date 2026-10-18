@@ -1324,6 +1324,46 @@ work, and the stated expectation is that the pieces make each other easier.
     **about 247 box-B cases** to put the CI above 1 at MH-RR 1.3418, against
     the discovery's 182 -- the number to hand the user if they ever ask whether
     more labelling pays.
+  - **The holdout was opened once and the mechanism survived on the harder
+    band (2026-10-18).** `test_series` -- ten whole works held out, the
+    cross-work generalisation test -- gives **MH-RR 3.9018, PAF 0.4855, CI
+    [0.3245, 0.6400]: support**. `test_panel` gives **MH-RR 4.3629, PAF 0.4894,
+    CI [0.2578, 0.7581]: held**. **No overall verdict is registered**, because
+    this file wrote "report the bands separately, do not pool" and never wrote
+    a combination rule, so none is invented after the fact. What can be said:
+    the point estimates are nearly identical (0.4894 against 0.4855), the
+    verdicts differ on **precision** (8 of 10 contributing deciles against 6 of
+    10) and not on effect, the held band's interval is not in conflict with
+    0.30, and both sit a little under the discovery's 0.5759 [0.4617, 0.6854].
+    **This file's registered expectation was wrong in a useful direction**: it
+    said that if the panel band confirmed while the series band failed the
+    mechanism would be style-specific, and the result is the reverse, so **the
+    mechanism is not style-specific**. The instruments held throughout -- crude
+    two-formula agreement exact in both bands, the **negative control
+    recovering the null in both** (0.9577 and 0.9880), and the proportionate
+    abstention printed before the outcome was read. **The condition for
+    discussing a repair, PAF >= 0.30 on held-out material, is met.**
+  - **The benefit is measured and the cost is not, so no decision goes to the
+    user yet.** Two warnings already point the same way: K4a found the loss-2
+    collapsed bridges are mostly a fill's medial axis (local ink width median
+    26.8px), so raising the threshold eats fill axes, and K10's author answers
+    already refuted unconditional loosening from the other direction. The next
+    registration therefore puts **the primary value on the cost side**, on
+    train material and declared as design exploration rather than a test: sweep
+    the collapse rule's coefficient with the trivial arms at both ends (current
+    value, collapse everything, collapse nothing), and score against **the
+    author's part groups**, which cost nothing and measure **both** directions
+    -- *fixed* = a marked token splits with its pieces landing in different
+    part groups, *broken* = an unmarked token that sat inside a single part
+    group splits. That last count is **the first number anyone has put on
+    over-splitting**, the direction the author cannot mark, which is the
+    constraint Track K was opened over. Primary: **broken / fixed, bar < 1.0**
+    -- marks are 0.74% of tokens, so mis-splitting 1% of unmarked tokens breaks
+    as many as the repair fixes. Secondary: the share of newly split or
+    absorbed structure with local ink width over 8px, against K4a's 92.7%, as
+    the fill-axis check. The bar is written before the sweep, and **a
+    coefficient chosen from the sweep is a design choice, not a confirmed
+    value** -- confirming it needs new marks, the K3 material.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2127,6 +2167,16 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **An append-only log read as a set of rows double-counts its keys** (Track
+  K, 2026-10-18, found and fixed by the track before it read anything).
+  `labels/face_groups.jsonl` carries up to three rows per `order` -- 417 rows
+  against 301 unique keys, 113 duplicated -- so the first holdout implementation
+  inflated the marks to 75 and 106. Read such a file as **latest-row-per-key**,
+  and **print the row count beside the unique-key count** so the gap is
+  visible. Track F's loader was safe because `G.S["faces"]` is a dict keyed by
+  `order`, which is also why K4's 185 was right. **A bug found late is swept
+  backwards**: every earlier result that read these labels prints whether it
+  went through the dict path.
 - **A registration earns reserved material only by naming the decision its
   answer changes** (ruled 2026-10-18, retiring K7's confirmatory leg). K7 asks
   whether the mouth predicts box-B membership. On read material the mouth is
