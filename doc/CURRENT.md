@@ -843,6 +843,55 @@ work, and the stated expectation is that the pieces make each other easier.
     connected component along the chord", a stratification by gap, the same
     predicate run on box A's 521 joined pairs as the trivial arm, and a split
     by `comp_same`.
+  - **K7, the part-label axis, stopped on its own negative control
+    (2026-10-18), and the registration was at fault, not the data.** The
+    control permuted part labels **within `order`**, which preserves each
+    stratum's composition, so its median came out at **1.3476** against a
+    registered band of [0.95, 1.05]. The track stopped rather than widen the
+    band or reread the failure as a property of the material. The diagnosis is
+    right and the numbers check out here: mouth 50 of 146 = 0.3425, non-mouth
+    132 of 636 = 0.2075, crude RR **1.6501** (CI 1.1137-2.7537), AFe **0.3940**
+    (CI 0.1021-0.6369), Fisher p 7.4e-4, permutation p 0.044; the per-part
+    table also reconciles to box B's 182. **The error was the pairing, not the
+    band**: a within-stratum permutation has null value 1 for **MH-RR** and
+    "whatever composition alone produces" for the **crude** RR, so [0.95, 1.05]
+    was a correct band attached to the wrong statistic. Approved: MH-RR becomes
+    the primary with the permutation distribution as its reference and the
+    null-1 band restored as a real instrument check; the crude RR is demoted to
+    secondary and printed beside its own permutation median, because the gap
+    1.6501 against 1.3476 **is** the composition effect and is a result worth
+    printing. **One instrument check comes first**: the stratum-size
+    distribution. The permutation median 1.3476 and the observed MH-RR 1.3418
+    agreeing to 0.006 has a boring explanation that must be ruled out --
+    degenerate strata, where singletons make the permutation an identity and
+    contribute nothing to MH, so both numbers are driven by the same few
+    strata. No name goes on that coincidence until the counts are printed.
+  - **The exposure stays "mouth versus the rest", and the reason is that the
+    registered design was the conservative one.** The track offered to replace
+    it with a per-part table after seeing that mouth is only 4th (face.other
+    0.782 n55, glasses 0.545 n11, face.ear 0.388 n85, face.mouth 0.343 n146,
+    face.nose 0.186, face.eye.closed 0.143, face.eye.open 0.085 n247,
+    face.brow 0.083 n145). Computed here: face.other sits in the comparator, and
+    removing it **raises** the mouth's RR from 1.6501 to **2.2356** -- so
+    comparing against everything else diluted the result rather than
+    manufacturing it, and moving the primary onto the table would mean picking
+    the maximum of 8 post-hoc. The table is kept as post-hoc description with n
+    on every row and **nothing below n = 30 used in a finding**. The one
+    exception is **face.other, which gets its own registration**: it is the
+    table's maximum *and* the only row with a mechanism written before the
+    measurement -- the track had already identified cheek hatching as
+    spur-pruning residue, which is the same mechanism as the 56 continuous-ink
+    cases, so it belongs in that registration rather than in a post-hoc table.
+  - **These 782 pairs are now read material, which changes what the rewrite can
+    claim.** The crude RR, its CI, AFe, Fisher p and the permutation p were all
+    printed while the primary was declared unread, so a re-registered MH-RR on
+    the same pairs cannot be confirmatory. Split accordingly: on this material
+    the question is **estimation, with AFe as the primary** (0.3940, CI
+    0.1021-0.6369) under the frame adopted 2026-10-17, and the **confirmatory
+    MH-RR moves to an unread panel band** -- the chainer has used only [0:171]
+    of 4,049 panels -- with the registration written before the band is opened.
+    **The author request does not wait for it**: what the request needs is the
+    three options and a denominator split by the predicate, not the mouth's RR.
   - **A third mechanism of under-connection is now hypothesised, and it needs
     neither labels nor the author** (registered 2026-10-18, to be measured
     after the part-label axis and before the author request). The 56 cases are
@@ -1558,12 +1607,46 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   across three Track K registrations, 2026-10-18). The track's mechanism
   readings were right all three times; its yield predictions were wrong all
   three times ("8 of 9 will be repaired" came in at 1 of 7; "all five rows
-  pass" came in at 21 of 30). The foundation's predictions of **where a guard
+  pass" came in at 21 of 30), and a fourth mis-estimate the same day was of **what a control
+  returns under the null** (1 against 1.3476), which is the same side of the
+  line -- so the division widened: **the author registers the mechanism, the
+  foundation registers the yield and the control's null value**, the latter
+  written as a pair with the statistic's name. The foundation's predictions of **where a guard
   would bite** were right all three times, which is the cheap direction: the
   mechanism was handed to it by the track's own notice. The 3-0 is not evidence
   that one party judges better -- the two prediction tasks differ and their
   biases point opposite ways. The division adopted from here: **the repair's
   author registers the mechanism, the foundation registers the yield.**
+- **A null value belongs to a statistic, not to a study** (Track K's K7,
+  2026-10-18, stopped by its own control). The registered negative control
+  permuted part labels within `order` and required the result in [0.95, 1.05].
+  It came out at 1.3476, because permuting within a stratum preserves that
+  stratum's composition, so a **crude** RR pooled over strata does not return
+  to 1 when the within-stratum association is destroyed. The same permutation
+  **is** centred on 1 for **MH-RR**. So the band was correct and was attached
+  to the wrong statistic: the failure was not the material, not the band's
+  width, and not the control's idea. **Write the null value and the statistic
+  as a pair in the registration**, and when a control fails, ask which of the
+  two is wrong before touching either.
+- **A coincidence between two statistics is a degeneracy check before it is a
+  finding** (same stop). The permutation median of the crude RR (1.3476) and
+  the observed MH-RR (1.3418) agreed to 0.006 although they estimate different
+  things. The boring explanation to rule out first is degenerate
+  stratification: singleton strata make a within-stratum permutation the
+  identity and contribute nothing to MH, so both numbers can be driven by the
+  same few strata. Required before interpretation: the number of strata, their
+  size distribution, how many are singletons, and what share of the units sit
+  in strata that carry both exposure levels and both outcomes.
+- **"Compared against everything else" can be the conservative choice, and
+  that is checkable** (ruled 2026-10-18). Track K suspected its pre-registered
+  exposure (mouth versus all other parts) of being a design error once the
+  per-part table showed mouth 4th of 8. Computed from the track's own table:
+  the highest-rate part, `face.other` at 0.782, sits in the comparator, and
+  removing it raises the exposed RR from 1.6501 to 2.2356. **A comparator that
+  contains the strongest non-exposed group dilutes the estimate**, so the
+  registered design did not manufacture the result and does not need replacing
+  -- while moving the primary onto the table would mean choosing the maximum of
+  eight cells post-hoc.
 - **A count from a run whose stop condition failed is usable only if its
   predicate never touches the failed path -- and it still needs a scale**
   (ruled 2026-10-18 on Track K's 32.4%). The unmeasurable box survived because
