@@ -1185,6 +1185,38 @@ work, and the stated expectation is that the pieces make each other easier.
     since the part-versus-gap question is about the same `face.other` cluster
     and designing it without knowing what that cluster is would mean measuring
     one candidate blind.
+  - **The two leading mechanisms were both dismissed on a swapped-direction
+    RR, so "no single mechanism explains the marks" is withdrawn.** Read in the
+    asked direction, **K1 (fill adjacency) has PAF 0.5030** crude with both
+    formulas agreeing, and **K4 (collapsed bridge) has PAF 0.5759**,
+    Miettinen, CI [0.4590, 0.6861], adjusted over length deciles (Levin
+    0.3926). **Both clear the 0.30 bar**, and both were failed by bars applied
+    to an RR with the mark as the exposure. Their registered verdicts stand --
+    K1 unsupported at RR 1.487 against 1.5, K4 held at MH-RR 1.8435 against 2.0
+    -- because a verdict is not re-read after the fact; what changes is what
+    gets measured next. The trajectory this file proposed, that the track would
+    close on "the defect is real but no single mechanism explains it", rested
+    on the mis-framed 0.248 and 0.331 and is withdrawn. The three deaths of the
+    day are unaffected: the gray axis, the continuity mechanism and the
+    hysteresis bridge stay dead.
+  - **K1 and K4 are probably one mechanism, and arithmetic says so before any
+    new measurement.** Attributable fractions of **disjoint** exposure groups
+    cannot sum past 1, since the attributable cases are disjoint sets --
+    and **0.5030 + 0.5759 = 1.0789**. (Even the conservative pairing, with
+    Levin's 0.3926, sums to 0.8956 and leaves almost nothing unexplained.) So
+    the two exposures must overlap. The mechanism side agrees: **K4a
+    established that the loss-2 collapsed bridges are mostly a fill's medial
+    axis** (local ink width median 26.8px, 92.7% over 8px), which makes "passes
+    a collapsed bridge" largely a restatement of "is adjacent to a fill". So
+    the next measurement is **the overlap, on read material, before
+    registration A**: the 2x2 of fill adjacency against collapsed-bridge
+    passage over the 25,035 tokens, each exposure's PAF conditioned on the
+    other, and the over-1 sum printed as a clue to which estimate is inflated.
+    Direction is fixed as exposure = predicate, outcome = mark; Miettinen is
+    the primary with Levin as a sensitivity; the crude two-formula agreement is
+    checked before anything is adjusted. **The unread band is then opened on a
+    single registration** over a combined exposure, because confirming K1 and
+    K4 separately would count the same denominator twice.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -1994,20 +2026,36 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   verdict). The vocabulary, fixed here: **AFe = (RR-1)/RR**, the fraction among
   the exposed; **PAF = p(RR-1)/(p(RR-1)+1) = p_case(RR-1)/RR**, the share of
   *all* cases a perfect repair would remove. The two PAF formulas are
-  algebraically the same, so **computing both and checking they agree to the
-  printed digits is the instrument check** -- and it is the check that fires
-  here. K4's pool table compares P(bridge | marked) 0.7243 with
+  algebraically the same **on the crude table**, so computing both and checking
+  they agree to the printed digits is a check on the **framing** -- and it is
+  the check that fires here. Corrected by Track K the same day: the agreement
+  holds only crude. Levin's form assumes a crude RR and a homogeneous
+  population and is biased when fed an adjusted one, so **under stratification
+  disagreement is normal** (K4 adjusted: Levin 0.3926 against Miettinen 0.5759)
+  and the estimator to report is **Miettinen's**, with Levin's printed as a
+  sensitivity and not as a check. K4's pool table compares P(bridge | marked) 0.7243 with
   P(bridge | unmarked) 0.1625 and calls the ratio 4.456 an RR: that is an RR
   with **marked as the exposure and bridge as the outcome**, a fine descriptive
   statement that cannot carry an attributable fraction. In the asked direction
   the RR is (134/4182)/(51/20908) = **13.136** and both PAF formulas return
   **0.6692** exactly. Fed direction 2's RR, they return **0.1233 and 0.3314**,
   disagreeing by 0.2082 -- which is how the error announces itself. D, by
-  contrast, was framed correctly and its two formulas agree at 0.0404 exactly,
-  so **the refutation of D is untouched**. Every attributable fraction reported
-  from here prints both formulas. Standing items: K1's 0.248 is valid only if
-  fill adjacency at radius 4 has prevalence near 0.6766, which is one number to
-  print, and K7 passes.
+  contrast, looked correctly framed -- and that reading was **a circular
+  check of the foundation's own making**: the "Miettinen" value it agreed with
+  was computed from a `p_case` the foundation had **back-solved out of the
+  consistency relation**, so agreement was guaranteed. With the observed
+  `p_case` the two are 0.0404 against 0.0676, and D was in direction 2 as well.
+  **A check that derives one of its own inputs from the relation it is
+  checking always passes; every input must come from the data.** The refutation
+  of D survives anyway, which is the one comfortable part: re-measured in the
+  asked direction, MH-RR 1.3121 with CI [0.9413, 1.8574] under RR\* 2.4129, and
+  PAF 0.1319 (Miettinen) / 0.0865 (Levin) with both CI upper bounds under 0.30.
+  **D is refuted under three definitions and both directions.** Every attributable fraction reported
+  from here prints both formulas. K7 passes. K1's 0.248 does **not**
+  revive: the foundation's algebra implied a prevalence near 0.6766 and the
+  measured P(fill-adjacent) is **0.5106**, so 0.248 was a mis-framed quantity
+  and not a valid one awaiting a number. In the asked direction K1 is crude RR
+  2.9823 with **PAF 0.5030**, both formulas agreeing.
 - **An identity key must be derived from the thing identified, not from its
   position in the output** (Track K, found while scoring, 2026-10-18). The
   sheet's `uid` was assigned after the tiles were shuffled, so a repeated tile
