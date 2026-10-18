@@ -133,8 +133,10 @@ raised with the date.
   measurements: the 2026-10-18 arm scoring ran **7h26m at 27.6 s/panel** over
   969 panels (`results/fill_koma_20261010/per_panel_held_nc2repaired.csv`,
   21,302 rows); IC6 ran in **under 49 min** (registration committed 22:05,
-  artefacts written 22:54 on 2026-10-16); IC7 is measuring **12.1 s/panel**
-  (200/969 in 40m15s, pid 709204). **No size guard is installed, and that is a
+  artefacts written 22:54 on 2026-10-16); IC7 is running at **<= 12.1 s/panel**
+  (200 of 969 panels done *by* 40m15s elapsed, pid 709204 -- the log prints
+  every 200 panels, so when the 200th finished was not observed; the exact
+  rate goes in with the IC7 result). **No size guard is installed, and that is a
   decision, not an omission** -- dropping the large panels would bias the
   sample toward low-fill material and break comparability with the 969-panel
   reference, so the cost is paid instead. **When it is raised:** when a
@@ -144,7 +146,7 @@ raised with the date.
   connected components 22 times. To be measured before it is believed.
 - shortcut: a wall-time estimate taken with `--limit N` **is not a sample**.
   IC7's registered "~90 min" came from 12 panels at 3.2 s/panel, but those are
-  the first 12 by sorted name and the real rate is **12.1 s/panel (~3h15m)** --
+  the first 12 by sorted name and the real rate is **<= 12.1 s/panel (~3h15m or less)** --
   the registration's own fallback applies (the run is still read and the
   overrun becomes this entry, never a reason to cut panels). Same family as
   the F3 defect, where 49 panels were compared against 969. **When it is
