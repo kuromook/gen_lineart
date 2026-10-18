@@ -839,10 +839,26 @@ work, and the stated expectation is that the pieces make each other easier.
     gap is not a gap": 4 of the 30 constructed genuine fills landed in this
     same box, so it contains real filled gaps, and the predicate is close to
     monotone in gap length, so 32.4% has no scale on its own. Before any of it
-    reaches the author it needs the name "the two tips' ink lies in one
-    connected component along the chord", a stratification by gap, the same
+    reaches the author it needs a name, a stratification by gap, the same
     predicate run on box A's 521 joined pairs as the trivial arm, and a split
     by `comp_same`.
+    **All three conditions were met on 2026-10-18 and they retired the number,
+    including the name this file gave it.** The trivial arm saturates (box A
+    521/521, box C 75/79, box B 59/182) and the gap stratification shows why:
+    at 2-4px box B is also 1.000 (n=46), at 12px and over it is 0.000 (n=53).
+    The split by `comp_same` is decisive -- **55 of the 59 have
+    `comp_same = 0`**, gap median 3.00px against a collar sum of 3.50px, so the
+    two tips are in *different* components and no sample point fits between
+    them. **The foundation's name, "the two tips' ink lies in one connected
+    component along the chord", holds for 4 of 59.** It was coined in the same
+    notice that told the track its own name overclaimed, and without splitting
+    by the subcase that notice had just required. The 55 are not waste; their
+    name is **"pairs closer than the thickness of their own ink bodies, with no
+    sample point between them"** -- free ends 1-4px apart, which is a statement
+    about the linking rule's reach and may be the purest instance of the
+    architectural 0% (a rule that collects only arms with node id >= 0 cannot
+    make a 3px free-end pair a candidate at all; unregistered reading, the
+    foundation's, for the track to check).
   - **K7, the part-label axis, stopped on its own negative control
     (2026-10-18), and the registration was at fault, not the data.** The
     control permuted part labels **within `order`**, which preserves each
@@ -941,6 +957,52 @@ work, and the stated expectation is that the pieces make each other easier.
     Confound to split out with `comp_same` and the presence of another span's
     node in the connecting ink: a crossing line makes ink continuous without
     the pair being one stroke.
+    **Measured 2026-10-18, and the mechanism shrank from 56 cases to 14.** The
+    statistic is now box B's `comp_same = 1`, **14 of 182 (7.7%)**, which is
+    non-monotone in gap (0.043 / 0.122 / 0.059 / 0.097 / 0.000 / 0.083) and so
+    is not a gap-length proxy; parts are face.mouth 6, face.ear 2, face.nose 2,
+    face.eye.open 2, face.brow 1, glasses 1. "A third of box B" is withdrawn,
+    and what the author request can drop is 7.7%, not a third. At n=14 the
+    frame changes: **existence here, prevalence on the unread band** -- the 14
+    are enumerated and each checked by eye for continuous ink with no skeleton
+    path, with no bar, because what a defect needs first is existence.
+    **The confound that could remove the mechanism entirely**: the registered
+    ink rule is `ink_mask(thr=128, grow=200)`, so a single gray-190 pixel
+    between two strokes makes them one component, and the mechanism would then
+    be the preprocessor's hysteresis rather than spur pruning. Required before
+    any existence claim: re-decide the 14 at `thr=128` with no grow and print
+    how many survive, plus each bridge's darkest gray and local ink width (a
+    bridge thinner than this material's ~2.7px line is not a line).
+    **An instrument check comes first**: box C is 75/79 on the same predicate,
+    which is impossible if the predicate is component identity -- a shared
+    skeleton node implies a shared ink component, the skeleton being a subset
+    of the ink. Either the predicate is actually "the chord never leaves the
+    ink" (which fits box C's 0.765 in the 20-24px bin, and then it must be
+    renamed) or there is an off-by-one. The 14 ride on that predicate.
+    **The trivial arms, written by the foundation under the division adopted
+    today**: arm 1 is non-candidate free-end pairs from the same panel matched
+    by gap bin, statistic = the difference in `comp_same` rate between
+    candidates and matched non-candidates stratified by gap, **null value 0**,
+    registered direction candidates higher, printed without a bar on this
+    material; arm 2 is the largest ink component's share of each panel's ink,
+    **no null value, descriptive**, to show the 14 are not concentrated in
+    panels that are one blob -- the same trap as the fills that dominated
+    K4a's 21.2%.
+  - **The pruning-residue mechanism and the continuity mechanism are separate
+    registrations, and bundling them was the foundation's error.** Face 267 --
+    the stratum holding 19.3% of the MH weight, 70 pairs, box B rate 0.429 --
+    settles it: its box B content is all 14 of its `face.other` strokes plus
+    mouth 9, brow 4, eye.open 3, and **`comp_same = 1` is 0 of its 30 box-B
+    cases**. The two mechanisms are cleanly separated inside one face, so
+    `face.other` gets its own registration whose statistic is *not* `comp_same`
+    but the ink left where `spur_max = 6` pruned the skeleton.
+  - **The leave-one-stratum-out check came out against the foundation's own
+    concern, which is worth recording as such.** MH-RR ranges over
+    **[1.2647, 1.8729]**, never crossing 1, and the **maximum is reached by
+    dropping face 267** -- the heavy stratum *dilutes* the estimate rather than
+    producing it. The worry raised when the weight concentration was found is
+    answered by measurement: 1.3418 stands as the primary, and the stratum is
+    called the face from here on.
   - **A sealed track's docstring can be quantitatively wrong**: F's
     `strokes.py` says a bridge span stays "their own (short, usually dropped)
     token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
@@ -1646,7 +1708,17 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   returns under the null** (1 against 1.3476), which is the same side of the
   line -- so the division widened: **the author registers the mechanism, the
   foundation registers the yield and the control's null value**, the latter
-  written as a pair with the statistic's name. The foundation's predictions of **where a guard
+  written as a pair with the statistic's name.
+  **The empirical half of this is withdrawn, the same day.** The claim that the
+  track's mechanism readings were unbroken lasted hours: its registered
+  "`comp_same = 1` is the majority of the 59" came in at **4 of 59**, which is
+  a mechanism reading, making it 4 of 5. And in the same exchange the
+  foundation named the 59 wrongly, in the very notice that told the track its
+  own name overclaimed. **Neither party has a clean record on what the material
+  contains**, so the procedural split stands on who is easier to fool rather
+  than on a tally, and the rule that did the work is simpler: **split by
+  subcase and print it before putting a name on the material.**
+  The foundation's predictions of **where a guard
   would bite** were right all three times, which is the cheap direction: the
   mechanism was handed to it by the track's own notice. The 3-0 is not evidence
   that one party judges better -- the two prediction tasks differ and their
