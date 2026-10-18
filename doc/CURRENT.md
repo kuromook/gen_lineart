@@ -866,6 +866,41 @@ work, and the stated expectation is that the pieces make each other easier.
     degenerate strata, where singletons make the permutation an identity and
     contribute nothing to MH, so both numbers are driven by the same few
     strata. No name goes on that coincidence until the counts are printed.
+    **The counts came back and the strata are degenerate** (2026-10-18): 145
+    strata over 782 pairs, median size 3 and max 70; only 39 are singletons
+    (5.0%) but **only 37 strata carrying 323 pairs (41.3%) contribute to
+    MH-RR**, and the MH numerator's weight is **19.3% in one stratum alone**
+    (n=70) with 39.1% in the top five. The coincidence is left unnamed. The
+    heavier number is not the 44.1% that cannot contribute but the 19.3%: the
+    primary value is substantially one stratum's property, so a
+    leave-one-stratum-out range is printed as description here, and a stability
+    condition in that form is registered **before** the unread band is opened.
+    That one stratum is itself a finding to chase -- 70 candidates against a
+    median of 3 -- and plausibly the same face-level mechanism as `face.other`
+    and the 56 continuous-ink cases.
+  - **The stratification variable is the *face*, which settles a causal
+    question the foundation's prescription had left open.** `order` is the face
+    identifier (`k7_part_axis.py` keys labels by `(order, stroke_id)` and
+    clusters the CI by it; `k4_main_leg.py` counts `n_faces` from it). The
+    foundation made MH-RR the primary without first deciding whether the
+    stratum is a confounder or a mediator -- had `order` been something a
+    part's identity determines, stratifying on it would partly block the
+    exposure, MH-RR would under-state the total effect and the crude RR would
+    be the right estimate of it. A face is **upstream of both** the part label
+    and the box-B rate, so it is a confounder, MH-RR is the correct adjustment,
+    and the 1.6501-against-1.3418 gap is the between-face composition effect.
+    Reports should call the stratum the face: "order" reopens the question on
+    every reading, "face" closes it in one line.
+  - **Strata where every unit is a case pull MH-RR toward 1, so the all-strata
+    value is the conservative one.** The track printed MH-RR 1.3418 over all
+    strata against 1.3502 over contributing strata and said the difference is
+    that one-sided strata still contribute. The direction can be stated
+    exactly: in MH-RR = sum(a·n0/n) / sum(b·n1/n), an all-case stratum has
+    a = n1 and b = n0, so its numerator and denominator terms are both n1·n0/n
+    -- equal mass on both sides, which shrinks the ratio toward 1. Keeping
+    1.3418 as the primary is therefore right, 1.3502 is printed beside it with
+    that reason, and the registration for the unread band states which of the
+    two is the primary (the conservative all-strata form is recommended).
   - **The exposure stays "mouth versus the rest", and the reason is that the
     registered design was the conservative one.** The track offered to replace
     it with a per-part table after seeing that mouth is only 4th (face.other
