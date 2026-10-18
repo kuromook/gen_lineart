@@ -1018,6 +1018,48 @@ work, and the stated expectation is that the pieces make each other easier.
     be corrected toward either side. The sheet must also not leak: no part
     names on the tiles, nothing about the mouth hypothesis in the text, and no
     hint of the expected distribution.
+    **The author answered all 56 the same day; both instrument checks passed
+    and the primary landed between the registered bars.** Repeats **8 of 8**
+    against a chance agreement of 0.4123 (expected 3.30) with the modal answer
+    at 0.562, under the 0.70 that would have printed uninformative. Anchors
+    **8 of 8 answered "not broken" with 0 called a skipped line** -- the
+    fourth option turned a bar that the old form would merely have passed into
+    an active confirmation that the crop is not hiding connections. And **0 of
+    40 real cases were called "not broken"**, which is the check on dropping
+    the 55 sub-collar cases. **Primary: skipped line 22 of 40 = 0.550, CP95
+    [0.385, 0.707]**, faint 9, can't-tell 9 -- the registered middle reading,
+    **"both kinds exist in quantity"**. Its consequence is the day's real
+    result: **F's rule cannot be repaired by loosening alone.** About half the
+    answerable gaps were drawn that way on purpose, so extending the linker's
+    reach destroys intended gaps at about the rate it recovers dropouts, and
+    **an unconditional loosening is refuted by labels** for the first time in
+    this project. **Sensitivity that must be printed beside it**: excluding the
+    9 can't-tells gives 22 of 31 = 0.710, CP95 [0.520, 0.858], which sits in
+    the "mostly intentional" band -- so the conclusion depends on how
+    missingness is handled, the registered denominator was all 40, and the
+    0.710 reading is not available as a post-hoc headline. The registration for
+    the unread band states in advance that can't-tell stays in the denominator.
+  - **The two post-hoc findings from the author's answers are one finding.**
+    The track offered (1) gap length separates the answers (skipped median
+    11.96px against faint 5.66px, Mann-Whitney p=0.0057) and (2) `face.other`
+    is 7 of 7 faint against 2 of 33 elsewhere (Fisher p=1.9e-6). But faint is 9
+    cases of which **7 are `face.other`**, so only **2 faint cases exist
+    outside it**: the gap-length result's faint arm is 78% cheek hatching, and
+    the two statements are the same 7 cases seen two ways. Confirming both on
+    the unread band would confirm both and learn nothing. The registration must
+    therefore **make them compete**: does gap length still separate *within*
+    `face.other`, and does faint exist at all outside it? If the unread band's
+    faint cases are again mostly `face.other`, the operative variable is the
+    part -- the cheek hatching -- and gap length is its proxy, which moves the
+    repair out of the linking rule and into how hatching is drawn and inked.
+    Worth noting what does line up: the author's first visual reading ("the
+    cheek hatching is faint output, a different thing from a skipped line"),
+    K7's `face.other` box-B rate of 0.782, and today's 7 of 7 all point at the
+    same row, which is what registration A stands on.
+    One more limitation to carry: the 40 were drawn from the 127, which is the
+    gap distribution truncated from below, so faint cases are under-represented
+    and the gap-length separation is **attenuated** -- the truncation cannot
+    have manufactured it.
   - **The debris points the other way: the hysteresis bridge is an untested
     explanation of the author's *over-merge* marks** (registration D, proposed
     by the foundation 2026-10-18, Track K to accept or decline). The heaviest
@@ -1823,6 +1865,16 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **An identity key must be derived from the thing identified, not from its
+  position in the output** (Track K, found while scoring, 2026-10-18). The
+  sheet's `uid` was assigned after the tiles were shuffled, so a repeated tile
+  and its first appearance carried different uids and repeats could not be
+  identified by key at all. Scoring fell back on (panel, s0, s1) and printed
+  **9 pairs, 9 agreeing**; one of those "pairs" was two *anchors* drawn from
+  the same span pair. With (panel, s0, s1, gap) it is **8 pairs, 8 agreeing**,
+  and the conclusion is unchanged -- but a second defect was hiding inside the
+  first: **the anchor set contained a duplicated span pair**, so anchors are
+  drawn from mutually distinct span pairs from here on.
 - **An anchor whose correct answer is missing from the option set tests
   nothing** (ruled 2026-10-18 on Track K's author request). The sheet mixed 8
   box-A pairs -- continuous ink -- among the real cases, with a bar of "at most
