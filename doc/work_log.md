@@ -4475,3 +4475,141 @@ Nothing else in the stage-2 registration changes. J1's statement that the
 slot amendment "adds no bar, removes no bar, and moves no threshold" stands;
 J2 is a separate, narrower change and is labelled as one rather than folded
 into J1 after the fact.
+
+## 2026-10-18 Repaired-NC2 held rescoring: C1 and C4 are readable for the first time, and the M0 verdict does not move
+
+969 panels, **21,302 rows**, 7h26m at 27.6 s/panel, finished 15:25.
+`results/fill_koma_20261010/per_panel_held_nc2repaired.csv`, run log
+`results/fill_koma_20261010/nc2repaired_held.log`, report
+`results/fill_koma_20261010/report_held_nc2repaired.txt`. The 2026-10-11 CSV
+is **not overwritten**; it is the reference the integrity check runs against.
+
+### Integrity first: the repair moves NC2 and nothing else, now at full scale
+
+**All 13,566 non-NC2 rows are byte-identical to the 2026-10-11 CSV: 0 rows
+missing, 0 differing cells** across every numeric column. The 40-panel check
+in the H1 entry is now a 969-panel check.
+
+Row accounting, so the total is not a loose number: 14 arms x 969 = 13,566,
+plus **967 NC2 pairs x 4 arms x 2 rows** (`arm@nc2crop` and
+`nc2_offbyone:arm`) = 7,736. Total 21,302. The 967 is 968 consecutive pairs
+minus **one pair rejected by the 25% overlap guard** (minimum overlap over
+the set was 0.075). The guard fired 0 times on 40 panels and once on 969: it
+earned its place rather than being decoration.
+
+**NC2 went from 0 rows of 13,566 to 7,736 rows of 21,302.**
+
+### A defect found in the reporting tool before any verdict was read
+
+`report_fill_koma.py` compared the arm's **full-panel** region-F1 against the
+**cropped** NC2 row. That is two geometries, which is the exact objection H1
+answered by emitting `arm@nc2crop` -- and the report tool had never been
+updated to use it. Reading C1 or C4 through it would have been the void
+control in a new form.
+
+Fixed: the NC2 leg now reads `arm@nc2crop` against `nc2_offbyone:arm`, the
+crop row is printed directly under its control so the comparison is visible,
+and a CSV with no crop row prints **"NC2 NOT READ: no @nc2crop row"** rather
+than silently comparing the wrong pair.
+
+### Negative controls first, as registered. Normal stratum, 956 panels
+
+| control | region-F1 | pixel IoU | pred area |
+|---|---:|---:|---:|
+| `nc1_polarity` | 0.0035 | 0.0987 | 0.9467 |
+| `nc2_offbyone:rough_dark` | 0.0094 | 0.0052 | 0.0070 |
+| **`rough_dark@nc2crop`** (the arm on that crop) | **0.0107** | 0.0180 | 0.0071 |
+| `nc2_offbyone:rough_dark@budget` | 0.0052 | 0.0173 | 0.0401 |
+| **`rough_dark@budget@nc2crop`** | **0.0155** | 0.0502 | 0.0410 |
+| `nc2_offbyone:freq_table` | 0.0136 | 0.0063 | 0.0000 |
+| **`freq_table@nc2crop`** | **0.0136** | 0.0063 | 0.0000 |
+| `nc3_hflip:rough_dark` | 0.0063 | 0.0063 | 0.0069 |
+| `nc3_hflip:rough_dark@budget` | 0.0104 | 0.0311 | 0.0394 |
+
+**NC2 discriminates where it can and is a tautology where it cannot, and the
+difference is measured per panel rather than asserted:**
+
+- `rough_dark` beats its NC2 by **+0.0013** and `rough_dark@budget` by
+  **+0.0103**. Both are real gaps; **neither arm falls to NC2.**
+- `freq_table` and `all_black` **agree with their NC2 on every one of the 955
+  shared panels** -- 0 panels differ. That tie is printed as **"NC2 tie
+  carries NO INFORMATION"** and is not read as the arm falling to a control.
+
+### C4: every non-learned arm is excluded, and NC2 is not what excludes them
+
+| arm | region-F1 | pixel IoU | verdict |
+|---|---:|---:|---|
+| `blank` | 0.0084 | 0.0021 | IDENTITY: 0 unless GT empty |
+| `all_black` | 0.0037 | 0.1040 | IDENTITY: pixel IoU = \|G\|/\|P\| |
+| `rough_dark` | 0.0065 | 0.0139 | **falls to NC3** (gap +0.000 < 0.05) |
+| `rough_dark@budget` | 0.0110 | 0.0451 | **falls to NC3** (gap +0.001 < 0.05) |
+| `freq_table` | 0.0084 | 0.0021 | **falls to NC3** (gap +0.000 < 0.05); NC2 tie uninformative |
+| `nc1_polarity` | 0.0035 | 0.0987 | control, not an arm |
+
+**Named, as the standing rule requires: every arm falls to NC3, the mirror
+control. Not one falls to NC2.** Repairing NC2 therefore did **not** change
+which arms are excluded -- it made C1's third leg readable, and the leg says
+the arms beat that control by a margin two orders below the bar.
+
+### C1, readable for the first time, in region-F1 and named as such (J2)
+
+C1: *the best arm's region-F1 must exceed `blank`, `all_black` and **its own
+NC2** by >= 0.05 absolute.* Best arm: `rough_dark@budget`.
+
+| leg | value | gap | bar | |
+|---|---:|---:|---:|---|
+| vs `blank` | 0.0110 vs 0.0084 | **+0.0026** | 0.05 | FAIL |
+| vs `all_black` | 0.0110 vs 0.0037 | **+0.0073** | 0.05 | FAIL |
+| vs its own NC2 (same crop) | 0.0155 vs 0.0052 | **+0.0103** | 0.05 | FAIL |
+
+**C1 FAILS on all three legs**, the largest gap being **5x below the bar**.
+The third leg could not be read at all until today.
+
+**Headline, with its metric named (amendment J2):**
+
+> **In region-F1 at `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5`, on 956
+> normal-stratum held panels: no non-learned arm predicts solid fill. Every
+> one falls to the mirror control NC3, the best arm clears "don't paint" by
+> +0.0026 against a bar of +0.05, and `rough_dark` is -0.0019 below "don't
+> paint". In pixel IoU `rough_dark@budget` reads 0.0451 against
+> `blank`'s 0.0021 and its own mirror's 0.0311 -- the same ordering, a
+> larger gap, and still no matched region.** The verdict is read in
+> region-F1 because that is the registered metric and the one C1-C4 are
+> written in.
+
+Preprocessor baseline, beside the number as required: the readable ceiling
+for fill is **IoU 0.0000**. (IC1's 0.0002 is `preproc@32`, an arm that fell
+to a control, and is only ever used as an instrument-check value.)
+
+### Near-blank stratum, 13 panels, reported separately with NO verdict
+
+IC6 established this stratum cannot support a region metric (nine of 13
+panels have zero regions). `blank` scores **0.6923 = 9/13**, which is that
+fact restated. `rough_dark` 0.3846, `rough_dark@budget` 0.6923. **No C1 or C4
+verdict is read here and none of these numbers is quoted as a result.**
+
+### Correction: `freq_table` is not `blank`, and the earlier claim was from a rounded print
+
+The IC-j10 registration said `freq_table` *"at r = 4 predicted **nothing** --
+predArea 0.0000, i.e. it **is** `blank`, an identity"*. Measured per panel:
+
+- **`freq_table` predicts on exactly 1 of 956 panels** (`koma_01978_020_2018_china2__china2__page0014_p3.png`,
+  predArea 0.034936, pixel IoU 0.0227 there). It is **not** an empty
+  predictor and **not** panel-independent.
+- Its **region-F1 is identical to `blank`'s on all 956 panels** -- 0 differ --
+  because that one prediction never produces a matched region. Its pixel IoU
+  differs from `blank`'s on that one panel.
+
+So the region-F1 identity holds and the claim "it **is** `blank`" does not.
+This matters for the tool: my first attempt at the tautology label tested
+`predArea == 0 or 1` and **correctly refused to fire** for `freq_table`,
+which is what sent me to measure it. The label now tests per-panel agreement
+between the arm and its NC2, which is the thing it is actually about.
+
+### What this clears
+
+**C1 and C4 are no longer blocked on a void control.** The condition fixed in
+amendment J1 -- *M1 trains anyway but no C1/C4 verdict is printed until the
+rescoring lands* -- **does not need to be invoked**: the rescoring finished
+2026-10-18 15:25, before the 2026-10-19 slot opens. M1 starts with all four
+criteria readable.
