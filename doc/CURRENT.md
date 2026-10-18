@@ -1214,9 +1214,52 @@ work, and the stated expectation is that the pieces make each other easier.
     other, and the over-1 sum printed as a clue to which estimate is inflated.
     Direction is fixed as exposure = predicate, outcome = mark; Miettinen is
     the primary with Levin as a sensitivity; the crude two-formula agreement is
-    checked before anything is adjusted. **The unread band is then opened on a
-    single registration** over a combined exposure, because confirming K1 and
-    K4 separately would count the same denominator twice.
+    checked before anything is adjusted.
+    **Measured, and "one mechanism restated" is refuted -- the arithmetic was
+    right and the inference past it was not.** Not disjoint does not mean the
+    same: Jaccard **0.2026**, P(fill-adjacent | bridge) 0.6846,
+    P(bridge | fill-adjacent) 0.2235, and **bridge passage keeps PAF 0.4533
+    among tokens that are not fill-adjacent at all**. Track K's distinction is
+    the one that matters: K4a's finding is about **what kind of bridge**
+    collapses, not about which tokens the two exposures cover. The four-cell
+    table is the clearest form (mark rate, ratio to neither): both 0.03807
+    (20.86x), bridge only 0.01895 (10.39x), fill only 0.00312 (1.71x), neither
+    0.00182. Re-read here, the two behave as **roughly independent
+    multiplicative factors** rather than a hierarchy -- fill adjacency's RR is
+    2.009 within bridge-passing tokens and 1.708 within the rest, so there is
+    no strong interaction, and the joint cell's 20.86x sits only a little above
+    the 17.8x multiplicativity predicts -- with bridge passage much the
+    stronger factor.
+  - **The registered exposure is bridge passage, not the union** (decided
+    2026-10-18). The union clears the bar more comfortably (prevalence 0.5632,
+    89.19% of the marks, PAF 0.7344 [0.6267, 0.8364]) and is still the wrong
+    choice, for two reasons. **PAF rises with the width of the exposure**, so
+    folding in 9,948 fill-only tokens at a crude 1.71x inflates it by
+    prevalence rather than by mechanism -- widening an exposure to clear a PAF
+    bar is the same move as relaxing the bar. And decisively: **an exposure has
+    to be something a repair can change.** Being next to a fill is a property
+    of the drawing and cannot be repaired; passing a collapsed bridge is a
+    property of one line of Track F's rule,
+    `len(span) <= max(3.0, 1.5 x median(local ink width))`. So the exposure is
+    **bridge passage: prevalence 0.1667, 72.43% of the marks, PAF 0.5759
+    [0.4617, 0.6854]**, with fill adjacency demoted to a stratifier and a
+    secondary (its independent contribution, MH-RR 2.77, and the four-cell
+    table printed again on fresh material). The bar is **the PAF CI's lower
+    bound at or above 0.30**, which the read estimate predicts, with a CI upper
+    bound below 0.30 as a refutation; the null value is MH-RR 1 under permuting
+    marks within length decile, and the pre-read prints are the crude
+    two-formula agreement, the stratum contributions, and the abstention counts.
+  - **The reserve for this confirmation is not an unread panel band, and that
+    was the foundation's oversight.** The outcome is the author's `broken`
+    mark, which exists only on labelled faces: the read material holds 184 of
+    the 185 marks. **Adding panels adds no marks.** The prescription to confirm
+    on `[171:]` was borrowed from Track J's chainer bands without checking
+    where the outcome comes from. The real reserve is **the author's next
+    marks**, which is the material K3 was already registered to wait for (40
+    new faces, 40 new marks), so the registration is written now and run when
+    Track H delivers. **The same question applies to K7**, whose outcome and
+    exposure are both label-derived, so the "confirm on the unread band"
+    routing needs revisiting there too.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2020,6 +2063,16 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **A PAF bar is meaningless unless the exposure is the narrowest set the
+  repair would touch** (ruled 2026-10-18 on Track K's exposure choice). PAF
+  grows with exposure prevalence even at a weak risk ratio, so a wide exposure
+  and a strong mechanism produce the same number: the union of fill adjacency
+  and bridge passage reaches PAF 0.7344 at prevalence 0.5632 by folding in
+  9,948 tokens elevated only 1.71x. **Widening an exposure to clear a PAF bar
+  is the same move as relaxing the bar**, and the defence is to pair the bar
+  with the requirement that the exposure name something a repair can change --
+  here one line of Track F's collapse rule, rather than the artwork's own
+  property of lying next to a fill.
 - **"AFe" was naming three different quantities, and two of them were one
   quantity fed an RR from the wrong direction** (found by Track K, 2026-10-18,
   which stopped before registering a bar because the definition flipped the
