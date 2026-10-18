@@ -1,6 +1,6 @@
 # Current Project State
 
-Updated: 2026-10-16 JST. **Track K opened** by user approval: the 1px
+Updated: 2026-10-18 JST. **Track K opened** by user approval: the 1px
 skeleton's connectivity, which is upstream of Tracks F, G and H. The error has
 two directions -- over-merge, which the author can mark, and under-connection,
 which has no mark and is the binding one (18.7% of arms joined). K1 registered
@@ -771,6 +771,23 @@ work, and the stated expectation is that the pieces make each other easier.
     that the word's unit is being eroded here. Needs IC-k7 first: IC-k5b
     checked counts, not stroke ids, and the track registered the id check as
     its own gate before any measurement that uses them.
+  - **Box B's instrument has failed its stop condition twice and the track
+    stopped both times, which is the registration working.** The box is the
+    only window on a deliberate gap (a "skipped line"), since the artificial-cut
+    instrument cannot construct one. Run 1 (B'): 9 of 30 constructed, 3
+    misclassified, cause being the chord grazing the candidate's **own** ink on
+    a curved line. Run 2 (B''), with B'-1/2/3 and the foundation's required
+    over-correction target T4: all four classes reached 30 constructed,
+    **T3 30/30 and T4 30/30**, T1/T2 **23/30**, cause being the attribution
+    radius taken from the sampled pixel's ink width. B'-1b -- the radius taken
+    at the nearest own skeleton pixel, `max(2.0, iw/2 + 1.0)` -- is approved
+    2026-10-18 **on the condition that the 30/30 bar is decided on a disjoint
+    band of sites**, because the fix was derived from the 7 failures; the bar is
+    not relaxed, the exit is registered in advance (if it fails, the chord is
+    the wrong geometry and the arc gets its own fresh band), and the radius
+    budget is spent. Until the instrument passes, the material's counts (box B
+    88: paper 65 / faint 23, `face.mouth` 12 of the faint) are description and
+    not evidence, which is the track's own ruling.
   - **A sealed track's docstring can be quantitatively wrong**: F's
     `strokes.py` says a bridge span stays "their own (short, usually dropped)
     token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
@@ -788,6 +805,8 @@ work, and the stated expectation is that the pieces make each other easier.
     **0.619 -> 0.711**, `wrong` unchanged in both. `stroke_chain.py`'s sha is
     now `53b8406cfbb4f4d1`; the pre-adoption file is commit `1a82ea5`, and
     anything compared with a figure recorded before 2026-10-17 must pin it.
+    **This does not reach Track K**, contrary to what this file routed on
+    2026-10-17: see the file-level sha trap below.
   - **After the adoption the topology bucket is half closed**: the merge
     defect is fixed and the ridge is untouched, so `t_relay_other`'s 51 cases
     are now **66.2% of the 77 remaining failures**, up from 46.0% of all
@@ -1433,6 +1452,51 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   So a repair that moves cases one way is registered with a target on the
   other side -- here a gap a third line genuinely fills, which must still
   classify as ink.
+  **T4 passed 30 of 30 on its first run (2026-10-18), and the attribution trap
+  the registration named fired in 6 of those 30** (the darkest point was nearer
+  the candidate's own span than the third line) and still classified as ink, so
+  the exclusion is not over-reaching. The over-correction target earned its
+  place on the first measurement.
+- **A radius taken from the sample point collapses exactly where it is needed**
+  (Track K, 2026-10-18, second failure of the same instrument). B'-1 attributed
+  ink to the candidate's own span within a radius built from the ink width *at
+  the sampled pixel*; the distance transform returns 0 to 2 at a stroke's edge,
+  and grazing one's own ink always happens at the edge. T1/T2 failed 7 of 30
+  with `d_own` 2.0-4.9px against radii of 2.0-2.4. The fix (B'-1b, approved) is
+  the definition, not a constant: **whether a pixel belongs to a line's body is
+  decided by that line's thickness, which is a property of the line, not of the
+  pixel's position** -- so take the width at the nearest own skeleton pixel,
+  `max(2.0, iw/2 + 1.0)`.
+- **A fix derived from the failures passes on those failures by construction**
+  (routed 2026-10-18 to Track K; it is Track J's IC-j12 lesson in another
+  shape). B'-1b was built by inspecting the 7 cases that failed, so re-running
+  on the same site band is diagnosis, not a check. The prescription: print the
+  diagnosed band to show the 7 are fixed, labelled as diagnosis, and decide the
+  30/30 bar on a **disjoint band of sites** drawn mechanically from the same
+  18,194 candidates with a new seed. Never aggregate the two bands. Also
+  registered before the run, as the foundation's own prediction: **T1/T2 will
+  not reach 30/30 on the fresh band**, because one case of nine was already
+  unreachable at any body radius -- and if that is how it fails, the conclusion
+  is that the chord is the wrong instrument, not that the radius needs a third
+  value. The number of fixes derived from the same material is budgeted, and
+  two were spent.
+- **A whole-file sha of a shared dependency is coarser than the dependency**
+  (the foundation's error, 2026-10-18, corrected by Track K with evidence and
+  then verified here). The foundation forecast that Track J's IC-j9 adoption
+  would halt Track K's next K2 run on its sha check, and prescribed fixing all
+  comparisons at the pre-adoption commit `1a82ea5`. Both were wrong: K's
+  `J_SHA` was the post-adoption value from the start
+  (`tools/stroke/k2_missed_candidates.py:47`, recorded in
+  `results/k2_missed_candidates_20261017/check.json`), so every K2 number --
+  box A 521, box C 79, box B 88 -- is already post-adoption and the tables need
+  no split; and while `tools/evaluation/stroke_chain.py` changed by 31 lines
+  added and 6 removed between `3d78816` and HEAD, the two functions Track K
+  actually calls, `arm_geometry` and `perp_offset`, are **byte-identical**
+  (checked here by extracting each body from both commits). The prescription is
+  withdrawn. Keep the halt wiring -- halting is correct behaviour -- but note
+  that a file-level sha halts on changes that cannot reach the caller, so the
+  halt alone carries no information about whether a number moved; printing a
+  sha over the called functions' bodies makes it informative.
 - **A set-level zero on a regression count is not a cost bar, it is a refusal
   to trade** (Track J, 2026-10-18, found by its own measurement). `newly_wrong
   = 0 by set` made 0 of 30 sweep cells proposable, including two that broke
