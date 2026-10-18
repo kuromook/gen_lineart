@@ -225,13 +225,61 @@ What the rename did and did not touch:
   edited its copy, which is why that one will conflict; it also added the
   pointer line, so the conflict resolves toward this file.)
 - `main` was **not** used: from the 2026-07-29 split point (`00b2739`) `main`
-  carries 13 commits this branch does not have and this branch carries 86, so
-  making `main` the foundation is a separate reconciliation job, not a rename.
+  carries 13 commits this branch does not have and this branch carries 86 (114
+  by 2026-10-19). That framing made it sound like a merge job, and it is not:
+  **all 13 are the paper scout's**, and none of them touch project code. See
+  "What `main` actually is" below.
 - Only this file's operative references changed. **Every other `diffusion`
   mention in `doc/` and `scripts/` is a citation of where a 2026-08 entry was
   written** ("doc/work_log.md, `diffusion` branch, 2026-08-08") and is left
   alone: that *was* the branch's name then, and rewriting it would make the
   citations wrong.
-- GitHub's own default branch could not be checked from here (`gh` is not
-  authenticated). If the repository's default is still `diffusion`, switch it
-  in the web UI; nothing local depends on it.
+- GitHub's own default branch **is readable from here after all**, without
+  `gh` and without authentication: `git ls-remote --symref origin HEAD` prints
+  `ref: refs/heads/main`. The earlier note in this file said it could not be
+  checked because `gh auth status` is logged out, which was the wrong command,
+  not a missing capability. The default is `main`, not `diffusion`, so the
+  rename never touched it; what to do about it is the next section.
+
+## What `main` actually is, and the decision about it (2026-10-19)
+
+`main` is **not** this project's trunk and never became one. From the
+2026-07-29 split point its only unique content is one directory,
+`tools/research/cross_domain_paper_scout/` (9 files, 782 lines); its 13
+commits are the scout's setup plus one report per run. **No project change has
+ever landed on it.** Meanwhile `foundation` is 114 commits past that point.
+
+How the scout runs, which is why `main` must keep existing:
+
+- It runs on an **always-on machine, not this one** (there is no crontab
+  here), from a **blobless sparse checkout** of just that one directory, which
+  does `git checkout main`. Weekly, `0 9 * * 1`.
+- Each run calls `claude -p` with `--allowedTools "WebSearch,WebFetch,Read,Edit"`
+  (no shell, no git for the agent itself), appends to `candidates.md` or
+  `candidates_diffusion.md`, and then the *script* commits and does
+  `git pull --rebase && git push`.
+- Two tracks share the slot by ISO-week parity: odd week topology, even week
+  diffusion.
+
+**Decision (user, 2026-10-19): switch GitHub's default branch to `foundation`
+and leave `main` alone as the scout's lane.** The default is still `main`
+today, which means anyone cloning the repository lands on the 2026-07-29
+snapshot plus a scout folder. Switching it is a web-UI action for the user;
+nothing local depends on it. `main` is **not** renamed to something more
+honest (`paper-scout`) because the always-on machine's sparse checkout tracks
+`main` by name, and the weekly push would fail silently until someone logs
+into that machine to re-point it. `main` is **not** turned into the real trunk
+either: that would put an unattended `pull --rebase && push` on the trunk, and
+the scout's own README records that its push block has never been exercised
+end to end.
+
+**Open, and the reason this came up: the scout's output has never been
+triaged.** Nine reports have accumulated since 2026-08-10 (4 topology, 5
+diffusion) and **no document on `foundation` cites the scout at all**. The
+topology lane's subjects are road-network extraction from satellite imagery,
+crack detection in concrete and composites, fiber tracking, and PCB
+trace/wire-bond inspection -- all of them the problem of joining broken line
+structure, which is Track K's problem. Local `main` also sits 12 commits
+behind `origin/main`, so the reports are not even on this disk by default:
+read them with `git show origin/main:tools/research/cross_domain_paper_scout/candidates.md`
+after a fetch.

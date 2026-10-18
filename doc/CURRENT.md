@@ -2142,6 +2142,14 @@ traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
 
+- **"It cannot be checked from here" needs the right command before it is
+  written down** (foundation's own, 2026-10-19). This file and
+  `doc/worktree_policy.md` recorded GitHub's default branch as unverifiable
+  because `gh` is not authenticated. It takes no authentication at all:
+  `git ls-remote --symref origin HEAD` prints `ref: refs/heads/main`. The same
+  shape as the other two misses of the week -- a fact about someone else's
+  material asserted from the first tool that failed, rather than from the tool
+  that answers the question.
 - **A bar placed on a ratio can be refuted while the mechanism it was placed
   to test is actually happening** (Track J, IC7, reported 2026-10-19; the
   sibling of Track K's "the ratio was precision all along"). The leg asked
