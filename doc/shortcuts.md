@@ -153,3 +153,15 @@ raised with the date.
   raised:** now, as a rule -- a cost estimate either uses a mechanical spread
   (every k-th panel, as IC-j10's exact-EDT leg did) or is written down as an
   unverified guess.
+- shortcut: a pass criterion fixed on a **ratio** cannot test a mechanism when
+  a second mechanism moves the same ratio the other way. IC7's C5 put its bar
+  on `npred/ngt < 0.90` to test merging; the measured 1.777 refuted the bar
+  while merging was in fact firing on 14.2% of GT regions, because dilated
+  sub-500px blobs crossing the filter pushed the same ratio up faster
+  (`results/fill_koma_20261010/ic7_npred_decomposition.txt`). **When it is
+  raised:** now, as a rule -- a criterion about a mechanism names the
+  decomposition it will count (carriers / merges / crossers), not a ratio that
+  several mechanisms share. The same question in IC6's erosion leg
+  (`pred/gt regions` < 1 read as "vanishing") is **re-opened by this**: that
+  reading was never decomposed either, and splitting could have been hidden
+  under it the same way.

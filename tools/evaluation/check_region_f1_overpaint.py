@@ -413,9 +413,18 @@ def run(limit=0):
     # ---- C5
     ratio5 = npr[C5_AT][0] / max(npr[C5_AT][1], 1)
     c5 = ratio5 < C5_RATIO_BAR
+    # AMENDMENT L2 (2026-10-18): the alternative this used to print --
+    # "regions are far enough apart ... any overshoot is elongation alone" --
+    # is WITHDRAWN. The ratio is moved UP by dilated sub-500px blobs crossing
+    # the filter and DOWN by merging, so it cannot test either one alone.
+    # ic7_npred_decomposition.py measured both: at d = 8.485, 57.5% of
+    # predicted regions are crossers AND 14.2% of GT regions sit in a merged
+    # carrier.
     word5 = ("MERGING FIRED" if c5 else
-             "REFUTED: regions are far enough apart that these radii do not "
-             "merge them; any overshoot is elongation alone")
+             "REFUTED as registered -- and the ratio cannot be read as "
+             "evidence either way (L2): crossers push it up while merging "
+             "pushes it down. See results/fill_koma_20261010/"
+             "ic7_npred_decomposition.txt for the decomposition that can.")
     print(f"\nC5  merging at d = {C5_AT:g}: npred/ngt {ratio5:.3f} "
           f"(bar: < {C5_RATIO_BAR}) -> {word5}")
 
