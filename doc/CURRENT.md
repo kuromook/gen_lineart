@@ -1002,6 +1002,22 @@ work, and the stated expectation is that the pieces make each other easier.
     **no null value, descriptive**, to show the 14 are not concentrated in
     panels that are one blob -- the same trap as the fills that dominated
     K4a's 21.2%.
+  - **The author request's denominator was split honestly, and its reading is
+    registered before the answers arrive** (2026-10-18). Of box B's 182, the
+    **55** whose two collars together exceed the gap (gap 2.00-9.22px, median
+    3.00) are removed, because "did you skip the line here" is not a question a
+    3px gap can pose to the author -- it is invisible at output scale. **127**
+    are answerable (gap 2.24-23.09px, median 10.82), 40 are drawn at seed
+    20261018, the 4 single-pixel-thread cases are listed separately, and the
+    sheet never claims 182. The instrument measures the **presentation**, not
+    the author: 8 repeats and 8 anchors among 56 tiles. Registered reading of
+    the primary, with Clopper-Pearson at n=40 being +/-15 points: **28 of 40 or
+    more reads as "mostly intentional"** ([0.535, 0.834]), **12 or fewer as
+    "mostly dropped"**, and anything between reads as **"both exist in
+    quantity"** -- which is not a failure but the finding that F's rule cannot
+    be corrected toward either side. The sheet must also not leak: no part
+    names on the tiles, nothing about the mouth hypothesis in the text, and no
+    hint of the expected distribution.
   - **The debris points the other way: the hysteresis bridge is an untested
     explanation of the author's *over-merge* marks** (registration D, proposed
     by the foundation 2026-10-18, Track K to accept or decline). The heaviest
@@ -1807,6 +1823,36 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **An anchor whose correct answer is missing from the option set tests
+  nothing** (ruled 2026-10-18 on Track K's author request). The sheet mixed 8
+  box-A pairs -- continuous ink -- among the real cases, with a bar of "at most
+  2 of 8 called a skipped line", to catch a crop that hides a connection. But
+  the options were skipped-line / faint / can't-tell, so the truthful answer
+  for an anchor, *it is not broken*, was absent: the author can only fall back
+  on can't-tell, and "the presentation hid the connection" becomes
+  indistinguishable from "the author was unsure". Required change: a fourth
+  option, **"not broken (looks connected)"**, after which the anchor bar
+  becomes option 4 at 6 of 8 or better with at most 1 of 8 called a skipped
+  line. The same option then earns its keep on the real cases too -- an answer
+  of "not broken" on a genuine box-B case says the 2x crop is hiding a real
+  gap, which checks the decision to drop the 55 sub-collar cases.
+- **An anchor set identifiable by a nuisance variable passes for the wrong
+  reason** (same ruling). Box A's gaps are mostly 2-8px while the 127
+  answerable cases have a gap median of 10.82px, so anchors drawn from box A at
+  large are separable by gap length alone and the author could score them
+  without ever looking at the ink. Box A holds about 48 pairs at 8px or more
+  (27 + 10 + 7 + 4 across the bins), so the anchors are drawn **matched on gap
+  length** to the 40 sampled cases.
+- **A bar on raw agreement is confounded by the answer marginal** (same
+  ruling). Reaching 6 of 8 on a repeat check is a 1.97% event when three
+  options are answered at random, which makes it a real bar -- but if the
+  author's answers run 80/10/10 the chance agreement is 0.66 and 6 of 8
+  becomes a **45.2%** event, so the same bar means nothing. The marginal is
+  printed beside the agreement, the bar is agreement at 6 of 8 *and* above the
+  marginal-implied chance agreement, and when one option takes 70% or more the
+  repeat check prints **uninformative**, not pass. Also: a repeated tile must
+  sit at least two sheets from its first appearance, or what is measured is
+  short-term memory of the tile.
 - **A robustness arm must not contain a repair of its own** (Track K, found and
   corrected by the track, 2026-10-18, after the foundation required the arm).
   The harsher arm -- re-deciding continuity at `thr = 128` with no grow --
