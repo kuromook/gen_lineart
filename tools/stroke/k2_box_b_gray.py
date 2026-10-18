@@ -37,9 +37,11 @@ BG_MODE_MIN = 245                  # 前提の検査: 背景の最頻灰
 WIN, BLOB_D, CROP = 14.0, 5, 512   # 標的の窓長・塊の直径・切り出し
 N_TARGET, SEED = 30, 20261018
 N_SITE_POOL = 300                  # B'-3: 構成が 30 件に達するまで site を足す
-KINDS = ("T1", "T2", "T3", "T4a", "T4b")
-WANT = {"T1": "紙", "T2": "かすれ", "T3": "墨", "T4a": "墨", "T4b": "墨"}
-N_PER_KIND = {"T1": 30, "T2": 30, "T3": 30, "T4a": 15, "T4b": 15}
+KINDS = ("T1", "T2", "T3", "T4touch", "T4sep")
+WANT = {"T1": "紙", "T2": "かすれ", "T3": "墨", "T4touch": "墨", "T4sep": "墨"}
+N_PER_KIND = {"T1": 30, "T2": 30, "T3": 30, "T4touch": 30, "T4sep": 30}
+T4_KINDS = ("T4touch", "T4sep")
+SEP_LEN, SEP_MARGIN = 14.0, 2.0     # T4sep: 第三の線の長さと、分離を確かめる余白
 CLEAN_R, MIN_SPAN = 6.0, 40        # 標的に使う span の選び方
 J_SHA = "53b8406cfbb4f4d1e4c53a15102ec8079a4f541e77e0523b6836af9d5a9a56a6"
 
@@ -103,10 +105,50 @@ def pipeline(g):
         sp_idx.append(np.full(len(rr), i, np.int32))
     sp_pts = np.concatenate(sp_pts) if sp_pts else np.zeros((0, 2))
     sp_idx = np.concatenate(sp_idx) if len(sp_pts) else np.zeros(0, np.int32)
-    return dict(ink=ink, iw=iw, spans=spans, span_tok=span_tok, paths=paths, tips=tips,
+    ncc, lab = cv2.connectedComponents(ink.astype(np.uint8), connectivity=8)
+    return dict(ink=ink, iw=iw, lab=lab, spans=spans, span_tok=span_tok, paths=paths, tips=tips,
                 sk_pts=sk_pts, sk_tok=sk_tok, sp_idx=sp_idx,
                 sk_tree=cKDTree(sk_pts) if len(sk_pts) else None,
                 sp_tree=cKDTree(sp_pts) if len(sp_pts) else None)
+
+
+def comp_at(P, q):
+    """点 q の連結成分のラベル。ink の外なら 0。tip が 1px ずれている場合に備えて 3x3 を見る。"""
+    H, W = P["lab"].shape
+    r, c = int(round(q[0])), int(round(q[1]))
+    r, c = int(np.clip(r, 0, H - 1)), int(np.clip(c, 0, W - 1))
+    if P["lab"][r, c]:
+        return int(P["lab"][r, c])
+    sub = P["lab"][max(0, r - 1):r + 2, max(0, c - 1):c + 2]
+    nz = sub[sub > 0]
+    return int(np.bincount(nz).argmax()) if len(nz) else 0
+
+
+def comp_collar(P, pa, pb, step=0.5):
+    """C-1: tip から弦に沿って進み、**自分の連結成分を出た点**から測り始める。
+    戻り値 (a2, b2, t_a, t_b, reason)。測れないときは a2 が None で reason に理由。
+    `step` は標本の刻みであって判定の閾値ではない。"""
+    v = pb - pa
+    L = float(np.hypot(*v))
+    if L < 1e-6:
+        return None, None, -1.0, -1.0, "弦の長さが 0"
+    u = v / L
+    la, lb = comp_at(P, pa), comp_at(P, pb)
+    t_a = t_b = None
+    t = step
+    while t <= L:
+        if t_a is None and comp_at(P, pa + u * t) != la:
+            t_a = t
+        if t_b is None and comp_at(P, pb - u * t) != lb:
+            t_b = t
+        if t_a is not None and t_b is not None:
+            break
+        t += step
+    if t_a is None or t_b is None:
+        return None, None, -1.0, -1.0, "自分の連結成分を出ないまま他方の tip に達した"
+    if L - t_b <= t_a:
+        return None, None, float(t_a), float(t_b), "両端が出た後の区間が空"
+    return pa + u * t_a, pa + u * (L - t_b), float(t_a), float(t_b), ""
 
 
 def profile(g, pa, pb, col):
@@ -165,15 +207,30 @@ def own_ink_mask(P, sp, vals, i, j):
 
 
 def measure(g, P, i, ei, j, ej, col, ti, tj):
-    """1 対の灰値プロファイルと分類、および記録用の列。"""
+    """1 対の灰値プロファイルと分類、および記録用の列。
+    襟は C-1(自分の連結成分を出た点から測る)。自分の墨の除外は廃止し、
+    旧規則が除外したはずの標本数だけ `n_would_exclude` に印字する。"""
     pa, pb = P["tips"][i][ei], P["tips"][j][ej]
-    vals, sp, mid_only = profile(g, pa, pb, col)
-    own = own_ink_mask(P, sp, vals, i, j)
-    free = ~own
-    gmin_excl = int(vals[free].min()) if free.any() else 255
-    k = int(np.argmin(np.where(free, vals, 256))) if free.any() else int(np.argmin(vals))
+    a2, b2, t_a, t_b, why = comp_collar(P, pa, pb)
+    if a2 is None:
+        return dict(cls=None, cls_raw=None, untestable=why, g_min=-1, g_min_excl=-1,
+                    n_own_dark=-1, n_would_exclude=-1, d_own=-1.0, d_other=-1.0,
+                    g_med=-1, g_max=-1, frac_gt240=-1.0, seg_n=0, midpoint_only=0,
+                    crossed=-1, near_other=-1, cls_second=None, g_second=-1,
+                    gap=round(float(np.hypot(*(pb - pa))), 3), t_a=t_a, t_b=t_b,
+                    comp_same=int(comp_at(P, pa) == comp_at(P, pb)))
+    H, W = g.shape
+    sp = seg_points(a2, b2)
+    rr = np.clip(np.round(sp[:, 0]).astype(int), 0, H - 1)
+    cc = np.clip(np.round(sp[:, 1]).astype(int), 0, W - 1)
+    vals = g[rr, cc].astype(int)
+    mid_only = 0
+    own = own_ink_mask(P, sp, vals, i, j)          # 分類には使わない。印字のみ
+    free = np.ones(len(vals), bool)
+    gmin_excl = int(vals.min())
+    k = int(np.argmin(vals))
     gmin = int(vals.min())
-    cls = klass(gmin_excl)
+    cls = klass(gmin)
     # 墨の下位区分と、かすれの near_other_token(いずれも記録のみ)
     crossed = 0
     near_other = 0
@@ -184,7 +241,7 @@ def measure(g, P, i, ei, j, ej, col, ti, tj):
                 break
         idx = P["sk_tree"].query_ball_point(sp[k], col)
         near_other = int(any(P["sk_tok"][m] not in (ti, tj) for m in idx))
-    fv = np.sort(vals[free]) if free.any() else np.array([255])
+    fv = np.sort(vals)
     second = int(fv[1]) if len(fv) > 1 else int(fv[0])
     # 最暗点(除外後)から、自分の span / 他の span までの距離(罠が発火したか見るため)
     d_own = d_other = -1.0
@@ -197,6 +254,9 @@ def measure(g, P, i, ei, j, ej, col, ti, tj):
             if sid not in (i, j) and d_other < 0:
                 d_other = float(dist_)
     return dict(g_min=gmin, g_min_excl=gmin_excl, n_own_dark=int(own.sum()),
+                n_would_exclude=int(own.sum()), untestable="",
+                t_a=round(t_a, 2), t_b=round(t_b, 2),
+                comp_same=int(comp_at(P, pa) == comp_at(P, pb)),
                 cls_raw=klass(gmin), d_own=round(d_own, 2), d_other=round(d_other, 2),
                 g_med=int(np.median(vals)), g_max=int(vals.max()),
                 frac_gt240=round(float((vals > G_PAPER).mean()), 4),
@@ -264,21 +324,23 @@ def build_target(g, p, mid, iw, kind):
         cv2.circle(out, (int(round(q[1])), int(round(q[0]))), max(rad, 1), int(fill), -1)
     if kind == "T3":
         cv2.circle(out, (int(round(p[mid][1])), int(round(p[mid][0]))), BLOB_D // 2, 0, -1)
-    if kind in ("T4a", "T4b"):
+    if kind in T4_KINDS:
         wa, wb = p[s], p[e]
         v = wb - wa
         L = float(np.hypot(*v))
         if L < 1e-6:
             return out, (wa, wb), (s, e)
         u = v / L
-        t = 0.5 if kind == "T4a" else 1.0 / 3.0
-        c = wa + u * (L * t)
+        c = wa + u * (L * 0.5)                      # どちらも弦の中点で交わる
         th = np.deg2rad(60.0)
         d = np.array([u[0] * np.cos(th) - u[1] * np.sin(th),
                       u[0] * np.sin(th) + u[1] * np.cos(th)])
-        wdt = max(int(round(2.0 * float(iw[int(p[mid][0]), int(p[mid][1])]))), 3)
-        a2 = c - d * L
-        b2 = c + d * L
+        w0 = float(iw[int(p[mid][0]), int(p[mid][1])])
+        if kind == "T4touch":                       # 長い: 候補の墨まで届いて 8 近傍で繋がる
+            half, wdt = L, max(int(round(2.0 * w0)), 3)
+        else:                                       # 短い: 白く塗った窓の中だけ(分離を狙う)
+            half, wdt = SEP_LEN / 2.0, max(int(round(w0)), 3)
+        a2, b2 = c - d * half, c + d * half
         cv2.line(out, (int(round(a2[1])), int(round(a2[0]))),
                  (int(round(b2[1])), int(round(b2[0]))), 0, wdt)
     return out, (p[s], p[e]), (s, e)
@@ -363,8 +425,8 @@ def work_target(t):
             want = WANT[kind]
             # B'-2: 構成後の弦の全長 + 3px の帯に、候補の 2 span と(T4 の)第三の線以外が無いこと
             allow = {ka[0], kb[0]}
-            if kind in ("T4a", "T4b"):
-                cc_ = (pa + pb) * 0.5 if kind == "T4a" else pa + (pb - pa) / 3.0
+            if kind in T4_KINDS:
+                cc_ = (pa + pb) * 0.5
                 nb_ = Pc["sp_tree"].query_ball_point(cc_, 4.0) if Pc["sp_tree"] is not None else []
                 allow |= {int(Pc["sp_idx"][m]) for m in nb_}
             dirty = set()
@@ -375,12 +437,29 @@ def work_target(t):
             if dirty:
                 row.update(constructed=0, reason="弦の帯に他の span がいる(B'-2)")
                 res.append(row); continue
+            # C-2: 第三の線が候補と 8 近傍で連結しているかを**実測**して振り分ける。
+            # 描き方で決めつけない。狙いと実測が食い違う構成は「構成できず」に数える。
+            if kind in T4_KINDS:
+                lc = comp_at(Pc, (pa + pb) * 0.5)
+                la, lb = comp_at(Pc, pa), comp_at(Pc, pb)
+                touching = bool(lc and (lc == la or lc == lb))
+                row["third_touches"] = int(touching)
+                if kind == "T4touch" and not touching:
+                    row.update(constructed=0, reason="第三の線が候補に触れていない(touch 不成立)")
+                    res.append(row); continue
+                if kind == "T4sep" and touching:
+                    row.update(constructed=0, reason="第三の線が候補に触れた(sep 不成立)")
+                    res.append(row); continue
+            got = d["cls"] if d["cls"] is not None else f"測れない:{d['untestable']}"
             row.update(constructed=1, theta=round(th, 2), dperp=round(dp, 3),
-                       want=want, got=d["cls"], ok=int(d["cls"] == want),
+                       want=want, got=got, ok=int(d["cls"] == want),
+                       untestable_target=int(d["cls"] is None),
                        blob_is_token=blob_is_token,
-                       **{k_: d[k_] for k_ in ("g_min", "g_min_excl", "n_own_dark", "cls_raw",
-                                               "d_own", "d_other", "g_med", "frac_gt240",
-                                               "seg_n", "midpoint_only", "gap", "crossed")})
+                       **{k_: d[k_] for k_ in ("g_min", "g_min_excl", "n_own_dark",
+                                               "n_would_exclude", "t_a", "t_b", "comp_same",
+                                               "cls_raw", "d_own", "d_other", "g_med",
+                                               "frac_gt240", "seg_n", "midpoint_only",
+                                               "gap", "crossed")})
             res.append(row)
     return res
 
@@ -396,8 +475,8 @@ def main():
     ap.add_argument("--snapshot", default="results/k1_broken_vs_fill_20261016/labels_snapshot.jsonl")
     ap.add_argument("--out", default="results/k2_box_b_gray_20261018")
     ap.add_argument("--workers", type=int, default=5)
-    ap.add_argument("--band", choices=["a", "b"], default="b",
-                    help="a=診断の帯(置換の 0..299、検査ではない) / b=検査の帯(置換の 300..599)")
+    ap.add_argument("--band", choices=["a", "b", "c"], default="c",
+                    help="a,b=診断の帯(置換の 0..299 / 300..599) / c=検査の帯(置換の 900..1199)")
     ap.add_argument("--pool-start", type=int, default=None, help="既定は帯から決まる")
     ap.add_argument("--pool-n", type=int, default=N_SITE_POOL)
     a = ap.parse_args()
@@ -459,14 +538,15 @@ def main():
     perm = rng.permutation(len(sites)) if len(sites) else np.zeros(0, int)
     # 帯は **1 本の置換の連続した区間**で割る(独立な第 2 seed では帯が重なるため)。
     # 帯(a)=0..299(診断、検査ではない) / 帯(b)=300..599(検査)。素集合は構成として保証される。
-    start = a.pool_start if a.pool_start is not None else (0 if a.band == "a" else N_SITE_POOL)
+    start = a.pool_start if a.pool_start is not None else \
+        {"a": 0, "b": N_SITE_POOL, "c": 3 * N_SITE_POOL}[a.band]
     order = perm[start:start + a.pool_n]
     pick = [(rank, sites[k]) for rank, k in enumerate(order, start=start)]
     bys = defaultdict(list)
     for rank, s_ in pick:
         bys[s_[0]].append((rank, s_))
     ttasks = [(p, P[p]["source"], P[p]["name"], ss) for p, ss in bys.items()]
-    band_role = "診断(検査ではない)" if a.band == "a" else "検査(棒はこの帯で判定)"
+    band_role = ("検査(棒はこの帯で判定)" if a.band == "c" else "診断(検査ではない)")
     print(f"帯({a.band}) {band_role}: 置換の {start}..{start + len(order) - 1} 番目、"
           f"site {len(sites)} 候補から {len(pick)} 個を試し、構成できた順に "
           f"{N_PER_KIND} を採る(B'-3)", flush=True)
@@ -477,6 +557,7 @@ def main():
 
     with open(out / "per_pair_gray.csv", "w", newline="") as fh:
         fn = ["panel", "order", "t0", "t1", "s0", "s1", "e0", "e1", "missing", "label", "cls",
+              "untestable", "t_a", "t_b", "comp_same", "n_would_exclude",
               "cls_raw", "g_min", "g_min_excl", "n_own_dark", "d_own", "d_other",
               "g_med", "g_max", "frac_gt240", "seg_n", "midpoint_only", "crossed", "near_other",
               "cls_second", "g_second", "gap", "gap_csv", "ink_csv", "crossed_csv"]
@@ -484,6 +565,7 @@ def main():
         w.writeheader(); w.writerows(mat)
     with open(out / "targets.csv", "w", newline="") as fh:
         fn = ["panel", "span", "kind", "site_order", "constructed", "reason", "want", "got", "ok",
+              "untestable_target", "third_touches", "t_a", "t_b", "comp_same", "n_would_exclude",
               "g_min", "g_min_excl", "cls_raw", "n_own_dark", "d_own", "d_other",
               "g_med", "frac_gt240", "seg_n", "midpoint_only", "gap", "theta", "dperp",
               "crossed", "blob_is_token", "d_tip0", "d_tip1"]
@@ -509,22 +591,21 @@ def main():
                                  for r in sel if not r["ok"]],
                           not_constructed=dict(Counter(
                               (r.get("reason", "") or "")[:28] for r in k if not r.get("constructed"))),
+                          n_untestable=sum(r.get("untestable_target", 0) for r in sel),
                           blob_is_token=sum(r.get("blob_is_token", 0) for r in sel) if kind == "T3" else None,
-                          trap_fired=sum(1 for r in sel if r.get("d_own", -1) >= 0
-                                         and 0 <= r.get("d_own", 9e9) < r.get("d_other", 9e9))
-                          if kind in ("T4a", "T4b") else None)
-    rows4 = {"T1": tsum["T1"], "T2": tsum["T2"], "T3": tsum["T3"],
-             "T4": dict(need=30, n_selected=tsum["T4a"]["n_selected"] + tsum["T4b"]["n_selected"],
-                        n_ok=tsum["T4a"]["n_ok"] + tsum["T4b"]["n_ok"],
-                        n_wrong=tsum["T4a"]["n_wrong"] + tsum["T4b"]["n_wrong"],
-                        short=tsum["T4a"]["short"] + tsum["T4b"]["short"],
-                        sub=dict(T4a=tsum["T4a"], T4b=tsum["T4b"]))}
-    stop_ok = all(v["n_selected"] >= v["need"] and v["n_wrong"] == 0 for v in rows4.values())
+                          third_touches=sum(r.get("third_touches", 0) for r in sel)
+                          if kind in T4_KINDS else None)
+    # C-2: T4 は touch / sep を**合算しない**。5 行そのまま。
+    rows5 = {k: tsum[k] for k in KINDS}
+    stop_ok = all(v["n_selected"] >= v["need"] and v["n_wrong"] == 0 for v in rows5.values())
 
     # --- 素材の記述(合否に使わない) ---
-    ok_rows = [r for r in mat if not r["missing"]]
-    trim = [r for r in ok_rows if not r["midpoint_only"]]
-    midp = [r for r in ok_rows if r["midpoint_only"]]
+    rows_all = [r for r in mat if not r["missing"]]
+    # C-3: 測れない箱は独立。紙にも墨にも足さない。
+    untest = [r for r in rows_all if r.get("untestable")]
+    ok_rows = [r for r in rows_all if not r.get("untestable")]
+    trim = ok_rows
+    midp = []
     def describe(sel):
         c = Counter(r["cls"] for r in sel)
         oth = Counter(r["cls"] for r in sel if r["label"] == "face.other")
@@ -546,6 +627,11 @@ def main():
                     paper_of_ink0_csv=sum(1 for r in sel if r["ink_csv"] == 0 and r["cls"] == "紙"),
                     n_ink0_csv=sum(1 for r in sel if r["ink_csv"] == 0))
     desc = dict(trimmed=describe(trim), midpoint_only=describe(midp))
+    desc["untestable_box"] = dict(
+        n=len(untest), n_measured=len(ok_rows), n_total=len(rows_all),
+        reasons=dict(Counter(r["untestable"] for r in untest)),
+        label=dict(Counter(r["label"] for r in untest).most_common(6)),
+        note="紙にも墨にも足していない(C-3)")
     sub = Counter((r["cls"], r["crossed"], r["near_other"]) for r in ok_rows)
     desc["subsplit"] = {f"{k[0]}/crossed={k[1]}/near_other={k[2]}": int(v) for k, v in sorted(
         sub.items(), key=lambda t: (-t[1],))}
@@ -558,18 +644,18 @@ def main():
         registered=dict(g_paper=G_PAPER, g_ink=G_INK, win=WIN, blob_d=BLOB_D, crop=CROP,
                         n_target=N_TARGET, seed=SEED, clean_r=CLEAN_R, min_span=MIN_SPAN,
                         collar="per_pair.csv の collar 列をそのまま(襟は動かさない)",
-                        own_radius="B'-1b: max(2.0, iw[最近傍の自分の骨格画素]/2 + 1.0)",
+                        collar_rule="C-1: tip から弦に沿って進み、自分の 8 近傍連結成分を"
+                                    "出た点から測る。自分の墨の除外(B'-1/B'-1b)は廃止",
                         band=a.band, band_role=band_role,
                         band_slice=[int(start), int(start + len(order))],
                         note="停止条件は構成した標的のみ。素材の分布の形は合否に使わない。"
                              "帯(a) は診断で検査ではない。棒の判定は帯(b) のみ。2 帯を合算しない"),
-        instrument=dict(targets_4rows=rows4, stop_condition_passed=stop_ok, internal=chk,
+        instrument=dict(targets_5rows=rows5, stop_condition_passed=stop_ok, internal=chk,
                         j_sha_ok=sha == J_SHA, j_head=j_head),
         material_description=desc,
-        verdict=(("診断の帯なので合否は出さない(帯 a)" if a.band == "a" else
-                  "器具の停止条件に合格(各 30 件を構成し、全部正しい箱に入った)") if stop_ok
-                 else ("診断の帯なので合否は出さない(帯 a)" if a.band == "a" else
-                       "**止める**: 登録した「各 30 件がすべて正しい箱に入る」を満たしていない")))
+        verdict=(f"診断の帯なので合否は出さない(帯 {a.band})" if a.band != "c" else
+                 ("器具の停止条件に合格(5 行とも 30 件を構成し、全部正しい箱に入った)" if stop_ok
+                  else "**止める**: 登録した「5 行とも各 30 件がすべて正しい箱に入る」を満たしていない")))
     json.dump(summary, open(out / "summary.json", "w"), indent=1, ensure_ascii=False)
     print(json.dumps(summary, ensure_ascii=False, indent=1))
 
