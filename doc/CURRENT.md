@@ -2153,16 +2153,36 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   area). Two mechanisms, opposite signs, one ratio, and the ratio reported
   neither. **A criterion that tests a mechanism names the counting
   decomposition, not a ratio** -- how many of what land where, each side
-  printed separately.
+  printed separately. J's next registration drops the ratio and puts a bar on
+  each of the two shares; they already carry numbers, at three dilations:
+  fused-GT share and crossing-prediction share read **0.142 / 0.575** at
+  `d=8.485`, **0.105 / 0.374** at `d=4`, **0.048 / 0.113** at `d=1`
+  (`../lineart-solid-fill/results/fill_koma_20261010/ic7_npred_decomposition.txt`,
+  48 panels).
+  **The discriminator is the second mechanism's direction against the
+  conclusion drawn, not whether the bar passed or broke.** The foundation first
+  wrote the latter ("a passed bar is safe in a way a refuted one is not") and
+  **Track J refuted it the same day with IC7 itself**: had the second mechanism
+  pushed that ratio *down* instead, the bar would have been **passed** and a
+  fusion that is not happening declared to be happening -- same statistic, same
+  trap, only the verdict reversed. So a bar is robust **only when every second
+  mechanism that can be named for its statistic moves it against the conclusion
+  being drawn.** J's own one passed ratio bar, IC-j12's rejection clause
+  (379/379 unabsorbed, ratio 1.000, bar `< 0.80`), is robust by that test and
+  not by the false one: its named second mechanism (loosening `MERGE_PX`
+  lengthens fragments past `parts_of`'s `PART_SHARE`, so they stop counting as
+  absorbed) *lowers* the ratio, which is the direction that **fires** the
+  rejection -- opposite the conclusion.
   The foundation audited Track K's own two ratio bars against this shape on
-  2026-10-19, since K had bars on an attributable fraction and on a cost ratio:
-  - The **PAF >= 0.30 bar was passed** (0.4855). Every dilution known in that
-    table -- all-case strata, marks arising in the unexposed arm -- pulls MH-RR
-    toward 1, so a hidden second mechanism can only *understate* it. **A passed
-    bar is safe from this trap in a way a refuted one is not**, which is worth
-    stating because it is the whole reason J's leg failed and K's did not.
-  - The **cost bar `broken/fixed < 1` was refuted**, which is J's shape
-    exactly. It survives for an algebraic reason: the ratio is
+  2026-10-19, since K had bars on an attributable fraction and on a cost ratio.
+  Both survive, by direction and by algebra, which is what the false
+  generalisation was built on top of:
+  - The **PAF >= 0.30 bar** (0.4855): every dilution known in that table --
+    all-case strata, marks arising in the unexposed arm -- pulls MH-RR toward
+    1, i.e. **against** the conclusion that the fraction is large, so a hidden
+    second mechanism can only understate it.
+  - The **cost bar `broken/fixed < 1`**, which was refuted. It survives for an
+    algebraic reason: the ratio is
     `(1 - precision) / precision` identically, a strictly monotone function of
     **one** counted quantity, so there is no numerator and denominator for two
     mechanisms to move apart; and the decomposition was printed per arm (four
