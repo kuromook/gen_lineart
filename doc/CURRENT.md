@@ -814,6 +814,49 @@ work, and the stated expectation is that the pieces make each other easier.
     unmeasurable box for a chord that never exits. Band (c) is substitution
     900+, bands (a) and (b) are both diagnosis now, and if band (c) fails the
     gray axis is abandoned with no fourth attempt in any form.
+    **Band (c) failed and the exit was taken (2026-10-18).** T1 30/30, T2
+    30/30, T3 30/30, T4-sep 30/30 -- and **T4-touch 21/30**. The tip mechanism
+    C-1 named was genuinely solved: the rows that failed band (b) at 27/30 came
+    back 30/30. What broke is the single case the new definition cannot see:
+    when the filling ink is 8-connected to the candidate, walking out of one's
+    own component walks through the fill. The 10 failures have `t_a` median
+    13.25px against 2.00 for the passes, 1.5 samples against 16.0, and
+    `comp_same` 8/10 against 3/24; 6 were called paper with every sample at
+    g_min 255, and 4 had no post-exit interval left at all. **The decisive
+    sentence is the track's own**: without T4-touch, four rows of 30/30 would
+    have been reported as a pass. The gray axis is abandoned, the author now
+    owns the skipped-line-versus-faint distinction, and the request carries
+    **three options** rather than two, since "the ink was never broken, only
+    the skeleton" is identifiable in advance.
+  - **Box B's one surviving measurement, and what it is not.** 59 of the 182
+    candidates (32.4%) fall in the registered unmeasurable box: 56 where the
+    interval after leaving one's own ink component is empty, 3 where the chord
+    reaches the other tip without ever leaving it (`face.other` 25,
+    `face.eye.open` 10, `face.mouth` 8). It survives the failed run because
+    **its predicate never touches the gray classification** -- only the
+    registered hysteresis ink rule and geometry -- which is also why the
+    material's class counts were correctly left unread. But it is **not** "the
+    gap is not a gap": 4 of the 30 constructed genuine fills landed in this
+    same box, so it contains real filled gaps, and the predicate is close to
+    monotone in gap length, so 32.4% has no scale on its own. Before any of it
+    reaches the author it needs the name "the two tips' ink lies in one
+    connected component along the chord", a stratification by gap, the same
+    predicate run on box A's 521 joined pairs as the trivial arm, and a split
+    by `comp_same`.
+  - **A third mechanism of under-connection is now hypothesised, and it needs
+    neither labels nor the author** (registered 2026-10-18, to be measured
+    after the part-label axis and before the author request). The 56 cases are
+    free-end pairs -- they are in box B precisely because they share no node --
+    whose ink along the chord is nonetheless unbroken. If the ink is continuous
+    while the skeleton is not, the defect sits in **skeletonisation and spur
+    pruning**, not in the linking rule: `spur_max = 6` prunes the connecting
+    spur and F's `build_links` only collects arms with node id >= 0, so nothing
+    can rejoin it, by architecture. That is distinct from both the cost refusal
+    (3.6%) and the ridge (`t_relay_other`). Primary value: the share of the 59
+    with an 8-connected ink path between the tips and no skeleton path.
+    Confound to split out with `comp_same` and the presence of another span's
+    node in the connecting ink: a crossing line makes ink continuous without
+    the pair being one stroke.
   - **A sealed track's docstring can be quantitatively wrong**: F's
     `strokes.py` says a bridge span stays "their own (short, usually dropped)
     token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
@@ -1482,7 +1525,12 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   the registration named fired in 6 of those 30** (the darkest point was nearer
   the candidate's own span than the third line) and still classified as ink, so
   the exclusion is not over-reaching. The over-correction target earned its
-  place on the first measurement.
+  place on the first measurement -- and then earned it again, decisively: when
+  the collar was redefined, the guard had to be rebuilt for the new definition
+  (a third line *touching* the candidate shares its connected component), and
+  the rebuilt **T4-touch came in at 21 of 30 while the other four rows were all
+  30/30**. Without it the run would have been reported as a pass. **This rule
+  is no longer a precaution; it has caught a false pass.**
 - **A radius taken from the sample point collapses exactly where it is needed**
   (Track K, 2026-10-18, second failure of the same instrument). B'-1 attributed
   ink to the candidate's own span within a radius built from the ink width *at
@@ -1506,6 +1554,33 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   is that the chord is the wrong instrument, not that the radius needs a third
   value. The number of fixes derived from the same material is budgeted, and
   two were spent.
+- **The author of a repair is the wrong party to predict its yield** (observed
+  across three Track K registrations, 2026-10-18). The track's mechanism
+  readings were right all three times; its yield predictions were wrong all
+  three times ("8 of 9 will be repaired" came in at 1 of 7; "all five rows
+  pass" came in at 21 of 30). The foundation's predictions of **where a guard
+  would bite** were right all three times, which is the cheap direction: the
+  mechanism was handed to it by the track's own notice. The 3-0 is not evidence
+  that one party judges better -- the two prediction tasks differ and their
+  biases point opposite ways. The division adopted from here: **the repair's
+  author registers the mechanism, the foundation registers the yield.**
+- **A count from a run whose stop condition failed is usable only if its
+  predicate never touches the failed path -- and it still needs a scale**
+  (ruled 2026-10-18 on Track K's 32.4%). The unmeasurable box survived because
+  it is decided by the registered ink rule and geometry alone, with no gray
+  classification in it. Two things it still lacked: a name that does not
+  overclaim (it says the tips' ink lies in one connected component, not that
+  the gap is not a gap -- 4 of 30 constructed real fills landed in the same
+  box) and a trivial arm, because the predicate is nearly monotone in gap
+  length, so the bare percentage has nothing to be compared against.
+- **A definition can be right in mechanism and one case short in coverage**
+  (Track K's C-1, 2026-10-18, and the right way to record a partial result).
+  The collar redefinition solved exactly what it was derived for -- the rows
+  that failed at 27/30 returned 30/30, and the retraction mechanism is closed
+  -- and failed only where the filling ink is continuous with the candidate.
+  Recorded as coverage missing at one place, not as a refutation of the
+  reasoning, because the distinction changes what the next registration
+  inherits.
 - **A diagnostic that predicts a fix's yield must run the instrument's own
   code path** (Track K, 2026-10-18, the most useful of the day). Before
   measuring B'-1b the track estimated it would repair 8 of 9 known failures; it
