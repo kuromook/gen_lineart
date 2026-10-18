@@ -28,12 +28,18 @@ def cls_of(label):
     return "eye" if label.startswith("face.eye") else {"face.other": "other_face"}.get(label, label.replace("face.", ""))
 
 
-def load_faces():
-    """返る: 顔ごとの dict(order, group, pts (n,16,2), ids, y (クラス番号), gid (正解グループ番号, -1 = なし), s, box, cl, csize)"""
+def load_faces(max_order=MAX_ORDER, n_lines=None):
+    """返る: 顔ごとの dict(order, group, pts (n,16,2), ids, y (クラス番号), gid (正解グループ番号, -1 = なし), s, box, cl, csize, pose)。
+    n_lines: 保存ファイルの最初の何行までを使うか(追記式なので、ある時点の内容を再現できる)"""
     G.load_state(G.LAB / "face_groups.jsonl")
+    if n_lines is not None:
+        G.S["faces"] = {}
+        for k, ln in enumerate(open(G.LAB / "face_groups.jsonl")):
+            if k < n_lines and ln.strip():
+                d = json.loads(ln); G.S["faces"][int(d["order"])] = d
     faces = []
     for o, r in sorted(G.S["faces"].items()):
-        if o > MAX_ORDER or r["usage"] != "train" or r["status"] != "done":      # 検証用は使わない
+        if o > max_order or r["usage"] != "train" or r["status"] != "done":      # 検証用は使わない
             continue
         q = G.S["queue"][o]
         pl = G.face_payload(o)
@@ -49,7 +55,7 @@ def load_faces():
         _p, _w, cl = G.panel_strokes(pl["panel"]); cl = np.asarray(cl).astype(int)
         faces.append(dict(order=o, group=q["group"], pts=pts, wid=wid, ids=ids, y=y, gid=gid, box=(x0, y0, x1, y1),
                           s=float(np.sqrt((x1 - x0) * (y1 - y0))), cl=cl[ids],
-                          csize=np.bincount(cl[cl >= 0], minlength=cl.max() + 2)))
+                          csize=np.bincount(cl[cl >= 0], minlength=cl.max() + 2), pose=r.get("pose"), panel=pl["panel"]))
     return faces
 
 

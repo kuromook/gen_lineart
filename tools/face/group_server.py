@@ -168,6 +168,7 @@ kbd{display:inline-block;min-width:1.3em;text-align:center;padding:0 4px;border:
 .g.cur{outline:2px solid #1c1c1c}.chip{width:14px;height:14px;border-radius:3px;flex:0 0 auto}
 .g .x{margin-left:auto;padding:1px 7px}.g .u{padding:1px 6px;font-size:12px}
 #msg{color:var(--acc);min-height:1.3em}
+#npad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}#npad button{padding:7px 4px;text-align:left;line-height:1.25}#npad button small{display:block;opacity:.8}
 ul{margin:4px 0 0;padding-left:18px}li{margin:1px 0}
 #mode{font-weight:600}
 </style></head><body><div class="app">
@@ -192,6 +193,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:1px 0}
    <button onclick="ungroup()"><kbd>X</kbd>選択をグループから外す</button>
    <button onclick="toggleBroken()"><kbd>D</kbd>解体する線(つながりがおかしい)</button></div></div>
  <div class="card"><div class="row" style="justify-content:space-between"><b>顔の向き</b><span id="poseInfo" class="mut small"></span></div>
+  <div id="npad" style="margin-top:6px"></div>
   <div class="row" style="margin-top:6px" id="yawBtns"></div>
   <div class="row" style="margin-top:6px" id="pitchBtns"></div></div>
  <div class="card"><div class="row" style="justify-content:space-between"><b>グループ</b><span id="selInfo" class="mut small"></span></div>
@@ -211,6 +213,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:1px 0}
   <li>メガネ(8): 顔のパーツではないが、目の位置の手がかりとして記録する。レンズと枠をまとめて 1 グループ。奥に目が描いてあれば、目は目として別のグループにする</li>
   <li>ホイール: 拡大・縮小 / 右ドラッグ(または Space+ドラッグ): 移動</li>
   <li>つながりがおかしい線(別々のパーツが 1 本につながっている等): 選んで D。桃色の点線になる。もう一度 D で取り消し。グループに入れても入れなくてもよい</li>
+  <li>顔の向きはテンキーの並び: 7 8 9 = 見上げ、4 5 6 = 水平、1 2 3 = 見下ろし(左の列 = 左斜め、中 = 正面、右の列 = 右斜め)。0 = 左向き横顔、. = 右向き横顔。キーボードのテンキーでも同じ(上の段の数字キーは目印用)</li>
   <li>顔の向き: 左右は「画面の中で顔が向いている側」。煽り = 下から見上げた顔、俯瞰 = 上から見下ろした顔。完了には向きの 2 つ(左右の向き・上下)が必要</li>
   <li>グループにしなかった線は「それ以外」(髪・輪郭の外・背景)として扱います</li>
   <li>青い点線の枠 = 検出された顔。表示されている線はすべて選べます</li></ul></div>
@@ -222,6 +225,10 @@ const $=id=>document.getElementById(id), cv=$("cv"), ctx=cv.getContext("2d");
 let F=null, bg=new Image(), bgOK=false, bgMode=0, st={done:0,skip:0,next:0,mode:""};
 let strokes=[], byId=new Map(), sel=new Set(), groups=[], gseq=0, hist=[], dirty=false, cur=0, broken=new Set(), pose={yaw:null,dir:null,pitch:null};
 const YAW=[["q","front",null,"正面"],["w","oblique","left","斜め・左向き"],["e","oblique","right","斜め・右向き"],["a","profile","left","横顔・左向き"],["s","profile","right","横顔・右向き"],["t","back",null,"後ろ"]];
+const NPAD=[["Numpad7","7","oblique","left","up","左斜め","見上げ"],["Numpad8","8","front",null,"up","正面","見上げ"],["Numpad9","9","oblique","right","up","右斜め","見上げ"],
+  ["Numpad4","4","oblique","left","level","左斜め","水平"],["Numpad5","5","front",null,"level","正面","水平"],["Numpad6","6","oblique","right","level","右斜め","水平"],
+  ["Numpad1","1","oblique","left","down","左斜め","見下ろし"],["Numpad2","2","front",null,"down","正面","見下ろし"],["Numpad3","3","oblique","right","down","右斜め","見下ろし"],
+  ["Numpad0","0","profile","left","level","左向き横顔","水平"],["NumpadDecimal",".","profile","right","level","右向き横顔","水平"]];
 const PITCH=[["z","level","水平"],["c","up","煽り(見上げ)"],["v","down","俯瞰(見下ろし)"]];
 let view={s:1,ox:0,oy:0}, tool="lasso", drag=null, hover=null, spaceDown=false, SIZE=900, selMode="new", pinch=null, lastTap=null; const pts=new Map();
 
@@ -305,8 +312,10 @@ function toggleUnsplit(){ const t=touched(); if(!t.length){ $("msg").textContent
 function toggleBroken(){ if(!sel.size){ $("msg").textContent="解体する線を選んでください"; return; } snapshot(); const all=[...sel].every(i=>broken.has(i));
   sel.forEach(i=>all?broken.delete(i):broken.add(i)); sel=new Set(); dirty=true; $("msg").textContent=""; refresh(); }
 function setYaw(y,d){ pose.yaw=y; pose.dir=d; dirty=true; poseUI(); }
+function setPose(i){ const n=NPAD[i]; pose={yaw:n[2],dir:n[3],pitch:n[4]}; dirty=true; poseUI(); }
 function setPitch(p){ pose.pitch=p; dirty=true; poseUI(); }
-function poseUI(){ $("yawBtns").innerHTML=YAW.map(y=>`<button class="${pose.yaw==y[1]&&pose.dir==y[2]?"on":""}" onclick="setYaw('${y[1]}',${y[2]?`'${y[2]}'`:null})"><kbd>${y[0].toUpperCase()}</kbd>${y[3]}</button>`).join("");
+function poseUI(){ $("npad").innerHTML=NPAD.map((n,i)=>`<button class="${pose.yaw==n[2]&&pose.dir==n[3]&&pose.pitch==n[4]?"on":""}" onclick="setPose(${i})"><kbd>${n[1]}</kbd>${n[5]}<small>${n[6]}</small></button>`).join("");
+  $("yawBtns").innerHTML=YAW.filter(y=>y[1]=="back").map(y=>`<button class="${pose.yaw==y[1]&&pose.dir==y[2]?"on":""}" onclick="setYaw('${y[1]}',${y[2]?`'${y[2]}'`:null})"><kbd>${y[0].toUpperCase()}</kbd>${y[3]}</button>`).join("")+'<span class="mut small">横顔・後ろの上下は下のボタンで</span>';
   $("pitchBtns").innerHTML=PITCH.map(p=>`<button class="${pose.pitch==p[1]?"on":""}" onclick="setPitch('${p[1]}')"><kbd>${p[0].toUpperCase()}</kbd>${p[2]}</button>`).join("");
   $("poseInfo").textContent=(pose.yaw&&pose.pitch)?"":"未入力"; $("msg").textContent=""; }
 function delGroup(id){ snapshot(); groups=groups.filter(g=>g.id!=id); dirty=true; refresh(); }
@@ -337,6 +346,8 @@ async function finish(status){ if(status=="done"&&!(pose.yaw&&pose.pitch)){ $("m
   if(!r.ok){ $("msg").textContent="保存に失敗: "+await r.text(); return; } dirty=false; go(cur+1); }
 document.addEventListener("keydown",e=>{ if(e.key==" "){spaceDown=true;e.preventDefault();return;}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="z"){undo();e.preventDefault();return;} if(e.ctrlKey||e.metaKey)return;
+  const npi=NPAD.findIndex(n=>n[0]==e.code); if(npi>=0){setPose(npi);e.preventDefault();return;}
+  if(e.code=="NumpadEnter"){finish("done");e.preventDefault();return;}
   const k=e.key.toLowerCase(); const d=DEF.find(d=>d[0]==k); if(d){makeGroup(d[1]);e.preventDefault();return;}
   if(k=="enter"){finish("done");e.preventDefault();} else if(k=="k")finish("skip"); else if(k=="x")ungroup(); else if(k=="d")toggleBroken();
   else if(k=="l")setTool("lasso"); else if(k=="r")setTool("rect"); else if(k=="h")setTool("pan"); else if(k=="b")cycleBg(); else if(k=="f")resetView();
