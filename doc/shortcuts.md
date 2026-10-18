@@ -158,7 +158,16 @@ raised with the date.
   on `npred/ngt < 0.90` to test merging; the measured 1.777 refuted the bar
   while merging was in fact firing on 14.2% of GT regions, because dilated
   sub-500px blobs crossing the filter pushed the same ratio up faster
-  (`results/fill_koma_20261010/ic7_npred_decomposition.txt`). **When it is
+  (`results/fill_koma_20261010/ic7_npred_decomposition.txt`). **The discriminator is the
+  DIRECTION of the second mechanism relative to the conclusion drawn, not
+  whether the bar was cleared or refuted** (the foundation proposed the latter
+  on 2026-10-19 as trap 16's general rule; it is false). Counterexample from
+  this very run: had the crossers pushed `npred/ngt` *down* instead of up, C5
+  would have been **cleared** and merging would have been claimed where it was
+  not. Same statistic, same trap, opposite verdict. A bar is robust only when
+  every second mechanism known to move the statistic moves it *against* the
+  conclusion -- which is the argument the foundation actually gave for K's PAF
+  leg, and it is sound; the generalisation over it is not. **When it is
   raised:** now, as a rule -- a criterion about a mechanism names the
   decomposition it will count (carriers / merges / crossers), not a ratio that
   several mechanisms share. The same question in IC6's erosion leg
