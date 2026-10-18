@@ -775,6 +775,42 @@ work, and the stated expectation is that the pieces make each other easier.
     `strokes.py` says a bridge span stays "their own (short, usually dropped)
     token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
     rather than fixed, because Track F's files are not modified.
+  - **The touch merge is adopted (Track J, IC-j9, 2026-10-17), and this
+    foundation's difference-form prescription was measured a second time.**
+    Judged once on the reserved panels `[0:40]`, never read since IC-j6's
+    registration: reference `stroke_chain` 0.619 rejoin / 0.072 wrong against
+    the candidate's **0.711 / 0.072**, trial by trial 9 gained and **0 lost**,
+    no trial newly wrong. Both refusal conditions checked before reading. The
+    absolute bar that failed IC-j8, `wrong <= 0.059`, **is failed by the
+    reference arm itself on this set too (0.072)**, so the trap holds on
+    independent material. Recorded values moved with the adoption: the
+    discovery set's rejoin **0.643 -> 0.752**, the reserved set's
+    **0.619 -> 0.711**, `wrong` unchanged in both. `stroke_chain.py`'s sha is
+    now `53b8406cfbb4f4d1`; the pre-adoption file is commit `1a82ea5`, and
+    anything compared with a figure recorded before 2026-10-17 must pin it.
+  - **After the adoption the topology bucket is half closed**: the merge
+    defect is fixed and the ridge is untouched, so `t_relay_other`'s 51 cases
+    are now **66.2% of the 77 remaining failures**, up from 46.0% of all
+    failures. The ridge repair needs a **two-node cost** -- the evidence is
+    chain-local while the cost is node-local -- which is a design change, not
+    a defect repair, and belongs to Track J under its own registration.
+  - **A correction this foundation owes Track K**: the 2026-10-16 routing
+    said loosening `MERGE_PX` is net-negative, from `merge_px_inf` breaking
+    111 of 200. The bounded sweep separates the two. At `MERGE_PX = 10` the
+    occluder's own ridge survives in **379 of 379** trials (reference also
+    379/379, ratio 1.000), so the fall in `wrong` there is a real precision
+    gain and the registered expectation that it would rise is refuted.
+    Unbounded and bounded part company at this point.
+  - **A caveat to carry out of stage 2**: pixel IoU and region-F1 **disagree
+    in sign** at this signal level. At `r = 4` `rough_dark` beats both
+    don't-paint and its mirror on pixel IoU (+0.0118, +0.0076) and beats
+    neither on region-F1. Every stage-2 headline must name its metric. The
+    verdict's robustness to `FILL_HALF_WIDTH_PX` (r in {2,3,4,6,8}, largest
+    gap +0.0003 against a +0.05 bar) stands as the strong result.
+  - **The GPU slot is taken: M1 trains 2026-10-19 to 10-22**, held on IC6's
+    four criteria. Track J's bounded `MERGE_PX` sweep and the
+    `FILL_HALF_WIDTH_PX` sensitivity run on CPU beside it, and Track K is CPU
+    only, so nothing contends.
   - Step 2 is Track J's own registered next step run on IC-j6 (of the 34.6% of
     trials the chainer fails to rejoin, how many were refused by the cost
     break-even versus matched to the wrong arm -- different repairs), with the
@@ -1370,6 +1406,63 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   reference arm** (`wrong_candidate - wrong_reference <= 0`), not as an
   absolute imported from another population. This is the fourth way a control
   is born meaningless, after the three already in the `moat` ledger.
+- **The instrument graded its own pass condition, and leniently** (caught
+  2026-10-18 by Track K itself, on the second run of K2-B'). The registration
+  said each of three constructed target classes must land in the right box,
+  30 of 30. The implementation set `stop_condition_passed` from
+  `n_constructed > 0`, so the first run printed PASS on nine constructed
+  targets of which three were misclassified. The track found it, tightened the
+  code to the registration, and left the first PASS in the record. **A stop
+  condition is code like any other: assert the registered threshold, by its
+  number, in the same commit that writes the condition.**
+- **A stop condition written about the material teaches nothing about the
+  instrument** (routed 2026-10-18 to Track K). K2's A2 required the ink count
+  along the chord to separate into a zero peak and a non-zero peak; it came
+  out as a zero peak plus a thin tail, and the tail was a different mechanism
+  (spur-pruning residue, 14 of 20 cases in two panels, 60% `face.other`). The
+  collar was never the problem: **the population A2 expected does not exist in
+  this material**. Whether a distribution is bimodal is not a property we
+  control, so making it the instrument's pass condition means a differently
+  shaped material leaves the instrument untested. **Register the decision
+  rule and its thresholds, and make the stop condition constructed targets
+  that must land in the right class.**
+- **A one-directional fix needs a target that catches over-correction**
+  (routed 2026-10-18). K's B'-1 excludes ink belonging to the candidate's own
+  spans, which can only move cases toward "paper"; "ignore all ink near the
+  tips" would pass the same stop condition and classify everything as paper.
+  So a repair that moves cases one way is registered with a target on the
+  other side -- here a gap a third line genuinely fills, which must still
+  classify as ink.
+- **A set-level zero on a regression count is not a cost bar, it is a refusal
+  to trade** (Track J, 2026-10-18, found by its own measurement). `newly_wrong
+  = 0 by set` made 0 of 30 sweep cells proposable, including two that broke
+  nothing and cut `wrong` from 0.061 to 0.048 and 0.035; the next
+  registration's surviving `broken = 0` refused a cell that gained 45 trials
+  and cut `wrong` from 23 to 16 counts because it broke 2 trials of 379. Only
+  an exactly additive repair clears such a clause, and IC-j9's adopted repair
+  happened to be exactly additive, so the clause was carried for a week
+  without ever being tested against a real trade. **Put the tolerance in the
+  bar as a number, before the material is touched** -- and once a reserved set
+  has been read, that number can no longer be written for that challenger:
+  it needs a new set, which here exists (the chainer uses panels [0:171] of a
+  4,049-panel corpus).
+- **Selecting on a zero-valued count manufactures a zero** (Track J,
+  2026-10-18). The challenger cell was picked by one mechanical rule, highest
+  score among discovery cells with `broken = 0`, and broke 0 of 311 there and
+  **2 of 379** on the never-read set. The recall and merit legs transferred
+  with their direction predicted; only the cost half did not. This is the
+  winner's curse in its count form: **if a grid cell is chosen partly because
+  a count was zero, expect that zero not to replicate.**
+- **A registered expected value must name the entry or the results file it
+  came from; a date and a sample size are not a citation** (Track J,
+  2026-10-18). IC-j10's second expected value cited "an r-census on 60 held
+  panels recorded 2026-10-14". There is no entry on that date, no commit (the
+  history goes 10-11 to 10-16) and no results file holding the number. The
+  measurement came out at 0.8588 against a band of 0.63 +/- 0.10, and the band
+  refuted nothing because **it was never a measurement**. The track found it
+  by going back to reread the census as its own registration instructed. This
+  one is not a flaw in a control's design: it is a registration resting on a
+  measurement that does not exist.
 - **The cached intermediate is not always the one that made the data, and the
   foundation approved the wrong path** (caught 2026-10-16 by Track K's IC-k5b,
   which failed 0 of 6 before anything was read). Track K's K2 registration --
