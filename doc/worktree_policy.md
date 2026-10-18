@@ -262,10 +262,16 @@ How the scout runs, which is why `main` must keep existing:
   diffusion.
 
 **Decision (user, 2026-10-19): switch GitHub's default branch to `foundation`
-and leave `main` alone as the scout's lane.** The default is still `main`
-today, which means anyone cloning the repository lands on the 2026-07-29
-snapshot plus a scout folder. Switching it is a web-UI action for the user;
-nothing local depends on it. `main` is **not** renamed to something more
+and leave `main` alone as the scout's lane. Done the same day** -- the user
+changed it in the web UI (the setting is on Settings -> General, not Settings
+-> Branches, which now holds only protection rules), and
+`git ls-remote --symref origin HEAD` confirms `ref: refs/heads/foundation`.
+A new clone now lands on the current state instead of the 2026-07-29 snapshot
+plus a scout folder, and the root `README.md` that GitHub shows is the one
+rewritten the same day. `origin/HEAD` was also re-pointed locally in both
+clones (`git remote set-head origin -a`); it had never been set in either, so
+nothing was relying on it. The scout is unaffected: its sparse checkout names
+`main` explicitly, and that branch still exists. `main` is **not** renamed to something more
 honest (`paper-scout`) because the always-on machine's sparse checkout tracks
 `main` by name, and the weekly push would fail silently until someone logs
 into that machine to re-point it. `main` is **not** turned into the real trunk
