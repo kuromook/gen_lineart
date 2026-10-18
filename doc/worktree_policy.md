@@ -188,12 +188,23 @@ What the rename did and did not touch:
     `~/disk/checkpoint/Stable-diffusion/`.
   Its reply is `inbox/note_track_j_reply_foundation_rename_20261018.md`;
   it sat unread here for a day, which is the foundation's own miss.
-  **What still holds the deletion is not a track**: `lineart-panel-generation`
-  is **a second clone of the same GitHub repository**, not a worktree of this
-  one, and `lineart-face-words` is a worktree *of that clone*, so the two
-  clones carry their own remote-tracking refs. Delete `origin/diffusion` once
-  that clone has been pushed from and re-fetched; it is recoverable either way,
-  since `67d7bf7` is an ancestor of `foundation`.
+  **That last condition is now met too** (2026-10-19). `lineart-panel-generation`
+  is a second clone of the same GitHub repository, not a worktree of this one,
+  and `lineart-face-words` is a worktree *of that clone*; the user pushed that
+  clone, and it is in sync at `13e241b` with nothing uncommitted. Audited in
+  both clones: `origin/diffusion` survives there only as a **stale
+  remote-tracking ref** -- no branch has it as upstream (`panel-generation` ->
+  `origin/panel-generation`, `face-words` -> `origin/face-words`), and the only
+  tracked-file hit is a prose line in that clone's `work_log.md` recording that
+  its `origin/diffusion` matched the frozen `67d7bf7`.
+  So **nothing anywhere resolves that branch name at run time**, and deleting
+  it is recoverable: `67d7bf7` is an ancestor of `foundation` and exists in
+  every clone.
+  **The delete itself has not been run from the foundation session**: it is a
+  destructive remote operation and this session's permission mode refused it.
+  The command, for the user to run, is `git push origin --delete diffusion`,
+  followed by `git remote prune origin` in `lineart` and in
+  `lineart-panel-generation` so neither clone keeps the ghost ref.
 - **Do not fix these references with a repo-wide `sed`** (warning from Track J,
   2026-10-18, asked to be carried to the other tracks). `experiments/*.sh` and
   `scripts/*.py` hold `BASE_CKPT=$HOME/disk/checkpoint/Stable-diffusion/...` in
