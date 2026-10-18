@@ -108,5 +108,26 @@ def r2():
             print((OUT / f"r2_fixplan_{arm}.log").read_text()[-2000:]); sys.exit(1)
 
 
+def r1():
+    """自己回帰の文法モデル(v2 の設定)を原/補正の対で(2026-10-18 事前登録)"""
+    import numpy as np
+    a = np.load(CORP["orig"]); b = np.load(CORP["fixed"])
+    assert np.array_equal(a["seq"][:, 1::4], b["seq"][:, 1::4]), "語トークンが一致しない"      # IC2
+    assert np.array_equal(a["seq"][:, 4::4], b["seq"][:, 4::4]), "scale トークンが一致しない"  # IC2
+    assert np.array_equal(a["split"], b["split"]), "分割が一致しない"                          # IC3
+    OUT.mkdir(parents=True, exist_ok=True)
+    for arm in ("orig", "fixed"):
+        o = OUT / f"r1_grammar_{arm}"
+        cmd = [PY, str(HERE.parent / "trackf/train_grammar.py"), "--data", CORP[arm],
+               "--out", str(o), "--dropout", "0.1"]
+        rc, dt = run(cmd, OUT / f"r1_grammar_{arm}.log")
+        ev = json.load(open(o / "eval.json")) if (o / "eval.json").exists() else None
+        print(f"r1 {arm}: rc={rc} {dt:.0f}s " +
+              (f"word {ev['word_bits']:.4f} pos {ev['pos_bits']:.4f} "
+               f"delta_prior {ev['pos_delta_prior_bits']:.4f}" if ev else ""))
+        if rc:
+            print((OUT / f"r1_grammar_{arm}.log").read_text()[-2000:]); sys.exit(1)
+
+
 if __name__ == "__main__":
-    {"r2": r2, "r3": r3, "r4": r4}[sys.argv[1]]()
+    {"r1": r1, "r2": r2, "r3": r3, "r4": r4}[sys.argv[1]]()
