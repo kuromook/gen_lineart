@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+"""掃き出しの再計算 R1–R3(2026-10-18 事前登録)。
+
+Track F のファイルは読むだけ。出力は results/sweep_posbins_20261018/ にのみ書く。
+R1: train_grammar.py(変更なしのコピー)を原/補正の対で
+R2: 10/09 の保存済みモデルで diagnose.py と fixplan_check.py を対で
+R3: panel_composition.py を shim で原/補正の対で走らせ、型ラベルの ARI を測る
+"""
+import json, subprocess, sys, time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+TRACKF = Path("/home/sh1/deepl/lineart-stroke-grammar")
+POSB = ROOT / "results/posbins_20261009"
+OUT = ROOT / "results/sweep_posbins_20261018"
+PY = sys.executable
+CORP = {"orig": str(TRACKF / "results/grammar_corpus_20260920/corpus.npz"),
+        "fixed": str(POSB / "corpus_fixed.npz")}
+
+
+def run(cmd, log, cwd=ROOT):
+    t0 = time.time()
+    with open(log, "w") as fh:
+        r = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, cwd=str(cwd))
+    return r.returncode, time.time() - t0
+
+
+R3_SHIM = """
+import sys
+from pathlib import Path
+sys.path.insert(0, {stroke!r})
+import panel_composition as M
+M.CORPUS = {corpus!r}
+M.OUT = Path({out!r})
+M.KS = (12,)
+M.main()
+"""
+
+
+def r3():
+    OUT.mkdir(parents=True, exist_ok=True)
+    for arm in ("orig", "fixed"):
+        o = OUT / f"r3_composition_{arm}"
+        code = R3_SHIM.format(stroke=str(TRACKF / "tools/stroke"), corpus=CORP[arm], out=str(o))
+        rc, dt = run([PY, "-c", code], OUT / f"r3_composition_{arm}.log", cwd=TRACKF)
+        print(f"r3 {arm}: rc={rc} {dt:.0f}s")
+        if rc:
+            print((OUT / f"r3_composition_{arm}.log").read_text()[-2000:]); sys.exit(1)
+
+
+if __name__ == "__main__":
+    {"r3": r3}[sys.argv[1]]()
