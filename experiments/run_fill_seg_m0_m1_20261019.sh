@@ -13,16 +13,28 @@
 #
 # Discipline (lesson 7): PYTHONUNBUFFERED=1, the holdout is scored at every
 # snapshot, training loss is never read as evidence.
+#
+# 2026-10-19 08:33, first launch: OOM at the DEFAULT --batch-panels 2.
+# 2 panels x WINDOWS_PER_PANEL 4 = 8 windows of 480x480 needs 11.38 GiB on an
+# 11.64 GiB card. The smoke test did not catch it because --smoke overrides
+# batch-panels to 1, so it exercised 4 windows, not the 8 the real run uses.
+# Fix: --batch-panels 1 (the configuration the smoke actually validated) with
+# the STEP COUNT DOUBLED, so the window budget is unchanged at 160,000
+# windows. No registered quantity moves: the registration fixes the
+# architecture, the loss and the discipline, not the batch size.
 set -u
 cd /home/sh1/deepl/lineart-solid-fill
 PY=/home/sh1/deepl/lineart/venv/bin/python
 OUT=results/fill_seg_20261010
-STEPS=20000
+STEPS=40000
+BATCH_PANELS=1
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 mkdir -p "$OUT"
 for ARM in M0 M1; do
   echo "=== $ARM start $(date '+%F %T') ==="
   PYTHONUNBUFFERED=1 "$PY" scripts/train_fill_seg.py \
-      --arm "$ARM" --steps "$STEPS" --eval-snapshot-steps 2000 --eval-panels 40
+      --arm "$ARM" --steps "$STEPS" --batch-panels "$BATCH_PANELS" \
+      --eval-snapshot-steps 4000 --eval-panels 40
   echo "=== $ARM exit $? at $(date '+%F %T') ==="
 done
 echo "=== slot run finished $(date '+%F %T') ==="
