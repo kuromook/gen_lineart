@@ -120,6 +120,25 @@ def arm_direction(pix_rc, ar, ac, reach):
     return v / nv if nv > 1e-6 else np.array([0.0, 0.0])
 
 
+def lateral_offset(a, b, reach):
+    """腕 a の接線の延長から見た腕 b の遠点の横ずれ [px]。両向きの最大。
+
+    登録 (F)（2026-10-19）で定義を先に固定してある:
+    腕 a の接着点 p_a と単位接線 v_a、腕 b の遠点 q_b = p_b + reach·v_b に対し
+    |(q_b − p_a) × v_a|。|v_a| = 1 なのでこれが直線からの垂直距離。
+    単位ベクトルが退化した腕は判定できないので 0 を返し**門は通す**。
+    """
+    def one(p, q):
+        _s, v, ar, ac = p
+        _t, w, br, bc = q
+        if abs(v[0]) + abs(v[1]) < 1e-6 or abs(w[0]) + abs(w[1]) < 1e-6:
+            return 0.0
+        dr = (br + reach * w[0]) - ar
+        dc = (bc + reach * w[1]) - ac
+        return abs(float(dr * v[1] - dc * v[0]))
+    return max(one(a, b), one(b, a))
+
+
 class UF:
     def __init__(self, n): self.p = np.arange(n)
     def find(self, a):
@@ -130,14 +149,17 @@ class UF:
 
 
 def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10.0, min_len=8,
-                          collapse_coef=1.5, width_gate=None):
+                          collapse_coef=1.5, width_gate=None, max_offset=None):
     """K の変種(2026-10-18、登録 E)。**Track F は封存。これは K の tree の複製である。**
 
     `collapse_coef` : 畳み込み閾値 `max(3.0, coef x median(局所インク幅))` の係数。
                       `None` なら**何も畳まない**、`inf` なら**全部畳む**(自明な腕)。
     `width_gate`    : 橋の局所インク幅がこの値以下のときだけ畳む(機構が示す腕)。
                       線 1 本の尺度は約 2.7px。`None` なら門なし。
-    既定値 (1.5, None) は `strokes_instrumented` と同一の挙動。"""
+    `max_offset`    : 登録 (F)（2026-10-19）の**横ずれの門**[px]。対合段で、
+                      2 本の腕の接線の延長がこの距離以内に揃っている対しか結ばない。
+                      `None` なら門なし = 現行の挙動。**門は対を減らすだけ**。
+    既定値 (1.5, None, None) は `strokes_instrumented` と同一の挙動。"""
     """skel: bool HxW. ink_width: float HxW, local ink width (2 x distance).
     Returns (spans, stroke_of_span, keep, info): spans is a list of (rows, cols),
     stroke_of_span[i] the stroke index of span i, keep[k] whether stroke k
@@ -200,7 +222,7 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
             continue
         r, c = spans[s - 1]
         v = arm_direction(np.stack([r, c], 1).astype(np.float32), ar, ac, reach)
-        arms.setdefault(nuf.find(n), []).append((s, v))
+        arms.setdefault(nuf.find(n), []).append((s, v, ar, ac))   # K: ar, ac は横ずれの門用
     suf = UF(ns + 1)
     linked_pairs = set(); linked_at = {}                                   # K: 記録だけ
     cos_lim = -np.cos(np.deg2rad(max_bend))  # straight continuation: dot = -1
@@ -212,8 +234,12 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
                 if lst[i][0] == lst[k][0]:
                     continue
                 dot = float(lst[i][1] @ lst[k][1])
-                if dot <= cos_lim:
-                    cand.append((dot, i, k))
+                if dot > cos_lim:
+                    continue
+                if max_offset is not None and \
+                        lateral_offset(lst[i], lst[k], reach) > max_offset:
+                    continue                                  # K: 登録 (F) の横ずれの門
+                cand.append((dot, i, k))
         cand.sort()
         used = set()
         for dot, i, k in cand:
@@ -244,7 +270,7 @@ def strokes_from_skeleton(skel, ink_width, spur_max=6.0, max_bend=35.0, reach=10
              "att": [(int(s_), int(n_), float(ar_), float(ac_)) for s_, n_, ar_, ac_ in att],
              "node_root": {int(n_): int(nuf.find(n_)) for n_ in range(nn + 1)},
              "arms": {int(k_): [(int(s_), (float(v_[0]), float(v_[1])))
-                                for s_, v_ in lst_] for k_, lst_ in arms.items()},
+                                for s_, v_, _a_, _c_ in lst_] for k_, lst_ in arms.items()},
              "linked_pairs": sorted(linked_pairs),
              "linked_at": {f"{a}-{b}": n for (a, b), n in linked_at.items()},
              "merge_bridges": merge_bridges}
