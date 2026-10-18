@@ -1135,6 +1135,54 @@ work, and the stated expectation is that the pieces make each other easier.
     statistic actually computed. The K7 stratum-contribution print is required
     before the primary is read: how many of the ten deciles carry both exposure
     levels and both outcomes, and what share of the marks sit in them.
+    **D was refuted the same day, and it was the foundation's hypothesis.**
+    With the abstention print passing (184 marks, D-prime prevalence 0.3033,
+    expected exposed marks 55.8, RR\* re-read from the formula as **2.4129**),
+    8 of 10 deciles contributing and all 184 marks inside them, and the
+    negative control recovering the null (**permutation median 1.0017**, 95%
+    interval [0.8542, 1.1504]), the primary came in at **MH-RR 1.1388, CI
+    [0.9706, 1.3105], AFe 0.0404** -- the CI's upper bound under RR\*, so
+    **refuted, not held**. The crude association was 1.83 (marked tokens are
+    0.554 D-prime against 0.3033 overall) and length-stratification took it to
+    1.14: **the foundation's warning was only half right**, since D-prime does
+    *not* escape the length confound either -- longer tokens owe their
+    connectivity to grow more often, predicate or no predicate. What D-prime
+    did buy is the clarity of the negative: **30.33% of tokens really do owe
+    their connectivity to grow and it still does not predict the marks**, so
+    the mechanism exists and is unrelated, rather than merely being diluted.
+    The grow bridge stays on the books as a **preprocessing** observation (cut
+    gray median 160, 28.5% at or above 190; width median 2.00px, 52.2% under a
+    2.7px line) for whoever touches the ink rule, and is closed as a topology
+    question. (Mark counts: 184 tokens here against K4's 185 rows, the
+    difference being one panel carrying several faces.)
+  - **Two bars of different shapes are being applied to the same marks, and
+    the surviving mechanism is K4.** K4's main leg was **held** at MH-RR
+    1.8435 against its registered bar of 2.0 -- **that verdict stands and is
+    not reopened** -- but its **AFe is 0.331**, above the 0.30 the foundation
+    set for D hours later, and above K1's refuted 0.248. So K4 remains the
+    largest explanation of the author's marks that anyone has. The resolution
+    is not to re-read a held verdict as support but to **register the AFe test
+    for the unread band before opening it**: bar **AFe >= 0.30**, with the
+    read material's AFe reported as an estimate and still owing a
+    face-clustered bootstrap CI. **This also answers whether the band has a
+    companion -- it does.** One opening of `[171:]` carries three things: K4's
+    AFe confirmation, the part-versus-gap-length discrimination designed so it
+    cannot confirm both, and registration A's confirmation if A produces a
+    statistic first. Order: **registration A on the read material first**,
+    since the part-versus-gap question is about the same `face.other` cluster
+    and designing it without knowing what that cluster is would mean measuring
+    one candidate blind.
+  - **The day's one positive result has a cheap successor: a conditional rule.**
+    The author's answers refuted loosening *without a condition*; gap length
+    separated the labels (11.96px against 5.66px, p=0.0057), so "join short
+    gaps, leave long ones" is possible in principle. Estimate it -- AUC and a
+    threshold with its error rate -- on the **31 decided answers**, as an
+    estimate and not a test, **with and without `face.other`**, because 7 of
+    the 9 faint cases are cheek hatching and the threshold may be nothing more
+    than "exclude the hatching", which would move the repair back into
+    registration A. The threshold is registered as a number before the band is
+    opened. This is the "measure a computable axis before asking the judge"
+    rule run backwards: **the judge's answers calibrating a computable axis.**
   - **The pruning-residue mechanism and the continuity mechanism are separate
     registrations, and bundling them was the foundation's error.** Face 267 --
     the stratum holding 19.3% of the MH weight, 70 pairs, box B rate 0.429 --
