@@ -90,9 +90,18 @@ raised with the date.
   (`broken = 0 by set`, and IC-j11's `newly_wrong = 0 by set`), which refuses
   any trade and has now twice rejected a candidate better on every aggregate
   -- IC-j12's cell gained 45 trials and lost 2 of 379. **When it is raised:**
-  in the registration that precedes the next unread chainer set, with the
-  tolerance written as a number before the material is touched; never by
-  re-reading a set already used.
+  in the registration that precedes a **third, never-read** chainer band,
+  never by re-reading `[0:40]`, `[40:171]` or `[171:271]`. Three conditions
+  on that registration, the first two added by the foundation on 2026-10-18:
+  (a) the observed **0.53% (2/379) is now known**, so a tolerance may not be
+  set to a round number that happens to clear it -- it must be derived from
+  something that is not that observation (e.g. the band-to-band variability
+  of `broken` measured on a band that is not the one being read), and the
+  conflict is stated in the registration; (b) the **required gain** is
+  written down too -- whether 45 rejoins and `wrong` 23 -> 16 are worth
+  0.53% breakage can only be decided before the numbers are seen; (c) the
+  IC-j12 verdict of **NOT ADOPTED stands** and is not revisited by any of
+  this.
 - shortcut: the chainer's "reserved" index ranges (`[0:40]`, `[40:171]`,
   `[171:271]`) are over the raw 5018-file `line/` directory, so they are
   reserved within Track J's chainer work only and are not disjoint from the
