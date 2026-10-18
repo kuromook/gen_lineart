@@ -170,6 +170,13 @@ What the rename did and did not touch:
 - **`origin/diffusion` is left in place, frozen at `67d7bf7`**, so a live
   session that still has it configured does not break mid-run. It is not
   pushed to again. Delete it once the live tracks (J, K, H) have acknowledged.
+  **Acknowledged so far: Track H (2026-10-18), with 0 references to fix and
+  `face-words` in sync at `43a6e88`.** Awaiting J and K.
+  Worth knowing while chasing those references: **`lineart-panel-generation` is
+  a second clone of the same GitHub repository**, not a worktree of this one,
+  and `lineart-face-words` is a worktree *of that clone*. So the two clones
+  each carry their own remote-tracking refs, which is another reason
+  `origin/diffusion` is being left in place rather than deleted today.
 - `main` was **not** used: from the 2026-07-29 split point (`00b2739`) `main`
   carries 13 commits this branch does not have and this branch carries 86, so
   making `main` the foundation is a separate reconciliation job, not a rename.
