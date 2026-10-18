@@ -788,6 +788,32 @@ work, and the stated expectation is that the pieces make each other easier.
     budget is spent. Until the instrument passes, the material's counts (box B
     88: paper 65 / faint 23, `face.mouth` 12 of the faint) are description and
     not evidence, which is the track's own ruling.
+    **Run 3 (B'-1b) failed on the test band**, which is the registered bar
+    working: band (a) diagnosis T1/T2 24/30, band (b) test **27/30**, T3 and
+    T4 30/30 on both with the attribution trap firing 5 times and staying ink.
+    All three failures have the same shape -- the nearest own skeleton pixel is
+    the candidate's own **tip**, with no skeleton inside the radius at all
+    (3.000000000000021 against 3.0, 4.56 against 4.00, 3.91 against 3.00) --
+    and the failing rows are the long ones (gap median 27.2 against 20.3px,
+    `d_tip` 8.25 against 4.12). **The mechanism is the skeleton's retraction at
+    a line's end** (median 10.8px measured here): a line's ink extends past its
+    last skeleton pixel, so "within half a width of the skeleton" defines a
+    body correctly mid-line and not at the end, and a chord that starts at a
+    tip always starts in the candidate's own ink where no skeleton exists. A
+    radius wide enough to cover it swallows the gap. **Approved 2026-10-18, as
+    the third and last attempt: the collar is redefined, not widened** -- start
+    measuring where the chord leaves the candidate's own connected ink
+    component. The test that admits it is that **it adds no tunable number**:
+    the arc adds a tangent length, a wider radius moves a constant, and the
+    component exit is decided by the already-registered hysteresis ink rule.
+    The binding condition is that **T4 must be rebuilt for the new definition**
+    -- a third line that *touches* the candidate shares its connected
+    component, so "exit your own component" would walk straight through the
+    filling ink and report paper -- so T4 splits into T4-touch (8-connected to
+    the candidate) and T4-sep, 30/30 each, plus a separately printed
+    unmeasurable box for a chord that never exits. Band (c) is substitution
+    900+, bands (a) and (b) are both diagnosis now, and if band (c) fails the
+    gray axis is abandoned with no fourth attempt in any form.
   - **A sealed track's docstring can be quantitatively wrong**: F's
     `strokes.py` says a bridge span stays "their own (short, usually dropped)
     token", but **53.4% of them survive** (19,101 of 35,799). Recorded here
@@ -1480,6 +1506,60 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   is that the chord is the wrong instrument, not that the radius needs a third
   value. The number of fixes derived from the same material is budgeted, and
   two were spent.
+- **A diagnostic that predicts a fix's yield must run the instrument's own
+  code path** (Track K, 2026-10-18, the most useful of the day). Before
+  measuring B'-1b the track estimated it would repair 8 of 9 known failures; it
+  repaired **1 of 7**, because the diagnostic script measured with a fixed
+  3.0px collar while the instrument uses `max(2.0, 0.5 x tip ink width)`.
+  **The prediction was made outside the instrument, so it was a prediction
+  about a different instrument.** The fix's mechanism was still right -- the
+  distance transform does collapse at an edge -- and only the yield estimate
+  was wrong, which is the correct way to split it. A yield estimate quoted in a
+  registration must come from the same call path it is predicting.
+- **A threshold compared against a float distance can fail by 2e-14** (Track
+  K, 2026-10-18). One of the three band-(b) failures was 3.000000000000021
+  against a radius of 3.0. A case that misses by that much is not a
+  measurement. The repair adopted here removes the comparison instead of
+  tuning it, but any registration that compares a computed distance to a
+  threshold **writes the tolerance as a number, or compares in integer pixel
+  arithmetic**.
+- **Skeletonization retracts at a line's end, so "within half a width of the
+  skeleton" is not a definition of the line's body there** (measured by Track
+  K, 2026-10-18: retraction median 10.8px in this material). The definition
+  holds mid-line and fails at the ends, which means **any instrument that
+  starts a measurement at a tip starts inside ink that has no skeleton**.
+  Relevant to F, G and J as well as K, which is why it sits here and not only
+  in the track entry.
+- **A registered exit clause that names a successor *method* is a guess; name
+  the *class* of change** (the foundation's error, 2026-10-18, caught by Track
+  K with evidence). The exit written for B'-1b said the next attempt was
+  limited to "the arc through the two tangents". The arc starts from the same
+  two tips and traverses the same first few pixels of the candidate's own ink,
+  so it could not have repaired any of the three failures: the clause named a
+  method chosen by the foundation's guess rather than by the mechanism. The
+  right form is **"the next change must be a definitional change derived from
+  the mechanism; a constant may not be moved"**, which admits the collar
+  redefinition and excludes the arc. Track K declining to follow the clause's
+  letter, and stopping to ask instead, was correct.
+- **Disjointness should be a property of the construction, not of a draw**
+  (Track K's amendment to this file's prescription, 2026-10-18, accepted as the
+  better form). The foundation prescribed a fresh band of sites under "a new
+  seed 20261018b"; two independent permutations can and do collide, so the
+  track used **the next interval of the same permutation** instead -- band (a)
+  = 0..299, band (b) = 300..599, band (c) = 900+ -- where no overlap is
+  possible by construction.
+- **Replacing an approximation with the concept it approximated is a different
+  kind of change from moving a number** (the principle that admitted Track K's
+  third fix, 2026-10-18). Two fixes derived from inspecting failures had
+  already been spent, and the budget was real. What let the third one through
+  is that it introduces no quantity anyone can tune: box B asks whether the
+  gap *between two strokes* is filled, the candidate's own ink is by
+  definition not in that gap, and the collar -- a fixed 2-3px, then
+  `max(2.0, 0.5 x iw)` -- was always an approximation of "skip your own ink".
+  The connected-component exit states the same intention exactly, and takes
+  its boundary from the hysteresis ink rule that was registered long before.
+  **The test to apply to a late fix is not how many times the instrument has
+  been touched, but whether the change hands anyone a new number to choose.**
 - **A whole-file sha of a shared dependency is coarser than the dependency**
   (the foundation's error, 2026-10-18, corrected by Track K with evidence and
   then verified here). The foundation forecast that Track J's IC-j9 adoption
