@@ -973,12 +973,26 @@ work, and the stated expectation is that the pieces make each other easier.
     any existence claim: re-decide the 14 at `thr=128` with no grow and print
     how many survive, plus each bridge's darkest gray and local ink width (a
     bridge thinner than this material's ~2.7px line is not a line).
-    **An instrument check comes first**: box C is 75/79 on the same predicate,
-    which is impossible if the predicate is component identity -- a shared
-    skeleton node implies a shared ink component, the skeleton being a subset
-    of the ink. Either the predicate is actually "the chord never leaves the
-    ink" (which fits box C's 0.765 in the 20-24px bin, and then it must be
-    renamed) or there is an off-by-one. The 14 ride on that predicate.
+    **Both checks ran the same day and the mechanism did not survive.** The
+    predicate's name was wrong: box C is **79/79** on `comp_same` and the four
+    cases where the predicate reads false are all `comp_same = 1` in the
+    20-24px bin, so it is not component identity but **"no point exists along
+    the chord where it leaves the candidate's own component"** -- a pair joined
+    by a long detour has a straight chord that crosses paper. Renamed here too;
+    this file had it as component identity. Then the hysteresis confound
+    decided it. For each of the 14, the minimax path between the tips (the path
+    minimising its darkest pixel) has a bottleneck gray of 0, 3, 62, 124, 130,
+    131, 162, 183, 189, 190, 194, 195, 196, 198 -- **10 of 14 are at or above
+    128, so they are not ink in the `thr` mask at all** -- and the bottleneck's
+    local ink width is **2.0px in 13 of 14** against this material's ~2.7px
+    line. At `thr = 128` with no grow, **4 survive**, and those four bridges
+    are single-pixel threads. **The third mechanism does not exist in the form
+    "the line is continuous"**: the enumeration was not run because existence
+    itself fails, and what the author request can drop goes 56 -> 14 -> 4
+    (2.2%). Arm 2 came back clean: the largest ink component's share is 0.4118
+    across the 13 panels holding a `comp_same = 1` case against 0.4676 across
+    the other 59, so K4a's fill trap did not fire this time -- a control worth
+    recording precisely because it was a miss.
     **The trivial arms, written by the foundation under the division adopted
     today**: arm 1 is non-candidate free-end pairs from the same panel matched
     by gap bin, statistic = the difference in `comp_same` rate between
@@ -988,6 +1002,28 @@ work, and the stated expectation is that the pieces make each other easier.
     **no null value, descriptive**, to show the 14 are not concentrated in
     panels that are one blob -- the same trap as the fills that dominated
     K4a's 21.2%.
+  - **The debris points the other way: the hysteresis bridge is an untested
+    explanation of the author's *over-merge* marks** (registration D, proposed
+    by the foundation 2026-10-18, Track K to accept or decline). The heaviest
+    fact left by the dead hypothesis is that **`grow = 200` counts a 2.0px
+    thread of gray 130-198 as ink**. Turn that around: two separately drawn
+    lines bridged by such a thread become one ink component, the skeleton runs
+    through, and **two drawn strokes fuse into one token** -- which is exactly
+    the direction the author *can* mark (`broken`). The earlier panel census
+    is consistent: 258 components at 128 collapse to 64 at 200. K1 already
+    refuted fill adjacency as the explanation of those marks (AFe 0.248), and
+    this costs the author nothing because the 90 marks already exist. Shape:
+    primary = the share of marked tokens whose skeleton passes through a pixel
+    that is ink **only** under grow, against unmarked tokens, stratified by
+    length and by face, MH-RR with AFe as the estimate; **null value = 1 for
+    MH-RR** under permuting marks within a face. **The instrument check that
+    comes first**, and without which the primary is not read: the share of
+    *all* tokens whose skeleton touches at least one grow-only pixel -- if that
+    is 90%, the predicate is saturated and separates nothing, which is this
+    question's "paint everything" arm. Repair is **not** Track K's: the ink
+    rule is shared by Track F's export and Track J's chainer, so if D stands
+    the fix is a cross-track design change under its own registration and the
+    user's call. Measure in K, repair elsewhere.
   - **The pruning-residue mechanism and the continuity mechanism are separate
     registrations, and bundling them was the foundation's error.** Face 267 --
     the stratum holding 19.3% of the MH weight, 70 pairs, box B rate 0.429 --
@@ -1771,6 +1807,17 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **A robustness arm must not contain a repair of its own** (Track K, found and
+  corrected by the track, 2026-10-18, after the foundation required the arm).
+  The harsher arm -- re-deciding continuity at `thr = 128` with no grow --
+  printed 8 survivors because the implementation snapped a tip to the nearest
+  ink within 2px when the tip did not land on the `thr` mask. The arm exists to
+  be **harsher**; the snap made it gentler, and the correct count is **4**
+  (provable without rerunning: `ink_plain` is a subset of `ink_hysteresis`, so
+  a minimax bottleneck at or above 128 admits no path in the plain mask at
+  all). An arm that carries a convenience of its own is not an arm, it is a
+  second primary value. Had the arm not been required, "8 survived" would have
+  been the reported number.
 - **A diagnostic that predicts a fix's yield must run the instrument's own
   code path** (Track K, 2026-10-18, the most useful of the day). Before
   measuring B'-1b the track estimated it would repair 8 of 9 known failures; it
