@@ -49,5 +49,26 @@ def r3():
             print((OUT / f"r3_composition_{arm}.log").read_text()[-2000:]); sys.exit(1)
 
 
+LAB_OLD = str(TRACKF / "results/panel_composition_20260921/labels_k12.npy")
+LAB_NEW = str(OUT / "r3_composition_fixed/labels_k12.npy")
+
+
+def r4():
+    """型条件つき cloze を、補正corpus の上で旧ラベル/新ラベルの対で(2026-10-18 事前登録)"""
+    import numpy as np
+    lab_new = np.load(LAB_NEW)
+    assert lab_new.shape == (5345,) and lab_new.max() + 1 == 12, lab_new.shape   # IC2
+    for arm, lab in (("oldlab", LAB_OLD), ("newlab", LAB_NEW)):
+        o = OUT / f"r4_cloze_fixed_{arm}"
+        cmd = [PY, str(HERE.parent / "trackf/train_cloze.py"),
+               "--data", CORP["fixed"], "--labels", lab, "--out", str(o)]
+        rc, dt = run(cmd, OUT / f"r4_cloze_fixed_{arm}.log")
+        ev = json.load(open(o / "eval.json")) if (o / "eval.json").exists() else None
+        print(f"r4 {arm}: rc={rc} {dt:.0f}s "
+              f"pos {ev['pos_bits']:.6f} word {ev['word_bits']:.6f}" if ev else f"r4 {arm}: rc={rc}")
+        if rc:
+            print((OUT / f"r4_cloze_fixed_{arm}.log").read_text()[-2000:]); sys.exit(1)
+
+
 if __name__ == "__main__":
-    {"r3": r3}[sys.argv[1]]()
+    {"r3": r3, "r4": r4}[sys.argv[1]]()
