@@ -25,6 +25,22 @@ Branch new tracks off `diffusion`:
 git worktree add ../lineart-<topic> -b <topic> diffusion
 ```
 
+## Who pushes (user instruction, 2026-10-18)
+
+**A track pushes its own branch. The foundation does not push it for them.**
+The foundation records and routes: when it notices a branch is behind, it
+**sends a notice** naming the branch and the command, and the track runs it.
+The foundation pushes only `diffusion`, which is its own.
+
+Precedent: on 2026-10-18 the foundation pushed `stroke-topology` itself, having
+found it with no upstream at all and 42 commits living on one disk. The user's
+instruction is that the notice, not the push, was the foundation's part. A
+track opened without `-u` accumulates silently, so the notice carries the exact
+form: `git push -u origin <branch>`.
+
+This is the same line as checking for live sessions before touching a track
+worktree -- a branch belongs to whoever is seated in it.
+
 ## Active Worktrees
 
 Updated 2026-09-30. `doc/CURRENT.md`'s Track Ledger is the authoritative status
