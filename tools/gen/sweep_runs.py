@@ -70,5 +70,43 @@ def r4():
             print((OUT / f"r4_cloze_fixed_{arm}.log").read_text()[-2000:]); sys.exit(1)
 
 
+FIXPLAN_SHIM = """
+import sys
+sys.path.insert(0, {gen!r})
+import common, fixplan_check as M
+common.CORPUS = M.CORPUS = {corpus!r}
+sys.argv = ['x', '--s2_ckpt', {ckpt!r}, '--out', {out!r}]
+M.main()
+"""
+
+
+def r2():
+    """診断値(G5)と sample_pos の差(G6)を、原/補正の対で(2026-10-18 事前登録)"""
+    OUT.mkdir(parents=True, exist_ok=True)
+    # IC1: 09-21 の ckpt + 原corpus で記録値を再現する
+    jobs = [("record", "results/gen_smoke_20260921/set/gen_best.pt",
+             "results/gen_smoke_20260921/twostage/stage2/gen_best.pt", CORP["orig"])]
+    for arm in ("orig", "fixed"):
+        jobs.append((arm, str(POSB / f"train_set_{arm}/gen_best.pt"),
+                     str(POSB / f"train_2stage_{arm}/stage2/gen_best.pt"), CORP[arm]))
+    for name, sck, s2ck, corpus in jobs:
+        o = OUT / f"r2_diagnose_{name}.json"
+        cmd = [PY, str(HERE / "diagnose.py"), "--set_ckpt", sck, "--s2_ckpt", s2ck,
+               "--corpus", corpus, "--out", str(o)]
+        rc, dt = run(cmd, OUT / f"r2_diagnose_{name}.log")
+        print(f"r2 diagnose {name}: rc={rc} {dt:.0f}s")
+        if rc:
+            print((OUT / f"r2_diagnose_{name}.log").read_text()[-2000:]); sys.exit(1)
+    for arm in ("orig", "fixed"):
+        o = OUT / f"r2_fixplan_{arm}"
+        code = FIXPLAN_SHIM.format(gen=str(HERE), corpus=CORP[arm],
+                                   ckpt=str(POSB / f"train_2stage_{arm}/stage2/gen_best.pt"),
+                                   out=str(o))
+        rc, dt = run([PY, "-c", code], OUT / f"r2_fixplan_{arm}.log")
+        print(f"r2 fixplan {arm}: rc={rc} {dt:.0f}s")
+        if rc:
+            print((OUT / f"r2_fixplan_{arm}.log").read_text()[-2000:]); sys.exit(1)
+
+
 if __name__ == "__main__":
-    {"r3": r3, "r4": r4}[sys.argv[1]]()
+    {"r2": r2, "r3": r3, "r4": r4}[sys.argv[1]]()

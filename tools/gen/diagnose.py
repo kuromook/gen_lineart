@@ -6,7 +6,7 @@
    Track F clozeは「1コマから1まとまりをランダムに抜く」(ランク無作為)。
    一方 AR 生成は全ランクを平均に含める → 平均の差の分解用
 """
-import json, sys
+import argparse, json, sys
 from pathlib import Path
 
 import numpy as np
@@ -87,12 +87,23 @@ def eval_pos_rank(model, panels, idx, lab, tg, dev, bs=64):
 
 
 def main():
+    """既定値は 2026-09-21 の実行と同一(引数なしの挙動を変えない)。
+    2026-10-18 に掃き出し R2 のため、ckpt/corpus/出力先を差し替える引数だけを足した。"""
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--set_ckpt", default="results/gen_smoke_20260921/set/gen_best.pt")
+    ap.add_argument("--s2_ckpt", default="results/gen_smoke_20260921/twostage/stage2/gen_best.pt")
+    ap.add_argument("--corpus", default=None)
+    ap.add_argument("--out", default="results/gen_smoke_20260921/diagnostics.json")
+    a = ap.parse_args()
+    if a.corpus:
+        import common
+        common.CORPUS = a.corpus
     dev = torch.device("cuda")
     d = load_all(0)
     panels, lab, tg, ite = d["panels"], d["lab"], d["tg"], d["ite"]
     rng = np.random.default_rng(123)
 
-    ck = torch.load("results/gen_smoke_20260921/set/gen_best.pt", map_location=dev, weights_only=False)
+    ck = torch.load(a.set_ckpt, map_location=dev, weights_only=False)
     ms = SetAR().to(dev); ms.load_state_dict(ck["model"]); ms.eval()
     true = eval_set(ms, panels, ite, lab, tg, dev)
     scram = eval_set(ms, panels, ite, lab, tg, dev, scramble=True, rng=rng)
@@ -102,7 +113,7 @@ def main():
     for r in true["per_rank"][:16]:
         print("   ", r[0], r[1], round(r[2], 3), round(r[3], 3), round(r[4], 3))
 
-    ck2 = torch.load("results/gen_smoke_20260921/twostage/stage2/gen_best.pt", map_location=dev, weights_only=False)
+    ck2 = torch.load(a.s2_ckpt, map_location=dev, weights_only=False)
     m2 = PosAR().to(dev); m2.load_state_dict(ck2["model"]); m2.eval()
     p2 = eval_pos_rank(m2, panels, ite, lab, tg, dev)
     print("[2stage-pos] 全体:", round(p2["pos_bits"], 3))
@@ -111,7 +122,7 @@ def main():
         print("   ", r[0], r[1], round(r[2], 3), round(r[3], 3))
     json.dump(dict(set_true={k: v for k, v in true.items()}, set_scrambled=scram,
                    twostage_pos=p2["pos_bits"]),
-              open("results/gen_smoke_20260921/diagnostics.json", "w"), indent=1)
+              open(a.out, "w"), indent=1)
 
 
 if __name__ == "__main__":
