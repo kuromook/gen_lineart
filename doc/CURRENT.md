@@ -1082,6 +1082,59 @@ work, and the stated expectation is that the pieces make each other easier.
     rule is shared by Track F's export and Track J's chainer, so if D stands
     the fix is a cross-track design change under its own registration and the
     user's call. Measure in K, repair elsewhere.
+    **The saturation check passed (2026-10-18): 0.4700 over the 25,035 tokens
+    of K4's main leg**, far under the 0.90 that would have made the predicate
+    useless, so D can discriminate. The track first measured it over all 90,111
+    tokens, noticed that is not the set D's primary rides on, and re-measured --
+    this file's "a diagnostic must run the instrument's own code path", applied
+    by the track to itself; the answer did not move (0.4619 -> 0.4700) but the
+    re-measurement is recorded. Numbering was checked too: `sid_not_found = 0`,
+    and 25,090 rows against 25,035 unique (panel, sid) because one panel can
+    carry several faces.
+    **The bars, written here under today's division**: the primary is **AFe,
+    bar 0.30**, chosen from what a repair must achieve -- K1 was refuted at AFe
+    0.248 on the same marks, so a rival mechanism at that level is not support,
+    and the repair is a cross-track change to an ink rule whose removal
+    fragmented a panel from 64 components back toward 258. AFe and MH-RR are
+    one bar written twice, through **AFe = p(RR-1)/(p·RR+1-p)**, so
+    **RR\* = (0.3+0.7p)/(0.7p)**: at p = 0.4700 the companion bar is
+    **MH-RR >= 1.912** (p 0.30 -> 2.429, 0.20 -> 3.143, 0.15 -> 3.857, 0.10 ->
+    5.286), and a changed predicate means re-reading RR\* off that formula
+    rather than keeping the number. **Falsifier**: the 95% CI upper bound of
+    MH-RR below RR\* is a refutation, not a held verdict -- checked for reach
+    with 185 marks at p=0.47, where a true null gives [0.750, 1.333] (upper
+    bound under 1.912, so refutation lands) and a true RR of 2 gives [1.483,
+    2.697] (lower bound over 1, so support lands). **Abstention before
+    reading**: if either the expected exposed or unexposed mark count under the
+    null falls below 20, do not read the primary -- print it and come back,
+    because adding marks from the unread band or Track H's new faces comes
+    first.
+  - **The registered predicate was too weak for its own mechanism, so D gains
+    D-prime.** "The skeleton touches at least one grow-only pixel" is 47%
+    prevalent and is carried by tokens whose grow share is tiny (per-token
+    median 0.0, q75 0.0741, q95 0.4516), while the mechanism says the grow
+    pixels sit at a **bottleneck**: two drawn lines bridged by a gray-190
+    thread. It is also confounded by length in the hypothesis's own direction
+    -- a longer token touches more pixels, and **124 of the 185 marks are in
+    the longest quintile**. So the primary predicate becomes **D-prime:
+    removing the grow-only ink pixels disconnects the token's skeleton into two
+    or more parts** -- the token owes its own connectivity to grow -- with D
+    kept as a secondary, printed separately and never pooled. D-prime's
+    prevalence is printed first, because the abstention condition depends on
+    it.
+  - **The permutation has to run inside the whole stratum, not inside one of
+    its factors** (the foundation's correction to D's registration, 2026-10-18,
+    one level deeper than K7). The track wrote "MH-RR stratified by length and
+    face, null value 1 under permuting marks within face": permuting within one
+    factor while stratifying on two does not return the statistic to 1, which
+    is exactly K7's failure again. Permuting within (face x length) cells
+    instead would be degenerate at 185 marks over ~145 faces. So the design is
+    settled as **stratify by length decile only, treat the face as the CI's
+    cluster** (the cluster bootstrap the track already runs), and **permute
+    marks within length decile**, which pairs the null value 1 with the
+    statistic actually computed. The K7 stratum-contribution print is required
+    before the primary is read: how many of the ten deciles carry both exposure
+    levels and both outcomes, and what share of the marks sit in them.
   - **The pruning-residue mechanism and the continuity mechanism are separate
     registrations, and bundling them was the foundation's error.** Face 267 --
     the stratum holding 19.3% of the MH weight, 70 pairs, box B rate 0.429 --
