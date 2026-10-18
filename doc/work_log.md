@@ -592,8 +592,12 @@ C1 and C3, the GPU slot is released rather than spent confirming it.
 
 Training discipline (lesson 7): `--eval-snapshot-steps` on from the first run,
 holdout scored at every snapshot, `PYTHONUNBUFFERED=1`. Training loss is not
-read as evidence of anything. Slot: the next 月-木 window, 2026-10-12 to
-2026-10-15.
+read as evidence of anything. Slot: the next 月-木 window, ~~2026-10-12 to
+2026-10-15~~ -> **AMENDED 2026-10-18 to 2026-10-19..10-22**; the original
+window passed unused and the operational cause is recorded in the 2026-10-16
+M0 entry, not excused. The original dates are struck, not deleted. See the
+amendment entry "2026-10-18 Stage 2 amendment J1" for the conditions that
+have to hold on Monday morning.
 
 ### What stage 2 will not do
 
@@ -4302,3 +4306,75 @@ families built per panel, both counted and both rim-measured:
 Track J fill number used adds 128 violating pixels over 49 panels on top of
 the 11,070 the pixel lattice produces by itself, and all of them sit inside a
 one-pixel rim.
+
+## 2026-10-18 Stage 2 amendment J1: the slot moves to 2026-10-19..10-22, and nothing else in the registration moves
+
+The stage-2 registration of 2026-10-10 named *"the next 月-木 window,
+2026-10-12 to 2026-10-15"*. That window **passed unused**; the operational
+cause -- a cheap gate that could have released or claimed the slot went
+unread while the chainer work ran -- is recorded in the 2026-10-16 M0 entry
+and is not re-excused here. The line in the registration is **struck and
+annotated, not deleted**, and points here.
+
+**Slot: 2026-10-19 (Mon) .. 2026-10-22 (Thu).** M1 takes it; this is the
+order the user approved on 2026-10-17.
+
+### What is amended: the dates. What is not: everything else
+
+**C1-C5, NC1-NC5, the stop rules and the training discipline stand exactly as
+registered on 2026-10-10 and are not restated in a weakened form here.** This
+amendment changes two dates and adds no bar, removes no bar, and moves no
+threshold. It is written before the slot opens and before any M1 number
+exists.
+
+The prohibition-2 falsifier is reproduced **verbatim**, as the standing rule
+requires, because it is the condition under which this slot becomes a
+violation rather than an experiment:
+
+> **敵対項を足した時点、あるいは出力を「マスク」ではなく「線画」として読んだ時点で、禁止2の違反です。**
+
+If that happens it goes in the report headline, not a footnote. Prohibition 1
+(diffusion / ControlNet) is untouched and no instrument that would falsify
+Track D hypothesis 4 / lesson 8 has been built, so nothing there is unlocked.
+
+### Pre-flight state, each item with where it was decided
+
+| gate | registered as | state on 2026-10-18 |
+|---|---|---|
+| IC1-IC5 | must pass before training | **PASS**, 2026-10-10 entry |
+| **IC4** stitching | **stop rule: if IC4 fails, nothing is trained** | **PASS** 300/300, bit-identical to the PNG on disk. **Cleared.** |
+| IC6 | *"no GPU time is spent before IC6 is read"* | **read 2026-10-16**: region-F1 grades a half-correct prediction at 0.655 vs `blank`'s 0.0084. **Pre-flight met.** |
+| smoke M0 / M1 | *"スモークテストを必ず先に"* | **PASS** end to end on the GPU: forward `(1,1,480,480)`, holdout scored through the stitcher, checkpoint written |
+| `scripts/train_fill_seg.py` | U-Net, BCE+Dice, **敵対項なし** | exists, 13,337 bytes, unchanged since 2026-10-10 |
+| IC-j10 (added since) | if **r-dependent**, M1's target definition reopens | **ROBUST TO r**, largest gap +0.0003 against the +0.05 bar. **Target definition does not reopen.** |
+| NC2 | C1 requires beating it; C4 excludes any arm failing it | **was void (0 rows of 13,566)**; repaired under amendment H1 and **the full 969-panel rescoring is running now** -> `results/fill_koma_20261010/per_panel_held_nc2repaired.csv` |
+
+### The one stop rule that could still release the slot, and why it does not
+
+> *"If `rough_dark` alone satisfies C1 and C3, the GPU slot is released
+> rather than spent confirming it."*
+
+M0 (2026-10-16) measured the opposite: `rough_dark` **fails C1** -- it does
+not exceed `blank` by `>= 0.05`, it is **-0.0019 below** it -- and IC-j10 has
+now shown that holds at every `r` in {2,3,4,6,8}. The slot is **not**
+released. The registered reason for spending it is unchanged: no non-learned
+arm predicts fill, so whether a learned one can is still open.
+
+### The one thing that is still pending, stated as a condition and not as a plan
+
+C1 reads the best arm against **three** things: `blank`, `all_black` and
+**its own NC2**. Two of the three were readable on 2026-10-16; the third was
+not, because NC2 produced zero rows. The repaired rescoring is in flight.
+
+**Condition, fixed now:** if the rescoring has not finished before the slot
+opens, **M1 trains anyway** -- the trainer does not depend on NC2 -- but
+**no C1 or C4 verdict is printed until it has**, and an M1 number reported
+without its NC2 row is reported as incomplete in those words. NC2 gates the
+*verdict*, not the *training*, and conflating the two is how a slot gets
+lost a second time.
+
+Baseline rule, unchanged and restated because it applies to every M1 number:
+**no number is reported without the preprocessor baseline and the
+"don't paint" baseline beside it**, and every report says the readable
+ceiling is **0.0000** (IC1's 0.0002 is the value of an arm that fell to a
+control, and is only ever used as an instrument-check value).
