@@ -1406,6 +1406,47 @@ work, and the stated expectation is that the pieces make each other easier.
     W} -- same bar, same reference, same prints, **one sweep**, so that nothing
     comes back for a second pass. The over-8px secondary doubles as the check
     that the gate is working.
+    **Every arm failed the bar (2026-10-18/19), the registered prediction held,
+    and the width gate the mechanism implied failed too.** Best arm, coefficient
+    1.5 with a 4px gate: **113 fixed, 2,895 broken, ratio 25.6**; the strong
+    cost alone (unmarked tokens that sat inside one part group) is 1.87 to 6.12
+    across arms, never under 1. Both trivial arms are the worst (26.8 and 40.1),
+    which is how we know there is no good point in between, and the ratio barely
+    moves with the knob (26-28 across coefficients 0 to 1.25) -- a global
+    threshold **trades fixes for breaks at a fixed ~26:1**, so this was never a
+    question of choosing the setting. The gate did what it was built for (the
+    over-8px share rises to 0.75-0.79, fill-scale bridges held back) and the
+    ratio still did not move, which the track flagged as the heavy fact.
+    **It is not a mystery, and the number was available before the sweep**: the
+    exposure's precision is P(mark | passes a collapsed bridge) =
+    134/4,182 = **3.20%**, so acting on every bridge-passing token has a floor
+    ratio of (4182-134)/134 = **30.2**. The gate raised precision to **3.76%**
+    and bought 25.6. **A ratio under 1.0 needs precision over 50% -- 13.3x the
+    best arm.** So the conclusion is stronger than "not worth it now":
+    **no rule keyed on collapsed-bridge passage can reach the cost bar**,
+    whatever the threshold or the gate.
+  - **PAF 0.49 and a 26:1 cost ratio are not in conflict, and this is the
+    distinction the whole sweep was for.** They are two readings of one table:
+    the attributable fraction answers *how much of the problem is here* (half
+    of it), precision answers *does acting here hit anything* (3.2%), and the
+    two diverge exactly when the exposure is common (16.7%) and the outcome
+    rare (0.74%). **A PAF bar licenses discussing a repair; whether one can be
+    built is decided by precision.** The bar was the right gate for the
+    discussion and never implied the repair existed. The requirement for any
+    future attempt is now a specification rather than a hunt: **a feature that
+    distinguishes where to split must raise precision inside the
+    bridge-passing set from 3.8% to over 50%**; anything less does not bring
+    the ratio under 1. The one direction the numbers do not kill, unmeasured
+    and unregistered: a repair that **does not decide** -- carrying both
+    tokenisations downstream instead of committing to one -- which is an
+    architecture change, not a threshold change.
+  - **Two corrections the foundation owes on this leg.** The "23 oldest faces
+    without a `broken` field" was carried over from a 2026-10-16 note and never
+    checked; **measured, it is 14 faces and 7,173 tokens**. And the track's own
+    first pass counted the cost over all 90,111 tokens before catching that the
+    author only ever saw the 25,035 in face regions -- **the same trap one level
+    below the distinction this file had just drawn**, with the first ratios
+    (85-139) kept in the record beside the corrected 25.6-40.1.
   - **The day's one positive result has a cheap successor: a conditional rule.**
     The author's answers refuted loosening *without a condition*; gap length
     separated the labels (11.96px against 5.66px, p=0.0057), so "join short
@@ -2209,6 +2250,16 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   Recorded as coverage missing at one place, not as a refutation of the
   reasoning, because the distinction changes what the next registration
   inherits.
+- **An attributable fraction and a precision answer different questions, and
+  diverge when the exposure is common and the outcome rare** (established with
+  numbers 2026-10-19, Track K's cost sweep). PAF 0.49 said half the author's
+  marks sit on tokens passing a collapsed bridge; precision said 3.2% of such
+  tokens carry a mark. Both are true, and the second is what a repair lives on:
+  a rule that acts on the exposure fixes one token for every 26 it breaks, and
+  **a cost ratio under 1 needs precision over 50%**. The floor was computable
+  from the four-cell table before any sweep ran. **A PAF bar is a licence to
+  discuss a repair, not evidence that one can be built** -- when the bar is
+  cleared, the next number to put on the table is precision.
 - **A ground-truth label answers only the question it was collected for**
   (ruled 2026-10-18, the foundation correcting its own cost design). The
   author's `broken` mark means "this token should be taken apart" and carries
