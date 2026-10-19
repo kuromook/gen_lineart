@@ -663,7 +663,34 @@ work, and the stated expectation is that the pieces make each other easier.
     damning was left out of the verdict.
   - **A third "must not do" statement now stands**, next to unconditional
     loosening and repair keyed on the collapsed bridge: **a rule that closes
-    free ends by gap length.** The
+    free ends by gap length.**
+  - **Track K's tree closed 2026-10-19** (`25e4dec`, pushed to
+    `origin/stroke-topology`, working tree clean). Its own closing record is
+    worth keeping: **across six registrations the bar was never moved**, and
+    every one of them landed within a hair of it -- K1 **1.487** against 1.5,
+    K4 **1.8435** against 2.0, K19's upper limit **0.4955** against 0.50 (three
+    just outside), K5 **0.5154** against 0.50 (just inside), K7 stopped because
+    the band did not hold and its primary was never read, and K2-C abandoned
+    its axis at the registered exit. Four of the six would have passed on a
+    bar moved by less than a hundredth.
+  - **Track K leaves one instrument for the other tracks**: the author-judgment
+    web UI, `tools/web/judge.html` plus `tools/stroke/k22_tiles.py` in that
+    tree. **Swap the manifest and the tiles and it works for any
+    multiple-choice question put to the author.** Answers land in the
+    artifact's shared store and are read directly with `ArtifactData`, which
+    removes the hand-off that caused K10's `uid` mix-up -- distributing PNG
+    sheets and taking answers back by number. 52 items took 2.5 minutes.
+    **Routed to Tracks H and J on 2026-10-19**, since H spends the author's
+    time continuously and J's fill/line boundary may need the same kind of
+    answer.
+  - **What Track K carries forward**, as it put it: three "must not do"
+    statements, one confirmed mechanism (the collapsed bridge, PAF 0.5759,
+    supported on the held-out series), **one direction the numbers have not
+    killed** (carry both tokenisations downstream rather than deciding -- which
+    changes Track F's output format *and* the model's input, so it was never in
+    K's hands), and one correction returned to this ledger (the 0.5px
+    retraction). `face_groups.jsonl` has not grown since 2026-10-16, so K is
+    quiet until it does. The
   axis is new -- its own registration, its own entry -- but the five
   instruments, the ink mask, the box structure and the 52-tile paper all live
   in K's tree, and Track I's first probe is the recorded case of what a
