@@ -590,6 +590,30 @@ work, and the stated expectation is that the pieces make each other easier.
     0.0664, between the registered bars, to be decided on the montage before
     stage 2 registers. n=23 cannot carry more than that.
 
+- **Track K's second axis, approved 2026-10-19 (free-end bridging, the
+  over-split side)**, and it stays **in K's tree** by the foundation's reading,
+  with the letter **L** reserved (`stroke-bridging`,
+  `../lineart-stroke-bridging`) for when that context has to be closed. The
+  axis is new -- its own registration, its own entry -- but the five
+  instruments, the ink mask, the box structure and the 52-tile paper all live
+  in K's tree, and Track I's first probe is the recorded case of what a
+  re-derivation costs. Proposal:
+  `../lineart-stroke-topology/doc/track_proposal_stroke_bridging_20261019.md`
+  (`98dce58`), bands in `b1eab40`.
+  **Approved to proceed without waiting for the author's 28 judgments**, which
+  are the *outcome* of a registration already closed (bar 0.50, three-way
+  reading, abstention condition, repeat band 5/6 declared before unblinding).
+  Waiting would stake the axis on a coin flip: at the point estimate the
+  judgments **confirm with probability 0.350, leave it held with 0.650, and
+  cannot refute at all** -- Track K's own column, and the number that matters
+  most for spending the author's time. Three pieces of work do not depend on
+  them: the 54 cases that cannot be asked (the gap is not visible in the
+  output, which is why even a perfect result covers 44% of the footprint), the
+  free-end joining rule itself (**absent from Track F**, which is sealed), and
+  the part-group cost instrument, which is **saturated** -- zero cross-group
+  cases on every arm, because box B's pairs are in nearly the same part by
+  construction, so the real error of fusing two lines inside one part cannot be
+  seen.
 - `../lineart-stroke-topology` (branch `stroke-topology`, **Track K**) --
   **opened 2026-10-16** by user approval, from the user's own observation after
   finishing 300 faces in Track H: "the 1px thinning and the linking leave many
@@ -3072,12 +3096,43 @@ input-side diffusion. Two things in it are worth a decision rather than a read:
   oracle-recall cap already on record -- it is a harder number about the task
   itself, and it bounds what any rough-conditioned model can be asked to do,
   the words line included.
-  **What is missing is the precision side**: for each rough ink pixel, the
-  distance to the nearest GT line pixel. The script in D's tree already
+  **What is missing is the precision side, and the unit is not the pixel** --
+  corrected here before the measurement was commissioned, because the two
+  directions have to be the same construction to be comparable. D's script
+  cuts the **GT skeleton into segments** and takes each segment's **median**
+  distance to the source skeleton, classifying the whole segment into
+  <=3 / 3-8 / >8 and weighting by segment length; both sides are skeletons, the
+  rough's at `dark < 200`. So the precision side is that mirrored: the rough's
+  skeleton cut into segments, each segment's median distance to the GT
+  skeleton, weighted by the rough's segment length, with the chance arm the GT
+  skeleton rotated 180 degrees. The script in D's tree already
   computes distance transforms, so this is one direction added to code that
   exists rather than a new measurement -- which is also why **the owner is
-  Track D**, closed since 2026-09-17 and holding exactly this machinery. The
-  band is registered before that number exists.
+  Track D**, closed since 2026-09-17 and holding exactly this machinery.
+  **Reopened for this one measurement by user approval 2026-10-19**;
+  registration in `../lineart-pair-signal/doc/track_d_reopen_precision_20261019.md`
+  (commit `6193385` in that tree, unpushed -- D pushes its own branch).
+  **The band is registered before the number exists, and it is deliberately
+  not a pass mark**: nothing is being accepted or rejected, so what is frozen
+  is a reference. The reference is derived rather than picked -- if the <=3px
+  correspondence is roughly symmetric then recall ~ M/L_gt and precision ~
+  M/L_rough for the same matched length M, so
+
+  > **predicted precision = recall x (L_gt / L_rough)**
+
+  with `L_gt` the median `gt_len` and `L_rough` the median `rough_density` x
+  230,400. Frozen today: **0.139 / 0.084 / 0.113 / 0.172 / 0.088 / 0.143** for
+  clippairskoma / ako5ver2koma / fitnesskoma / gakuenkoma / hamlabikoma /
+  houseikoma, from `L_gt/L_rough` of 0.394 / 0.421 / 0.563 / 0.712 / 0.433 /
+  0.586. **The rough's skeleton is 1.4-2.5x longer than the GT's**, so a low
+  precision is explainable by quantity alone and the reading turns on measured
+  against predicted: at the prediction, the rough's extra length explains
+  everything and it carries no placement information beyond what its length
+  buys; far above, the rough's ink concentrates where the line goes; far below,
+  it is worse than its own length allows. **No abstention condition**, and the
+  reason is on the record: this is a census of all 8,467 pairs, not a sample,
+  so the reachability computation that every bar otherwise owes does not
+  apply.
 - **One entry that would reopen a closed line.** CtrLoRA (ICLR 2025,
   arXiv:2410.09400) is the only paper in the whole log that treats the
   **condition encoder** as the suspect -- ControlNet's randomly-initialised
