@@ -3045,9 +3045,39 @@ input-side diffusion. Two things in it are worth a decision rather than a read:
   line ink** -- precision and recall of rough-ink as a predictor of line-ink.
   High recall with low precision would say the condition is *intrinsically
   ambiguous* (the inker discards much of the rough), which would implicate the
-  dataset rather than the architecture. Evaluation-only, no GPU. Check first
-  whether Track D's `per_pair.csv` already carries it; its columns are
-  alignment and density, not ink-level precision/recall, so probably not.
+  dataset rather than the architecture. Evaluation-only, no GPU.
+  **Checked 2026-10-19, and half of it already exists** -- read, not
+  re-measured, from Track D's
+  `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
+  (8,467 pairs). Its `rough_le3` / `rough_3to8` / `rough_gt8` columns are the
+  **recall side**: the share of GT stroke length whose nearest rough ink lies
+  within 3px, 3-8px, and beyond. Medians **by pool** (never pooled):
+
+  | pool | n | <=3px | 3-8px | >8px | `aligned` |
+  |---|---:|---:|---:|---:|---:|
+  | clippairskoma | 6,978 | **0.3537** | 0.3795 | 0.1976 | 0.3014 |
+  | ako5ver2koma | 536 | **0.2005** | 0.4366 | 0.3152 | 0.1742 |
+  | fitnesskoma | 455 | **0.2007** | 0.4301 | 0.2940 | 0.1873 |
+  | gakuenkoma | 202 | **0.2417** | 0.4373 | 0.2392 | 0.2198 |
+  | hamlabikoma | 164 | **0.2026** | 0.4734 | 0.2631 | 0.1766 |
+  | houseikoma | 132 | **0.2450** | 0.4020 | 0.2283 | 0.2176 |
+
+  Chance (the conditioning map rotated 180 degrees) is 0.000-0.012, so the
+  signal is real, and **the shape is not the one the paper predicted**: the
+  expected case was high recall with low precision, a messy superset the inker
+  thins. Instead **recall at 3px is 0.20-0.35, and 20-32% of GT stroke length
+  has no rough ink within 8px at all.** The rough has ink *near* most GT
+  strokes (the `<=8px` share totals 0.63-0.73) but does not place it. This is
+  the **rough**, not the conditioning map, so it is not the 0.604
+  oracle-recall cap already on record -- it is a harder number about the task
+  itself, and it bounds what any rough-conditioned model can be asked to do,
+  the words line included.
+  **What is missing is the precision side**: for each rough ink pixel, the
+  distance to the nearest GT line pixel. The script in D's tree already
+  computes distance transforms, so this is one direction added to code that
+  exists rather than a new measurement -- which is also why **the owner is
+  Track D**, closed since 2026-09-17 and holding exactly this machinery. The
+  band is registered before that number exists.
 - **One entry that would reopen a closed line.** CtrLoRA (ICLR 2025,
   arXiv:2410.09400) is the only paper in the whole log that treats the
   **condition encoder** as the suspect -- ControlNet's randomly-initialised
@@ -3698,6 +3728,10 @@ each. Item 4 is two open bugs in shared tooling, **item 5 is now an active
 third front -- Track J, the solid fills, opened 2026-10-09 to take the idle
 GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every ControlNet track is closed and none leaves work behind, and
 **Track I closed itself on 2026-10-04** -- see the Track Ledger above.
+
+**2026-10-19: M1 is running.** The user instructed it that day, and Track J,
+which had held it under its own rule that a long GPU job runs only on the
+user's word, started it; the 10-19..10-22 window is in use.
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
    and a live session is on it as of 2026-10-09). **The push is done**:
