@@ -4218,12 +4218,20 @@ user's word, started it; the 10-19..10-22 window is in use.
    that was already measured), so the H entry is likely to carry the same kind
    of error. What is wanted is four lines, the fourth being what this ledger
    has wrong.
-   **And the dependency that is now visible: Track K is quiet waiting on
-   `labels/face_groups.jsonl`**, which stands at 417 lines, last written
-   2026-10-16 21:12 (commit `43a6e88`). K's K3 frame needs 40 new faces and 40
-   new marks. That is **the author's time, which is the user's**, not a task
-   Track H can schedule, so it was put to the user rather than to H; K's cost
-   of waiting is zero, so nothing reorders on its account. **Closed 2026-10-19: the two uncommitted paths in the
+   **The dependency was named and then answered the same day: Track K is quiet
+   indefinitely, by user decision 2026-10-19.** `labels/face_groups.jsonl`
+   stands at 417 lines, last written 2026-10-16 21:12 (`43a6e88`), and K's K3
+   frame needs 40 new faces and 40 new marks -- which is **the author's time,
+   and the author is the user**, not something Track H can schedule. The user's
+   reason, recorded because it is not derivable from anything here: **not a
+   shortage of time, but that it does not have to happen now.** So **no further
+   batch of author marks is scheduled**, K's cost of waiting is zero, and
+   nothing reorders on its account. To restart K later the only missing input
+   is 40 marks; its instruments, registrations and bands all survive in
+   `origin/stroke-topology` at `25e4dec`. **The connectivity line's next
+   possible move is therefore not K's**: it is carrying both tokenisations
+   downstream, which changes Track F's output format and the model's input, so
+   it belongs to F and G. **Closed 2026-10-19: the two uncommitted paths in the
    finished trees are dealt with, and neither was junk** -- which is why
    "worth a look" was the right instruction rather than a sweep.
    `cleanup-refiner`'s `venv` is a **symlink to the foundation's shared
