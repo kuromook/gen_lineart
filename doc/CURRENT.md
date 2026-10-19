@@ -796,7 +796,9 @@ work, and the stated expectation is that the pieces make each other easier.
     (3.000000000000021 against 3.0, 4.56 against 4.00, 3.91 against 3.00) --
     and the failing rows are the long ones (gap median 27.2 against 20.3px,
     `d_tip` 8.25 against 4.12). **The mechanism is the skeleton's retraction at
-    a line's end** (median 10.8px measured here): a line's ink extends past its
+    a line's end** (**median 0.5px**, corrected 2026-10-19; this entry first
+    said 10.8px, see the correction note under Known Tool Traps): a line's ink
+    extends past its
     last skeleton pixel, so "within half a width of the skeleton" defines a
     body correctly mid-line and not at the end, and a chord that starts at a
     tip always starts in the candidate's own ink where no skeleton exists. A
@@ -2535,12 +2537,37 @@ traceable source -- marking the ones that do not. Resume after that, not before.
   threshold **writes the tolerance as a number, or compares in integer pixel
   arithmetic**.
 - **Skeletonization retracts at a line's end, so "within half a width of the
-  skeleton" is not a definition of the line's body there** (measured by Track
-  K, 2026-10-18: retraction median 10.8px in this material). The definition
+  skeleton" is not a definition of the line's body there.** The definition
   holds mid-line and fails at the ends, which means **any instrument that
   starts a measurement at a tip starts inside ink that has no skeleton**.
   Relevant to F, G and J as well as K, which is why it sits here and not only
   in the track entry.
+  **Corrected 2026-10-19: the size is 0.5px, not the 10.8px this entry carried
+  for a day, and the 10x error was the foundation's** (Track K measured it and
+  sent the correction). On box B's **364 tips**, extending outward along the
+  tangent in 0.5px steps with the instrument's own
+  `ink_mask(thr=128, grow=200)` and stopping on leaving the tip's own connected
+  component: **median 0.5px** (quartiles 0.5-0.5, max 5.5), against `iw/2` of
+  1.0px at the same tips, correlation 0.737, and the stop reason was *outside
+  ink* in **364/364**. It is the geometry of a round cap: at a 2px stroke width
+  the ink ends about 1px past the last skeleton pixel. **No measurement of
+  10.8px exists anywhere in `results/` or the work logs**; what does exist is
+  **10.82px as the median gap length** of box B's 127 answerable cases
+  (`work_log.md` line 2312). The direction of the entry was right, the size was
+  a borrowed number wearing the wrong name.
+  **What depended on it, re-derived**: the entry was used to argue that a
+  radius wide enough to cover the retraction *swallows the gap itself*. At
+  0.5px against a 10.82px median gap, **it does not**, so that argument is
+  withdrawn -- a 1px wider radius would have covered the three failing rows
+  (`d_own` 3.00, 4.56, 3.91 against radii 3.00, 4.00, 3.00) without reaching
+  the gap. The decision it supported still stands, but **on the
+  pre-registration ground only**: the radius had already moved twice and the
+  registration said it does not move a third time. A decision keeps its force
+  from the rule it was registered under, not from the number quoted beside it.
+- **When one quantity's median equals another quantity's median, suspect a
+  swapped name before a real coincidence** (Track K's general form of the
+  correction above, 2026-10-19). 10.8 arrived as a retraction and was in fact
+  the gap median sitting two sections away in the same log.
 - **A registered exit clause that names a successor *method* is a guess; name
   the *class* of change** (the foundation's error, 2026-10-18, caught by Track
   K with evidence). The exit written for B'-1b said the next attempt was
@@ -2950,6 +2977,73 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   inflate the baseline.
 
 ## Approaches Never Taken Up
+
+### The paper scout's nine reports, triaged against Track K's spec (2026-10-19)
+
+The scout on `main` has accumulated **9 runs since 2026-08-10 -- 11 topology
+papers and 15 diffusion papers -- and nothing on `foundation` had ever cited
+it.** Read in full and judged against the one open requirement this project
+has: **K's registered spec, a feature that lifts the precision of the author's
+`broken` mark among collapsed-bridge-passing tokens from 3.8% past 50%.**
+
+Criteria, fixed before the verdicts: a candidate answers the spec only if it
+supplies (1) a **per-token quantity**, since the decision is per token, not an
+image-level loss or score; (2) computable from **material this project has**
+(ink raster, skeleton, spans; GT line art for training), not from labels the
+corpus lacks; (3) discriminating **inside** the exposure, separating the 134
+marked tokens from the 4,048 unmarked -- merely detecting that a bridge exists
+is the exposure itself, at precision 3.2%.
+
+**Verdict: one candidate of the right type, none that can be said to reach the
+bar. The spec is not answered.**
+
+- **The one**: *Individual fibre separation in 3D fibrous materials imaged by
+  X-ray tomography* (Depriester et al. 2022, J. Microscopy, DOI
+  10.1111/jmi.13096). It splits a binary mask of touching and crossing fibres
+  using **only the local orientation field**: compute the misorientation angle
+  between neighbouring local orientations and cut where it exceeds one
+  threshold. That is a per-location split/no-split decision keyed on a quantity
+  computable from the ink alone, taken **inside** the merged-object set -- K's
+  exact position. It also lands on the axis this project already measured as
+  the one that works at crossings: **tangent agreement and lateral offset, not
+  curvature**. So it is not a new hope; it is a published, single-parameter
+  instantiation of an axis the stroke-curve work already established.
+  Why it still cannot be said to clear the bar: nothing in it bears on the
+  **rate** in this material, and its own named failure mode is that **a sharp
+  corner looks like a contact** -- in hand-drawn line art a deliberate sharp
+  bend is common, and that is precisely the false-positive population that
+  holds precision down. The scout rated it **low**, mainly for being a
+  heuristic post-process rather than a trainable loss and for being 3D; **for K
+  that downgrade does not apply**, because K needs a feature, not a loss.
+- **A partial contributor**: Batra et al. 2019's auxiliary **orientation head**
+  (per-pixel tangent angle, supervision derivable free from GT line art) is the
+  learned way to produce the field the fibre method thresholds, and would be
+  more robust than tangents computed on a 1px skeleton near a junction -- which
+  is where K has measured the skeleton to be least trustworthy. It decides
+  nothing by itself.
+- **Three families that answer a different question.** (a) *Losses that stop a
+  model breaking a line*: region-separation (Oner 2020), CAPE, MALIS/TOPO-Loss,
+  TopoM-CrackNet, Betti matching, Topograph, Beyond-pixel-wise. These address
+  **under-connection** -- K's other direction, the one with no author mark --
+  and none is a per-token feature. (b) *Metrics*: APLS, Cracks-Per-Patch, and
+  SAMSEM's **ESD** (per-instance open/short rate), which is the closest thing
+  to the measurement this project wants and **shares K's own obstacle**: it
+  presumes a per-instance decomposition, and crossings are exactly where that
+  is ambiguous. (c) *The entire diffusion file*, 15 papers on condition
+  adherence, over-inking, attention control and the VAE bottleneck: **none of
+  them is about splitting a merged token.** Zero bear on the spec.
+
+**The reusable reading, and it is about the instrument**: a 13.3x precision
+lift is **information**, and a loss function is not information. The literature
+K needs answers *"what distinguishes a junction from a continuation"*, and the
+scout's topology focus areas are pointed at *"how to train for connectivity"*.
+That is why its ratings invert against K's need -- the only entry of the right
+type is rated lowest, and the five highest-rated entries are losses K cannot
+use. **The mis-rating is systematic, not random**, so the fix is a focus-area
+line, not a re-read. Two diffusion entries remain worth their own decision for
+reasons unrelated to K (the frozen VAE's round-trip on GT line tiles as an
+unmeasured ceiling, and the flat `MSE` spending ~90% of its gradient on blank
+paper), and they are logged where they stand rather than promoted here.
 
 Recorded so they are not re-asked from scratch, and so that "we must have tried
 that" is not assumed.
