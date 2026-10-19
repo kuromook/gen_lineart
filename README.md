@@ -146,10 +146,9 @@ leakage のあった時期の高い f1(旧 `shape1` / `std15` 系)は**採用基
 - **`foundation`** — 共通基盤。全 track はここから生やします
   (`git worktree add ../lineart-<topic> -b <topic> foundation`)。
   2026-10-18 に `diffusion` から改名(閉じた方向の名前だったため)
-- **`main`** — **このプロジェクトの trunk ではありません。**
-  cross-domain paper scout(他分野の論文から転用可能な着想を探す週次ジョブ)の専用レーンで、
+- **`paper-scout`** — cross-domain paper scout(他分野の論文から転用可能な着想を探す週次ジョブ)の専用レーン。
   常時起動マシンの cron が `candidates*.md` だけを push します。
-  開発は `foundation` で進んでいます
+  2026-10-19 に `main` から改名(trunk と誤読される名前だったため)。`main` ブランチはもうありません
 - **`<topic>`** — track ごとのブランチ。一覧と物理位置(worktree か別クローンか)は
   `doc/worktree_policy.md`。**ブランチの push は track 自身がやります**
 

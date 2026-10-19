@@ -2980,7 +2980,7 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
 
 ### The paper scout's nine reports, triaged against Track K's spec (2026-10-19)
 
-The scout on `main` has accumulated **9 runs since 2026-08-10 -- 11 topology
+The scout on `main` (renamed `paper-scout` later the same day; see `doc/worktree_policy.md`) has accumulated **9 runs since 2026-08-10 -- 11 topology
 papers and 15 diffusion papers -- and nothing on `foundation` had ever cited
 it.** Read in full and judged against the one open requirement this project
 has: **K's registered spec, a feature that lifts the precision of the author's

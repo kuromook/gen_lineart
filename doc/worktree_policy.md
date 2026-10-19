@@ -298,6 +298,21 @@ either: that would put an unattended `pull --rebase && push` on the trunk, and
 the scout's own README records that its push block has never been exercised
 end to end.
 
+**Superseded later the same day (2026-10-19): `main` was renamed to
+`paper-scout`.** The reason for not renaming above was that the always-on
+machine tracks `main` by name and someone would have to log into it to
+re-point it; the rename was done *from* that machine (`nuc`,
+`/home/sh1/da/gen_lineart`), so that cost was paid in the same step. What was
+done there: `git branch -m main paper-scout`, the scout README's setup line
+changed to `git checkout paper-scout` (commit `8a3b044`), `git push -u origin
+paper-scout`, then -- after checking `origin/main` was an ancestor of
+`paper-scout` -- `git push origin --delete main`. `scout.sh` needs no change:
+it runs a bare `git pull --rebase && git push`, which follows the new
+upstream. The crontab path is unchanged. The first cron push to
+`paper-scout` is the 2026-10-26 run; check `cron.log` on `nuc` for it.
+**`origin/main` no longer exists**; on this machine run `git fetch --prune`
+and delete or rename any local `main`.
+
 **Triaged 2026-10-19 at the user's request** -- see "The paper scout's nine
 reports, triaged against Track K's spec" under `doc/CURRENT.md`'s *Approaches
 Never Taken Up*. Until that day, nine reports had accumulated since 2026-08-10
@@ -309,5 +324,5 @@ crack detection in concrete and composites, fiber tracking, and PCB
 trace/wire-bond inspection -- all of them the problem of joining broken line
 structure, which is Track K's problem. Local `main` also sits 12 commits
 behind `origin/main`, so the reports are not even on this disk by default:
-read them with `git show origin/main:tools/research/cross_domain_paper_scout/candidates.md`
-after a fetch.
+read them with `git show origin/paper-scout:tools/research/cross_domain_paper_scout/candidates.md`
+after a fetch (`origin/main` before the rename above).
