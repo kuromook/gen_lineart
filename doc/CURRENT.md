@@ -4210,7 +4210,20 @@ user's word, started it; the 10-19..10-22 window is in use.
    mechanism now half works. Track G sent its first notice on 2026-10-04 and it
    is folded in; Track H has pushed its branch but **still owes a notice**, so
    everything above about it is this file reading that track's work log, which
-   is second-hand by construction. **Closed 2026-10-19: the two uncommitted paths in the
+   is second-hand by construction. **Asked again 2026-10-19**, in
+   `../lineart-face-words/inbox/note_foundation_h_owes_a_notice_20261019.md`,
+   with the reason stated plainly: on that single day Tracks K, D and J each
+   sent a notice and **each one corrected a number in this file** (the 0.5px
+   retraction, the discriminator for a bar on a ratio, and the VAE round-trip
+   that was already measured), so the H entry is likely to carry the same kind
+   of error. What is wanted is four lines, the fourth being what this ledger
+   has wrong.
+   **And the dependency that is now visible: Track K is quiet waiting on
+   `labels/face_groups.jsonl`**, which stands at 417 lines, last written
+   2026-10-16 21:12 (commit `43a6e88`). K's K3 frame needs 40 new faces and 40
+   new marks. That is **the author's time, which is the user's**, not a task
+   Track H can schedule, so it was put to the user rather than to H; K's cost
+   of waiting is zero, so nothing reorders on its account. **Closed 2026-10-19: the two uncommitted paths in the
    finished trees are dealt with, and neither was junk** -- which is why
    "worth a look" was the right instruction rather than a sweep.
    `cleanup-refiner`'s `venv` is a **symlink to the foundation's shared
