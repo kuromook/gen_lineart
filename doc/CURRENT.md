@@ -3033,6 +3033,33 @@ bar. The spec is not answered.**
   adherence, over-inking, attention control and the VAE bottleneck: **none of
   them is about splitting a merged token.** Zero bear on the spec.
 
+**The tenth report arrived the same day** (2026-10-19, diffusion track:
+"control-signal representation -- how sparse, noisy, or weak conditions are
+encoded"), hours after the triage above, and is the strongest of the ten for
+*this project* while still **not touching K's spec at all** -- it is entirely
+input-side diffusion. Two things in it are worth a decision rather than a read:
+
+- **One free measurement that has never been done here.** From the inverted
+  diagnosis of *Block and Detail* (arXiv:2402.18116): measure, over the
+  training pairs, the **per-pixel correspondence between dilated rough ink and
+  line ink** -- precision and recall of rough-ink as a predictor of line-ink.
+  High recall with low precision would say the condition is *intrinsically
+  ambiguous* (the inker discards much of the rough), which would implicate the
+  dataset rather than the architecture. Evaluation-only, no GPU. Check first
+  whether Track D's `per_pair.csv` already carries it; its columns are
+  alignment and density, not ink-level precision/recall, so probably not.
+- **One entry that would reopen a closed line.** CtrLoRA (ICLR 2025,
+  arXiv:2410.09400) is the only paper in the whole log that treats the
+  **condition encoder** as the suspect -- ControlNet's randomly-initialised
+  4-layer conv stack "cannot extract any useful information from the condition
+  image at the beginning of training" -- and it re-frames the hypothesis this
+  project already spent a 10x-steps run rejecting: not undertrained, but
+  badly *started*, which more steps cannot fix. Its budget fits (~37M LoRA
+  params against 361M, ~1,000 pairs, released SD1.5 Base ControlNet). But the
+  ControlNet lineage is **closed** by Tracks A and B, so this is a request to
+  reopen it, and the ledger's bar for reopening a held or closed track is a new
+  yardstick, not a new paper. Logged, not promoted.
+
 **The reusable reading, and it is about the instrument**: a 13.3x precision
 lift is **information**, and a loss function is not information. The literature
 K needs answers *"what distinguishes a junction from a continuation"*, and the

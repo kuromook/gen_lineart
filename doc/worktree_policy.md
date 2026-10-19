@@ -254,6 +254,25 @@ How the scout runs, which is why `main` must keep existing:
 - It runs on an **always-on machine, not this one** (there is no crontab
   here), from a **blobless sparse checkout** of just that one directory, which
   does `git checkout main`. Weekly, `0 9 * * 1`.
+  **Located 2026-10-19: the host is `nuc` at 192.168.1.8** (user `sh1`, up 20
+  days), clone at **`/home/sh1/da/gen_lineart`**, sparse-checkout list exactly
+  `tools/research/cross_domain_paper_scout`, branch `main` tracking
+  `origin/main`, clean. Its crontab line is
+  `0 9 * * 1 /home/sh1/da/gen_lineart/tools/research/cross_domain_paper_scout/scout.sh >> .../cron.log 2>&1`.
+  Key-based SSH from this machine was set up by the user the same day
+  (`ssh-copy-id`), so the foundation can audit it directly; before that it was
+  unreachable (`Permission denied (publickey,password)`).
+- **The scout's own open question is now closed**: its README recorded that the
+  commit/pull/push block had never been exercised end to end under cron, only
+  by hand. The 2026-10-19 run did it -- `cron.log` shows
+  `47001e8..c6b236e main -> main` and `run end, exit=0` -- so that block is
+  tested.
+- Tidied on `nuc` the same day: `git fetch --prune` dropped the ghost
+  `origin/diffusion`, `git remote set-head origin -a` re-pointed `origin/HEAD`
+  from `main` to `foundation`, and a `git grep` for any run-time branch
+  resolution returns **0 hits**. `branch.main.merge` stays `refs/heads/main`,
+  which is what the cron depends on. **Nothing there needed renaming**: the
+  only local branch is `main`, and `main` must keep its name.
 - Each run calls `claude -p` with `--allowedTools "WebSearch,WebFetch,Read,Edit"`
   (no shell, no git for the agent itself), appends to `candidates.md` or
   `candidates_diffusion.md`, and then the *script* commits and does
@@ -279,9 +298,12 @@ either: that would put an unattended `pull --rebase && push` on the trunk, and
 the scout's own README records that its push block has never been exercised
 end to end.
 
-**Open, and the reason this came up: the scout's output has never been
-triaged.** Nine reports have accumulated since 2026-08-10 (4 topology, 5
-diffusion) and **no document on `foundation` cites the scout at all**. The
+**Triaged 2026-10-19 at the user's request** -- see "The paper scout's nine
+reports, triaged against Track K's spec" under `doc/CURRENT.md`'s *Approaches
+Never Taken Up*. Until that day, nine reports had accumulated since 2026-08-10
+(4 topology, 5 diffusion) and **no document on `foundation` cited the scout at
+all**. A tenth arrived from the 2026-10-19 run, hours after the triage, and is
+logged there too. The
 topology lane's subjects are road-network extraction from satellite imagery,
 crack detection in concrete and composites, fiber tracking, and PCB
 trace/wire-bond inspection -- all of them the problem of joining broken line
