@@ -2265,6 +2265,16 @@ traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
 
+- **A long run's own log can be the thing a crash destroys** (Track J,
+  2026-10-19, caught in advance while M1 was in flight). The trainer writes
+  `train_<arm>.jsonl` with mode `"w"`, and there is no `--resume`, so a crash
+  plus a relaunch **truncates the holdout curve that the 4,000-step
+  checkpoints were supposed to make recoverable**: the weights survive and the
+  record of how they got there does not. The procedure is to copy the jsonl
+  aside before relaunching, and the general form is that **a multi-day run's
+  recoverability has to cover its log, not only its checkpoints** -- an
+  append-mode slip is invisible until the first crash, which is the worst
+  moment to discover it.
 - **A rotated chance arm's height is a property of the structure you rotate,
   not of the structure you measure** (Track D, 2026-10-19, refuting a
   prediction the foundation had registered). Both directions of the
@@ -3927,7 +3937,29 @@ GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every 
 
 **2026-10-19: M1 is running.** The user instructed it that day, and Track J,
 which had held it under its own rule that a long GPU job runs only on the
-user's word, started it; the 10-19..10-22 window is in use.
+user's word, started it; the 10-19..10-22 window is in use. Launched 08:34 as
+`experiments/run_fill_seg_m0_m1_20261019.sh` (`3bd7170`, OOM fix `c59bc78`):
+**M0 then M1 sequentially**, 40,000 steps each at `--batch-panels 1` after the
+default batch size OOM'd, snapshots every 4,000 steps, runner detached at
+**PPID 1** with stdout to `results/fill_seg_20261010/slot_20261019.log`, so
+nothing depends on a session staying open. Both arms run because the registered
+question is a **difference** between them.
+
+Track J wrote a handoff note while it runs
+(`../lineart-solid-fill/doc/work_log.md`, commit `f75295b`) and it carries two
+things this ledger should respect rather than copy:
+
+- **A crash procedure**: there is no `--resume`; checkpoints land every 4,000
+  steps, but `train_<arm>.jsonl` is opened with `"w"`, so **copy the jsonl
+  aside before relaunching** or the holdout curve is gone.
+- **Mid-run holdout numbers that are explicitly not a verdict**, recorded so a
+  later reader can see they were watched and not acted on. **The values are
+  deliberately not reproduced here.** A number repeated in the authoritative
+  ledger is a number that will be quoted later without its caveat -- which is
+  this file's own trap about the reader taking away the headline figure. They
+  are in that note, with their condition attached, and the registered reading
+  of the slot is a difference on the 956-panel table, not a mid-run curve.
+  **No C1-C4 verdict may be quoted from the trainer's own numbers.**
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
    and a live session is on it as of 2026-10-09). **The push is done**:
