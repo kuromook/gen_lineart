@@ -174,3 +174,15 @@ raised with the date.
   (`pred/gt regions` < 1 read as "vanishing") is **re-opened by this**: that
   reading was never decomposed either, and splitting could have been hidden
   under it the same way.
+- shortcut: a headline number travels without its condition unless the
+  condition is **on the same line**. The foundation and Track K hit this from
+  both ends on 2026-10-19: K wrote a proposal headline on an n = 8 point
+  estimate of 0.625, and the foundation passed the reach probability built on
+  it to the user with the condition stripped ("反証は買えない"); the true
+  value was not 0.625 and the outcome had been printed in advance as
+  probability 0.000 under that estimate. The same family as IC7's C5 -- a
+  statistic quoted away from what produced it. **When it is raised:** it is
+  not raised; it is a writing rule for every report from here, and the M1
+  headline is the next one it applies to -- sample size, stratum and the
+  baseline beside the number, in the sentence that carries the number, not in
+  a footnote under it.
