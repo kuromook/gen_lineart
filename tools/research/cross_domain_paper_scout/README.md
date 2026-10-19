@@ -60,7 +60,7 @@ sparse-checkout.
 git clone --filter=blob:none --sparse https://github.com/kuromook/gen_lineart.git
 cd gen_lineart
 git sparse-checkout set tools/research/cross_domain_paper_scout
-git checkout main
+git checkout paper-scout
 ```
 
 Add to crontab (adjust time; weekly is the intended pace -- see "Why
