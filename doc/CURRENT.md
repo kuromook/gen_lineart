@@ -118,7 +118,40 @@ closed, as are both of its successors.
   Notices: `inbox/note_oracle_visual_check_pairs_look_sound_20260913.md`,
   `inbox/note_stroke_fit_is_measurable_but_weak_20260917.md`.
 - `../lineart-pair-signal` (branch `pair-signal`) -- **CLOSED 2026-09-17,
-  diagnosis complete.** Why did 8,467 pairs contribute nothing to any
+  diagnosis complete. Reopened 2026-10-19 for one measurement by user
+  approval, which it delivered the same day, and closed again.**
+  **The pair is loose in both directions, and now by measurement.** The recall
+  side had been on record since 2026-09-15; the precision side -- for each
+  rough skeleton segment, the median distance to the GT skeleton, the same
+  construction mirrored -- was measured on all 8,467 pairs against a rotated
+  null. Notice `inbox/note_track_d_precision_20261019.md`, results in
+  `results/pair_alignment_strata_20261019/`, commits `791356f` / `08220e0`.
+  - **The reconciliation was exact first**, as registered: 8,467/8,467 pairs
+    matched by name and the maximum absolute difference on every recall column
+    against 2026-09-15 was **0.00e+00**.
+  - **Placement information exists on both sides, and the precision side holds
+    about half of it.** `prec_aligned` (measured minus rotated) runs
+    **0.0920-0.1687** by pool against the recall side's 0.1742-0.3014, a ratio
+    of **0.505-0.775**, and it is not an artifact of the median: `>0` holds in
+    **91-97% of pairs individually**.
+  - **The new number is `prec_gt8` = 0.464-0.660**: about half the rough's
+    skeleton length has **no GT skeleton within 8px**, against 0.198-0.315 on
+    the recall side. Read together: **two to three tenths of the final line has
+    nothing under it, and about half of what the author drew has nothing over
+    it.**
+  - **Track D's own caveat, which the foundation adopts**: reading `prec_gt8`
+    as "half the author's input is unused" **overstates it**. `gray < 200`
+    skeletonises pencil grain and tone into short fragments -- clippairskoma's
+    roughs are largely texture -- so part of the unmatched half is grain, not
+    misplaced line. The measurement was left exactly as registered; only the
+    reading is bounded. Montage:
+    `results/pair_alignment_strata_20261019/montage_precision_vs_recall.png`.
+  - The secondary readings came out **mixed, per pool** on the registered
+    window, which is the honest outcome for a reference whose flaw was already
+    recorded (it measures the many-to-one crowding, not placement).
+  - This is consistent with hypothesis 4 and lesson 8 from this track's own
+    closure: a conditional objective learns to copy what it is given, and what
+    it is given disagrees with the target **this much in both directions**. Why did 8,467 pairs contribute nothing to any
   fine-tune? Five hypotheses, four of them eliminated by measurement:
   - **VAE ceiling: refuted.** GT round-trips at f1 **0.9605** (SD1.5) and
     **0.9806** (SDXL) on lineart_family, against a best trained model of 0.25
@@ -2168,6 +2201,36 @@ traceable source -- marking the ones that do not. Resume after that, not before.
 
 ## Known Tool Traps
 
+- **A rotated chance arm's height is a property of the structure you rotate,
+  not of the structure you measure** (Track D, 2026-10-19, refuting a
+  prediction the foundation had registered). Both directions of the
+  rough-to-line correspondence use the same null -- rotate one skeleton 180
+  degrees -- and the foundation predicted the precision side's chance would sit
+  *above* the recall side's 0.000-0.012, because the rough's segments are
+  shorter and more numerous and a short segment satisfies a median-distance
+  test more easily by luck. **The mechanism was confirmed and the prediction
+  still failed**: the rough does have 2.2-3.1x the segments at 19.6-41.8px mean
+  length against the GT's 49.0-70.1px, but the chance arm came out *lower* on
+  average (0.0334 against 0.0523), with `prec_chance > chance_rec` in only
+  20-39% of pairs. The reason is that the recall side rotates **the rough**,
+  which carries 1.4-2.5x the GT's skeleton length, and a denser rotated
+  structure lands near things by accident more often. **Rotating the denser of
+  the two raises the floor**, so a chance arm is not comparable across two
+  directions unless the same structure is rotated in both -- and when it is
+  not, the difference in the floors is the asymmetry, not the signal. The
+  named suspect for an inflated null (centrally symmetric panel borders, which
+  survive a 180-degree rotation exactly as they survive the horizontal flip
+  that was rejected for that reason) **did not need to be called**: the nulls
+  came out low.
+- **A threshold on grey reads pencil grain as strokes, so an unmatched-length
+  figure is not an unused-input figure** (Track D's own caveat on its result,
+  adopted 2026-10-19). `gray < 200` skeletonises grain and tone into short
+  fragments -- clippairskoma's roughs are largely texture -- so of the ~half of
+  rough skeleton length with no GT line within 8px, some is grain rather than
+  misplaced line. The measurement stands as registered; **the reading is
+  bounded by what the threshold admits.** Sibling of the trap above about a
+  summary statistic over all ink being a reading of the solid areas: there a
+  threshold-free statistic read the fills, here a threshold reads the paper.
 - **"It cannot be checked from here" needs the right command before it is
   written down** (foundation's own, 2026-10-19). This file and
   `doc/worktree_policy.md` recorded GitHub's default branch as unverifiable
@@ -3133,6 +3196,11 @@ input-side diffusion. Two things in it are worth a decision rather than a read:
   reason is on the record: this is a census of all 8,467 pairs, not a sample,
   so the reachability computation that every bar otherwise owes does not
   apply.
+  **Done the same day**: Track D was reopened for it, measured it, and closed
+  again -- see its ledger entry above. The shape is that **the pair is loose in
+  both directions**, with about half the rough's ink having no GT line within
+  8px, bounded by Track D's own caveat that a `gray < 200` threshold
+  skeletonises pencil grain.
 - **One entry that would reopen a closed line.** CtrLoRA (ICLR 2025,
   arXiv:2410.09400) is the only paper in the whole log that treats the
   **condition encoder** as the suspect -- ControlNet's randomly-initialised
@@ -3152,10 +3220,19 @@ scout's topology focus areas are pointed at *"how to train for connectivity"*.
 That is why its ratings invert against K's need -- the only entry of the right
 type is rated lowest, and the five highest-rated entries are losses K cannot
 use. **The mis-rating is systematic, not random**, so the fix is a focus-area
-line, not a re-read. Two diffusion entries remain worth their own decision for
-reasons unrelated to K (the frozen VAE's round-trip on GT line tiles as an
-unmeasured ceiling, and the flat `MSE` spending ~90% of its gradient on blank
-paper), and they are logged where they stand rather than promoted here.
+line, not a re-read. Two diffusion entries looked worth their own decision for reasons unrelated to
+K, and **one of them was wrong on the facts -- the foundation's error, found
+2026-10-19 while writing back Track D's result.** The scout calls the frozen
+VAE's round-trip on GT line tiles an unmeasured ceiling, and this file repeated
+it; **Track D measured it and refuted it** long before, in its own ledger entry
+above: GT round-trips at f1 **0.9605** (SD1.5) and **0.9806** (SDXL) on
+lineart_family, against a best trained model of 0.25. So the VAE is not the
+ceiling, and the CtrLoRA caveat built on "run the round-trip test first" is
+void -- the test is on record. **This is the logged trap about citing the file
+when stating a fact about a track's material, walked into a second time**, and
+the file it should have cited was four hundred lines up in this document.
+The other entry stands as logged: the flat `MSE` spends ~90% of its gradient on
+blank paper. Neither is promoted here.
 
 Recorded so they are not re-asked from scratch, and so that "we must have tried
 that" is not assumed.
