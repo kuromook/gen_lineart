@@ -3961,6 +3961,20 @@ things this ledger should respect rather than copy:
   of the slot is a difference on the 956-panel table, not a mid-run curve.
   **No C1-C4 verdict may be quoted from the trainer's own numbers.**
 
+**Nobody is seated at that worktree as of 2026-10-19 14:05, and the run does
+not care.** Verified from the foundation: pid **777362** at **PPID 1**, 5h29m
+elapsed, GPU at 100% and 7,473MiB, log at **M0 step 29,050/40,000, 1.47 it/s**,
+snapshots through `M0_step28000.pt`. At that rate the remaining 50,950 steps
+(M0's remainder plus all of M1) finish in **about 9.6 hours, ETA 2026-10-19
+23:40** -- conditional on M1 running at M0's speed, which is why that figure
+travels with its condition. **So the slot will very likely end with no session
+watching it**: whoever opens that worktree next should read Track J's handoff
+note first, and the foundation left the completion checklist in
+`../lineart-solid-fill/inbox/reply_j_slot_handoff_20261019.md` (copy the jsonls
+before re-running anything; the verdict is M1-M0 on the 956-panel table; every
+figure carries the don't-paint and preprocessor baselines in the same sentence;
+`npred/ngt` beside every region-F1).
+
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
    and a live session is on it as of 2026-10-09). **The push is done**:
    `ca9d788` equals `origin/face-words`, verified here, so the
