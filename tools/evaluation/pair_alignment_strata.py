@@ -23,6 +23,16 @@ position destroyed except for structure symmetric about the centre).
 flip was tried first and rejected: panel borders and vertical rules survive a
 flip in place, so a tile could score 43% by "chance".
 
+That measures recall: the share of GT covered by the source. The mirror
+measures precision -- the source's own skeleton split into segments by the
+same rule, each segment's median distance to the GT skeleton, weighted by
+source segment length (`*_prec_*`). Its chance level rotates the GT
+skeleton 180 degrees instead of the source, so both arms destroy position
+the same way. The rough skeleton is 1.4-2.5x longer than the GT skeleton,
+so a low precision is partly bought by that length: the reference value is
+recall x (L_gt / L_rough), frozen in
+`doc/track_d_reopen_precision_20261019.md` before the run.
+
 Outputs `per_pair.csv` and prints distributions per source and per data
 source prefix, plus how many pairs clear a few alignment thresholds.
 """
@@ -66,21 +76,48 @@ def shares(dist, segs):
     return acc / total if total > 0 else np.full(3, np.nan)
 
 
+def pixel_share(dist, segs):
+    """The same populations as `shares`, but each pixel judged on its own
+    distance instead of its segment's median. The gap between the two is the
+    instrument's own distortion -- a long segment whose median is <= 3px
+    counts its whole length -- measured rather than guessed, so the reading's
+    window can be centred on it (`doc/track_d_reopen_precision_20261019.md`
+    section 4.5)."""
+    near = total = 0
+    for rr, cc in segs:
+        near += int((dist[rr, cc] <= 3).sum())
+        total += len(rr)
+    return near / total if total > 0 else np.nan
+
+
 def score_pair(args):
     name, data_dir, min_seg = args
     data_dir = Path(data_dir)
     gt = load_gray(data_dir / "line" / name)
-    segs = segments(ink_skeleton(gt), min_seg)
+    gt_sk = ink_skeleton(gt)
+    segs = segments(gt_sk, min_seg)
+    to_gt = dist_to(gt_sk)
+    to_gt_rot = dist_to(np.ascontiguousarray(np.rot90(gt_sk, 2)))
     row = {"name": name, "source": name.split("_")[0], "gt_len": int(sum(len(r) for r, _ in segs)),
-           "gt_ink": float((gt < 128).mean())}
+           "gt_n_seg": len(segs), "gt_ink": float((gt < 128).mean())}
     for key, (sub, polarity, thr) in SOURCES.items():
         sk = source_skeleton(load_gray(data_dir / sub / name), polarity, thr)
-        m = shares(dist_to(sk), segs)
+        d_src = dist_to(sk)
+        m = shares(d_src, segs)
         f = shares(dist_to(np.ascontiguousarray(np.rot90(sk, 2))), segs)
+        src_segs = segments(sk, min_seg)
+        pm = shares(to_gt, src_segs)
+        pf = shares(to_gt_rot, src_segs)
         row.update({
             f"{key}_le3": m[0], f"{key}_3to8": m[1], f"{key}_gt8": m[2],
             f"{key}_chance_le3": f[0], f"{key}_aligned": m[0] - f[0],
             f"{key}_density": float(sk.mean()),
+            f"{key}_prec_le3": pm[0], f"{key}_prec_3to8": pm[1], f"{key}_prec_gt8": pm[2],
+            f"{key}_prec_chance_le3": pf[0], f"{key}_prec_aligned": pm[0] - pf[0],
+            f"{key}_seg_len": int(sum(len(r) for r, _ in src_segs)),
+            f"{key}_n_seg": len(src_segs),
+            f"{key}_pix_le3": pixel_share(d_src, segs),
+            f"{key}_prec_pix_le3": pixel_share(to_gt, src_segs),
         })
     return row
 
@@ -118,7 +155,8 @@ def main():
     print(f"\n{len(rows)} pairs scored, {len(valid)} with GT strokes")
     print("\nper source (length-weighted share of each pair's GT strokes; distribution over pairs p10 / p50 / p90)")
     for key in SOURCES:
-        for col in ("le3", "3to8", "gt8", "chance_le3", "aligned"):
+        for col in ("le3", "3to8", "gt8", "chance_le3", "aligned",
+                    "prec_le3", "prec_3to8", "prec_gt8", "prec_chance_le3", "prec_aligned"):
             v = np.array([r[f"{key}_{col}"] for r in valid])
             print(f"  {key:<15} {col:<11} mean {v.mean():.3f}   p10 {np.percentile(v, 10):.3f}  p50 {np.percentile(v, 50):.3f}  p90 {np.percentile(v, 90):.3f}")
 
@@ -131,6 +169,16 @@ def main():
               f"manga_line {np.mean([r['manga_line_aligned'] for r in rs]):.3f}  "
               f"lineart_coarse {np.mean([r['lineart_coarse_aligned'] for r in rs]):.3f}  "
               f"rough 3-8px {np.mean([r['rough_3to8'] for r in rs]):.3f}")
+
+    print("\nper data source prefix, medians (recall side vs precision side; never averaged across pools)")
+    print(f"  {'pool':<15} {'n':>5}  {'le3':>7} {'3to8':>7} {'gt8':>7} {'algn':>7} | "
+          f"{'p_le3':>7} {'p_3to8':>7} {'p_gt8':>7} {'p_algn':>7} | {'gt_len':>7} {'seg_len':>7}")
+    for src, rs in sorted(by.items()):
+        med = lambda c: np.median([r[c] for r in rs])  # noqa: E731
+        print(f"  {src:<15} {len(rs):>5}  "
+              f"{med('rough_le3'):>7.4f} {med('rough_3to8'):>7.4f} {med('rough_gt8'):>7.4f} {med('rough_aligned'):>7.4f} | "
+              f"{med('rough_prec_le3'):>7.4f} {med('rough_prec_3to8'):>7.4f} {med('rough_prec_gt8'):>7.4f} "
+              f"{med('rough_prec_aligned'):>7.4f} | {med('gt_len'):>7.0f} {med('rough_seg_len'):>7.0f}")
 
     print("\npairs clearing alignment thresholds (count of valid pairs)")
     for key in SOURCES:
