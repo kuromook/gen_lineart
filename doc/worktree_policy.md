@@ -41,6 +41,14 @@ form: `git push -u origin <branch>`.
 This is the same line as checking for live sessions before touching a track
 worktree -- a branch belongs to whoever is seated in it.
 
+**The named exception, and the reason it is narrow (2026-10-19, user
+approved).** The foundation committed and pushed two trees itself:
+`cleanup-refiner` (`4519bef`) and `controlnet-sd15-refine` (`cea3cf1`). Both
+are **dormant or closed with nobody seated in them**, which is exactly the
+condition the rule protects against -- it exists to keep the foundation out of
+a *live* tree, not to leave orphaned work uncommitted forever. When a track has
+a live session, the notice still goes to it and the track still pushes.
+
 ## Active Worktrees
 
 Updated 2026-09-30. `doc/CURRENT.md`'s Track Ledger is the authoritative status

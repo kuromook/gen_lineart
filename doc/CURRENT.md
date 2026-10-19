@@ -4210,10 +4210,23 @@ user's word, started it; the 10-19..10-22 window is in use.
    mechanism now half works. Track G sent its first notice on 2026-10-04 and it
    is folded in; Track H has pushed its branch but **still owes a notice**, so
    everything above about it is this file reading that track's work log, which
-   is second-hand by construction. The audit ran clean today apart from
-   uncommitted paths in two finished trees (`cleanup-refiner`,
-   `controlnet-sd15-refine`) -- worth a look only to decide whether they are
-   worth keeping, since both tracks are closed.
+   is second-hand by construction. **Closed 2026-10-19: the two uncommitted paths in the
+   finished trees are dealt with, and neither was junk** -- which is why
+   "worth a look" was the right instruction rather than a sweep.
+   `cleanup-refiner`'s `venv` is a **symlink to the foundation's shared
+   environment** whose target exists; `.gitignore` carried `venv/` with a
+   trailing slash, which matches a directory and never a symlink, so it had
+   shown as untracked since 2026-08-03. Ignoring it keeps the convenience
+   (`4519bef`). `controlnet-sd15-refine`'s stray file is a **190-line runner
+   that produced a result this project still cites** -- Track D's hypothesis 2
+   replication with `--eval-snapshot-steps`, scored on the 192-tile holdout at
+   cs=2.5, and the only record of how "training loss is nearly flat past 1000
+   steps" was obtained, header included its user-approved scope exception.
+   Committed, not deleted (`cea3cf1`). Both were pushed by the foundation under
+   the named exception in `doc/worktree_policy.md`: dormant or closed, nobody
+   seated.
+   **Push state of every tree, audited the same day**: all in sync except
+   `solid-fill`, 6 commits ahead while Track J runs M1, notified.
    The 2026-09-30 reconciliation
    is done -- the Track Ledger above was rebuilt from every track's own files,
    and the three proposals and the Kimi exchange are now held in `doc/`. What
