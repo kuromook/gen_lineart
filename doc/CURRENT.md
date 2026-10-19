@@ -623,10 +623,47 @@ work, and the stated expectation is that the pieces make each other easier.
     0.0664, between the registered bars, to be decided on the montage before
     stage 2 registers. n=23 cannot carry more than that.
 
-- **Track K's second axis, approved 2026-10-19 (free-end bridging, the
-  over-split side)**, and it stays **in K's tree** by the foundation's reading,
-  with the letter **L** reserved (`stroke-bridging`,
-  `../lineart-stroke-bridging`) for when that context has to be closed. The
+- **Track K's second axis closed itself the same day it opened, 2026-10-19:
+  K19 landed on the registered "the axis dies" branch, and the letter L
+  reservation is released** (no `stroke-bridging` branch and no
+  `../lineart-stroke-bridging` worktree was ever created). Commit `78856b2` in
+  K's tree.
+  - **Instrument checks first, all three passed.** Repeats 7/8 against a
+    chance agreement of 0.3657 (expected 2.93, mode 0.50); anchors 7
+    "not broken" / 0 "intentional skip" / 1 undecidable, and **4/4 on the four
+    whose widths could be matched**, i.e. the subset the width defect does not
+    touch was answered perfectly; the cross-check scored **6/6 on the six
+    committed items** against the band of 5/6 (exact upper tail 0.0261)
+    declared before unblinding.
+  - **The two undecidable items both moved to a committed answer**, which is
+    the foundation's registered reading of them: not drift, but the boundary
+    getting sharper. The decision to keep them out of the bar (trap 21) is what
+    made that legible instead of a failure.
+  - **Primary, on the registered denominator and bar**: 42 cases at <=8px,
+    14 kasure / 19 intentional skip / 8 undecidable, **precision 0.3333, CP95
+    [0.1957, 0.4955]**. The upper limit misses the 0.50 bar by **0.0045** and
+    **K did not move it**. The <=6px reference arm (n=23) reads 0.4783
+    [0.2682, 0.6941], which is the held branch, and the primary governs.
+  - **The answer-check that matters most.** Before unblinding, Track K added
+    the column the foundation's table lacked: at a true precision of 0.625 the
+    probability of reaching "the axis dies" is **0.000** -- *this paper cannot
+    kill the axis*. **It killed it.** So the truth was not 0.625: **the n=8
+    point estimate was noise**, and the proposal's headline had been written on
+    it.
+  - **Cost instrument rebuilt (K21) and all three arms came up empty**: part
+    groups saturated (zero cross-group on every arm), ambiguity 2.1%, width
+    mismatch degenerate on box B (median 0.000). The proposal's own stated
+    limit -- that cost can only be seen through the author's answers -- is
+    confirmed rather than worked around.
+  - **The answers took 152 seconds for 52 items (median 2.4s each), and Track K
+    refused to use that for pass or fail because no speed band was
+    registered.** The evidence for judgement quality is the 6/6 cross-check
+    against items answered slowly last time. This is the discipline working in
+    the direction that costs something: an unregistered statistic that looked
+    damning was left out of the verdict.
+  - **A third "must not do" statement now stands**, next to unconditional
+    loosening and repair keyed on the collapsed bridge: **a rule that closes
+    free ends by gap length.** The
   axis is new -- its own registration, its own entry -- but the five
   instruments, the ink mask, the box structure and the 52-tile paper all live
   in K's tree, and Track I's first probe is the recorded case of what a
