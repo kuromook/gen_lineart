@@ -288,3 +288,14 @@ Track Bは**損失が最後まで下がり続けたのに全軸が悪化**する
 - 既存チェックポイント(仮説2で使う):
   `../lineart-controlnet-sd15-refine/checkpoints/`(weightごと)、
   `../lineart-controlnet-sdxl-fidelity/checkpoints/`(512/1024)
+
+---
+
+## 2026-10-19: 1測定だけのために再開(ユーザー承認)
+
+Track D は 2026-09-17 に閉じたが、**ラフ→線の精度側**を測るために再開した。
+**読むのは `doc/track_d_reopen_precision_20261019.md`** —— 測るもの、鏡像にすべき
+既存の構成、そして**数が出る前に凍結した参照値と三分岐**がそこに書いてある。
+器具は `tools/evaluation/pair_alignment_strata.py`、既存出力は
+`results/pair_alignment_strata_20260915/per_pair.csv`。
+終わったら基盤に書き戻して再び閉じる。**push は D 自身が回す。**
