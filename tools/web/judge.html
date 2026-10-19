@@ -1,0 +1,247 @@
+<title>線の切れ目の判定</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column — a fixed-tone viewing mat for the tile, the four answers under it, the strip of all tiles last. */
+:root{
+  --bg:#f2f3f1; --surface:#fff; --fg:#1a1d1f; --muted:#5f686d; --line:#d9ddda;
+  --accent:#1f6b75; --accent-fg:#fff; --ok:#3f7d57;
+  --mat:#fbfbfa; --mat-line:#c9cec9;           /* 見る面は主題の都合で両テーマ共通 */
+  --font-ui:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15181a; --surface:#1e2225; --fg:#e7eaea; --muted:#9aa3a7; --line:#2d3337;
+  --accent:#58b0bb; --accent-fg:#0d1416; --ok:#6cba8a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#15181a; --surface:#1e2225; --fg:#e7eaea; --muted:#9aa3a7; --line:#2d3337;
+  --accent:#58b0bb; --accent-fg:#0d1416; --ok:#6cba8a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);line-height:1.6;
+  margin:0;font-size:15px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);
+  z-index:10;background:var(--surface)}
+.wrap{max-width:720px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);
+  border-bottom:1px solid var(--line);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)))
+  calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));
+  padding-block:10px}
+.hrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;max-width:720px;margin:0 auto}
+h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.01em}
+.count{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px;
+  color:var(--muted);margin-left:auto}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px;
+  max-width:720px;margin-inline:auto}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+
+.intro{font-size:13.5px;color:var(--muted);padding-block:16px 4px}
+.intro b{color:var(--fg);font-weight:500}
+.q{font-size:17px;font-weight:700;padding-block:14px 10px;text-wrap:balance}
+
+.stage{display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:var(--mat);border:1px solid var(--mat-line);border-radius:6px;padding:14px}
+.stage img{max-width:100%;width:420px;height:auto;image-rendering:pixelated;
+  border:1px solid var(--mat-line);background:#fff}
+.tid{font-family:var(--font-mono);font-size:12px;color:#6b7370;letter-spacing:.06em}
+
+.opts{display:grid;gap:8px;margin-top:14px}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;cursor:pointer;
+  background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;
+  padding:11px 13px;font:inherit}
+.opt:hover{border-color:var(--accent)}
+.opt[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.opt kbd{font-family:var(--font-mono);font-size:12px;font-weight:600;border:1px solid currentColor;
+  border-radius:4px;padding:0 6px;opacity:.65;flex:none;margin-top:2px}
+.opt .lab{font-weight:500;min-width:0}
+.opt .hint{display:block;font-size:12.5px;opacity:.72;font-weight:400}
+
+.nav{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.nav button{font:inherit;font-size:13px;background:var(--surface);color:var(--fg);
+  border:1px solid var(--line);border-radius:6px;padding:7px 13px;cursor:pointer}
+.nav button:hover:not(:disabled){border-color:var(--accent)}
+.nav button:disabled{opacity:.4;cursor:default}
+.saved{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.saved.on{color:var(--ok)}
+
+.strip{display:flex;flex-wrap:wrap;gap:5px;margin-top:22px}
+.cell{width:26px;height:26px;border-radius:4px;border:1px solid var(--line);background:var(--surface);
+  font-family:var(--font-mono);font-size:11px;color:var(--muted);cursor:pointer;padding:0;
+  font-variant-numeric:tabular-nums}
+.cell[data-done="1"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.cell[aria-current="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.legend{font-size:12.5px;color:var(--muted);margin-top:10px}
+
+details{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+.code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface);
+  border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:10px;
+  white-space:pre-wrap;word-break:break-all}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:420px){.stage img{width:100%}.cell{width:24px;height:24px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="hrow">
+      <h1 id="title">判定用紙</h1>
+      <span class="count" id="count">読み込み中</span>
+    </div>
+    <div class="bar"><i id="barfill"></i></div>
+  </header>
+
+  <p class="intro" id="intro">タイルを読み込んでいます。</p>
+  <p class="q" id="question"></p>
+
+  <div class="stage">
+    <img id="tile" alt="判定するタイル" hidden>
+    <span class="tid" id="tid">—</span>
+  </div>
+
+  <div class="opts" id="opts"></div>
+
+  <div class="nav">
+    <button id="prev" type="button">← 前</button>
+    <button id="next" type="button">次 →</button>
+    <button id="skipto" type="button">未回答へ</button>
+    <span class="saved" id="saved"></span>
+  </div>
+
+  <div class="strip" id="strip"></div>
+  <p class="legend" id="legend">緑が回答済み。番号を押すとそこへ移動します。<b id="notehere"></b></p>
+
+  <details>
+    <summary>回答を書き出す(採点はこの画面の保存で足ります)</summary>
+    <div class="code" id="code">—</div>
+    <div class="nav"><button id="copy" type="button">コピー</button></div>
+    <p class="note">回答の内訳は画面には出していません。どれを何件選んだかが見えると、
+      残りの判定が引きずられるためです。書き出しを開くと内訳が見えます。</p>
+  </details>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var man=null, items=[], cur=0, ans={}, db=null, col=null, writable=true, LS="judge-answers";
+
+  function el(id){return document.getElementById(id)}
+  function lsGet(){try{return JSON.parse(localStorage.getItem(LS+":"+(man?man.id:"?"))||"{}")}catch(e){return {}}}
+  function lsSet(){try{localStorage.setItem(LS+":"+man.id,JSON.stringify(ans))}catch(e){}}
+
+  function render(){
+    if(!man)return;
+    var it=items[cur];
+    el("title").textContent=man.title||"判定用紙";
+    el("intro").innerHTML=man.intro||"";
+    el("question").textContent=man.question||"";
+    var img=el("tile");
+    img.src=it.src; img.hidden=false; img.alt="タイル "+it.id;
+    el("tid").textContent="#"+it.id;
+    var done=0; for(var k in ans){if(ans[k])done++}
+    el("count").textContent=done+" / "+items.length+" 件";
+    el("barfill").style.width=(items.length?done/items.length*100:0)+"%";
+    var picked=ans[it.id]||0;
+    Array.prototype.forEach.call(el("opts").children,function(b){
+      b.setAttribute("aria-pressed", String(Number(b.dataset.v)===picked));
+    });
+    el("prev").disabled=cur===0; el("next").disabled=cur===items.length-1;
+    var s=el("saved");
+    if(!picked){s.textContent="未回答"; s.className="saved"}
+    else{s.textContent=writable?"保存済み":"この端末にのみ保存"; s.className="saved on"}
+    Array.prototype.forEach.call(el("strip").children,function(c,i){
+      c.dataset.done=ans[items[i].id]?"1":"0";
+      c.setAttribute("aria-current", String(i===cur));
+    });
+    el("code").textContent=items.map(function(x){
+      return "#"+x.id+":"+(ans[x.id]||"-")}).join(" ");
+  }
+
+  function pick(v){
+    var it=items[cur];
+    if(ans[it.id]===v)return;
+    ans[it.id]=v; lsSet(); render();
+    if(col){col.doc(String(it.id)).set({value:v,at:new Date().toISOString()})
+      .catch(function(e){ if(e&&e.code==="invalid_argument"){writable=false; render()} });}
+    setTimeout(function(){ if(cur<items.length-1){cur++; render()} },140);
+  }
+
+  function goNextUnanswered(){
+    for(var d=1;d<=items.length;d++){
+      var i=(cur+d)%items.length;
+      if(!ans[items[i].id]){cur=i; render(); return}
+    }
+  }
+
+  function buildOptions(){
+    var box=el("opts"); box.textContent="";
+    man.options.forEach(function(o){
+      var b=document.createElement("button");
+      b.type="button"; b.className="opt"; b.dataset.v=o.value;
+      var k=document.createElement("kbd"); k.textContent=o.value;
+      var w=document.createElement("span"); w.className="lab"; w.textContent=o.label;
+      var h=document.createElement("span"); h.className="hint"; h.textContent=o.hint||"";
+      w.appendChild(h); b.appendChild(k); b.appendChild(w);
+      b.addEventListener("click",function(){pick(o.value)});
+      box.appendChild(b);
+    });
+    var strip=el("strip"); strip.textContent="";
+    items.forEach(function(it,i){
+      var c=document.createElement("button");
+      c.type="button"; c.className="cell"; c.textContent=it.id;
+      c.title="#"+it.id;
+      c.addEventListener("click",function(){cur=i; render()});
+      strip.appendChild(c);
+    });
+    el("notehere").textContent=man.note?" "+man.note.replace(/\*\*/g,""):"";
+  }
+
+  document.addEventListener("keydown",function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    if(/^[1-9]$/.test(e.key)){
+      var v=Number(e.key);
+      if(man&&man.options.some(function(o){return o.value===v})){e.preventDefault(); pick(v)}
+    }else if(e.key==="ArrowRight"||e.key==="j"){if(cur<items.length-1){cur++; render()}}
+    else if(e.key==="ArrowLeft"||e.key==="k"){if(cur>0){cur--; render()}}
+  });
+  el("prev").addEventListener("click",function(){if(cur>0){cur--; render()}});
+  el("next").addEventListener("click",function(){if(cur<items.length-1){cur++; render()}});
+  el("skipto").addEventListener("click",goNextUnanswered);
+  el("copy").addEventListener("click",function(){
+    var t=el("code").textContent, b=el("copy");
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){b.textContent="コピーしました";
+        setTimeout(function(){b.textContent="コピー"},1600)},select)
+    }else select();
+    function select(){var r=document.createRange(); r.selectNodeContents(el("code"));
+      var s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="選択しました";
+      setTimeout(function(){b.textContent="コピー"},1600)}
+  });
+
+  fetch("manifest.json").then(function(r){return r.json()}).then(function(m){
+    man=m; items=m.tiles||[]; ans=lsGet(); buildOptions(); render();
+    return (window.claude&&window.claude.use)?window.claude.use("db"):null;
+  }).then(function(d){
+    if(!d)return;
+    db=d; col=db.collection("sets/"+man.id+"/answers");
+    col.onSnapshot(function(snap){
+      var changed=false;
+      snap.docs.forEach(function(doc){
+        var v=doc.data()&&doc.data().value;
+        if(v&&ans[doc.id]!==v){ans[doc.id]=v; changed=true}
+      });
+      if(changed){lsSet(); render()}
+    },function(err){ if(err&&err.code!=="unavailable"){writable=false; render()} });
+  }).catch(function(e){
+    el("intro").textContent="タイルの一覧を読み込めませんでした。ページを開き直してください。";
+    if(window.console)console.error(e);
+  });
+})();
+</script>
