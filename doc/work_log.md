@@ -4958,3 +4958,53 @@ chainer tolerance on 2026-10-18, and it applies to me here. A bar on either
 share has to come from a stated mechanism (e.g. the sub-500px share of GT fill
 area, 2.0% from IC6's census, carried through the dilation geometry), computed
 and written down before the leg runs.
+
+## 2026-10-19 Slot run in flight (handoff note, written while it runs)
+
+Not a result. This exists so that whoever is next at this worktree can pick
+the slot up without reconstructing it.
+
+**Launched** 2026-10-19 08:34, `experiments/run_fill_seg_m0_m1_20261019.sh`
+(commit `3bd7170`, OOM fix `c59bc78`): **M0 then M1, sequentially**, 40,000
+steps each at `--batch-panels 1`, snapshots every 4,000 steps on 40 held
+panels. Runner pid 777362, **PPID 1**, stdout to
+`results/fill_seg_20261010/slot_20261019.log` -- it does not depend on any
+session staying open.
+
+**Both arms, not just M1,** because the registered question C2 is `M1 - M0 >=
+0.03` plus NC4 dropping `>= 0.03`; M1 alone leaves C2 unreadable.
+
+**The batch-size adjustment, recorded for the next track that takes this
+window:** the first launch OOM'd at the default `--batch-panels 2` (8 windows
+of 480x480 = 11.38 GiB on an 11.64 GiB card). The smoke test could not have
+caught it, because `--smoke` overrides batch-panels to 1 and so exercised 4
+windows, not 8. Steps were doubled 20,000 -> 40,000 so the **window budget is
+unchanged at 160,000**. No registered quantity moved.
+
+**What to do when it finishes** (expected ~03:00-04:00 on 2026-10-20 at the
+measured 1.47 it/s):
+
+1. Read `slot_20261019.log` and both `train_M0.jsonl` / `train_M1.jsonl`
+   **in the session it finishes in**, before drafting anything new.
+2. Score the final checkpoints through `score_fill_koma.py` -- the trainer's
+   40-panel holdout slice is **not** the 956-panel table C1 is read on, and
+   no C1/C2/C3/C4 verdict may be quoted from the trainer's own numbers.
+3. Every number carries the "don't paint" and preprocessor baselines **in the
+   same sentence** (`blank` region-F1 0.0084 on the 956-panel normal stratum;
+   the readable fill ceiling is 0.0000, IC1's 0.0002 being an arm that fell to
+   a control). Strata reported separately, never pooled.
+4. Print `npred/ngt` beside every region-F1 (IC7): a low F1 with a high ratio
+   is a speckle defect, not a "does not know where the fill is" defect.
+
+**If it crashes:** there is no `--resume`. Checkpoints are written every 4,000
+steps, but `train_<arm>.jsonl` is opened with `"w"`, so **copy the jsonl aside
+before relaunching** or the holdout curve is lost.
+
+**Holdout so far (M0, 7 snapshots to step 28,000, 40 held panels -- the
+trainer's own slice, not the 956-panel table):** region-F1 0.0000-0.0020 at
+every snapshot, against `blank`'s 0.0084 on the 956-panel normal stratum, and
+predicted area 0.0014-0.0168 against GT 0.1047 on those same 40 panels. The
+curve is oscillating, not rising. **This is not a verdict and is not to be
+quoted as one**; it is recorded so that a later reader can see it was watched
+and not acted on mid-run -- stopping on it would be a bar placed after the
+numbers.
