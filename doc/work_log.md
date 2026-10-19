@@ -6119,3 +6119,83 @@ costs 0.048); the objective nearly flat after 1,000 steps and bound to tone;
 outputs inherit their conditioning map's strokes; aligned pairs teach faithful
 copying, not placement; and scale does not move it. The pairs do not contribute
 because a conditioned generative epsilon objective cannot express selection.
+
+---
+
+## 2026-10-19 — the precision side of rough to line
+
+One measurement, the mirror of September's recall side, on the same 8,467
+pairs. Outputs: `results/pair_alignment_strata_20261019/per_pair.csv`,
+`precision_report.txt`, `montage_precision_vs_recall.png`. Instrument:
+`tools/evaluation/pair_alignment_strata.py` (one direction added),
+`pair_precision_report.py`, `pair_precision_montage.py` (commit 791356f).
+
+**The recall side reproduces exactly.** All 8,467 pairs matched by name,
+`max |delta| = 0.00e+00` on `rough_le3`, `_3to8`, `_gt8`, `_chance_le3`,
+`_aligned` and `gt_len` against `results/pair_alignment_strata_20260915/`.
+Reported first, as registered.
+
+**The main value — against the null that keeps quantity and destroys
+position (GT skeleton rotated 180 degrees, `aligned = measured - rotated`):**
+
+| pool | n | prec<=3 | prec_chance | **prec_aligned** | recall_aligned | ratio | prec>0 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| clippairskoma | 6,978 | 0.1887 | 0.0191 | **0.1522** | 0.3014 | 0.505 | 97.0% |
+| ako5ver2koma | 536 | 0.1108 | 0.0069 | **0.0956** | 0.1742 | 0.549 | 94.4% |
+| fitnesskoma | 455 | 0.1464 | 0.0000 | **0.1222** | 0.1873 | 0.653 | 93.4% |
+| gakuenkoma | 202 | 0.1795 | 0.0000 | **0.1664** | 0.2198 | 0.757 | 97.0% |
+| hamlabikoma | 164 | 0.1244 | 0.0189 | **0.0920** | 0.1766 | 0.521 | 94.5% |
+| houseikoma | 132 | 0.1756 | 0.0000 | **0.1687** | 0.2176 | 0.775 | 90.9% |
+
+**The precision side carries real position information — and about half as
+much as the recall side.** `prec_aligned` is positive in 91-97% of pairs
+individually, so this is not a median artefact, but it is 0.50-0.78 of the
+same pair's recall-side figure in every pool.
+
+**The number that is new: `prec_gt8` is 0.464-0.660** (medians; clippairskoma
+0.534). **Roughly half of the rough's ink length has no GT skeleton within
+8px at all.** The recall side's `gt8` was 0.198-0.315. Read together: a fifth
+to a third of the final line has nothing under it, and half of what the artist
+drew has nothing over it.
+
+**The registered prediction about the null is refuted.** It said
+`prec_chance` would come out above the recall side's 0.000-0.012 because the
+rough's segments are shorter and a short segment meets a median <= 3px by
+chance more easily. The mechanism is confirmed -- the rough has 2.2-3.1x the
+segments at 19.6-41.8px mean length against the GT's 49.0-70.1 -- but **the
+effect it predicted is not there.** On medians it looks supported (0.0191 vs
+0.0119 in clippairskoma), on means it reverses (**0.0334 vs 0.0523**), and
+per pair `prec_chance > chance_rec` in only **20-39%** of pairs. The
+distributions cross.
+
+**What governs the chance level is which skeleton gets rotated, not the
+segment length of the side being measured.** The recall side rotates the
+rough, which is 1.4-2.5x the GT's length, and a dense rotated skeleton falls
+near things by accident. The precision side rotates the sparse GT. Density of
+the rotated arm beats segment length of the measured arm. The panel-border
+suspect, named in advance, is not needed: the null did not come out high.
+
+**The frozen reference, under its corrected name.** Section 4's predicted
+precision was shown (before the numbers) to reduce in pixel units to exactly
+`M_prec / M_rec`, so it measures the asymmetry of the correspondence, not
+position beyond quantity. Measured: (a) segment-median ratio 1.04-1.41,
+(b) pixel units 0.58-1.20. Both mixed per pool under the registered window
+[0.80, 1.25], no pool at >= 1.5 or (except clippairskoma's 0.58) <= 0.67. The
+instrument's own distortion `k_prec / k_rec` is 0.91-1.33, and the frozen
+`L_rough` (whole skeleton) is 1.11-2.33x the `min_seg` survivors' length that
+the measurement actually weights by — a definition gap, printed not corrected.
+
+**Caveat on reading `prec_gt8` as wasted effort.** The montage shows why half
+of it is there: `gray < 200` skeletonises pencil grain and screentone into
+short fragments (clippairskoma's rough is largely texture). Part of the
+unmatched half is grain, not misplaced strokes. The measurement is unchanged
+-- it was registered -- but "half the artist's input is unused" overstates it.
+
+**The reading.** The rough is not a sparse accurate hint. Both directions
+agree on the same picture: roughly a third of the GT has no rough under it,
+roughly half the rough has no GT over it, and both carry real but partial
+position information above a destroyed-position null. The boundary this
+census was meant to measure is that **the pair is loose in both directions**,
+which is consistent with hypothesis 4 standing: a conditioned generative
+objective learns to copy what it is given, and what it is given disagrees
+with the target by this much in both directions.
