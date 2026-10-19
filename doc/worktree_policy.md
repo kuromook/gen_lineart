@@ -312,6 +312,18 @@ upstream. The crontab path is unchanged. The first cron push to
 `paper-scout` is the 2026-10-26 run; check `cron.log` on `nuc` for it.
 **`origin/main` no longer exists**; on this machine run `git fetch --prune`
 and delete or rename any local `main`.
+**Verified from the foundation 2026-10-19, so the rename is not waiting on the
+2026-10-26 run to be trusted.** On `nuc`: local branch `paper-scout` tracking
+`origin/paper-scout`, tree clean, the README's setup line reads
+`git checkout paper-scout`, `scout.sh` still at its crontab path. The git half
+of the weekly job was then exercised without running the agent --
+`git pull --rebase` clean, `git push --dry-run` returns *Everything
+up-to-date*, and `@{u}` resolves to `origin/paper-scout` -- which was the one
+thing the rename could have broken silently. The agent half had already run
+today. In this clone the stale local `main` (at `a41832a`, tracking a ref that
+no longer exists) was **renamed rather than deleted**: it is now `paper-scout`
+fast-forwarded to `origin/paper-scout`, after checking `a41832a` is an
+ancestor of it, so nothing was discarded to tidy a name.
 
 **Triaged 2026-10-19 at the user's request** -- see "The paper scout's nine
 reports, triaged against Track K's spec" under `doc/CURRENT.md`'s *Approaches
