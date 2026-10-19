@@ -17,7 +17,8 @@ cost nothing to follow and are written in `doc/CURRENT.md`. This one needed code
 
 What it checks:
 
-  1. every track directory named in CURRENT.md's ledger exists on disk
+  1. every track directory the ledger *claims* exists is on disk -- a bullet can
+     also name a path in order to say it is not there, and that is not a claim
   2. every `lineart-*` directory on disk appears in the ledger
   3. stale `git worktree list` entries whose directories are gone
   4. how each track is attached -- worktree of this repo, separate clone, or a
@@ -52,6 +53,16 @@ INBOX = FOUNDATION / "inbox"
 # reported, which is the opposite sign.
 QUIET_DAYS = 3
 
+# Prose that names a track directory in order to say it is *not* there. Matched
+# against the sentence the name sits in, never the whole bullet, so that one
+# released reservation does not suppress the claims around it.
+NON_CLAIM = re.compile(
+    r"\bnever\b|\bno such\b|\bdoes not exist\b|\bwas not created\b"
+    r"|\bno\b[^.]{0,160}?\bever (?:created|existed)\b"
+    r"|\breservation is released\b",
+    re.IGNORECASE,
+)
+
 
 def run(args, cwd=None):
     """Return stdout, or None if the command fails. Never raises."""
@@ -62,6 +73,30 @@ def run(args, cwd=None):
     except (OSError, subprocess.TimeoutExpired):
         return None
     return done.stdout.strip() if done.returncode == 0 else None
+
+
+def claimed_dirs(bullet):
+    """Directory names this bullet asserts exist, in order of appearance.
+
+    A bullet can name a path in order to say it is not there -- "the letter L
+    reservation is released (no `../lineart-stroke-bridging` worktree was ever
+    created)". Counting that as a claim sends the reader to CURRENT.md to correct
+    a record that was already right, which is the expensive direction for the one
+    check that does not depend on anyone's attention. So the negation is read out
+    of the ledger prose, in the same spirit as the finished marker: the status
+    stays in one place. Markdown wraps mid-sentence, so whitespace is normalised
+    before the sentence around each name is cut out.
+    """
+    flat = re.sub(r"\s+", " ", bullet)
+    names = []
+    for m in re.finditer(r"`\.\./(lineart-[A-Za-z0-9._-]+)`", flat):
+        left = max(flat.rfind(". ", 0, m.start()), flat.rfind(" - ", 0, m.start()))
+        ends = [e for e in (flat.find(". ", m.end()), flat.find(" - ", m.end())) if e != -1]
+        sentence = flat[left + 1 : min(ends) if ends else len(flat)]
+        if NON_CLAIM.search(sentence):
+            continue
+        names.append(m.group(1))
+    return names
 
 
 def ledger_dirs():
@@ -78,7 +113,7 @@ def ledger_dirs():
     entries = {}
     # Ledger entries are bullets; a bullet runs until the next one starts.
     for bullet in re.split(r"\n- ", text):
-        names = re.findall(r"`\.\./(lineart-[A-Za-z0-9._-]+)`", bullet)
+        names = claimed_dirs(bullet)
         if not names:
             continue
         head = bullet[:900]
@@ -190,8 +225,31 @@ def dirty(path):
     return uncommitted, unpushed
 
 
+def self_test():
+    """Assert the claim reader on the cases that produced it. Exits non-zero on failure."""
+    claims = "A track lives in `../lineart-face-words` and is current."
+    released = (
+        "Track K's second axis closed itself: the letter L reservation is "
+        "released (no `stroke-bridging` branch and no "
+        "`../lineart-stroke-bridging` worktree was ever created). Commit `78856b2`."
+    )
+    assert claimed_dirs(claims) == ["lineart-face-words"], claimed_dirs(claims)
+    assert claimed_dirs(released) == [], claimed_dirs(released)
+    # A negation must not reach past its own sentence.
+    both = released + " Work continues in `../lineart-solid-fill`."
+    assert claimed_dirs(both) == ["lineart-solid-fill"], claimed_dirs(both)
+    # Wrapped markdown: the sentence survives the line break.
+    wrapped = released.replace("and no ", "and no\n  ")
+    assert claimed_dirs(wrapped) == [], claimed_dirs(wrapped)
+    print("self-test: 4 cases pass")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument(
+        "--self-test", action="store_true", help="check the ledger claim reader and exit"
+    )
     parser.add_argument(
         "--quiet", action="store_true", help="print findings only, skip the table"
     )
@@ -202,6 +260,9 @@ def main():
         help=f"days of unreported commits before it counts as a gap (default {QUIET_DAYS})",
     )
     args = parser.parse_args()
+
+    if args.self_test:
+        return self_test()
 
     ledger_status = ledger_dirs()
     ledger = set(ledger_status)

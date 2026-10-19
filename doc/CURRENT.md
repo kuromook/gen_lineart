@@ -3136,6 +3136,21 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   training data. Chance is measured by rotating each conditioning map 180
   degrees; horizontal flip was rejected because panel borders survive it and
   inflate the baseline.
+- **An audit read a path the ledger says does not exist as a claim that it
+  does.** `tools/audit_track_ledger.py` matched `` `../lineart-...` `` with a
+  bare regex, so Track K's released letter-L reservation -- recorded correctly
+  in the ledger as "no `../lineart-stroke-bridging` worktree was ever created"
+  -- came back as a finding: "ledger names it but no such directory exists".
+  Found 2026-10-19 while checking that the start-up command in the new
+  `CLAUDE.md` runs. **The record in this file was already right; the tool was
+  the broken side**, and its finding pointed a reader at a correct entry to
+  "fix" it. Fixed by reading the negation out of the sentence the name sits in
+  (`claimed_dirs` / `NON_CLAIM`, with `--self-test`). The general form:
+  **a check that scans prose for identifiers will count a name written in order
+  to deny it.** This is the expensive direction of a false positive for
+  discipline 4 specifically, because that check is the one piece of discipline
+  that does not depend on anyone's attention -- so its output is read as
+  authoritative, and it has no author standing by to say "that one is fine".
 
 ## Approaches Never Taken Up
 
