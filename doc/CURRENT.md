@@ -1,12 +1,36 @@
 # Current Project State
 
-Updated: 2026-10-18 JST. **Track K opened** by user approval: the 1px
+Updated: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
+and its second axis closed itself the day it opened: K19 landed on the
+registered "the axis dies" branch -- precision 0.3333, CP95 upper **0.4955**
+against a 0.50 bar, and **the bar was not moved** -- so the letter-L
+reservation is released and no `stroke-bridging` branch or worktree was ever
+created. Across six registrations K never moved a bar, and four of the six
+would have passed on one moved by less than a hundredth. It leaves three "must
+not do" statements, one confirmed mechanism, one direction the numbers have not
+killed (carry both tokenisations downstream, which was never K's to decide),
+and the author-judgment web UI, routed to Tracks H and J. K is **dormant**
+until `face_groups.jsonl` grows. **Track J's multi-day slot is running**,
+detached at PPID 1: M0 finished at step 40,000 and M1 is at 8,000 of 40,000,
+ETA tonight. Its completion checklist is in J's entry; the verdict is M1 - M0
+on the 956-panel table, not the trainer's own 40 panels, and the mid-run
+holdout figures are deliberately not reproduced here. **Track D returned the
+precision side of the pair measurement** -- the pair is loose in both
+directions. The nine paper-scout reports are triaged below against K's spec;
+the `main` -> `paper-scout` rename is in `doc/worktree_policy.md`. Added this
+day: a repo-root `CLAUDE.md` with the start-up procedure for a session that has
+been reset, and a fix to `tools/audit_track_ledger.py`, which had counted a
+path this file names *in order to deny it* -- a new tool trap, and the reason
+two ledger entries below now carry their status word in their opening lines,
+where the audit can read it.
+
+Previous: 2026-10-18 JST. **Track K opened** by user approval: the 1px
 skeleton's connectivity, which is upstream of Tracks F, G and H. The error has
 two directions -- over-merge, which the author can mark, and under-connection,
 which has no mark and is the binding one (18.7% of arms joined). K1 registered
 before Track H's 300-face analysis returned.
 
-Previous: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
+Earlier: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
 trap** -- the `cy`/`cx` swap was a misdiagnosis -- and, later the same day,
 Track G's resumed placement question settled: the reference frame carries the
 win and lesson 13 now holds from both the classification and the prediction
@@ -21,8 +45,11 @@ preprocessor cannot fill, so for fills the baseline is *paint nothing* against
 panel, one of which says the line art on this corpus **encloses almost
 nothing**, which the words line should know about. Two new tool traps came out
 of it).
-The Track Ledger, Lessons, Known Tool Traps, Active Goal and Next Actions are
-current as of this date; the ledger was rebuilt on 2026-09-30 by
+The Track Ledger, Lessons, Known Tool Traps and Next Actions are current as of
+the Updated date above. **Active Goal is not**: the goal itself stands, but its
+"where the work is" paragraph names its own date, 2026-10-04, and was written
+before Tracks J and K existed -- read the Track Ledger for who is working. The
+ledger was rebuilt on 2026-09-30 by
 reading every track's own files after this file had fallen 13 days behind. The
 descriptive sections further down -- Current Data Direction, Current Model
 Interpretation, Current Extraction Rules, Current Data Pipeline Stage, and the
@@ -471,7 +498,9 @@ work, and the stated expectation is that the pieces make each other easier.
 ### Opened since the reconciliation
 
 - `../lineart-image-prompt` (branch `image-prompt`, **Track I**) -- **opened
-  2026-09-30**, read `## Approaches Never Taken Up` below for why. Does an
+  2026-09-30, closed 2026-10-04** (`7c2f470`, on a clean negative; the closure
+  is read out further down this entry). Read `## Approaches Never Taken Up`
+  below for why it opened. Does an
   IP-Adapter image-prompt channel change lesson 8's mechanism, or only add a
   second thing to copy? **Its first probe is void and the reason is worth
   carrying**: it ran 8 arms x 192 tiles and measured nothing, because cs was
@@ -712,7 +741,11 @@ work, and the stated expectation is that the pieces make each other easier.
   construction, so the real error of fusing two lines inside one part cannot be
   seen.
 - `../lineart-stroke-topology` (branch `stroke-topology`, **Track K**) --
-  **opened 2026-10-16** by user approval, from the user's own observation after
+  **opened 2026-10-16, dormant since 2026-10-19**: the tree closed at `25e4dec`
+  (pushed, working tree clean) and K is quiet until `face_groups.jsonl` grows
+  past its 2026-10-16 state, which is the author's input it runs on. Its
+  closing record and both axes are in the Track K entries above. Opened by user
+  approval, from the user's own observation after
   finishing 300 faces in Track H: "the 1px thinning and the linking leave many
   parts with wrong connectivity". The defect is **upstream of Tracks F, G and
   H** -- the unit the words are made of is decided there -- and nobody could
