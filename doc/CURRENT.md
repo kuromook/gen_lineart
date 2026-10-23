@@ -3636,6 +3636,17 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   states it had not known about the duplication and that the ledger should say
   **unchecked**, not *already reported*. **Third instance that day of a name read
   as a measurement** -- after `NC4` and the extraction side's `black` -- and this
+  **Fourth instance an hour later, and the new entry caused it.** Track L's
+  ledger entry opens *"active, opened 2026-10-23"* and goes on to describe the
+  proposal's **"eight closed doors"** -- and the status reader, scanning the
+  first 900 characters for `closed|dormant|paused`, printed Track L as
+  **`(finished)`** on the day it was created. Fixed by narrowing **where the
+  check is allowed to look**: `entry_is_finished()` reads only the entry's
+  opening (260 characters) and lets an explicit `active` win over a stopped word
+  in the same opening, so *"active, idle"* stays active; three cases added to
+  `--self-test`, now eleven. **Three of the four instances are this one script**,
+  which is the price of the one check that depends on nobody's attention: it
+  reads prose, and prose uses status words for other things.
   one is the dangerous sub-case, because the name belonged to a *check*, so its
   existence was read as coverage. **An inventory named wrongly gets caught when
   its counts stop adding up; a check named wrongly never does, because a check

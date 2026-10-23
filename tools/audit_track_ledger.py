@@ -106,6 +106,28 @@ def claimed_dirs(bullet):
     return names
 
 
+STATUS_STOPPED = re.compile(r"\bclosed\b|\bdormant\b|\bpaused\b", re.IGNORECASE)
+STATUS_ACTIVE = re.compile(r"\bactive\b", re.IGNORECASE)
+
+
+def entry_is_finished(bullet):
+    """Whether a ledger entry declares its own track stopped.
+
+    Only the entry's opening is consulted -- up to the first sentence end after
+    the subject, which is where this ledger states status -- and an explicit
+    "active" wins over a stopped word in the same opening ("active, idle" is a
+    running track). Prose further down may say "closed doors" or "near-closed
+    registrations" about something other than the track.
+    """
+    flat = re.sub(r"\s+", " ", bullet)
+    # The opening is everything up to the end of the sentence that names the
+    # status, capped so a long first sentence cannot swallow the whole entry.
+    opening = flat[:260]
+    if STATUS_ACTIVE.search(opening):
+        return False
+    return bool(STATUS_STOPPED.search(opening))
+
+
 def ledger_dirs():
     """Track directory -> whether its ledger entry marks it finished.
 
@@ -113,6 +135,16 @@ def ledger_dirs():
     purpose should not be reported as owing the foundation a notice. The marker is
     read from the ledger bullet itself, so a track's status lives in one place
     rather than being duplicated into this script.
+
+    The status word is taken from the entry's **opening**, not from anywhere in
+    its first 900 characters, and an explicit "active" there settles it. Track L's
+    entry forced this on 2026-10-23: it opens "active, opened 2026-10-23" and
+    goes on to describe "eight closed doors", and the wider window read that
+    "closed" as the track's own status and printed `(finished)`. Third instance
+    of this script matching a word used for something else -- after the denied
+    directory name and the notice that named its branch -- so the general form
+    holds: **a check that scans prose for a word will match the word used for
+    something else, and the fix is to narrow where it is allowed to look.**
     """
     if not LEDGER.exists():
         return {}
@@ -123,10 +155,7 @@ def ledger_dirs():
         names = claimed_dirs(bullet)
         if not names:
             continue
-        head = bullet[:900]
-        finished = bool(
-            re.search(r"\bCLOSED\b|\bclosed\b|\bdormant\b|\bpaused\b", head)
-        )
+        finished = entry_is_finished(bullet)
         # The first name in a bullet is its subject; later ones are cross-references.
         entries.setdefault(names[0], finished)
         for other in names[1:]:
@@ -308,12 +337,27 @@ def self_test():
     assert notice_senders(by_branch) == ["lineart-solid-fill"], notice_senders(by_branch)
     by_dir = "発信: `lineart-face-words` / branch `face-words`"
     assert notice_senders(by_dir) == ["lineart-face-words"], notice_senders(by_dir)
+    # Status comes from the entry's opening, and "closed doors" is not a status.
+    track_l = (
+        "`../lineart-fill-region` (branch `fill-region`, **Track L**) -- **active, "
+        "opened 2026-10-23 by user approval**, worktree of this repo. Proposal: "
+        "eight closed doors with their measurements, five candidates."
+    )
+    assert not entry_is_finished(track_l)
+    assert entry_is_finished(
+        "`../lineart-stroke-topology` (branch `stroke-topology`) -- **CLOSED "
+        "2026-10-19**, tree clean and pushed."
+    )
+    assert not entry_is_finished(
+        "`../lineart-stroke-selection` (branch `stroke-selection`) -- active, idle "
+        "since 2026-10-04."
+    )
     # A frozen ledger is reported for its claim, not for existing.
     assert FIRST_DOCUMENT_CLAIM.search("This file is the first document to read.")
     assert not FIRST_DOCUMENT_CLAIM.search(
         "Moved: the live ledger is ../lineart/doc/CURRENT.md"
     )
-    print("self-test: 8 cases pass")
+    print("self-test: 11 cases pass")
     return 0
 
 
