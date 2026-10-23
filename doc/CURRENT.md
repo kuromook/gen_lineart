@@ -4660,7 +4660,27 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       which is the first file a fresh session in that tree reads. J found and
       fixed it unprompted, with the 2026-10-10 measurements beside it. A
       retraction pass is only as wide as the list of stores, and this one was
-      wider than the foundation's list.
+      wider than the foundation's list. **And Track J supplied the mechanism,
+      which is better than the observation**: the foundation's list was not
+      careless -- at the moment it was drawn, J's briefing existed only in its
+      thirteen-day-old version and **the sentence being retracted had not yet
+      been written there**. So **when a retraction and a rewrite run on the same
+      day, the store list is structurally one short**, because a new store is
+      being created while the pass is walking. J's countermeasure, adopted: on a
+      day it rewrites its briefing, it posts one line to `../lineart/inbox/`
+      saying what it copied into the current-state section, which is enough for
+      this file's list to catch up.
+    - **Amendment J3 (disclosure only), approved 2026-10-23**: Track J's 956-panel
+      headline will name its mask -- *"against the radius-4 estimated mask"* --
+      beside the registered `MIN_REGION_PX = 500` / `MATCH_IOU = 0.5` region-F1.
+      No bar, number or population moves; the population was always that. Same
+      shape as J's own amendment J2, which made the headline name its metric.
+      **The condition the foundation attached**: the qualifier must not become a
+      reservation. The mask is common to every arm including `blank` and
+      `all_black`, so **C1-C3 are comparisons on one shared mask and the caveat
+      does not weaken them** -- what it bounds is any absolute claim about how
+      much fill is really recoverable. A clean negative must not be softened by
+      a caveat that does not touch it.
 12. **Pre-annotated marking: let a model propose the groups and have the author
     correct them -- under Track H, registered separately, and not before H18
     reads out.** Proposed by the user 2026-10-23, on the reasoning that
