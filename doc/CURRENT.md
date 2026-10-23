@@ -3634,6 +3634,24 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `f38a601`'s message is left standing with this entry as its correction, since a
   commit message is a store. **The check: one path per query, or read the
   `--name-only` output rather than the commit order.**
+  **Second instance within the hour, same shape, found by Track L.** The
+  foundation made backup tags before the rewrite and then **kept working**, so
+  both tags went stale -- `backup/fill-region-pre-data-rewrite` was one commit
+  behind, and **the missing commit was L's hold record itself**, which replaces
+  the briefing's *"this tree pushes its own branch"* with a hold. **Losing that
+  one commit would have put a fresh session back on the instruction to push**,
+  restoring the exposure the rewrite exists to remove. The foundation's own tag
+  was also a commit behind. Both re-pointed; nothing was lost, since the old
+  targets are ancestors. **L's framing, which names what the two instances
+  share: a snapshot read in place of a moving ref.** Reading output order as a
+  mapping and reading a tag as a branch are the same act -- **inferring the
+  correspondence of two things from their ordering or their name instead of
+  asking each one.** **Two provisions follow**: a backup ref taken before a
+  rewrite is only valid if nothing commits after it, so **it is taken at the
+  moment of the rewrite and not in advance**; and **verification compares
+  against the live ref, never the tag**, because a change made after the tag
+  would otherwise pass as something that never existed rather than as a
+  difference.
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
