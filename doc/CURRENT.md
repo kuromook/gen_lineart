@@ -3402,6 +3402,22 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   furniture (paper, MASK, トンボ, bleed and panel frames, 集中線) is 100% pure
   black among drawn pixels exactly as a fill is, 5,480 layers of it, so it has
   to be dropped by name before any fill count means anything.
+  **The subtler sibling, 2026-10-23 evening: a metric can be valid on one
+  construction and silently invalid on another, and still return a plausible
+  number.** The foundation asked whether `肌グラデ` rides the same hill as the
+  blurred tone, on `mask_mid_per_boundary`. The extraction side answered that
+  **the question is malformed**: a gradient-fill layer cuts its area with a
+  **hard** mask and softens the paint *inside* it, while a blurred tone layer has
+  a **soft mask**. `mask_mid_per_boundary` measures the mask, so **the softness of
+  a gradient fill is invisible to it in principle**. The dangerous part is what
+  it returns instead -- on ako5's 17 gradient layers, **p10 0.000 / p50 0.78 /
+  p90 1.07 / max 1.67, two of eleven above 1.0**, which lands squarely on the
+  hard hill (tone's hard hill is p90 0.93). **A number in a believable range is
+  not evidence that the instrument measured the thing.** The earlier version of
+  this trap was an instrument that returned *zero* for a class it could not see;
+  this one returns a number that reads as an answer. The check that catches it is
+  not a range test: it is **asking what the instrument is physically attached
+  to** -- here, the mask -- and whether the property lives there.
   **Third instance, 2026-10-23, from the extraction side and pointing the other
   way.** Its first inventory reported **84 works with ベタ and 1,246 ベタ layers**;
   the corrected figures are **55 works and 299 layers**. The cause was the layer
@@ -5207,6 +5223,48 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       population of 430 before any tone is split. The `gradient` class as a
       whole (1,999) stays unusable as a separator for the reason already
       recorded; what is usable is this named subset.
+    - **The graded class is two constructions, not one, so the plan has five
+      production classes and not four (2026-10-23 evening).** Measured on ako5's
+      17 gradient layers: all are `LayerType=2` (gradient fill), carry no tone
+      effect, and -- like tone -- keep **the shape in the layer mask with an
+      empty body raster**. So the production record supports **line / ベタ /
+      hard tone / blurred tone / gradient fill**, where the last two are both
+      "an area represented only in part" by the author's description but are
+      built differently and need **different instruments**: a blurred tone shows
+      up in `mask_mid_per_boundary` (its mask is soft, max 209), a gradient fill
+      does not (hard mask, soft paint) and shows up instead in the **density
+      range** its gradient uses.
+      **The density figures, explicitly provisional.** From `GradationFillInfo`:
+      `肌グラデ` **176-255, 3 steps, peak 31%**; `背景グラデ` 192-255, 2 steps,
+      25%; `乳首グラデ 円` 120-255, 5 steps, 53%. Two things make them worth
+      recording and one makes them quotable only with this sentence attached.
+      **It reproduces**: all seven `肌グラデ` measured gave 176-255. **It carries
+      its own known cell** -- the same parser on a flat `30L 10%` tone layer
+      returns `[229, 255]`, and 255-229 = **10.2%** against the name's 10%, which
+      is discipline 2 applied without being asked for. **And the parse is
+      guesswork**: runs of four identical bytes in `GradationData` read as
+      greyscale, not a spec that was decoded, so these are **an indication of
+      density and not a density map**, and they are not a render.
+      **Scope: ako5's 17 layers, out of 430 `肌グラデ` over 70 works.** A full
+      pass exists (`scripts/inspect/survey_soft_fill_layers.py`, taking a layer-
+      name regex) and waits until the tone scan's last group finishes, so the two
+      do not slow each other.
+      **Rendering the gradients is deliberately deferred.** It would answer
+      "are these one class by appearance", but it needs the gradient's direction
+      and shape decoded on top of a parse that is already guesswork, and **no
+      decision waits on it**: item 11 is not a tree yet, and what it needs first
+      is whether ベタ plus hard tone give an external standard at all. The option
+      is kept, and `乳首グラデ 円` shows the shape is sometimes in the name.
+      **The extraction side declined to say whether the two are one class, and
+      that was correct.** Its reasoning: it holds **records of how the thing was
+      made, not of how it looks**, and it had just been burned by
+      `has_gradation_fill` -- a tool setting read as an appearance. **So the
+      question of whether "blurred area" is one category or two belongs to the
+      author** (discipline 6), and it only needs asking if a decision ever turns
+      on it. The user's original wording -- *blur or gradation, mostly shading or
+      background placement, representing an area only in part* -- describes an
+      **appearance**, and the production record has now shown two mechanisms
+      under it.
     - **Trial works settled: `ako6` first, `fringe3` second, and the pair is a
       contrast rather than a repetition.** All three fringe volumes scouted
       (2019, 24/26/24 pages): `fringe` 9 black / 1 white, `fringe2` 13/4,
