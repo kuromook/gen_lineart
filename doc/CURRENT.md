@@ -2301,6 +2301,24 @@ incident that actually happened here.
    cs2.5 above; `0.2582` credited to a model when it was the preprocessor's;
    `line_width_p50 7.59` read as thick strokes when it was solid fill; the
    `0.651` endpoint-gap that was a tokeniser artefact.
+   **The verdict-word sibling, added 2026-10-23 from Track J's C3 reading.**
+   A conclusion of the form *"the simple thing suffices"* -- no learned model is
+   needed, the frequency table is enough, the preprocessor is the baseline --
+   **describes two materially different situations and the registered wording
+   cannot tell them apart**. Form A: the arms work and the simple one is as
+   good, which is actionable. Form B: **every arm including the trivial ones
+   sits in one band, so the simple one ties by default**, which says nothing
+   about models and everything about the formulation. 2026-10-23 was form B.
+   **So any such verdict carries the trivial arm's score in the same sentence,
+   and when the best arm does not clear the trivial arm by the registered
+   margin, the verdict is "nothing in this formulation does the task" and not
+   "no model is needed".** Track J proposed this against its own verdict and the
+   foundation approved it **for every track**, because lesson 14 made a
+   no-training control mandatory project-wide and so gave every track the same
+   exposure. **Why it is legitimate after the fact**: it is a *tightening*.
+   Moving a bar after seeing results is the sin because it lets something pass
+   that would not have; this restricts what may be claimed and lets nothing
+   through. **The asymmetry is the test, not the timing.**
 2. **Every new measurement includes a cell whose value is already known, and if
    it does not reproduce, nothing else in the run is read.** Already the practice
    that caught the most: Track B verified its cs=1.0 column against historical
@@ -4534,6 +4552,48 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
    exactly one reading and not by a family. Track J's falsifier for that
    reading stands as registered; if it fires, the reading is withdrawn and that
    goes in the headline.
+   **VERDICT, 2026-10-23: the registered headline is "no learned model is needed
+   for this."** The 969-panel table finished 14:06 (11,620 rows); both anchors
+   passed before a verdict was read -- A1 agreed with this tree's own table
+   **panel by panel, 969 of 969**, and A2 reproduced the trainer's
+   `score_holdout` to 1e-9 for both checkpoints. All figures **against the
+   radius-4 estimated mask** (amendment J3), normal stratum, 956 panels.
+   - **C4 removes both models before anything else is read.** M0 falls to NC3
+     (mirror); **M1 falls to NC2 as well** -- its score against its own panel's
+     ground truth does not beat its score against the neighbouring panel's. A
+     model that cannot tell its own panel from the next one has not learned the
+     panel.
+   - **C1 FAIL, and not narrowly**: best arm `rough_dark@budget` **0.0110**, so
+     +0.0026 over `blank`, +0.0072 over `all_black`, +0.0102 over its own NC2,
+     against a bar of **0.05**.
+   - **C2 FAIL on both legs**: M1 - M0 = **-0.0012**, M1 - NC4 = **-0.0017**,
+     against +0.03. **The leg NC4 made readable says the sharpest thing in the
+     report: giving M1 *another panel's* context scores slightly higher than
+     giving it its own.** The 4-channel whole-koma context is not used as
+     context. The instrument that did not exist that morning produced the most
+     informative line of the verdict.
+   - **Not an artefact of threshold placement**: region-F1 was written over nine
+     (MIN_REGION_PX, MATCH_IOU) cells and **the sign is identical in all nine**.
+     Halving the match bar lifts M0 over `blank` by +0.0114, a fifth of C1's
+     bar, and both C2 legs stay negative.
+   - **What the models do**: GT fill is **10.40%** of normal-stratum panel area;
+     M0 paints 0.71%, M1 0.34%. `npred/ngt` is 0.531 / 0.328 -- about half the
+     GT count -- while the **area** ratio is 0.068 / 0.033, so each predicted
+     region is **14-30x too small**. IC7's speckle defect, and **the area ratio
+     is the sharper index than the count ratio**. The contact sheet agrees: red
+     dust along the strokes, not areas. Two figures of the same shape: M0
+     exceeds zero on **17 of 956** panels, M1 on 11, against `blank`'s 8; and
+     **`all_black`'s pixel IoU is 0.1040 against M0's 0.0204**, so **blacking in
+     the whole panel recovers 5-8x more fill pixels than a trained model** --
+     `all_black` wins nothing at region level (0.0037), but any claim that a
+     model learned where fill goes must clear that row first.
+   - **The floor and the ceiling travel in the same sentence as the verdict**:
+     `blank` **0.0084**, the preprocessor's readable ceiling **pixel IoU
+     0.0000**, and **every arm on the table, learned and not, sits inside that
+     band. Nobody won.** No family hides a success -- where `rough_dark@budget`
+     reads high the `blank` column tracks it, and what that column measures is
+     how many panels have no scorable region at all. The 13 near-blank panels
+     are **NO VERDICT** by C5 and IC6, printed only.
 6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
    up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
    line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
@@ -4811,6 +4871,24 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       J will print the distinction. **"Both near zero" closes the formulation and
       leaves the semantic route open; "the non-learned arm won" would say the
       frequency table is already enough.** L counts the eighth door accordingly.
+      **Settled 2026-10-23: the door closed in form B.** Every arm sits in the
+      `blank`-to-ceiling band, so **the eighth door is "this formulation does not
+      predict fill", not "the non-learned route suffices"** -- which leaves the
+      semantic route open, as J predicted. **And Track J asked that item 11 be an
+      independent track rather than its own next stage**, matching the user's
+      decision of the same day; its three reasons are worth keeping: the verdict
+      refuted *a per-pixel U-Net against this mask at this scale* and not a
+      ground-truth decomposition; **J's own next seat should stay open for a
+      region proposer**, which is neither the cheap morphology nor the U-Net
+      already refuted; and item 11 **meets the external-standard problem before
+      J does**, since a decomposition whose ground truth is the radius-4 mask is
+      only a decomposition of an estimate. **A clean negative should close as a
+      negative** rather than be softened by a successor stage inside the same
+      track.
+      **The motive for item 11, in the form that survives** -- Track J's wording,
+      replacing the retracted one: **a person can look at the outline and tell
+      which area is filled; cheap closing cannot extract it; what can is
+      unmeasured.**
     - Open before a registration: approval for the L tree, and whether to create
       it now or after the inventory returns. Track J's verdict (item 5) bounds
       candidate 2 and is still unread.
