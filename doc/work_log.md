@@ -5566,3 +5566,47 @@ production fill layer against a panel whose page exists at several stages can
 read as "the mask missed every region" when the truth is "that version was
 not drawn yet". That is a defect report waiting to be filed against the
 instrument instead of the corpus, and it is theirs to avoid, not J's to fix.
+
+## 2026-10-23 Where `scale`/`dx`/`dy` come from, and why item 11 does not need them
+
+The foundation asked, before cutting masks for item 11, whether their reading
+of these three manifest columns is right: "the rough was aligned; the line
+side's frame did not move". **It is right, and it is readable off the code
+rather than inferred from dimensions agreeing.**
+
+Provenance: `search_panel_alignment()` in
+`tools/pair_extraction/match_koma_panels.py`, a joint translation+scale search
+run per panel, coarse-to-fine (a downscaled pre-search finds the
+neighbourhood, the fine search re-centres on it, and the returned `dx`/`dy`
+are always the **total** native-pixel offset from the panel's own `(cx, cy)`).
+It arrived with the koma pipeline in `acc4138`, **2026-07-26** -- so the
+guess that these are a product of the July alignment work is correct.
+
+Where they are applied, in `tools/pair_extraction/materialize_koma_panels.py`:
+
+- the line panel is `crop_page(line_gray, x0, y0, x1, y1)` -- **the three
+  columns never touch it**
+- the rough panel is `materialize_rough(...)`, which rescales a padded ROI
+  about the panel centre by `scale` and then crops at `(pad+dy, pad+dx)`
+
+So `scale != 1.0` means **the rough page was drawn at a different scale than
+the line page**, and the correction was applied to the rough alone.
+
+**Consequence for item 11: if the production fill layer is matched against
+the LINE page, these columns are irrelevant and the overlay check is not
+needed before cutting.** They matter only if something is compared against
+the rough.
+
+One thing to carry if the rough side is ever used: the alignment maximises
+edge agreement per panel, and Track D measured on 2026-10-19 that the pairs
+are **loose in both directions** -- roughly half the rough's ink has no GT
+line within 8px. A "the mask missed this region" reading taken against the
+rough inherits that looseness on top of the version problem.
+
+### A rule from the foundation's side of this exchange, worth keeping here
+
+Their sharpening of today's third name-as-measurement failure: it was the
+**most dangerous variant**, because *the name belonged to a check*. An
+inventory counted by names gives itself away when the totals do not add up;
+a check that was never pointed at this corpus reports nothing, **and
+reporting nothing is what a passing check looks like.**
