@@ -157,7 +157,17 @@ L が考え直すべき前提でもある。
 
 ## 9. 運用
 
-- **push はこの木がやる**: `git push -u origin fill-region`。基盤は push しない
+- 🛑 **push 保留中(2026-10-23、基盤からの連絡)。`git push -u origin fill-region` を実行しないこと。**
+  この木の履歴は `7d7087d` で **ako6 のベタ納品 884ファイル / 75.2MB**(作者の原稿)を抱えている。
+  `github.com/kuromook/gen_lineart` は public。**内容自体は既に `origin/foundation` 経由で公開済み**
+  (`7d7087d`/`51623d3`/`f38a601` はいずれも origin/foundation 上)なので、push しても新しい内容は出ない。
+  **出るのは参照** —— `foundation` だけ書き換えて後からこの枝を素のまま push すると、
+  書き換えで消したはずの blob を public に連れ戻す。**書き換えが `fill-region` も覆うまで保留。**
+  解除は基盤からの連絡で。基盤は **(b) 木ごと書き換え → この木が `git reset --hard` で追従** を
+  打診済み(こちらの希望も (b))。
+  **基盤の最初の連絡は `7d7087d` を部位層24MBとしていたが、実測では ako6 75.2MB で、
+  `51623d3`(部位層 134ファイル/23.4MB)はこの枝の祖先ではない。** 訂正済み
+- **解除後は push はこの木がやる**: `git push -u origin fill-region`。基盤は push しない
 - **通達は `../lineart/inbox/note_*.md`。冒頭に `発信: \`lineart-fill-region\`` の行を置く**
   (無いと基盤の audit が差出人を特定できない。2026-10-23 の偽陽性の原因)
 - **文書は2本だけ**: このファイル(短く保つ、履歴を溜めない)と `doc/work_log.md`(時系列)
