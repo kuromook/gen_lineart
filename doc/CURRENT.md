@@ -37,6 +37,9 @@ knowledge: `black` was *meant* as the fill, the digital line pass tends to fuse
 it, fill-only `black` layers also appear, and going back to analogue separates
 them again -- **so whether `black` is fill is a property of the generation, and
 2018-2019 is a generation mid-move** (`beta`-named area share 30.8% -> 53.1%
+from `ako6` to `ako7`). **The raster's loss is a separate thing and is ours**: a
+16.0 width cap in `merge_line_candidates` drops the widest layers, so one giant
+fill layer per page accounts for it -- a knob, not a fact about the corpus
 from `ako6` to `ako7`). The whole-corpus tone scan also finished: **17,695 used
 tone layers of 86,308 configured, five densities and three rulings covering
 99.8%**.
@@ -702,12 +705,45 @@ work, and the stated expectation is that the pieces make each other easier.
   so **separated fill drops out and fused fill stays**: ink-presence **14.2% for
   separated `black` against 83.7% for fused fill inside `線画 ...` layers**, and
   **ako6's raster is missing 46.4% of the production fill's pixels**
-  (66,226,148 of 123,596,784). **The general form: how much fill a raster loses
-  is a function of that work's generation** -- a fully separated generation loses
-  nearly all of it, a fully fused one almost none. **So the `ako7` measurement is
-  not about `ako7`; it is about the generation.** This file's *"ako6 is one work
-  and not yet a claim"* stays exactly right, and what a second case changes is
-  **the map of which generation is which**, not the status of the claim.
+  (66,226,148 of 123,596,784). **The "function of the work's generation" reading
+  written here is RETRACTED: the extraction side found the actual mechanism in
+  this project's own code, and it is a width threshold** (`b64893c8`'s question,
+  answered the same night).
+  `extract_clip_dataset.merge_line_candidates` drops layers when the composited
+  line width exceeds **`LINE_MERGED_MAX_WIDTH = 16.0`**, **removing them in order
+  of their own single-layer width**, and rejects the page if more than half must
+  go. **Fill is by definition wide, so it is removed first.** The guard was added
+  in August for the opposite reason -- to stop one fill layer inside a
+  line-named layer from costing a whole page (`aljanne2 page0017` had been lost
+  entirely over one such layer out of 42).
+  **Measured per layer, almost nothing is lost.** On `ako6 page0028`, whose page
+  retention reads 0.2034: **8 of its 9 line-named fill layers survive at
+  exactly 1.0000**, and the only casualty is the single layer at `drawn_ratio`
+  **0.348**, retained 0.0099 -- **and that one layer holds about 80% of the
+  page's fill area**, which is the whole of the page-level figure. **A page
+  aggregate here is one layer's fate wearing a page's name.**
+  **So the ako6/ako7 difference is not about generations.** Layers at
+  `drawn_ratio >= 0.2`: **5 in ako6 against 2 in ako7**, and **`線画`-named among
+  them: 3 against 0** -- ako7's two large ones are called `color` and
+  `レイヤー 23`, which never enter the composite at all. That is the entire
+  source of `line`-family ink-presence reading **1.0000 in ako7 and 0.8371 in
+  ako6**. Page retention inside ako6 ranges **0.17 to 1.00** and **does not track
+  line width** (0.44 / 0.38 / 0.36 all occur at width 1.91). **The function is
+  "does this page carry a giant fill layer", not "which generation is this".**
+  **The general form, rewritten and now predictive**: *a raster loses fill when a
+  page carries a fill layer large enough to push the composite past the 16.0
+  width cap, and what it loses is that layer -- widest single-layer width first.*
+  **Which layer drops is predictable**, where before this file said it could not
+  be predicted from names.
+  **And the consequence is better than the earlier reading allowed.** The missing
+  fill is **not absent from the manuscripts and not lost in production**: it is
+  **discarded by a threshold in this project's own extraction step**, which means
+  **there is a knob**. The loss stands as measured (46.4% / 40.4% of production
+  fill absent from the raster) and **every figure built on `fill_mask.py` still
+  inherits it**; what changes is that recovering it is a pipeline question rather
+  than a fact about the corpus. **This is the second time today that naming the
+  mechanism moved a finding from "a property of the material" to "a parameter of
+  ours"** -- the first being tone's invisibility in `LayerRenderMipmap`.
   **And ako7 cannot be judged from the inventory**, which holds colour
   statistics and no shape. The colour-test mass by name runs ako6 0.182 /
   2018_ako7 0.174 / 2019_ako7 0.322 / ako8 0.000 / ako9 0.044 / ako10 0.000 --
@@ -3705,6 +3741,9 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   the largest single layer name goes from the unnamed `線画` (41.4%) to **`black`
   (53.1%)**. `black` is fill in both (keep4 0.994 / 0.993, median inscribed
   radius 135.2 / 174.4px). **So 2018-2019 is a generation mid-move**, which is
+  a claim about **how the author separated the layers** and **not** about how
+  much fill the raster keeps -- that second thing turned out to be a width
+  threshold in this project's own extractor (Track L's entry).
   why a date cannot stand in for it.
 - **Still no external standard for areas, stated precisely by Track L.** Whole
   production layers mix line and area (line-named layers are 86.3% area by
@@ -5410,9 +5449,17 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **Every count on that line is a count of names, not of content, and two of
       them have since moved a long way.** By 2026-10-23 evening the extraction
       side had checked the ベタ column against the pixels: **ベタ layers 1,246 ->
-      299 and works with ベタ 84 -> 55**, because `black` is a *line*-layer name
-      in this corpus and only **70 of 1,012** `black` layers met the fill
-      signature. The tone column is separately known to be **2-3x inflated** by
+      299 and works with ベタ 84 -> 55**, because **across this corpus as a whole**
+      `black` is predominantly a *line*-layer name -- only **70 of 1,012**
+      `black` layers met the fill signature, i.e. 942 did not. **Corrected
+      2026-10-23 night by the extraction side: that is a corpus-wide majority and
+      not a per-work fact**, and its inventory never decided by name -- a layer
+      called exactly `black` is classed `beta` or `line` **by its pixel
+      signature**. So the author's generation-dependence is followed
+      automatically, and `ako6`/`ako7` having all 74 of their `black` layers come
+      out as fill **does not contradict the majority**. **The `区分` column is
+      that decision folded into one value; read per work, go to the per-layer
+      signature columns.** Same shape as colour not being a property of a work. The tone column is separately known to be **2-3x inflated** by
       unused templates (next bullet but two). So the line stands as an index of
       what names exist and **must not be quoted as an inventory of area** --
       see the rule at the end of the `NC4` trap.
