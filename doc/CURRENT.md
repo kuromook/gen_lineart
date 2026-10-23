@@ -44,7 +44,13 @@ ETA tonight. Its completion checklist is in J's entry; the verdict is M1 - M0
 on the 956-panel table, not the trainer's own 40 panels, and the mid-run
 holdout figures are deliberately not reproduced here. **Track D returned the
 precision side of the pair measurement** -- the pair is loose in both
-directions. The nine paper-scout reports are triaged below against K's spec;
+directions. **Track L is proposed** (fills, in a clean tree, by user decision) on a lead the
+author supplied and this file could not derive -- the manuscripts carry ベタ and
+トーン as separate production layers, and the extraction tool has already counted
+519 of them while discarding them; the request is out and is expected to take
+days. **One retraction**: the enclosure reframing this file wrote in the morning
+is withdrawn in item 11, measured away by Track J on 2026-10-10.
+The nine paper-scout reports are triaged below against K's spec;
 the `main` -> `paper-scout` rename is in `doc/worktree_policy.md`. Added this
 day: a repo-root `CLAUDE.md` with the start-up procedure for a session that has
 been reset, and a fix to `tools/audit_track_ledger.py`, which had counted a
@@ -4530,8 +4536,14 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
     it on 2026-10-10 and it was never executed: *"the ground-truth side needs
     no rough at all"*, and *"a line/fill/texture decomposition is not only
     Track J's business: part of the words line's unit problem is a fill
-    problem."* **No GPU, no author time**, so it can run alongside Track J's
-    verdict rather than behind it.
+    problem."* **Proposed as Track L on 2026-10-23 by user decision**, in a clean
+    tree rather than as Track J's next stage -- the proposal is
+    `doc/track_l_fill_region_proposal_20261023.md` and is **not yet approved**.
+    The user's reason, recorded because it is not derivable: Track J went toward
+    muddle, recognised it and stopped, and **only a few specific ideas have been
+    refuted**; J's tree carries its prohibitions and a nearly closed registration
+    alongside its instruments, so L **borrows the instruments read-only and not
+    the framing**.
     - **That it repairs line measurement is already demonstrated twice, not
       hoped for.** (i) `line_width_p50 7.59` read as thick strokes was solid
       fill, and the fill-excluded width is the instrument that does separate
@@ -4549,18 +4561,63 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       mark means indecision. But in all four pairs of
       `results/region_closure_20261010/pair_check.png` the hair and clothing
       that are solid black in the line art are drawn in the rough as **an
-      outline with white inside**. So the information is absent as ink and
-      present as **enclosure**, and the open question is **which enclosed
-      region is filled**, not where the fill ink is. That changes the unit from
-      the pixel to the region, makes the label a handful per panel (cheap to
-      ask the author), and is the representation question the Active Goal
-      names.
+      outline with white inside**. **The reading built on that, "the information
+      is absent as ink and present as enclosure, so the question is which
+      enclosed region is filled", is RETRACTED the same day it was written.**
+      Track J measured exactly that on 2026-10-10, two ways, and both fail:
+      downscaling gives **enclosed 0.0% at every setting** (scales 1 to 1/16,
+      two thresholds, barrier from the rough and from the de-filled GT -- a
+      2.7px stroke breaks into dashes as the image shrinks, so "the eye bridges
+      the gap; this operation widens it"), and morphological closing over 59
+      panels and 1,602 regions >=500px reaches **9.3% at r=16 and 15.4% at
+      r=32** with tightness collapsing to 0.085 and 0.033 -- the enclosing
+      region is about **30x the fill**, bought by swallowing the neighbourhood.
+      The same day's D1 adds that a fill's outline is **2.24x** a drawn stroke's
+      pieces per 100px against a 2.00x bar, so it is not a drawn curve either.
+      **The failure here was the foundation's**: it took the montage sentence
+      from that entry's section 2 and built the reframing without reading
+      section 3, two screens down, which tests it -- the qualifier that this is
+      a *human* reading came loose exactly as "for SDXL bare" came loose from
+      `cs2.5`. **What survives**: J refuted *cheap morphology*, not the idea of
+      a region proposer, and wrote so ("the requirement the user states is
+      right; cheap morphology does not meet it", and "no region proposer is
+      built" is a scoping decision). What died is the foundation's claim that
+      the reframing made the task **tractable and free of GPU and author time**.
     - **Unit constraint, already measured**: 0.5% of `ako5` tiles sit entirely
       inside a fill and 31.3% are near-blank, so **a region formulation does
       not fit the 480px tile**; Track J has already moved its own input unit to
       the koma panel, and this starts there too.
-    - Open before a registration: whether this is a track of its own or Track
-      J's next stage, which depends on J's verdict (item 5).
+    - **The lead that now heads the proposal came from the author, 2026-10-23,
+      and it is production knowledge this file could not derive**: manga
+      manuscript data carries a **tone (トーン) layer**, which is a surface
+      representation outright, handled separately from the **ベタ layer, which
+      also exists as its own layer**. So the fill ground truth does not have to
+      be inferred or asked for -- **it can be dug out of the manuscripts from
+      the period when the work was done in separated layers**. And the
+      extraction tool **already identifies those layers in order to discard
+      them**: its 2026-08-21 reply records that layers with
+      `black_among_drawn == 1.00` are "2値のベタ・フキダシ" and that admitting
+      them would add **519 layers across 74% of normal pages** (of 2,048 pages
+      surveyed). The inventory is already counted. The tool also already emits a
+      third raster on the **same folder, naming and canvas** as line/sketch
+      (`{prefix}_{page}_koma.jpg`, 1,645 pages), so **existing alignment
+      carries over** -- the heaviest technical question is answered before it is
+      asked. Two reservations: the tool's test lumps ベタ with **フキダシ**
+      (speech balloons, which are lettering furniture and not drawn fill), and
+      the author's "separated period" is to be **measured from the inventory,
+      not assumed**.
+    - **Request sent 2026-10-23** to the manuscript-layer session on `um350`
+      (now 192.168.1.5; host key verified identical to the old .9 entry, key
+      auth confirmed), asking for the inventory first and output second. Text:
+      `outbox/request_fill_tone_layers_20261023.md`. **It went by cross-session
+      message over Remote Control, a route that reports nothing back** -- so
+      delivery is known and reading is not, and silence is not agreement.
+      **The user expects the extraction to take days.** The reply will land in
+      `inbox/` or as a message; `ls -t inbox | head` is step 2 of this project's
+      start-up procedure, which is what will catch it.
+    - Open before a registration: approval for the L tree, and whether to create
+      it now or after the inventory returns. Track J's verdict (item 5) bounds
+      candidate 2 and is still unread.
 12. **Pre-annotated marking: let a model propose the groups and have the author
     correct them -- under Track H, registered separately, and not before H18
     reads out.** Proposed by the user 2026-10-23, on the reasoning that
