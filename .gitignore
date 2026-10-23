@@ -1,6 +1,8 @@
 __pycache__/
 .ipynb_checkpoints/
-venv/
+# `venv` without a slash on purpose: in several track trees venv is a SYMLINK
+# to this one, and `venv/` does not match a symlink (found 2026-10-24, when
+# importing this file into the dormant trees left the symlink untracked).
 venv
 .claude/
 
@@ -29,3 +31,10 @@ results/**
 
 # Local notification secrets / endpoints.
 config/autoloop_notify.env
+
+# Local file-exchange with the extraction-tool session (Windows machine).
+inbox/
+outbox/
+
+# 原稿由来の納品物(抽出ツールからの SCP 受け)。dataset/ と同じ扱いで追跡しない
+data/
