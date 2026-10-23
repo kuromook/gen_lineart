@@ -2519,6 +2519,16 @@ incident that actually happened here.
    cs2.5 above; `0.2582` credited to a model when it was the preprocessor's;
    `line_width_p50 7.59` read as thick strokes when it was solid fill; the
    `0.651` endpoint-gap that was a tokeniser artefact.
+   **The reverse side, 2026-10-24: a number can carry its construction and still
+   fail to communicate.** Track L needed three exchanges to convey that 40-60%
+   of the production fill is absent from this project's rasters. The construction
+   *was* attached -- *"the raster lacks 46.4% of the fill"* -- and **that sentence
+   was itself the problem**, because "lacks" and "discarded" describe an act on
+   one object where the truth is **two objects with different contents** (the
+   three-files statement in the traps). **So discipline 1 is necessary and not
+   sufficient: the construction has to be stated in a form that cannot be read
+   as a different claim.** The repair was to replace the wording everywhere
+   rather than annotate it, because an annotated phrase keeps being quoted.
    **A fifth, 2026-10-23, where what travelled was a *corpus* rather than a
    number.** The foundation told the extraction side to trial `ako5` and
    `housei` because *"every fill figure on record sits on those pools"* -- true
@@ -2560,6 +2570,20 @@ incident that actually happened here.
    `NC4` trap below. Discipline 2 binds the instrument before a result is read;
    this binds the quantity before the work starts, and it is checkable the
    moment a criterion is written down.
+   **The second sibling, from the 2026-10-23/24 exchange: publish in a form that
+   can be measured back.** Eight corrections passed between the foundation, the
+   extraction session and Track L in one day, and **almost none was caught before
+   publishing** -- the extraction side counts three of its own deliverables
+   corrected *after or just before* release and none before; the foundation
+   stopped exactly one table before it went out, and only because the other side
+   had written its instrument's design out in prose. **So "check before you
+   publish" is not what worked.** What worked was that every party shipped
+   **statistics and not verdicts, disclosed how it counted, and put the limits in
+   the same message** -- which let the other side recompute and disagree. The
+   asymmetry that made it work: **one side held the whole population and the
+   other held the construction, so each could see the other's error and neither
+   could see its own.** Prefer the form that invites the recomputation over the
+   hope of catching it alone.
    **And the case where no known value exists, Track J's wording, 2026-10-23**:
    **a newly built control, lacking a known value, must carry an identity
    inside itself.** It produced two while building `NC4`: `ctx_of` asserted
