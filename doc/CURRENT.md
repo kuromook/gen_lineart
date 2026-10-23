@@ -3745,12 +3745,50 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   much fill the raster keeps -- that second thing turned out to be a width
   threshold in this project's own extractor (Track L's entry).
   why a date cannot stand in for it.
-- **Still no external standard for areas, stated precisely by Track L.** Whole
-  production layers mix line and area (line-named layers are 86.3% area by
-  pixel); cutting them with radius 4 is circular; and the `beta`-named layers
-  selected by name are the ones largely absent from the raster. **So the three obvious
-  routes each fail for a different reason**, which is a better map than "we have
-  no ground truth".
+- **An external standard for areas is now within reach, on a distinction Track L
+  made after finding a hole in this file's own map (2026-10-23 night).** The map
+  said three routes fail for three different reasons -- whole layers mix line and
+  area, cutting with radius 4 is circular, and name-selected `beta` layers are
+  largely absent from the raster. **Routes 1 and 2 were not independent.** The
+  foundation's proposed remedy for route 1 was *"take only the pixels in a layer
+  that pass the shape test"*, and **that is precisely route 2's circularity**:
+  cut the pixels with `keep4` and the standard's **boundary** is set by the
+  radius-4 opening, which is then what evaluates it. **A map of independent
+  failures hid a dependency between two of its entries.**
+  **The distinction that opens the road: selecting is not cutting.**
+  - **Cut pixels** -> the standard's **boundary** comes from the instrument ->
+    **circular**.
+  - **Select whole layers** -> the boundary stays the author's, and radius-4
+    decides only **which layers are admitted**, never their shape -> **not
+    circular**. Every pixel of the standard is then one the author drew.
+  **Measured, `keep4 >= 0.95` with no pixel cutting:**
+
+  | | layers | line contamination | fill-area coverage |
+  |---|---:|---:|---:|
+  | ako6 | 316 | **0.6%** | **86.0%** |
+  | ako7 | 140 | **1.2%** | **76.7%** |
+  | ako6 `beta`-name, non-tone | 59 | 1.4% | 10.3% |
+  | ako7 `beta`-name, non-tone | **2** | 0.2% | **1.1%** |
+
+  So route 1's defect -- 13.7% line contamination -- **falls to 0.6-1.2% while
+  covering most of the fill**.
+  **And Track L withdrew its own recommendation in the same message.** The
+  name-selected standard (`beta`-named, non-tone) that its first work had pointed
+  to **collapses on ako7: 2 layers, 1.1% coverage**, because as `black` layers
+  increase they move **under tone folders**, so the non-tone `beta`-named set
+  shrinks. **The second work killed what the first suggested** -- the second time
+  that day a structure seen in ako6 had been written as a rule.
+  **The limit is stated with the result, not after it.** The layers `keep4`
+  excludes are the ones **fused with lines**, which is **exactly where the mask
+  is weakest**, so **agreement against this standard is biased in the mask's
+  favour**. The bias is bounded by what is left out: **14.0% of the fill area in
+  ako6, 23.3% in ako7**, and Track L has put those two numbers on the same line
+  as any agreement figure it reports.
+  **Not a verdict: the mask's agreement against this standard is unmeasured.**
+  What exists so far is the standard's purity and coverage. Running it needs the
+  L1 procedure (`pid` key, train split, native resolution, two negative
+  controls, ako6 as the known cell) with a region-unit main value -- **and Track
+  L is waiting on the user rather than starting it.**
 - **`git add -A` put the author's artwork into a public repository, and a
   force-push does not take it back out.** 2026-10-23, the foundation's own
   error, start to finish because the whole shape is reusable.
