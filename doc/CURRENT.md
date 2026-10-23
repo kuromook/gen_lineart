@@ -3413,6 +3413,16 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   deficient send every existing figure the opposite way when re-read. Until then,
   a fill figure is quotable only as *"against the radius-4 inferred mask"*, the
   same way a diffusion f1 is quotable only beside its conditioning map.
+  **The evening's correction removed the date this caveat was going to end on.**
+  The standard was expected to be the extraction side's ベタ layers; after the
+  `black` correction the supply is **299 layers over 55 works** rather than
+  1,246 over 84, and the filtering that produced it is **name-based and has
+  already been wrong once**. Track J's reading, adopted: the qualifier is now a
+  caveat **with no end date** -- not a larger one, since no number moved and the
+  comparison was always on one shared mask, but one that can no longer be
+  written as *"until item 11 brings the production layers in"*. Getting an
+  external standard is a **smaller and different errand** than it looked this
+  morning, and item 11 should be registered as if it has none.
 - **A multi-day run's completion procedure must not be addressed to the session
   that launched it.** Track J's handoff note of 2026-10-19 opens its checklist
   with "read `slot_20261019.log` and both jsonls **in the session it finishes
@@ -3496,6 +3506,26 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   a refuted framing belongs in the briefing's current-state section *with its
   measurements*, not only deep in the work log, so a fresh session cannot pick
   it up at the entrance.
+  **A sibling, added by Track J the same evening, after the extraction side's
+  `black` correction.** Both failures are the same act -- **a name read as a
+  measurement**. J assumed `black_among_drawn == 1.00` meant *a fill layer*; the
+  extraction side assumed `black` meant *a black area*. Neither was checked
+  against the content until something forced it, and in J's case the thing that
+  forced it was being asked to supply the number as an external standard. The
+  rule, J's wording, adopted project-wide:
+
+  > **An inventory counted by name is not an inventory of what the name refers
+  > to. It may not be quoted as a standard until the signature has been checked
+  > on the content side.**
+
+  **The exposure is project-wide**, the same way lesson 14's is: anywhere a
+  figure here rests on names. Swept 2026-10-23 -- the live instances are the
+  manuscript inventory's layer-count line (marked at the point of citation in
+  Next Actions item 11) and the retracted 519, which was this failure's first
+  instance and is already withdrawn in four stores. **The counts that survive
+  the sweep are the ones where a signature was checked**: the 444 tone layers
+  actually in use, the 70 of 1,012 `black`, the 5,480 furniture layers dropped
+  by name *after* the pixel statistic had failed to separate them.
 
 
 ## Approaches Never Taken Up
@@ -4818,6 +4848,15 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       gradient 1,999, ベタ 1,246, pure-black-but-unnamed 682, line-named-but-ベタ
       192, balloon 656, 描き文字 843, ノンブル 1,334, furniture 5,480, unknown
       14,069.**
+      **Every count on that line is a count of names, not of content, and two of
+      them have since moved a long way.** By 2026-10-23 evening the extraction
+      side had checked the ベタ column against the pixels: **ベタ layers 1,246 ->
+      299 and works with ベタ 84 -> 55**, because `black` is a *line*-layer name
+      in this corpus and only **70 of 1,012** `black` layers met the fill
+      signature. The tone column is separately known to be **2-3x inflated** by
+      unused templates (next bullet but two). So the line stands as an index of
+      what names exist and **must not be quoted as an inventory of area** --
+      see the rule at the end of the `NC4` trap.
       - **トーン was not being discarded. It was invisible.** In CLIP STUDIO a
         tone layer carries no halftone pixels: `LayerEffectInfo` holds the
         enable flag, density %, LPI and angle; `LayerLayerMaskMipmap` holds
