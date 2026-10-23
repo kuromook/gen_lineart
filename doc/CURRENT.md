@@ -656,6 +656,43 @@ work, and the stated expectation is that the pieces make each other easier.
   number. **L read this first as "the tone folder is the cause" and corrected it
   the same day**: it was correlation, name family and folder being confounded
   (`line`-named layers have 0 of 549 under a tone folder, so the 2x2 degenerates).
+  **Second result, same night: whether `black` is a fill layer is a property of
+  the GENERATION, and the author answered by telling L to measure.** The author's
+  process knowledge, which nothing here could derive: when the tone-layer method
+  began, **`black` was intended as the fill**; but in a digital line-art workflow
+  **fill tends to get put in during the line pass**, so `black` came to be
+  **fused with the line while `black` layers that are fill only also began to be
+  made**; and **after line art went back to analogue, the fill separates from
+  the line again**. **So there are generations in which `black` should be called
+  fill**, and ako6/ako7 need **not just layer names but the statistics**.
+  **ako6's verdict, on all 107 pages and 781 layers rather than a sample:
+  `black` IS fill.** Median `keep4` (the share of a layer's own ink surviving
+  the radius-4 opening) **0.994**, p10 0.955, median inscribed radius
+  **135.2px** -- *a mass, not a line* -- over 177 layers holding 28.2% of the
+  fill area; `hair black` 16 layers at 0.979. Against that, the **unnamed `線画`
+  layers (144, holding 41.4% of the fill area) are bimodal**: `keep4` >= 0.9 for
+  **59** and <= 0.2 for **26**. **One name denotes both pure fill layers and
+  pure line layers.** Per page: **both kinds 77, fused only 25, separated only
+  0** of 102, separated share median 0.496 -- so the author's *"fused, yet
+  fill-only ones also made"* holds **simultaneously inside one work**, and **the
+  name fails in both directions**.
+  **This gives the raster question its mechanism, which is the part that
+  matters.** The line raster is composited from the layers classified as *line*,
+  so **separated fill drops out and fused fill stays**: ink-presence **14.2% for
+  separated `black` against 83.7% for fused fill inside `線画 ...` layers**, and
+  **ako6's raster is missing 46.4% of the production fill's pixels**
+  (66,226,148 of 123,596,784). **The general form: how much fill a raster loses
+  is a function of that work's generation** -- a fully separated generation loses
+  nearly all of it, a fully fused one almost none. **So the `ako7` measurement is
+  not about `ako7`; it is about the generation.** This file's *"ako6 is one work
+  and not yet a claim"* stays exactly right, and what a second case changes is
+  **the map of which generation is which**, not the status of the claim.
+  **And ako7 cannot be judged from the inventory**, which holds colour
+  statistics and no shape. The colour-test mass by name runs ako6 0.182 /
+  2018_ako7 0.174 / 2019_ako7 0.322 / ako8 0.000 / ako9 0.044 / ako10 0.000 --
+  **and that table ranks nothing**, being an eight-page sample. **The
+  "statistics" the author means are the `keep4` side**, which is sayable only
+  because ako6 carries both.
   **And the briefing's worry about the delivery is refuted in pixel terms**:
   **91.5% of the delivery's 450,998,301 paint pixels pass the shape test**, with
   8 layers (0.24%) failing -- the "75.7% below 0.01" was a **count of layers**,
@@ -2488,6 +2525,18 @@ incident that actually happened here.
    their judgement -- and when a judgement is in doubt, pull the
    full-resolution crop instead of arguing from the montage. The cost here was
    not the misreading but the retraction built on top of it.
+   **A branch of this rule that nothing here anticipated, 2026-10-23.** Asked
+   whether the black mass in a tone folder's `black` layer counts as fill, the
+   author answered **not with a verdict but with an instruction to measure**: the
+   name does not settle it, look at the statistics. **So the author's authority
+   can be exercised over the *method of deciding* rather than over the answer**
+   -- and this rule must not be read as "wait for the author to say which", since
+   sometimes the author's answer is "that is a measurement". Track L's reading,
+   adopted: **what measurement could reach was only "which one ako6 is"**, while
+   the part only the author holds -- that separation and fusion **go back and
+   forth with changes in the workflow** -- did come from the author and could not
+   have come from anywhere else. **Measurement answered the instance; the author
+   answered the structure.**
 7. **Minimality is not the lever here, and two of its pieces are.**
    Considered and **declined** 2026-10-10: the `ponytail` skill
    (`github.com/DietrichGebert/ponytail`, MIT), a general "take the first rung
@@ -5402,7 +5451,10 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       tops and tights. The layer names are `black` x2 and `線画 cloth`; in 2016
       (`phantom`, `poolsideIdle`) the name is **`線画 HEAD hair`** -- **this
       period's manuscripts separate the fill layer by body part**, which is what
-      "a simple area layer" turns out to mean here.
+      "a simple area layer" turns out to mean here. **Refined the same day by the
+      author: it is not a period but a generation of the workflow, and
+      separation and fusion go back and forth** (see Track L's entry) -- ako6
+      holds separated and fused fill on the same pages, 77 of 102.
       **This changes what the surviving motive is a motive for.** The form that
       survived Track J's refutation is *"a person can look at the outline and
       tell which area is filled; cheap closing cannot extract it; what can is
