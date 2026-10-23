@@ -5279,9 +5279,50 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       once**, part naming *and* colour, so either result would have been
       unreadable. **A control must differ on the one axis under test**; this one
       was picked for the axis it was wanted for and not checked for others.
-      The replacement second work is **`2024c ako`** -- monochrome by direct
-      measurement (next bullet), 139 koma, layer names `線画` / `レイヤー 2` /
-      `成人修正` with no part-name system.
+      The replacement second work is **`2019_ako7`**, changed again the same
+      evening after it was measured: `2024c ako` had been picked to serve the
+      control framing, and when the framing went, **the work choice was left
+      standing with nothing holding it up**. On the sampled eight pages
+      `2024c ako` has **`beta` 0 and `beta_in_line_name` 2** against
+      `2019_ako7`'s **19** and `ako6`'s **18** -- an order of magnitude, and the
+      point of the second work is ベタ. `2024c ako` stays on the candidate list
+      as the late-year example of a clean manuscript, with the correction that
+      **its cleanness was zero white-fill contamination and not quantity of
+      ベタ**.
+    - **The author's "ako6 through ako10 generation" is right for the first half
+      and wrong for the second, and what changes is *which* separation
+      survives.** The user's reading, 2026-10-23, was that this era's
+      manuscripts are probably the good ones, naming ako6 to ako10. Measured on
+      the inventory's eight-page samples:
+
+      | work | tone% | ベタ | part-named | koma here |
+      |---|---:|---:|---:|---:|
+      | 2018_ako6 | 42.1% | 18 | **187** | 227 |
+      | 2018_ako7 | 40.7% | 10 | **182** | 33 |
+      | 2019_ako7 | 32.8% | 19 | **147** | 157 |
+      | 2019b_ako8 | 27.3% | 11 | **8** | 33 |
+      | 2020_ako9 | 26.5% | **2** | **10** | 93 |
+      | 2020b_ako10 | 31.1% | **1** | **3** | 87 |
+      | 2022b_ako10 | 31.5% | 4 | **1** | 6 |
+
+      **Tone separation holds all the way to ako10 at 26-31%, while part naming
+      collapses at ako8 (182 -> 8) and the ベタ layers fall to 1-4 from ako9 on.**
+      So the good window for ベタ and part names is **ako6-ako7, 2018-2019**, and
+      the generation stays good only in the tone axis. **Not yet measured**: the
+      sample is eight pages per work, so a ベタ count is per-eight-pages and
+      ako9/ako10's 1-2 could be a sample that happened to miss them -- the gap
+      from ako6's 2-per-page is large enough that this file reads it as real, and
+      reads it as **unmeasured** until the page count is raised.
+    - **The manuscript tree duplicates works across year folders too.**
+      `2019_ako7` and `2019b_ako7` are identical down to the layer count (512),
+      the ベタ count (14), the tone count (168) and the page file
+      (`page0069.clip`), differing only in the year directory -- while
+      `2019_ako8` (41 layers) and `2019b_ako8` (238) genuinely differ. **So the
+      289-work figure may count fewer real works than it says.** Same shape as
+      this corpus holding one page at several stages and as the extraction
+      side's colliding output names: **duplication is present at every layer of
+      this pipeline**, and the safe assumption is that a count of anything here
+      is an upper bound until the duplicates are tested for.
       **But the control framing is dropped entirely, because the extraction side
       turned the rule back on the replacement and it holds.** `ako6` and
       `2024c ako` differ in **year (six apart), page count (108 vs 139) and part
