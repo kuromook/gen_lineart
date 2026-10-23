@@ -51,7 +51,8 @@ a live session, the notice still goes to it and the track still pushes.
 
 ## Active Worktrees
 
-Updated 2026-09-30. `doc/CURRENT.md`'s Track Ledger is the authoritative status
+Updated 2026-10-24 (three rows were missing: Tracks J, L and M).
+`doc/CURRENT.md`'s Track Ledger is the authoritative status
 of each track; this table records only where each one physically lives, because
 **that has stopped being uniform** — see the two exceptions below it.
 
@@ -66,6 +67,9 @@ of each track; this table records only where each one physically lives, because
 | `lineart-controlnet-sd15-refine` | `controlnet-sd15-refine` | worktree of `lineart` |
 | `lineart-controlnet-sdxl-fidelity` | `controlnet-sdxl-fidelity` | worktree of `lineart` |
 | `lineart-cleanup-refiner` | `cleanup-refiner` | worktree of `lineart`, dormant |
+| `lineart-solid-fill` | `solid-fill` | worktree of `lineart`, **Track J**, opened 2026-10-20 |
+| `lineart-fill-region` | `fill-region` | worktree of `lineart`, **Track L**, opened 2026-10-23 |
+| `lineart-colour-manuscripts` | `colour-manuscripts` | worktree of `lineart`, **Track M**, opened 2026-10-24 |
 | `lineart-panel-generation` | `panel-generation` | **separate clone** of the same remote |
 | `lineart-face-words` | `face-words` | worktree **of that clone**, not of `lineart` |
 

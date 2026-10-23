@@ -6609,3 +6609,47 @@ split holds: the one place it could meet is if colour manuscripts also separate
 line layers from fill layers, which is a question for after M reads the layer
 structure, not a reason to identify the two now. L offers
 `l8_inventory_reconcile.py` read-only for that stage.
+
+## 2026-10-24 (midday) -- Track M opened, and the author reordered its candidates before it ran
+
+Approved on the three questions the proposal asked. The answers:
+
+1. **the manuscripts are built as a base layer that indicates the area, with
+   濃淡 layers on top of it** (some exceptions), and **the base is what to go
+   after**, because finding areas is the current target
+2. **single illustrations go in** -- a colour-painted manga page is likely less
+   tractable than a single illustration, which is made more carefully
+3. open the tree
+
+**(1) is the one that matters**: the area division is **already a layer**, not
+something to recover from composited pixels. The proposal's candidate 1
+(quantise the composite, take connected components) is handicapped by exactly
+the 濃淡 sitting above it, and candidate 2 (read the layer structure) becomes the
+main line. **The reordering comes from the author's process knowledge and not
+from a measurement**, which is the same category as the ベタ/トーン lead of
+2026-10-23 that corrected this file's premise -- and the briefing says the
+registration has to record it that way. What must not follow from it is naming
+the base layer: the condition gets measured, and the exceptions the author
+mentions are part of what gets measured.
+
+Tree: `../lineart-colour-manuscripts`, branch `colour-manuscripts`, cut from
+`foundation` at `e9d680b`, briefing committed `94c19cb`. Nobody is sitting in it.
+Two things verified at birth rather than assumed: **`data/` is ignored there**
+(the branch was cut after `f7372e6`) and **the inherited `doc/CURRENT.md` was
+replaced with a pointer before any session read it** -- the first tree opened
+since audit check 8 existed, and the pointer is worded to avoid the sentence the
+check looks for, since a pointer that still carries the claim is
+indistinguishable from what it replaced.
+
+Stores fixed in the same work (規律3 -- a retraction is a path): the ledger entry,
+the awaiting-decision paragraph (only the gradient masks are still queued),
+`doc/README.md`, the proposal's own status block, and
+`doc/worktree_policy.md` -- whose physical-location table **was missing three
+rows**, Tracks J, L and M. It had said "Updated 2026-09-30" while two live
+tracks were absent from it.
+
+Track L closed the `.gitignore` hole on its branch (`1d77d86`, pushed). Its own
+reading is worth keeping: it had **stated** the hole in a notice without closing
+it, and it had run `git add -A` in that tree this morning -- nothing was swept in
+only because `results/**` and `inbox/` were already ignored. Knowing and
+checking were on different sides.

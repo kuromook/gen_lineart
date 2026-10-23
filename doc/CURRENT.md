@@ -235,7 +235,12 @@ by keeping the pixels in the foundation's tree and reading them by absolute
 path, which is sound and is not the fix. **The fix is one line on each branch**
 (`git checkout foundation -- .gitignore`), and it belongs to whoever sits there.
 Nothing is tracked under `data/` in any tree today -- checked -- so the exposure
-is prospective. **`tools/audit_track_ledger.py` now checks it as check 9**
+is prospective, **but it was closer than that sounds**: Track L ran `git add -A`
+in its tree this morning to commit L8, and nothing was swept in only because
+`results/**` and `inbox/` were already ignored. **`fill-region` is fixed**
+(`1d77d86`, pushed, three lines taken verbatim from the foundation), and its own
+reading of it is the one to keep -- it had *stated* the hole in a notice and not
+closed it, so knowing and checking were on different sides. **`tools/audit_track_ledger.py` now checks it as check 9**
 (asked of git, so a rule in any form counts; a plain directory that is not a
 repo is not flagged), self-test 13 cases. The rule was already in CLAUDE.md and
 in every briefing, which is exactly what made it worth checking mechanically:
@@ -266,20 +271,13 @@ distributions above, and the distributions have now answered the conditional
 part**: the criterion **has** stopped being the colour test, since the area floor
 is what removes areas from the standard, so the question to put to other works
 is about area and not colour. And **two candidate tracks queued behind L**:
-- **colour manuscripts, now written up as Track M**:
-  `doc/track_m_colour_manuscripts_proposal_20261024.md` (116 lines, the author's
-  premise that colour puts a colour in **every** area so the division is
-  complete rather than sparse, four closed doors with their measurements, the
-  stock -- 28 all-colour works over 233 pages, 47 mixed over 1,566, 427 panels
-  already in the koma corpus -- three candidates, the trivial arm, and the two
-  questions that are the author's). **The foundation wrote the proposal, which is
-  recording and not experimenting; opening the tree is the user's call** and
-  nothing has been opened. It **does not take over Track L's homework**: whether
-  a colour area can serve as the standard for a filled area is a separate
-  registered question, because a coloured area is not a filled area
-- **the gradient masks**, which the survey above has just made measurable (the
-  mask is an area, and inverting one that marks everything-but-the-character
-  yields the character)
+**colour manuscripts were approved the same day and are now Track M in the
+ledger above** (`../lineart-colour-manuscripts`, briefing `94c19cb`), with the
+author's three answers -- the base layer carries the area division and 濃淡 sits
+on top of it, single illustrations go in, open the tree. **One candidate is
+still queued and undecided: the gradient masks**, which the survey above has
+just made measurable (the mask is an area, and inverting one that marks
+everything-but-the-character yields the character).
 
 **The lineage, compressed 2026-10-24.** Each of these is now a ledger entry or a
 record file rather than a paragraph here.
@@ -943,6 +941,56 @@ work, and the stated expectation is that the pieces make each other easier.
   which is discipline 7-7 landing on the foundation's own sentence. One of the 8
   is **`パース定規 1`**: the shape test caught a name the exclusion families miss,
   and it goes to the extraction side.
+- `../lineart-colour-manuscripts` (branch `colour-manuscripts`, **Track M**) --
+  **active, opened 2026-10-24 by user approval**, worktree of this repo cut at
+  `e9d680b`, briefing committed at `94c19cb`. **Nobody has worked in it yet.**
+  Taking the **area division** from colour manuscripts, on the author's premise
+  that **colour puts a colour in every area, so the division is complete rather
+  than sparse** -- against ベタ, which covers hair, tops and tights and nothing
+  else. Proposal: `doc/track_m_colour_manuscripts_proposal_20261024.md`
+  (123 lines, four closed doors with their measurements, the stock, three
+  candidates, the trivial arm). **It does not take over Track L's homework**:
+  whether a colour area can serve as the standard for a filled area is a
+  separate registered question, because a coloured area is not a filled area and
+  the decision being learned is not the same decision.
+  **The author answered three things on approval, and the first one reordered
+  the candidates before any measurement was taken.** (1) The manuscripts are
+  built as **a base layer that indicates the area, with 濃淡 layers on top of
+  it**, some exceptions, and **the base is what to go after** since finding areas
+  is the current target. (2) **Single illustrations go in** -- a colour-painted
+  manga page is likely less tractable than a single illustration, which is made
+  more carefully. (3) Open the tree. **The consequence of (1) is that the area
+  division is already a layer and not something to recover from composited
+  pixels**: the proposal's candidate 1 (quantise the composite, take connected
+  components) is handicapped by exactly the 濃淡 sitting above it, and candidate
+  2 (read the layer structure) becomes the main line. **The reordering comes from
+  the author's process knowledge and not from a measurement, and the
+  registration has to say so** -- the same category as the ベタ/トーン lead of
+  2026-10-23, which corrected this file's premise and which nothing here could
+  have derived. **What must not follow from it is naming the base layer**: the
+  condition has to be measured and registered, and the exceptions the author
+  mentions are part of what gets measured.
+  **Stock, counted from the delivered census** (`inbox/work_color_mode.csv`,
+  289 works at 5 pages each): **28 all-colour works over 233 pages**, 47 mixed
+  over 1,566, 214 all-monochrome; the koma corpus already holds **427 panels
+  over 6 candidate works**, `2022b_hyoui_color` the largest at 190. The largest
+  all-colour items are `2017 illustration` 79p, `2022b hyoui_color` 45p,
+  `2019 fringe3` 24p, `2018 skima10` 17p. **A rough 468 colour pages inside the
+  47 mixed works is an estimate and not a measurement** (each work's sampled
+  ratio times its page count).
+  **Verified at birth rather than assumed**: `data/` is ignored in this tree
+  (`check-ignore` passes; the branch was cut after `f7372e6`), and the inherited
+  `doc/CURRENT.md` was replaced with a pointer **before any session read it** --
+  the first tree opened since check 8 existed.
+  **First job is the instrument check, not a result**: page-level selection
+  (work-level classification is a closed door -- 47 mixed works, `fringe2` falls
+  to the monochrome side 2/5), **calibrating the saturation threshold** (the
+  "saturation 24 over 2% of pixels" rule is uncalibrated, its only ground being
+  that JPEG bleed reaches about saturation 10), and identifying the base layer.
+  Its null is **taken fresh in this pool** -- Track J/L's region-F1 floor
+  (`blank` 0.0084) is not carried in. The layer inventory it needs from the
+  extraction side **queues behind Track L's 2,963 layers**. No GPU at this stage.
+
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT

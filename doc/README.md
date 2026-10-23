@@ -28,7 +28,10 @@ working on extraction/tiling/panel-matching.
   that" from being assumed. Moved out of `doc/CURRENT.md` 2026-10-24.
 - `doc/track_m_colour_manuscripts_proposal_20261024.md`: Track M 起案 -- taking the
   area division from colour manuscripts, where every area carries a colour.
-  Written 2026-10-24, **awaiting user approval; no tree exists**. Holds the
+  Written 2026-10-24 and **approved the same day** -- the tree is
+  `../lineart-colour-manuscripts` (branch `colour-manuscripts`) and its live
+  briefing is that tree's `doc/initial_notice.md`; this file stays as the
+  proposal it was. Holds the
   closed doors (work-level colour classification, the uncalibrated saturation
   threshold, the retracted `fringe3` trial, the zero-tone signature) so they are
   not re-derived.
