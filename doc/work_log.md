@@ -5193,7 +5193,7 @@ Two things the same message carries that the next entry has to live with:
   design.
 - **The GT may stop being an estimate.** The author's production files carry
   a tone layer and, in some periods, **a separate fill layer**; the
-  extraction tool already identifies it (519 layers, 74% of normal pages, at
+  extraction tool already identifies it (519 layers, 74% of normal pages, at **[RETRACTED 2026-10-23 -- see "Retraction: the "519 fill layers"..." below; the inventory is 299 layers across 55 works and is not a standard.]**
   `black_among_drawn == 1.00`) and has been discarding it. If that inventory
   lands, the first instrument check it enables is **how close `fill_mask.py`'s
   radius-4 distance-transform mask is to a real production fill layer** --
@@ -5210,7 +5210,7 @@ reported is read **against the radius-4 distance-transform estimate** in
 IC1-IC7 all take the mask as given and check the quantities computed on top
 of it -- not out of negligence, but because **no external standard existed**.
 The author's production files may contain a separate fill layer (the
-extraction tool already identifies 519 such layers, 74% of normal pages), and
+extraction tool already identifies 519 such layers, 74% of normal pages), and **[RETRACTED 2026-10-23 -- see "Retraction: the "519 fill layers"..." below; the inventory is 299 layers across 55 works and is not a standard.]**
 if that inventory lands it is the **first** external standard the mask could
 be checked against.
 
@@ -5396,7 +5396,7 @@ solid fill is predictable. Two specific doors stay open, and neither is
 weakened by anything above: a **region proposer** (today's negative is about
 cheap morphology and about a per-pixel U-Net, not about proposing candidate
 regions and classifying them), and an **external fill-layer standard** from
-the production files (519 layers, 74% of normal pages), which would be the
+the production files (519 layers, 74% of normal pages), which would be the **[RETRACTED 2026-10-23 -- see "Retraction: the "519 fill layers"..." below; the inventory is 299 layers across 55 works and is not a standard.]**
 first thing the radius-4 mask could be checked against. Per amendment J3, the
 mask caveat qualifies the outward absolute claims above; it does not soften
 the comparisons, because the mask is common to every arm.
