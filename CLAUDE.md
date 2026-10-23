@@ -106,8 +106,9 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 - `outbox/reply_*.md` — 基盤から track へ(送信)。配送は
   `cp outbox/<file> ../lineart-<topic>/inbox/`
 - 抽出ツール(Windows, `sh1@192.168.1.5`)への通達は **SCP でプッシュ**する(鍵認証済み)。
-  宛先は `sh1@192.168.1.5:C:/Users/sh1/inbox_from_lineart/`。**便ごとにファイルを残す**
-  (メッセージ経路は双方向で取りこぼす。2026-10-24 に3通が届いていなかった)
+  宛先は `sh1@192.168.1.5:C:/Users/sh1/code/extract_line_and_sketch/inbox/`
+  (`inbox_from_lineart/` は旧。使わない)。**送った後に `dir` で着弾を確認する**。
+  **便ごとにファイルを残す**(作者の指示。メッセージだけでは記録に残らない)
 - **原稿由来の納品物は `data/` 配下。`.gitignore` 済み、絶対にコミットしない**
   (2026-10-23 に 99MB を public repo に上げた。force-push では消えない)
 - 意味のある結果が出たら `doc/work_log.md` に要約を戻し、
