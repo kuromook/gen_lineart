@@ -179,11 +179,32 @@ def last_commit(path):
         return None
 
 
+def notice_senders(head):
+    """Directory names a notice identifies itself with, best source first.
+
+    A `発信: `<dir>`` line is authoritative; otherwise any mention of a
+    directory name in the opening; otherwise the branch the notice names, since
+    a track on branch `<topic>` lives in `lineart-<topic>` (CLAUDE.md §5).
+    """
+    sender = re.search(r"発信:\s*`(lineart-[A-Za-z0-9._-]+)`", head)
+    if sender:
+        return [sender.group(1)]
+    names = re.findall(r"`(lineart-[A-Za-z0-9._-]+)`", head[:600])
+    if names:
+        return names
+    return [
+        "lineart-" + b
+        for b in re.findall(r"branch\s+`([a-z0-9][a-z0-9._-]*)`", head[:600])
+    ]
+
+
 def last_notice():
     """Directory name -> (date, filename) of the most recent notice it sent.
 
     Notices carry a `発信: `<dir>`` line; fall back to any mention of the
-    directory name so a differently-formatted notice still counts.
+    directory name, then to the branch name a notice gives instead (a track on
+    branch `<topic>` lives in `lineart-<topic>`, per CLAUDE.md §5), so a
+    differently-formatted notice still counts.
     """
     newest = {}
     if not INBOX.is_dir():
@@ -193,12 +214,7 @@ def last_notice():
             head = note.read_text(encoding="utf-8", errors="replace")[:4000]
         except OSError:
             continue
-        sender = re.search(r"発信:\s*`(lineart-[A-Za-z0-9._-]+)`", head)
-        names = (
-            [sender.group(1)]
-            if sender
-            else re.findall(r"`(lineart-[A-Za-z0-9._-]+)`", head[:600])
-        )
+        names = notice_senders(head)
         stamp = re.search(r"(\d{8})", note.name)
         when = None
         if stamp:
@@ -241,7 +257,12 @@ def self_test():
     # Wrapped markdown: the sentence survives the line break.
     wrapped = released.replace("and no ", "and no\n  ")
     assert claimed_dirs(wrapped) == [], claimed_dirs(wrapped)
-    print("self-test: 4 cases pass")
+    # A notice that names its branch and not its directory still has a sender.
+    by_branch = "宛: 基盤 / 2026-10-23 14:20 / branch `solid-fill`(push 済み)"
+    assert notice_senders(by_branch) == ["lineart-solid-fill"], notice_senders(by_branch)
+    by_dir = "発信: `lineart-face-words` / branch `face-words`"
+    assert notice_senders(by_dir) == ["lineart-face-words"], notice_senders(by_dir)
+    print("self-test: 6 cases pass")
     return 0
 
 

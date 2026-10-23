@@ -13,18 +13,29 @@ disk before being folded in. Track H's current best is group recall **0.351**
 (H17, 260 training faces, read on the original 193, 5-fold by series, mean of 3
 seeds, train split only) against a proposed per-stroke rule bar of 0.80/0.60, so
 **Track G's dependency is not payable yet** and Track H says so itself.
-**Track J's slot finished 2026-10-19 23:43:35** (exit 0, `M1_step40000.pt` on
-disk) **and its verdict has not been read**: no commit in that tree since the
-handoff note, and the GPU has been idle for four days. The registered verdict is
-M1 - M0 on the 956-panel table; the trainer's own 40-panel snapshots in
-`slot_20261019.log` are not it. **The 956-panel table was running on 2026-10-23
-and is expected to finish about 14:15 JST** (350 of 969 at 12:05; 13.2 s/panel
-on average, with runs of 78 s on the largest koma). **If no notice from Track J
-has arrived by then, wake that session** -- its own watcher is harness-tracked
-but is a single point of failure with nothing watching it. Amendment **J3**
-(2026-10-23, disclosure only, registered before the table was read) has the
-headline naming the radius-4 estimated mask, with the clause that this bounds
-absolute claims and **not** C1-C5, which are comparisons on one shared mask. **Track K's restart input now exists** -- Track H
+**Track J's four-day slot has been read, and it is a clean negative.** The
+969-panel table finished 14:06 (11,620 rows); **both anchors passed before any
+verdict was read** -- A1 agreed with this file's table panel by panel 969/969,
+A2 reproduced the trainer to 1e-9. **C4 removes both models from every verdict**
+(M0 falls to the mirror control; **M1 falls to the off-by-one control as well**
+-- its score against its own panel's ground truth does not beat its score
+against the neighbouring panel's). **C1 FAIL** (best arm `rough_dark@budget`
+0.0110, bar 0.05), **C2 FAIL on both legs** (-0.0012 and -0.0017), **C3 fires**.
+The sign is identical in all nine threshold cells, so none of it is an artefact
+of where the bars sit. What the models were doing: ground-truth fill is **10.40%**
+of panel area, M0 paints **0.71%** and M1 **0.34%**, at roughly half the region
+count -- **each region 14-30x too small**, red dust along the strokes rather than
+areas -- and **`all_black` recovers 5-8x more fill pixels than either trained
+model** (pixel IoU 0.1040 against 0.0204 / 0.0124). Amendment **J3**
+(disclosure only, registered before the table was read) has the headline naming
+the radius-4 estimated mask, with the clause that this bounds absolute claims
+and **not** C1-C5, which are comparisons on one shared mask. **The verdict word
+had to be split in two** and the split is now Working Discipline item 1's
+sibling rule, project-wide: *"the simple thing suffices"* means something
+different when the simple arm is winning than when every arm including the
+trivial one sits in one band, and today was the second -- so the headline is
+**"no arm predicts fill in this formulation"**, not "no learned model is
+needed". **Track K's restart input now exists** -- Track H
 kept marking for its own bar -- while K stays dormant by the 2026-10-19 decision,
 and H is explicit that it is not asking for K back. **The request relayed through Track H was
 answered the same day**, from the user's own three proposals rather than a
@@ -33,7 +44,13 @@ region unit -- no GPU, no author time), **item 12** (pre-annotated marking under
 Track H, after H18, starting at order 501), and **Working Discipline item 8**
 (conformal prediction, adopted as item 12's mechanism and premature for the
 fills). The order the user set is in the Next Actions preamble. **Track J's
-verdict is the next thing to be taken up** and is deliberately still open.
+verdict closed in form B**, which leaves the semantic route open and settles
+Track L's eighth door; **item 11 stays an independent track**, by both the
+user's decision and Track J's own request. **The manuscript-layer scan's first
+group is in** (1,724 pages / 9 works; 212 pages carry tone, 595 layers), with
+two corrections that both run high-to-low -- **ベタ works 84 -> 55, ベタ layers
+1,246 -> 299** -- and the hard/graded tone split measuring **bimodal**, which
+is the answer that statistic was asked for.
 
 Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
 and its second axis closed itself the day it opened: K19 landed on the
@@ -3329,6 +3346,19 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   author standing by to say "that one is fine" and its output is read as
   authoritative -- discipline 4's most of all, being the one check that depends on
   nobody's attention.
+  **A third false positive from the same tool the same day, on a different
+  reader.** The audit matched a notice to its sender by looking for a
+  `` `lineart-<topic>` `` directory name in its opening, and Track J's slot
+  verdict identifies itself as *"branch `solid-fill`"* -- the branch, not the
+  directory. So the notice counted for nobody, and the audit reported
+  *"`lineart-solid-fill` has committed 5d past its last notice -- unreported
+  results are likely"* **against the one track that had just reported a four-day
+  slot in full**. Fixed by reading the branch as a last resort
+  (`notice_senders()`, branch `<topic>` -> `lineart-<topic>` per CLAUDE.md §5),
+  with the two spellings added to `--self-test` (6 cases). The shape to keep:
+  **a check that matches records by one spelling of a name will report the
+  absence of everything spelled the other way**, and the report reads as a
+  finding about the track rather than about the reader.
 - **A layer can be present, intended and fully specified, and still measure as
   empty, because its content is a render-time effect rather than pixels.**
   Found 2026-10-23 by the extraction session. A CLIP STUDIO tone layer keeps its
@@ -3348,6 +3378,28 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   furniture (paper, MASK, トンボ, bleed and panel frames, 集中線) is 100% pure
   black among drawn pixels exactly as a fill is, 5,480 layers of it, so it has
   to be dropped by name before any fill count means anything.
+  **Third instance, 2026-10-23, from the extraction side and pointing the other
+  way.** Its first inventory reported **84 works with ベタ and 1,246 ベタ layers**;
+  the corrected figures are **55 works and 299 layers**. The cause was the layer
+  name `black`, which in this corpus is a **line** layer -- the ink pass, not a
+  fill -- and only **70 of 1,012** `black` layers met the fill signature at all.
+  Its own words: the same structure of error as the foundation's 519-layer
+  reading, *"画素統計ではなく名前の側で"* -- on the name side instead of the pixel
+  statistic. The pair is now symmetric and both halves are on record: **a class
+  defined by a pixel statistic collects everything that shares the statistic,
+  and a class defined by a name collects everything that shares the name.**
+  Neither side is the safe one, and the only thing that held in either case was
+  requiring the name **and** the signature to agree before a layer counts.
+- **A fill can be white, and an instrument that counts ink cannot see it.**
+  Found 2026-10-23 by the extraction session while fixing the above. Its fill
+  signature read `plane0`, which is **255 for a white fill exactly as it is for
+  blank paper**, so coverage cannot separate *this area is painted white* from
+  *nothing is here*. The independent check adopted is **`preview_dark` >= 0.5
+  from `CanvasPreview`**, the composited page, which carries colour rather than
+  coverage. Every instrument in this project counts ink, so the general form is
+  worth keeping beside the tone trap: **coverage is not colour, and what colour
+  an area is cannot be read from a field that only says whether the area was
+  touched.**
 - **Every solid-fill number on record inherits a mask that has never been
   checked against anything.** Stated by Track J 2026-10-23, of its own corpus:
   `fill_mask.py` infers the fill from a *flattened* line-art raster by distance
@@ -4863,6 +4915,30 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **The user expects the extraction to take days.** The reply will land in
       `inbox/` or as a message; `ls -t inbox | head` is step 2 of this project's
       start-up procedure, which is what will catch it.
+    - **Group 1 of the scan came back the same day, and it moved three of the
+      numbers in this file (2026-10-23).** **1,724 pages over 9 works: 212 pages
+      carry tone, 595 tone layers in use.** The scan went from **3.1 to
+      0.28 s/page** once the layer read was narrowed, which is what makes a full
+      pass over the newly-connected `F:` drive discussable at all rather than a
+      quoted month. Two corrections arrived with it and are recorded as traps
+      above -- **ベタ works 84 -> 55, ベタ layers 1,246 -> 299**, and the white-fill
+      blind spot in `plane0` that `preview_dark` now covers. **The direction of
+      both is the same: the first figures were too high**, so nothing that was
+      planned on the strength of them is safe without re-reading.
+    - **The hard/graded split came back as a measurement, and it is bimodal --
+      which is the answer the statistic was asked for.** `mask_mid_per_boundary`
+      -- the share of mask pixels that are neither 0 nor 255, normalised by the
+      shape's boundary length, so a hard edge scores near its own perimeter and
+      a graded one scores far above it -- has **p90 0.929 and p95 7.874**, an
+      order of magnitude between two adjacent deciles, and **54 of 595 layers
+      (9.1%) sit above 1.0**. So the author's two kinds of tone are **two
+      populations, not a continuum**, and the threshold can be set on this side
+      without a judgement call, which is exactly what asking for the statistic
+      and not the verdict was for. **The `gradient` class cannot be used for
+      it**: all 595 layers in use carry `has_gradation_fill = True`, so that
+      flag records a tool setting and not a look. That is the second name this
+      week that turned out to be about production rather than appearance, the
+      first being `black`.
     - **How Track J's door closes changes how L reads candidate 2, and J sent
       this ahead of its verdict (2026-10-23).** If C3 fires, *"no learned model
       is needed"* will most likely hold in the form **"both arms are near
