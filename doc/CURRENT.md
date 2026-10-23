@@ -3513,6 +3513,9 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   as the present *and* does not establish which tree it is in. **Both are commits
   on eight branches nobody asked for, so they are one decision and go to the
   user together.**
+- **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
+  groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
+  is still to come.
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
@@ -5492,8 +5495,28 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       not something a work choice can answer. **The rule caught its author's
       second attempt as well as the first**, which is the strongest evidence it
       is worth keeping.
-    - **The colour question is measured now, not inferred, and the hypothesis
-      below is superseded by it (2026-10-23 evening).** The extraction side read
+    - **Colour is a property of the page, not of the work -- the work-level
+      answer was the wrong *shape* of answer, and the extraction side retracted
+      its own (2026-10-23 night).** Over 289 works: **214 all-monochrome, 28
+      all-colour, 47 mixed.** Two reciprocal counter-examples kill both simple
+      rules: **`fringe2`, which the author calls colour, reads monochrome on 2
+      of 5 sampled pages** (its siblings read 4/5 and 5/5), so a majority vote
+      fails; and **`2019_ako8`, a monochrome manga, has one page at 92% coloured
+      pixels** -- a cover -- so "any page with colour" fails too. Monochrome
+      books carry colour covers and frontispieces, and colour books have pages
+      with little colour in them. **So `work_color_mode_pages.csv` (1,348 rows,
+      one per page) is the file to use and exclusion is per page**; the
+      work-level column is kept for reference and is wrong for 47 works.
+      **And the earlier "`2024c ako` is monochrome" was right only by luck** --
+      it happened to be 0 of 5 with no mixture, so the form of the answer was
+      never tested. **This is the day's recurring failure in its fifth unit**:
+      name against signature, layer against content, screening against ranking,
+      population against measurement, and now **work against page**. Each time
+      the number was fine and **the thing it was a number *of* was wrong**.
+      Five candidate works are all-colour and drop off the list: `2019_plecia`,
+      `2019b_hitoduma`, `2021_yakuza_c`, `2022b_fujiko`, `2024c_tama`.
+    - **The colour question is measured now, not inferred, and the tone-share
+      hypothesis below is deleted by it (2026-10-23 evening).** The extraction side read
       **saturation off `CanvasPreview`** -- the page image CSP itself rendered,
       1240-1754px, a few hundred KB per page -- so it asks *is there colour on
       the paper* instead of reasoning from layer names, tone share or colour
@@ -5557,6 +5580,50 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       floor already applied, so a re-cut must be built from the per-layer PNGs.**
       Reversibility lives in the per-layer output and not in the composite,
       which is the concrete form of the threshold rule above.
+    - **`ako6` delivered 2026-10-23, and it is the first production fill this
+      project has ever held.** `data/incoming_manuscript/ako6/fill/`, **883 PNGs
+      + `beta_manifest.json`, 78MB**: **107 pages, 102 with fill, 781 fill
+      layers, 0 errors**, one canvas throughout (**7016x6543**), composite
+      coverage mean **8.8%** / median 5.9% / max 43.5%. Checked on arrival --
+      every file on disk is named in the manifest and every name resolves to a
+      file, 883 both ways. **The decision rule is recorded in the manifest
+      itself** (`black_among_drawn >= 0.95`, `drawn_gray_mean <= 12.0`,
+      `drawn_ratio` in [0.002, 0.9], `preview_dark >= 0.5`, name families
+      `nombre`/`balloon`/`text`/`furniture` excluded), which is what makes a
+      re-cut possible.
+      **The name-vs-signature lesson paid for itself here**: by name family the
+      781 layers are **`line` 549, `beta` 193, `unknown` 39** -- so **70% of the
+      production fill lives in layers called `線画 ...`** (`線画 hair` 171,
+      `線画 skin` 154, `線画` 144, `線画 cloth` 52) and a name-based design would
+      have dropped them. `black` is 177, the name that caused the 84 -> 55
+      correction.
+      **Two notes from the arrival check, in the order their size deserves.**
+      (i) **Three layers of 781 (0.4%) come from a `sketch set` folder**, one of
+      them named `下絵`. Seeing that one record first, this file was about to
+      report a defect; measured, it is 0.4% and not a pattern -- **the same
+      error it spent the day recording, caught on itself.**
+      (ii) **The signature has no shape term, and this is the useful half.**
+      Colour purity, coverage and page darkness cannot separate *a pure-black
+      fill* from *a pure-black dense line layer*, and 469 of the 781 are
+      line-named. **This project holds exactly the missing instrument**:
+      `fill_mask.py`'s radius-4 opening is a shape test -- the region that can
+      hold a disk of that radius -- which a stroke fails and an area passes.
+      **So the instrument check is bidirectional and the circularity worry
+      resolves differently than it was framed**: they test colour, we test
+      shape, neither was built from the other, so **agreement is informative and
+      disagreement says which side to look at**. It remains a track's job to
+      run, not the foundation's (discipline 5).
+    - **Relayed for Track H, 2026-10-23**: five pages exported layer by layer at
+      full canvas, with a JSON of layer id, name and parent folder, so H and the
+      author can check **whether the part names match their own pixels** against
+      the author's per-stroke marks. Author's approval on record ("let's look at
+      a few pages"). H picked pages that carry marked training faces and matched
+      the versions, and deliberately included two pages holding
+      `beta_in_line_name` layers as cases where the name is not the content.
+      `inbox/request_track_h_part_layer_export_20261023.md`; **H states the
+      judgement is the author's and the extraction side is asked only to
+      export** -- the division discipline 6 asks for, arrived at by the track
+      without being told.
     - **Delivered 2026-10-23 to `inbox/`**: `fill_tone_inventory_layers.csv`
       (45,533 rows), `..._works.csv` (289), `..._inventory.json`,
       `tone_layers_local.csv` (1,114 structurally-confirmed tone layers with
