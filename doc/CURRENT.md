@@ -3279,6 +3279,44 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   discipline 4 specifically, because that check is the one piece of discipline
   that does not depend on anyone's attention -- so its output is read as
   authoritative, and it has no author standing by to say "that one is fine".
+- **A multi-day run's completion procedure must not be addressed to the session
+  that launched it.** Track J's handoff note of 2026-10-19 opens its checklist
+  with "read `slot_20261019.log` and both jsonls **in the session it finishes
+  in**". The run was deliberately detached at PPID 1 so that nothing depended on
+  a session staying open; it finished 2026-10-19 23:43:35, and the session that
+  wrote the instruction had exited around 14:00 the same day. **The two
+  requirements are incompatible by construction**: detaching is precisely what
+  makes the launching session's lifetime irrelevant, so an instruction addressed
+  to that session cannot be carried out. This file had already recorded that day
+  that "the slot will finish with nobody watching", so the gap was foreseen and
+  only the wording was never fixed. The cost: a four-day GPU window spent and
+  its verdict still unread four days later. **The rule: the completion procedure
+  belongs to the tree** -- the briefing, or a file the briefing names --
+  addressed to whoever arrives next, never to "this session". Sibling of the
+  `"w"`-mode jsonl trap from the same note: a multi-day run's recoverability has
+  to survive the session that started it, and that covers its instructions as
+  well as its weights and its log.
+- **Two files can each delegate an instrument to the other, and nothing notices
+  until a verdict needs it.** Found by the foundation 2026-10-23 while reading
+  Track J's tree to see what reading the slot would take. `NC4` (the context
+  shuffle, M1's control) is required by J's pass criterion C2 -- *M1 - M0 >= 0.03
+  **and** M1's NC4 dropping >= 0.03, both or the context stream is not what
+  produced the difference*. `tools/evaluation/score_fill_koma.py:29` says NC4
+  "belongs to M1; **it lives in the trainer**"; `scripts/train_fill_seg.py`'s
+  docstring says it "**lives in the scorer, not here**". **It exists in neither**,
+  so the registered verdict of a four-day run was unreadable from the moment it
+  was registered. Each file is individually coherent -- the comment names the
+  right owner, and both authors believed the instrument was somebody's -- which
+  is why no review of either file finds it. **The check: for every control a
+  pass criterion names, grep for its implementation, not for its name.** A name
+  appearing twice is the failure mode, not the evidence. Track J has the same
+  precedent in smaller form (`IC-j10`, 2026-10-18: "the registration's second
+  expected value cites a measurement that does not exist"), which makes this the
+  second instance and the reason it is written as a trap rather than an incident.
+  A pass criterion is a promise that something is measurable; nothing in this
+  project currently checks that promise at registration time, and a cheap place
+  to start is the moment a criterion is written down.
+
 
 ## Approaches Never Taken Up
 
