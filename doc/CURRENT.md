@@ -3299,452 +3299,227 @@ One standing policy note from that period is still worth reading where it sits:
 **a tile score is not a content-match guarantee, and thumbnail QC hides it** --
 found at full resolution in the strict pass's tail.
 
-
 ## Next Actions
 
-Items 1-2 are the fronts on the words line -- Track H on the author's time and
-Track G on the machine's -- and **item 5 is the third front as of 2026-10-09**,
-Track J on the GPU, which until that day had nothing to do. Item 3 is the three held tracks and what would justify resuming
-each. Item 4 is two open bugs in shared tooling, **item 5 is now an active
-third front -- Track J, the solid fills, opened 2026-10-09 to take the idle
-GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every ControlNet track is closed and none leaves work behind, and
-**Track I closed itself on 2026-10-04** -- see the Track Ledger above.
-Items 11 and 12 were added 2026-10-23 from the user's own three proposals, and
-they come with an order the user set: **(1)** item 11's GT-only measurements,
-which need neither the GPU nor the author; **(2)** item 12's cost baseline,
-which needs no instrument at all; **(3)** H18's read-out, before which the
-marking stream is not to be touched; **(4)** then item 12's registration. The
-third proposal, conformal prediction, is ruled on in Working Discipline item 8
--- adopted as item 12's mechanism, premature for the fills, not a track.
+**Three fronts and a queue.** Item 1 is Track H on the **author's time**, which
+is this project's scarce resource; item 2 is Track G on the machine's, slot open
+with its next assignment named; item 11 is the fill line, now Track L, and it is
+the only one with something in flight. Item 3 is the three held tracks and the
+trigger that would resume each, item 4 one data-side decision left from two
+fixed bugs, **item 5 is Track J, closed 2026-10-23 on a clean negative**, items
+6-10 housekeeping, none of them blocking, and item 12 a registration waiting on
+H18. Every ControlNet track is closed and leaves nothing behind.
 
-**2026-10-19: M1 is running.** The user instructed it that day, and Track J,
-which had held it under its own rule that a long GPU job runs only on the
-user's word, started it; the 10-19..10-22 window is in use. Launched 08:34 as
-`experiments/run_fill_seg_m0_m1_20261019.sh` (`3bd7170`, OOM fix `c59bc78`):
-**M0 then M1 sequentially**, 40,000 steps each at `--batch-panels 1` after the
-default batch size OOM'd, snapshots every 4,000 steps, runner detached at
-**PPID 1** with stdout to `results/fill_seg_20261010/slot_20261019.log`, so
-nothing depends on a session staying open. Both arms run because the registered
-question is a **difference** between them.
+**The order the user set on 2026-10-23 still stands**: (1) item 11's GT-only
+measurements, which need neither the GPU nor the author; (2) item 12's cost
+baseline, which needs no instrument at all; (3) H18's read-out, before which the
+marking stream is not to be touched; (4) then item 12's registration. The third
+proposal of that day, conformal prediction, is ruled on in Working Discipline
+item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
 
-Track J wrote a handoff note while it runs
-(`../lineart-solid-fill/doc/work_log.md`, commit `f75295b`) and it carries two
-things this ledger should respect rather than copy:
-
-- **A crash procedure**: there is no `--resume`; checkpoints land every 4,000
-  steps, but `train_<arm>.jsonl` is opened with `"w"`, so **copy the jsonl
-  aside before relaunching** or the holdout curve is gone.
-- **Mid-run holdout numbers that are explicitly not a verdict**, recorded so a
-  later reader can see they were watched and not acted on. **The values are
-  deliberately not reproduced here.** A number repeated in the authoritative
-  ledger is a number that will be quoted later without its caveat -- which is
-  this file's own trap about the reader taking away the headline figure. They
-  are in that note, with their condition attached, and the registered reading
-  of the slot is a difference on the 956-panel table, not a mid-run curve.
-  **No C1-C4 verdict may be quoted from the trainer's own numbers.**
-
-**Nobody is seated at that worktree as of 2026-10-19 14:05, and the run does
-not care.** Verified from the foundation: pid **777362** at **PPID 1**, 5h29m
-elapsed, GPU at 100% and 7,473MiB, log at **M0 step 29,050/40,000, 1.47 it/s**,
-snapshots through `M0_step28000.pt`. At that rate the remaining 50,950 steps
-(M0's remainder plus all of M1) finish in **about 9.6 hours, ETA 2026-10-19
-23:40** -- conditional on M1 running at M0's speed, which is why that figure
-travels with its condition. **So the slot will very likely end with no session
-watching it**: whoever opens that worktree next should read Track J's handoff
-note first, and the foundation left the completion checklist in
-`../lineart-solid-fill/inbox/reply_j_slot_handoff_20261019.md` (copy the jsonls
-before re-running anything; the verdict is M1-M0 on the 956-panel table; every
-figure carries the don't-paint and preprocessor baselines in the same sentence;
-`npred/ngt` beside every region-F1).
-
-1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
-   and a live session is on it as of 2026-10-23). **The push is done**:
-   `origin/face-words` is `43a6e88` (2026-10-18), verified here, so the
-   "single-disk" flag raised on 2026-10-04 is cleared. It remains a worktree of
-   Track G's separate clone, so neither `git worktree list` here nor
-   `tools/audit_track_ledger.py` can attribute it -- the audit prints it as a
-   separate clone, which is the best it can do.
-   Why it exists, from Track G's first notice: a word is a shape class with
-   size removed, so words mix meanings and dilute any placement measured on
-   them; fixing a small, trustworthy set of words is the prerequisite Track G
-   stopped for. It assigns author strategy labels (eye, nose, mouth, brow, ear)
-   in a namespace separate from `wNNN`, at instance level, with a held-out part
-   fixed at labelling time -- and **the user allowed those labels as ground
-   truth for evaluation, an explicit exception to "names are interpretive
-   only"**. **Its first notice arrived 2026-10-23**, so the entry above is now
-   the track speaking rather than this file reading its disk.
-   **Where it stands and what the foundation is waiting for.** The opening
-   hypothesis is refuted, the words turned out not to carry part identity
-   (lesson 13), and the track has moved up a level: the unit itself is wrong, so
-   it is collecting line-level ground truth through the grouping UI --
-   **373 faces complete as of 2026-10-23**, and the author is still marking.
-   Three things to watch from here rather than act on:
-   - **The three measurements that ground truth is for were answered on
-     2026-10-12** (H6, 68 faces), and this file carried them as unanswered for
-     eleven days: mixing **68%**, fragmentation **22%**, ink in no cluster
-     **7%**, a cluster capturing a true group **19%** of the time. They settled
-     the question they were for -- the regrouping mechanism is a **replacement,
-     not a repair** -- and the track has built one. The denominators differ
-     from the 2026-10-09 cluster-mark figures; see the entry above.
-   - **The held-out discipline is now carried across two label sets.** The face
-     queue inherits the instance queue's series groups and the same
-     page-sha1 rule, and the track verified zero panels disagree between them,
-     so a mechanism can be scored without a leak across the two label types.
-     This is worth protecting if anything proposes re-splitting.
-   - **A rule's pass criteria are still unset by design** (precision 0.80 /
-     recall 0.60 per label on the panel-held-out side is the recorded
-     candidate, with fewer than 20 positives counting as undecidable). They are
-     to be fixed before the held-out side is read. Note the counting problem
-     already visible: at the random order's rate, reaching 20 held-out
-     positives needs roughly 1,000 labels for mouth and nose, 2,400 for ear and
-     7,000 for closed eye -- so either the order stops being uniform (which
-     would bias what "position predicts" means and was deliberately avoided) or
-     the rare parts get a different instrument. Unresolved, and the user's call.
-2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **resumed
-   and settled the same day, 2026-10-09; the slot is open again and has been
-   re-routed.** It had been idle since 2026-09-25, when the work moved to
-   Track H and its own blocker sent it there. The reasoning behind the decision is a resource one and worth keeping,
-   because it will recur: Track H's line-level ground truth occupies **the
-   author**, which is this project's scarce resource, while the machine sits
-   idle -- and **no held experiment anywhere in the project is GPU-bound**, the
-   heavy work having all been closed by lesson 8. So the work to pick up is work
-   that needs neither the GPU nor the author's eyes, which is what this one is.
-   The question it halted on is now answered -- **placement is relative only
-   once a reference frame is given, and the word contributes almost nothing
-   inside it**; the numbers, the author's visual verdict and the three peaks
-   are in the Track Ledger entry for 2026-10-09, and the one-line consequence
-   is in lesson 13. Both notices are in `inbox/`
-   (`note_track_g_frame_relative_placement_20261009.md`,
-   `note_track_g_status_and_idle_capacity_20261009.md`); every figure in them
-   was re-derived here from `results/framerel_20261009/` before being folded
-   in, and the box-orientation numbers were recomputed from `faces.csv`
-   independently. **Not resumed, and still on hold**: the generative line
-   (PosAR-W, set-AR vs two-stage, scale-up), untouched.
-   **What the track now waits for** is Track H's unit: `tools/gen/framerel.py`
-   takes a new unit's labels in place of the word id, so the distance to the
-   0.074 ceiling comes out in one run, right after item 1's three measurements
-   land. Restricting to frontal faces was drafted and deliberately **not**
-   registered -- with a mixed unit it would measure a mixed unit.
-   **The re-routed slot, decided 2026-10-09 by the foundation under the user's
-   standing permission to give Track G other tracks' work**: measure the real
-   blast radius of the distorted corpus position bins (the trap above) and
-   re-report the figures that sit on them -- rebuild the bins with matched
-   denominators and recompute the marginal 7.563, the cloze 6.315-6.388 and
-   Track G's own 6.658. The track proposed it itself, it reported the
-   distortion in the first place, and it needs neither the GPU nor the author's
-   eyes. The precedent for the shape of the answer was Track I on
-   `lineart_003_000`: if the shift is small, "no re-measurement needed" can be
-   closed; if it is large, the premise Track F resumes on has changed.
-   **Done the same day, and the answer is "large" (third notice, folded into
-   Known Tool Traps).** Every position figure is replaced, no verdict flips, the
-   margins collapse, and the mechanism is that the tokens were encoding the
-   panel's aspect ratio -- 86% of the learned advantage reproducible by a
-   frequency table with no training, which is now lesson 14. Track F's premise
-   has changed in exactly one direction: its word negative is untouched and its
-   **placement** claim is much weaker than recorded.
-   **The slot is open again and the next assignment is named**: finish the
-   sweep. Which of the *remaining* figures in Tracks F and G sit on the
-   distorted bins, and what do they read when rebuilt -- specifically Track F's
-   "238 words have a placement preference that replicates" and its weak
-   relative placement (residual cosine 0.15 against a null near zero), plus any
-   figure in either track's logs derived from `bins_of`. Some of it was computed
-   on real coordinates rather than bins and is therefore unaffected; the
-   deliverable is the list, separated into "unaffected", "replaced, verdict
-   holds" and "replaced, verdict changes", so whoever resumes Track F reads one
-   table instead of re-deriving this. Same conditions: no GPU, no author's eyes,
-   pre-registration first, Track F's files untouched.
-   Deliberately *not* chosen for the same slot, and why, so the decision is not
-   re-litigated: Track C/E's re-render route is the one named untried thing in
-   the deletion family, but its verdict needs the author's eyes and would
-   compete with the labelling; Track G's generation scale-up is cheap but needs
-   a visual gate and leaves word purity unsolved; the solid-fill pool would use
-   the GPU but has no route to it after lesson 8, and reopening it is a separate
-   user decision (item 5).
-   First notice received 2026-10-04 and it closes the
-   13-day gap; three things in it change the picture here:
-   - **The blocker is word purity, not tooling.** A word is a shape class with
-     size removed, so one word spans roughly 6x in size and mixes meanings --
-     the user reads w342/w343/w344 as closed eyes where Track F named them
-     panel frame, bangs and hair tips. **Relative placement measured on mixed
-     words is diluted**, which is why fixing a small set of words came first.
-     That is Track H.
-   - **"Do not restart from placement" (2026-09-23) was about ordering, not
-     about dropping placement.** Rendering had to become readable first,
-     because the ant swarm could not be judged at all. It since was: real
-     cluster instances replaced decoded prototypes (token match 5,345/5,345,
-     A-column F1 0.78 at precision 1.00; the black blobs are real solid fills,
-     not a width bug) and the user judged the words recognisable. The goal was
-     then restated as **analysing placement on the ground-truth word
-     segmentation, with no generative model, measuring word trustworthiness
-     while doing it.**
-   - **The instrument check failed three times and was stopped before any main
-     run, with no verdict on the claim it was testing** -- the user's domain
-     claim that placement is decided by relative position rather than absolute
-     coordinates. v1 (32x32, offsets in reference-word sizes), v2 (16x16,
-     direction x log-distance) and v3 (relation types fixed on the training
-     half) all failed their relocation or range checks. The diagnosis is that
-     relations do transfer (type-1 median distance 4.1 reference sizes) but a
-     reference large relative to the panel makes "within 4 sizes" cover
-     everything, and shrinkage tuned on the whole set erased the few tight
-     pairs. **Grid probabilities have too many knobs for this question**; the
-     first candidate on return is a point prediction scored by miss distance,
-     not yet registered.
-
-   Measured on GT and replicating across halves (62 works -> 36 groups, 380
-   near-duplicate panels dropped): per-word median detail-flip **0.275** (the
-   global 23.2% was a frequency-weighted average), **238 words** have a
-   placement preference that replicates, and relative placement between
-   different words is consistent across halves but **weak** -- residual cosine
-   0.15 against a null near zero. The word-reliability split **49 / 164 / 254**
-   is the second version, three-valued by bootstrap with zero pass/fail flips
-   across three seeds; the first version flipped 8 of the top 20 words on the
-   random draw alone and is superseded. Reliability there means **boundary
-   stability, not freedom from mixed meaning** -- which is exactly the blocker
-   above. The generative line (PosAR-W, set-AR vs two-stage) is **on hold, not
-   abandoned**; a train/sample mismatch in the placement sampler was found and
-   fixed, worth 0.011 pos bits, and did not explain the collapsed compositions.
-   The standing warning from its last run still holds: **bits do not guarantee a
-   visual pass** -- position beat the marginal by 0.9 bits while the montage
-   stayed unreadable.
-
-   **Two things were routed to its briefing on 2026-10-09 and should be the
-   first things read when it resumes.** (a) The axis correction: the swap it
-   reported was a misdiagnosis, its own analyses are numerically fine but every
-   *directional* reading in them is mirrored, and the distorted corpus bins are
-   still distorted -- Known Tool Traps has the settled version. (b) Track H's
-   results, which bear directly on the question G halted: the words do not
-   carry part identity (lesson 13), the unit mixes parts (the trap above), and
-   the structure G was looking for in word-to-word placement does appear
-   cleanly in **frame-relative** coordinates once a face box supplies the
-   frame. If relative position is to be measured again, the face box is the
-   first reference frame this project has that is not another mixed word.
-3. **Tracks C, E and F are held, not closed** (user decision 2026-10-04). The
-   words line resumes as the active work; these three stay in place so they can
-   be re-measured when a new yardstick exists. **Held means the state must be
-   durable and the trigger must be named**, so each briefing records what would
-   justify picking it up again rather than leaving a future session to re-derive
-   it:
-   - **C** (`../lineart-stroke-selection`) -- what would change the verdict is
-     not a new metric. Lesson 10 came from a human absolute judgement, and it
-     found the *perfect* deletion unusable. The one thing that could move it is
-     a different **output format**: Track E's untried route of re-rendering the
-     surviving strokes so the result reads as a sparse drawing rather than a
-     holed rough. What was measured was holed roughs.
-   - **E** (`../lineart-aesthetic-judge`) -- stopped because a comparison
-     between two lossy outputs ranks the loss (lesson 11). It reopens when there
-     are two outputs that differ by something *other* than damage. Its unused
-     build, with tiles disjoint across arms, sits at
-     https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG.
+1. **Face-part words** (`../lineart-face-words`, Track H -- the front on the
+   author's time, live session as of 2026-10-23, pushed `43a6e88`). It is a
+   worktree of Track G's separate clone, so neither `git worktree list` here nor
+   the audit can attribute it; the audit prints it as a separate clone, which is
+   the best it can do.
+   The opening hypothesis is refuted -- the words do not carry part identity
+   (lesson 13) -- so the track moved up a level: the **unit** is wrong, and it is
+   collecting line-level ground truth through the grouping UI. **373 faces
+   complete as of 2026-10-23**, author still marking. Three things to watch
+   rather than act on:
+   - **The three measurements the ground truth was for are answered** (H6,
+     2026-10-12, 68 faces): mixing **68%**, fragmentation **22%**, ink in no
+     cluster **7%**, a cluster capturing a true group **19%** of the time. They
+     settle it -- the regrouping mechanism is a **replacement, not a repair** --
+     and the track has built one. Denominators differ from the 2026-10-09
+     cluster-mark figures; the ledger entry has both.
+   - **The held-out discipline is carried across two label sets**: the face
+     queue inherits the instance queue's series groups and the same page-sha1
+     rule, zero panels disagreeing, so a mechanism can be scored without a leak
+     across label types. Protect this if anything proposes re-splitting.
+   - **A rule's pass criteria are still unset by design** (the recorded
+     candidate is precision 0.80 / recall 0.60 per label on the panel-held-out
+     side, fewer than 20 positives counting as undecidable), to be fixed before
+     the held-out side is read. The counting problem is already visible: at the
+     random order's rate, 20 held-out positives needs roughly **1,000 labels for
+     mouth and nose, 2,400 for ear, 7,000 for closed eye** -- so either the order
+     stops being uniform, which would bias what "position predicts" means and
+     was deliberately avoided, or the rare parts get a different instrument.
+     The user's call.
+2. **Panel generation** (`../lineart-panel-generation`, Track G) -- **the slot is
+   open and its next assignment is named.** The question it halted on is
+   answered: **placement is relative only once a reference frame is given, and
+   the word contributes almost nothing inside it** (ledger entry 2026-10-09,
+   lesson 13). The generative line (PosAR-W, set-AR vs two-stage, scale-up) is
+   **on hold, not abandoned**, with one standing warning from its last run:
+   **bits do not guarantee a visual pass** -- position beat the marginal by 0.9
+   bits while the montage stayed unreadable.
+   - **The named assignment: finish the sweep.** Which of the *remaining* Track
+     F and G figures sit on the distorted position bins, and what they read when
+     rebuilt -- Track F's "238 words have a placement preference that
+     replicates", its weak relative placement (residual cosine 0.15 against a
+     null near zero), and anything in either track's logs derived from
+     `bins_of`. Some was computed on real coordinates and is unaffected. **The
+     deliverable is one table in three buckets** -- unaffected / replaced,
+     verdict holds / replaced, verdict changes -- so whoever resumes Track F
+     reads it instead of re-deriving it. Same conditions as before: no GPU, no
+     author's eyes, pre-registration first, Track F's files untouched.
+   - **What it waits for is Track H's unit.** `tools/gen/framerel.py` takes a new
+     unit's labels in place of the word id, so the distance to the **0.074**
+     ceiling comes out in one run. Restricting to frontal faces was drafted and
+     deliberately **not** registered: with a mixed unit it would measure a mixed
+     unit.
+   - **The instrument check failed three times and was stopped with no verdict**
+     on the user's domain claim that placement is decided by relative position.
+     v1 (32x32, offsets in reference-word sizes), v2 (16x16, direction x
+     log-distance) and v3 (relation types fixed on the training half) all failed
+     their relocation or range checks: relations do transfer (type-1 median
+     distance 4.1 reference sizes) but a reference large relative to the panel
+     makes "within 4 sizes" cover everything, and shrinkage tuned on the whole
+     set erased the few tight pairs. **Grid probabilities have too many knobs for
+     this question.** First candidate on return, not yet registered: a point
+     prediction scored by miss distance.
+   - Its own GT measurements that nothing else carries: per-word median
+     detail-flip **0.275** (the global 23.2% was a frequency-weighted average),
+     and the three-valued word-reliability split **49 / 164 / 254**, where
+     reliability means **boundary stability, not freedom from mixed meaning** --
+     which is the blocker itself.
+3. **Tracks C, E and F are held, not closed** (user decision 2026-10-04). Held
+   means the state is durable and **the trigger is named**, each in its own
+   briefing:
+   - **C** (`../lineart-stroke-selection`) -- not a new metric. Lesson 10 came
+     from a human absolute judgement and found the *perfect* deletion unusable;
+     what could move it is a different **output format**, Track E's untried
+     re-render of the surviving strokes as a sparse drawing rather than a holed
+     rough. Holed roughs are what was measured.
+   - **E** (`../lineart-aesthetic-judge`) -- stopped because a comparison between
+     two lossy outputs ranks the loss (lesson 11). It reopens when two outputs
+     differ by something *other* than damage. Its unused build, tiles disjoint
+     across arms, is at https://claude.ai/artifact/Mvvoqn3CAjtaNQ3ScqR9vG.
    - **F** (`../lineart-stroke-grammar`) -- closed its measurement phase on a
-     clean negative: no inter-word grammar within a panel, five measurements
-     agreeing. That negative was measured on *the vocabulary it had*. If the
-     words line produces a better vocabulary -- which is exactly what Track H is
-     working on -- the question is worth re-asking on it, and that is the
-     trigger. **Two corrections were written into its briefing on 2026-10-09**,
-     both aimed at whoever resumes it: the axis note it received on 2026-10-04
-     named the wrong cause (the columns are as named; the transpose is in
-     `strokes`/`pts` and `dims`, and the distorted bins remain distorted), and
-     Track H has since measured that the unit `cluster_set` is built on mixes
-     parts in 41% of labelled cases and excludes 14.6% of all strokes. The
-     second one sharpens the trigger rather than the negative: a better
-     vocabulary now plainly means a better **unit**, not just a better codebook.
-     **Measured 2026-10-09, and the answer splits F's record in two**: its word
-     negative is untouched (word bits move by -0.056 to +0.004 and the cloze
-     still falls far short of its 6.348 gate), while **every position figure is
-     replaced and the placement claim is much weaker** -- the marginal goes
-     7.563 -> 7.957, the cloze band 6.315-6.388 -> 7.785-7.792, and 86% of what
-     looked like placement structure was the panel's aspect ratio (lesson 14).
-     A corrected corpus identical in every other token is kept at
+     clean negative (no inter-word grammar within a panel, five measurements
+     agreeing) **measured on the vocabulary it had**. The trigger is a better
+     vocabulary, which now plainly means a better **unit**, not a better
+     codebook -- Track H's work. **Its record is split in two**: the word
+     negative is untouched (word bits move -0.056 to +0.004, the cloze still far
+     short of its 6.348 gate), while **every position figure is replaced and the
+     placement claim is much weaker** -- marginal 7.563 -> 7.957, cloze band
+     6.315-6.388 -> 7.785-7.792, and 86% of the apparent placement structure was
+     the panel's aspect ratio (lesson 14). A corrected corpus identical in every
+     other token is kept at
      `../lineart-panel-generation/results/posbins_20261009/corpus_fixed.npz`, so
-     a resume starts from that rather than rebuilding it.
-4. **Both tool bugs are fixed, 2026-10-09 -- what remains under this item is
-   the data-side decision.** (a) The `housei`-prefix split heuristic now
-   resolves by looking for the file, through
-   `tools/evaluation/gt_paths.resolve()`, in all **nine** places it appeared
-   rather than only the one that was reported. The re-check of past 192-tile
-   numbers this item asked for **is not needed, and the reason is recorded
-   under Known Tool Traps**: the two splits share no basename, so the heuristic
-   could only resolve correctly or point at nothing, and every caller raises on
-   a missing file. (b) `bipartite_match_f1`'s unbounded worst case now has a
-   shared guard, `tools/evaluation/bsds_guard.match_f1()`, used by the two
-   shared batch scorers; the metric is untouched. Guarded and unguarded output
-   is byte-identical on the verification batch.
-   **Still open and still a user decision**: the unapplied `manga_line`
-   emptiness fix (downscale to 240px plus auto-contrast). It is a data-side
-   change, not a bug fix, and it must be applied to training and holdout
-   together or it merely inverts the train/eval mismatch. Details: **Known
-   Tool Traps** above.
-5. **Solid fills: reopened 2026-10-09 by user decision, as Track J
-   (`../lineart-solid-fill`, branch `solid-fill`).** Deferred on 2026-09-13,
-   reopened when the GPU was idle and the survey found **nothing held anywhere
-   in the project that is GPU-bound** -- which is structural, not an oversight:
-   the heavy generative line closed with lesson 8, Track I closed on a
-   four-decimal null, the deletion family closed with lesson 10, and the CNN+GAN
-   family was left at lesson 5. What remains on the words line is bounded by the
-   author and by labels, neither of which a GPU shortens. Fills are the one
-   exception, and the ledger entry above has the reasoning and the counts.
-   Over 12,000 tiles across `ako5` and `housei` have never been trained on and
-   appear in no evaluation set. They are not a harder version of the current
-   task but a different one: GT there is 24.5% solid fill against the lineart
-   pool's 4.0% -- both **ink-normalised**; by tile area the fill in these pools
-   is 4-8%, and the two quantities are not interconvertible because the mask
-   that measures area is a dilated opening, see the Track J entry -- 27-38% of tiles are near-blank, and the preprocessor fills
-   nothing at all (fill_ratio 0.0%), so an edge-detector-plus-selection
-   pipeline cannot reach it by construction. The delete-only oracle tops out at
-   0.3291 there against 0.7425 on the lineart pool. The natural moment to
-   reopen it is when stroke selection has a real number on the lineart pool:
-   that is what decides whether this is the other half of the plan or a
-   separate project. Inventory:
-   `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
-   **Stage 1 is done (2026-10-10) and its verdict is that the premise holds**:
-   the preprocessor's readable ceiling is micro IoU 0.0000 and the adopted
-   checkpoint fails its own off-by-one control, so the comparison for fills is
-   *paint nothing* against *paint everything* (whose score is the GT area share
-   by identity: 0.0939 / 0.1201). **Two GT-only measurements then moved the
-   unit before stage 2 was registered**: a fill region does not close inside a
-   480px window (87.6% / 92.9% of fill area is in a border-cut component), so
-   the input is now the **koma panel**; and the line art encloses almost
-   nothing (1.2 regions per panel, 95-100% of fill area outside any of them;
-   **the 1.2 is from the inferred mask and the author's fill gives median 3.0**,
-   Track L 2026-10-24),
-   so the 面 is taken to be the fill connected component rather than a proposed
-   closed region. Stage 2 is registered in the track's log on `clip_pairs_v3`
-   koma panels, split on **work family** with the `ako` series collapsed (9
-   families, 969 panels, 19.3% held out, fixed before any score) because
-   whether a character's hair is blacked in is a property of that character.
-   **The one item that was waiting on the user is decided: yes, 2026-10-10.**
-   A **non-adversarial segmentation model is outside** the CNN+GAN prohibition,
-   stage 2 may proceed and may spend the four-day slot. What is still closed is
-   the adversarial objective itself -- the `msgan`/`cleanup` i2i family, a GAN
-   term, another `--unpaired-weight` sweep -- so the prohibition narrowed by
-   exactly one reading and not by a family. Track J's falsifier for that
-   reading stands as registered; if it fires, the reading is withdrawn and that
-   goes in the headline.
-   **VERDICT, 2026-10-23: the registered headline is "no learned model is needed
-   for this."** The 969-panel table finished 14:06 (11,620 rows); both anchors
-   passed before a verdict was read -- A1 agreed with this tree's own table
-   **panel by panel, 969 of 969**, and A2 reproduced the trainer's
-   `score_holdout` to 1e-9 for both checkpoints. All figures **against the
+     a resume starts from it.
+4. **Both tool bugs are fixed (2026-10-09); what remains is the data-side
+   decision.** The `housei`-prefix split heuristic resolves by looking for the
+   file (`tools/evaluation/gt_paths.resolve()`) in all **nine** places it
+   appeared, and `bipartite_match_f1`'s unbounded worst case has a shared guard
+   (`tools/evaluation/bsds_guard.match_f1()`), byte-identical output on the
+   verification batch. Why the past 192-tile numbers need no re-check is in
+   T46.
+   **Still open and still the user's**: the unapplied `manga_line` emptiness fix
+   (downscale to 240px plus auto-contrast). It is a data-side change, not a bug
+   fix, and **it must be applied to training and holdout together** or it merely
+   inverts the mismatch (T49).
+5. **Solid fills -- Track J (`../lineart-solid-fill`), closed 2026-10-23 on a
+   clean negative.** The registered headline is **"no learned model is needed for
+   this"**, and the distinction Track J insisted on against its own verdict:
+   **"no arm predicts fill in this formulation"**, not "the non-learned route
+   suffices". The 969-panel table (11,620 rows) passed both anchors before any
+   verdict was read -- A1 agreed with the tree's own table **969 of 969** panels,
+   A2 reproduced `score_holdout` to 1e-9 -- and every figure is **against the
    radius-4 estimated mask** (amendment J3), normal stratum, 956 panels.
-   - **C4 removes both models before anything else is read.** M0 falls to NC3
-     (mirror); **M1 falls to NC2 as well** -- its score against its own panel's
-     ground truth does not beat its score against the neighbouring panel's. A
-     model that cannot tell its own panel from the next one has not learned the
-     panel.
-   - **C1 FAIL, and not narrowly**: best arm `rough_dark@budget` **0.0110**, so
-     +0.0026 over `blank`, +0.0072 over `all_black`, +0.0102 over its own NC2,
+   - **C4 removes both models first.** M0 falls to NC3 (mirror); **M1 falls to
+     NC2** -- its score against its own panel's ground truth does not beat its
+     score against the neighbour's. A model that cannot tell its own panel from
+     the next one has not learned the panel.
+   - **C1 FAIL, not narrowly**: best arm `rough_dark@budget` **0.0110** --
+     +0.0026 over `blank`, +0.0072 over `all_black`, +0.0102 over its own NC2 --
      against a bar of **0.05**.
-   - **C2 FAIL on both legs**: M1 - M0 = **-0.0012**, M1 - NC4 = **-0.0017**,
-     against +0.03. **The leg NC4 made readable says the sharpest thing in the
-     report: giving M1 *another panel's* context scores slightly higher than
-     giving it its own.** The 4-channel whole-koma context is not used as
-     context. The instrument that did not exist that morning produced the most
-     informative line of the verdict.
-   - **Not an artefact of threshold placement**: region-F1 was written over nine
-     (MIN_REGION_PX, MATCH_IOU) cells and **the sign is identical in all nine**.
-     Halving the match bar lifts M0 over `blank` by +0.0114, a fifth of C1's
-     bar, and both C2 legs stay negative.
+   - **C2 FAIL on both legs**: M1 - M0 **-0.0012**, M1 - NC4 **-0.0017**, against
+     +0.03. **The leg NC4 made readable says the sharpest thing in the report:
+     giving M1 another panel's context scores slightly higher than giving it its
+     own.** The 4-channel whole-koma context is not used as context -- from an
+     instrument that did not exist that morning.
+   - **Not an artefact of threshold placement**: region-F1 over nine
+     (MIN_REGION_PX, MATCH_IOU) cells, **sign identical in all nine**. Halving
+     the match bar lifts M0 over `blank` by +0.0114, a fifth of C1's bar, and
+     both C2 legs stay negative.
    - **What the models do**: GT fill is **10.40%** of normal-stratum panel area;
-     M0 paints 0.71%, M1 0.34%. `npred/ngt` is 0.531 / 0.328 -- about half the
+     M0 paints 0.71%, M1 0.34%. `npred/ngt` **0.531 / 0.328** -- about half the
      GT count -- while the **area** ratio is 0.068 / 0.033, so each predicted
-     region is **14-30x too small**. IC7's speckle defect, and **the area ratio
-     is the sharper index than the count ratio**. The contact sheet agrees: red
-     dust along the strokes, not areas. Two figures of the same shape: M0
-     exceeds zero on **17 of 956** panels, M1 on 11, against `blank`'s 8; and
-     **`all_black`'s pixel IoU is 0.1040 against M0's 0.0204**, so **blacking in
-     the whole panel recovers 5-8x more fill pixels than a trained model** --
-     `all_black` wins nothing at region level (0.0037), but any claim that a
-     model learned where fill goes must clear that row first.
+     region is **14-30x too small** (IC7's speckle defect; the area ratio is the
+     sharper index). M0 exceeds zero on **17 of 956** panels, M1 on 11, `blank`
+     on 8. And **`all_black`'s pixel IoU is 0.1040 against M0's 0.0204** --
+     blacking in the whole panel recovers **5-8x more fill pixels than a trained
+     model**, while winning nothing at region level (0.0037). Any claim that a
+     model learned where fill goes clears that row first.
    - **The floor and the ceiling travel in the same sentence as the verdict**:
-     `blank` **0.0084** (**0.0000 on the cleanly-separated stratum**, where every
-     koma has area -- Track L's L7), the preprocessor's readable ceiling **pixel IoU
-     0.0000**, and **every arm on the table, learned and not, sits inside that
-     band. Nobody won.** No family hides a success -- where `rough_dark@budget`
-     reads high the `blank` column tracks it, and what that column measures is
-     how many panels have no scorable region at all. The 13 near-blank panels
-     are **NO VERDICT** by C5 and IC6, printed only.
-6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked
-   up for now** (user decision 2026-09-06). It belongs to the shelved CNN+GAN
-   line (`scripts/train_i2i_survey.py`, the `cleanup`/msgan family), so acting
-   on it would mean returning to an architecture this project moved off. The
-   remaining move, if it is ever resumed, is: add a GT-free
-   continuity/self-consistency regularizer to the unpaired branch, then
-   re-sweep `--unpaired-weight` between 0.003 (no effect) and 0.03
-   (destructive: F1@2px 0.4175 -> 0.2381, as fragmented high-contrast
-   stippling). Note the `skima` rough-only pool itself (626 pages -> 4,917
-   tiles, `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and
-   may be worth using in the ControlNet context instead -- that would be a
-   new idea, not this one.
+     `blank` **0.0084**, the preprocessor's readable ceiling **pixel IoU
+     0.0000**, and **every arm, learned and not, sits inside that band. Nobody
+     won.** The 13 near-blank panels are **NO VERDICT** by C5 and IC6, printed
+     only.
+   - **Why the pool was worth the slot, and still is for someone else.** Over
+     **12,000 tiles** across `ako5` and `housei` have never been trained on and
+     appear in no evaluation set: GT there is **24.5% solid fill** against the
+     lineart pool's **4.0%** (both ink-normalised; by tile area 4-8%, and the two
+     are not interconvertible because the mask that measures area is a dilated
+     opening), 27-38% of tiles are near-blank, the preprocessor fills **nothing**
+     (fill_ratio 0.0%), and the delete-only oracle tops out at **0.3291** there
+     against **0.7425** on the lineart pool. Inventory:
+     `../lineart-controlnet-sdxl-fidelity/doc/pool_inventory.md`.
+   - **Two unit findings that outlived the verdict**: a fill region does not
+     close inside a 480px window (87.6% / 92.9% of fill area is in a border-cut
+     component), so the unit is the **koma panel**; and the line art encloses
+     almost nothing -- 1.2 regions per panel from the inferred mask, **median
+     3.0 from the author's own fill** (Track L, 2026-10-24).
+     The prohibition that still holds: a **non-adversarial** segmentation model
+     was ruled outside the CNN+GAN prohibition (user, 2026-10-10), and the
+     adversarial objective itself stays closed -- the `msgan`/`cleanup` i2i
+     family, a GAN term, another `--unpaired-weight` sweep.
+6. The unpaired-rough adversarial-branch idea is **dormant, not to be picked up
+   for now** (user decision 2026-09-06): it belongs to the shelved CNN+GAN line.
+   The remaining move, if ever resumed, is a GT-free continuity /
+   self-consistency regulariser on the unpaired branch, then a re-sweep of
+   `--unpaired-weight` between **0.003 (no effect)** and **0.03 (destructive:
+   F1@2px 0.4175 -> 0.2381, fragmented high-contrast stippling)**. The `skima`
+   rough-only pool itself (**626 pages -> 4,917 tiles**,
+   `dataset/pairs_480/train/rough_unpaired_skima/`) still exists and may be
+   worth using in the ControlNet context instead -- that would be a new idea,
+   not this one.
 7. Decide whether to rename the remaining `kurip`-named infra scripts, given
    `kurip` was a username (`match_kurip_regions.py` and others;
-   `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to
-   the work above.
-8. Decide whether umbrella/layer-difference rows (ako5ver2) should be
-   manually masked, tagged for future routing, or left held out. Still open.
-9. **Keep this file from falling behind again.** Status 2026-10-09: the
-   mechanism now half works. Track G sent its first notice on 2026-10-04 and it
-   is folded in; Track H has pushed its branch but **still owes a notice**, so
-   everything above about it is this file reading that track's work log, which
-   is second-hand by construction. **Asked again 2026-10-19**, in
-   `../lineart-face-words/inbox/note_foundation_h_owes_a_notice_20261019.md`,
-   with the reason stated plainly: on that single day Tracks K, D and J each
-   sent a notice and **each one corrected a number in this file** (the 0.5px
-   retraction, the discriminator for a bar on a ratio, and the VAE round-trip
-   that was already measured), so the H entry is likely to carry the same kind
-   of error. What is wanted is four lines, the fourth being what this ledger
-   has wrong.
-   **The dependency was named and then answered the same day: Track K is quiet
-   indefinitely, by user decision 2026-10-19.** The reason, recorded because it
-   is not derivable from anything here: **not a shortage of time, but that it
-   does not have to happen now.** **What has changed since, and it moves the
-   cost rather than the decision (2026-10-23):** `labels/face_groups.jsonl`
-   stood at 417 lines when the above was written and is now **518 lines / 402
-   orders**, because Track H kept marking for its own bar -- 97 complete faces
-   at `order` >= 301 all carry a `broken` field, 62 with at least one mark, 116
-   marks over train and holdout. K3's frame of 40 new faces and 40 new marks is
-   therefore **already covered**, and the author's time it would have cost is
-   being spent anyway on H18. Restarting K is now a question of whether it is
-   worth a session, not of whether the input exists. Nothing reorders on its
-   account, and Track H is explicit that its notice is not a request to
-   restart K. To restart K later the only missing input
-   is 40 marks; its instruments, registrations and bands all survive in
-   `origin/stroke-topology` at `25e4dec`. **The connectivity line's next
-   possible move is therefore not K's**: it is carrying both tokenisations
-   downstream, which changes Track F's output format and the model's input, so
-   it belongs to F and G. **Closed 2026-10-19: the two uncommitted paths in the
-   finished trees are dealt with, and neither was junk** -- which is why
-   "worth a look" was the right instruction rather than a sweep.
-   `cleanup-refiner`'s `venv` is a **symlink to the foundation's shared
-   environment** whose target exists; `.gitignore` carried `venv/` with a
-   trailing slash, which matches a directory and never a symlink, so it had
-   shown as untracked since 2026-08-03. Ignoring it keeps the convenience
-   (`4519bef`). `controlnet-sd15-refine`'s stray file is a **190-line runner
-   that produced a result this project still cites** -- Track D's hypothesis 2
-   replication with `--eval-snapshot-steps`, scored on the 192-tile holdout at
-   cs=2.5, and the only record of how "training loss is nearly flat past 1000
-   steps" was obtained, header included its user-approved scope exception.
-   Committed, not deleted (`cea3cf1`). Both were pushed by the foundation under
-   the named exception in `doc/worktree_policy.md`: dormant or closed, nobody
-   seated.
-   **Push state of every tree, audited the same day**: all in sync except
-   `solid-fill`, 6 commits ahead while Track J runs M1, notified.
-   The 2026-09-30 reconciliation
-   is done -- the Track Ledger above was rebuilt from every track's own files,
-   and the three proposals and the Kimi exchange are now held in `doc/`. What
-   caused the drift is structural and still true: **Tracks G and H live in a
-   separate clone** (`lineart-panel-generation`, with `lineart-face-words` as
-   its worktree), so `git worktree list` run here cannot see them, and neither
-   sent a notice to `inbox/`. Notices stopped on 2026-09-17 while those two did
-   all the work of the following two weeks. When checking project state, list
-   the sibling `lineart-*` directories and `git branch -r`, not just the
-   worktrees. Whether to consolidate that clone back into this repo's worktree
-   set, and whether the words-line tracks should send notices at all, are open
-   questions for the user -- the current arrangement works, it is only invisible
-   from here.
+   `prepare_kurip_tiles.py` affects hamlabi too). Still open, unrelated to the
+   work above.
+8. Decide whether umbrella/layer-difference rows (ako5ver2) should be manually
+   masked, tagged for future routing, or left held out. Still open.
+9. **Keep this file from falling behind again.** The mechanism half works, and
+   the half that does not is named: **Track H still owes a notice**, asked twice
+   (2026-10-19, `../lineart-face-words/inbox/note_foundation_h_owes_a_notice_20261019.md`),
+   with the reason stated plainly -- on one day Tracks K, D and J each sent a
+   notice and **each corrected a number in this file**, so the H entry is likely
+   to carry the same kind of error. Four lines are wanted, the fourth being what
+   this ledger has wrong.
+   **The structural cause of the 2026-09-30 drift is still true**: Tracks G and H
+   live in a **separate clone**, so `git worktree list` run here cannot see them.
+   When checking project state, list the sibling `lineart-*` directories and
+   `git branch -r`, not just the worktrees. Whether to consolidate that clone
+   back, and whether the words-line tracks should send notices at all, are open
+   questions for the user -- the arrangement works, it is only invisible from
+   here.
+   **Track K is quiet indefinitely** (user, 2026-10-19), not for lack of time but
+   because it does not have to happen now. What changed since moves the cost and
+   not the decision: `labels/face_groups.jsonl` is at **518 lines / 402 orders**
+   (417 when the above was written), so K3's frame of 40 new faces is **already
+   covered** and the only missing input to restart is **40 marks**; its
+   instruments and bands survive in `origin/stroke-topology` at `25e4dec`.
+   Track H is explicit that its notice is not a request to restart K. **The
+   connectivity line's next possible move is not K's**: it is carrying both
+   tokenisations downstream, which changes Track F's output format and the
+   model's input, so it belongs to F and G.
 10. Revisit whether `--max-soft-ink-ratio` needs a per-source
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
-   housei has an established relaxed value so far); yield may be
-   conservative for the others under the shared default. Still open.
+   housei has an established relaxed value so far); yield may be conservative
+   for the others under the shared default. Still open.
 11. **The fill line: line / ベタ / tone / gradient on ground truth, at region
     unit.** Proposed by the user 2026-10-23, **now Track L**
     (`../lineart-fill-region`, open, pushed `7a4df98`) -- so the live state is
