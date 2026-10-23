@@ -4752,6 +4752,48 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
         from a 6-work, 232-page mirror on `D:`. When it returns, a 7,663-page
         structural scan (about 25 minutes at 4-way parallelism) replaces the
         name-based table with measurement.
+    - **Decided by the user 2026-10-23, and sent back the same day.** Scale: a
+      few works as a trial, then widen -- but **split the cheap from the dear**,
+      so the **full 7,663-page structural scan runs now** (0.67 s/page, ~25 min;
+      **`F:` has been reconnected**) because it replaces the name-based table
+      with measurement and retires the "renamed or absent" ambiguity, while the
+      **1.2 min/page fill rendering starts on a few works**. Order: **ベタ first,
+      トーン after**. Format: **density map plus a binary mask of the shape, and
+      no halftone dots** -- in the user's words, the dots would multiply the data
+      for nothing when what is wanted is an analysis of areas; the settings are
+      recorded, so dots can be generated later if the look ever matters. The
+      foundation's pick for the trial works, stated as its own: **`ako5` and
+      `housei`**, because they are the pools every fill figure on record sits on
+      and both are in the `D:` mirror -- 78 pages, about 1.6 hours, and it is
+      what makes the mask instrument check (above) possible at all.
+    - **A second category inside tone, from the author, and it changes
+      candidate 5.** The user's wording: *"some tone is not a cleanly cut area
+      but has blur or gradation (mostly shading, or placed in the background);
+      these represent an area only partially, so extract them, but keep them
+      separable."* So **tone holds two different things** -- **hard-edged tone,
+      which is an area**, and **blurred or graded tone, which is shading and
+      represents an area only in part**. The decomposition this project has
+      framed as 線 / ベタ / ツヤベタ therefore lands on **four** production
+      classes: line, ベタ, hard tone, graded tone. **The ask to the extraction
+      side was for the statistic and not the verdict** -- per layer, the share of
+      mask pixels that are neither 0 nor 255, plus whether the layer is of the
+      `gradient` class it already separates (1,999 layers) -- so that the
+      threshold stays on this side. **This is the furniture lesson inverted**:
+      there, one pixel statistic collected unrelated classes; here, one name
+      would collect two kinds of area. **And it makes candidate 5 answerable** --
+      "do highlight fills separate from plain fills by shape alone", which the
+      radius-4 mask cannot do, becomes a question with production labels.
+    - **A circularity the foundation flagged before sending its measurements.**
+      The extraction side asked for our figures to validate its layer
+      thresholds. But **this project's fill ground truth is the radius-4 inferred
+      mask, and it has never been checked against anything external**. If their
+      thresholds are tuned to agree with that mask and we then check that mask
+      against their layers, the check is circular -- the instrument measuring
+      itself, which is this file's most repeated failure. **The protocol sent**:
+      their classification is fixed from layer structure and names, which are
+      independent of us; our numbers are for scale only and are not a target to
+      fit; the mask comparison happens **once, after their thresholds are
+      frozen**, and is not iterated.
     - **Request sent 2026-10-23** to the manuscript-layer session on `um350`
       (now 192.168.1.5; host key verified identical to the old .9 entry, key
       auth confirmed), asking for the inventory first and output second. Text:
