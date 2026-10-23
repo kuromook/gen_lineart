@@ -3764,6 +3764,59 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   "unnamed" cannot mean "unrecorded". **What does work is cheaper**: the
   start-up procedure listed `inbox` only, and a request the foundation did not
   carry lands in **`outbox`**. `CLAUDE.md` now lists both.
+- **The composited-page route is dead for area boundaries, answered 2026-10-24:
+  `CanvasPreview` is a quarter of native and the native composite is not in the
+  file.** 7016x6543 -> **1754x1635**, 4961x7016 -> 1240x1754, **exactly 4.00x**
+  (checked here). CSP stores only the reduced version. **This was the
+  contingency Track L had named in advance** -- *"if the resolution turns out to
+  be reduced, the request changes shape"* -- which is why asking the four
+  questions before the work was the right order. Two side answers: **the halftone
+  is composited but crushed** (60L at 600dpi is a ~10px period at native, so
+  **2.5px at a quarter** and it averages to grey -- a page at 48% tone coverage
+  shows 21.6% midtone in the preview); and **the preview looks like visible
+  layers only, on one layer's evidence** (`visibility=0` at paper darkness 0.064
+  against a median 0.720 over 50 visible layers) -- **direction, n=1, weak.**
+  **And building a true native composite would be heavier than the extraction
+  work itself**, needing opacity, blend modes, clipping, halftone generation,
+  gradient rendering whose direction and shape are undecoded, and folder
+  compositing -- **which has already gone wrong once on panel frames**. The
+  extraction side's warning is the part to keep: **a mistake there produces a
+  plausible-looking image, so visual inspection cannot catch it.**
+  **The counter-proposal it made instead is better than what was asked for, and
+  it is adopted.** What this side actually wants is *the fill painted inside line
+  layers*, so **hand those layers over one by one at native resolution** rather
+  than a composited page. The full inventory carries `drawn_ratio`,
+  `black_among_drawn` and `preview_dark`, so **this side specifies which layers
+  to export**. Its sentence: *for the "counted invisible as a negative" problem,
+  **the layers that were dropped are themselves the answer, and the composited
+  page is only a proxy for them.*** **And it moves the selection to this side
+  where it can be disclosed**, which was the only real gain the composited page
+  had offered.
+- **"Statistics only, so it is light" was wrong, and the correction is worth
+  keeping.** `drawn_ratio` and its siblings **cannot be had without drawing each
+  layer**: **about 85 s/page** measured (an ako6 page carries 178 layers, 55 with
+  content), so **the 65-page inventory is about 90 minutes**, not minutes. The
+  fill extraction had been fast because it drew **only the candidates**.
+  Running; output `page_layers_priority65.csv`, **pre-selection, all layers**,
+  with `visibility` / `opacity` / `has_mask` / `has_gradation_fill` /
+  `tone_enabled` / `tone_density_pct` / `tone_lpi` / `rendered` / `drawn_ratio` /
+  `black_among_drawn` / `drawn_gray_mean` / `preview_dark` per layer. **The
+  request had called item 1 "statistics only, no rendering" and this file passed
+  that on** -- a cost estimate inherited from the wrong operation.
+- **The cross-session channel drops messages in both directions, and the author
+  has ruled on it (2026-10-24).** Track L's three requests **never reached the
+  extraction side over the bridge**; it found them by reading this tree's
+  `outbox/` directly. And **every message it sends back reports "delivery
+  unconfirmed"**. So the losses are not one-sided and nothing sent by message
+  alone can be assumed to have arrived *or* to have been recorded.
+  **The author's instruction: direct exchange is fine, but nothing may be left
+  without a record.** Adopted on both sides: **every exchange leaves a file --
+  `inbox/` for what arrives, `outbox/` for what goes out -- and a message is
+  only a pointer to the file.** The extraction side's replies now land as files
+  (`inbox/reply_composited_page_20261024.md` is the first), and the foundation
+  does the same. **This also repairs the gap found an hour earlier from the
+  other end**: the start-up procedure now lists `outbox` as well as `inbox`, so a
+  file left by anyone is seen even when the message carrying it was lost.
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is in Next Actions item 11.
