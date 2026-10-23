@@ -23,6 +23,10 @@ working on extraction/tiling/panel-matching.
 ## Current — Architecture / Research (doc/*.md)
 
 - `doc/CURRENT.md`: authoritative current status and next actions.
+- `doc/fill_line_record_20261023.md`: the fill line's 2026-10-23/24
+  correspondence record (layer inventory, class scheme, deliveries, colour and
+  tone surveys), moved out of `doc/CURRENT.md` item 11. A record, not a state --
+  several of its claims were superseded within hours and it says which.
 - `doc/tool_traps.md`: the Known Tool Traps evidence -- each trap's incident,
   mechanism and numbers. `doc/CURRENT.md § Known Tool Traps` holds the rules as
   a one-line index and cites entries here as `T<n>`. Split out 2026-10-24.
