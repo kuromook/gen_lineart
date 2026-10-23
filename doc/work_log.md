@@ -6516,3 +6516,54 @@ Lesson, and it is the day's pattern again: **a delivery is not delivered because
 it arrived.** The file was in the foundation's `inbox/` at 02:25 and the track
 that owned it could not see it. Nothing checks this -- the audit's notice column
 tracks what tracks *send*, not what the foundation forwards.
+
+## 2026-10-24 (morning, later) -- Track L read the distributions, and the premise behind the 128 is retracted
+
+Routing reply, within the hour. All four of the foundation's structural notes
+landed, and one was a live defect: the **31 layers with content and no
+`preview_dark`** were being dropped silently by Track L's own
+`preview_dark >= 0.5` (all undelivered, median `drawn_ratio` 0.00696 -- above
+the area floor -- 20 with `has_gradation_fill=True`), and are now counted
+separately as "layers whose darkness is unknown". `用紙` was harmless (all 65
+peak at `preview_dark` 0.4153, never in a dark set) and is excluded explicitly
+with the reason in the registration. On `folder` versus `layer_type`, L uses
+`folder` because **`folder` is the exact complement of `rendered` on all 7,362
+rows** -- verified here -- and corrected the foundation's count: the
+disagreement with `layer_type` is **206 rows, not 141**; 141 left out the 65
+roots at `folder=True & layer_type=256`. 79 of those rows have content.
+
+**The retraction, and it is this file's own**: "`black_among_drawn` median 0.823,
+just under the 0.95 cut, which is where an anti-aliased line layer carrying ベタ
+would fall" was written into the ledger at 07:40 on the extraction side's
+wording and is **false for this author**. Measured against the author's own
+delivered ベタ (496 layers): bam median 0.9986, 100% at or above 0.95. Against
+the dark layers the **area floor** (`dr < 0.002`) cut: 1,414 layers, bam median
+**1.0000**, 87% at or above 0.95. **The cut side is blacker.** This author's
+line layers carry no anti-aliasing at all (`線画 skin`, `線画 hair` both 1.0).
+What removes areas from the standard is **the area floor, not the colour test**:
+of 1,551 dark layers the standard has never seen, the floor alone cut **1,207**
+(median 20,657 px, 257 above 46,000 px, over 61 pages) and colour alone cut 63.
+**The 128 is real and is not the bulk.**
+
+Track L's P3 missed (predicted bam below 0.95; 1,239/1,551 at or above) and is
+kept. Its 規律2 anchor **failed on the first run at 0.9745 against a
+pre-registered 0.98 both ways, bar not moved**, then recovered 496/496 = 1.0000
+(reverse 0.9940) once it stopped reading the layer name where the extraction
+side reads the ancestor folders -- the one axis its registration had declared a
+surrogate. **Three delivered layers pass all four written conditions of 判定 and
+are not in `excluded`**, so the written rule does not determine the delivery; a
+query is out.
+
+**The band check the foundation owes is not payable yet.** Whether the 1,207
+layers are line or area is not decidable from the statistics: a 2.7 px line
+running 7,600 px is 20,000 px, the same as a hair mass or an iris. L asked the
+extraction side at 07:42 for **all 2,963 content-bearing raster layers,
+unselected, at native resolution** (~0.25 GB), and **named no layers on
+purpose** -- naming them would put its own selection inside the standard.
+Requests #2 and #5 withdrawn. The pixels land under `data/` and are not
+committed.
+
+Lesson: **a mechanism offered with a number is not part of the measurement.**
+The 128 count was real and arrived with an explanation of where 0.823 comes
+from; the count survived and the explanation did not. It had been in this
+ledger for one hour.

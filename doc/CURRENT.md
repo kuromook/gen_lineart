@@ -107,14 +107,15 @@ priority pages, pre-selection -- **7,362 rows over 65 pages** (`ako6` 31 /
 content**, 20 columns including `visibility` / `opacity` / `has_mask` /
 `rendered` / `drawn_ratio` / `black_among_drawn` / `preview_dark`. It cost
 **~25 s/page**, ~25 minutes in all, against the forecast 85 s.
-**The quantity the fill line was after**: **759 layers pass the extraction
-side's ベタ colour signature and 128 fail it while being dark on the page**
-(`preview_dark >= 0.5`), top names `線画` 24 / `effect` 17 / `black` 11, and
-**`black_among_drawn` median 0.823** -- just under the 0.95 cut, which is where
-an anti-aliased line layer carrying ベタ would fall. **The 128 is the extraction
-side's own cut, and it asks us to re-cut with ours** (every column is in the
-file). `preview_dark` is measured on the 1/4 preview, so it has **no boundary
-precision**.
+**The quantity the fill line was after, as the extraction side framed it**:
+**759 layers pass its ベタ colour signature and 128 fail it while being dark on
+the page** (`preview_dark >= 0.5`), top names `線画` 24 / `effect` 17 / `black`
+11, `black_among_drawn` median 0.823 -- **and the reason offered for that 0.823,
+"just under the 0.95 cut, where an anti-aliased line layer carrying ベタ would
+fall", is RETRACTED by Track L's measurement the same morning** (below).
+**The 128 is the extraction side's own cut, and it asks us to re-cut with ours**
+(every column is in the file). `preview_dark` is measured on the 1/4 preview, so
+it has **no boundary precision**.
 **Routed to Track L at 07:39** --
 `outbox/reply_l_page_layers_priority65_20261024.md`, copied with the CSV, the
 JSON and the notice into `../lineart-fill-region/inbox/`, which had to be
@@ -140,6 +141,58 @@ matching the notice. Four things a re-cut has to know, all in the reply:
 - **31 layers have content but no `preview_dark`** (`マンガ用グラデーション` 15,
   `rendering_shadow_*` 9, `背景グラデ` 3), which a `preview_dark >= 0.5`
   condition **drops silently**
+**Track L read the distributions the same morning (L8, `b9a2831`, unpushed) and
+the colour signature is not what removes areas from the standard.** Against the
+author's own ベタ as delivered (496 layers, `ako6`+`ako7` priority pages,
+`beta_manifest.json`'s 判定 mapped onto the inventory): bam median **0.9986**,
+**100% at or above 0.95**. Against the dark layers that the **area floor**
+(`dr < 0.002`) cut: 1,414 layers, bam median **1.0000**, 87% at or above 0.95.
+**The cut side is the blacker one** -- this author's line layers carry **no
+anti-aliasing at all** (`線画 skin` and `線画 hair` both bam 1.0), so
+`black_among_drawn` does not separate line from area in this corpus and the
+0.823 story does not hold here.
+**What the standard has never seen**: 2,177 layers with content that are neither
+delivered nor in `excluded`, **1,551 of them dark on the page**. Split by which
+axis cut them, **the area floor alone cut 1,207** (median **20,657 px**, 257
+layers above 46,000 px, spread over **61 pages**) and **colour alone cut 63**.
+**The 128 exists and is not the bulk.**
+**Track L's own registration missed and is kept**: P3 predicted bam would
+concentrate below 0.95 and 1,239 of 1,551 came back at or above it. Its
+**規律2 anchor passed on the second run and FAILED on the first** -- 496/496 =
+**1.0000** recovered both ways after the fix (reverse 0.9940, 3 layers over),
+against a pre-registered **0.98 both ways**, with the first run at **0.9745**
+and **the bar not moved**; the cause was its own surrogate for the name family
+reading the layer name while the extraction side reads the ancestor folders, an
+axis the registration had declared as surrogate. **Three delivered layers pass
+all four written conditions of 判定 and are not in `excluded`** (one at
+opacity 79, two at 256), so **the written rule does not determine the delivery**
+and a query is out to the extraction side.
+**The band check this session owes is not payable yet, and Track L says why**:
+whether those 1,207 layers are line or area **is not decidable from the
+statistics** -- a 2.7 px line running 7,600 px is 20,000 px, the same as a hair
+mass, an iris or a shadow. So at **07:42** it asked the extraction side not for
+a condition but for **all 2,963 content-bearing raster layers of the 65 pages,
+unselected, at native resolution** (~0.25 GB, `layer_id` in each filename), and
+**named no layers on purpose** -- naming them would put its own selection inside
+the standard, which is the shape of the retraction it had made the day before.
+Requests #2 (the composited page) and #5 (mixed layers) are **withdrawn**.
+The condition, and the band check with it, comes after `keep4` runs per layer on
+those pixels; **until then Track L publishes no number about mask precision**,
+and when the pixels land they go under `data/` and are never committed.
+**The foundation's four structural notes all landed**, and one was a live
+defect: the **31 layers with content and no `preview_dark`** were being dropped
+silently by L's own `preview_dark >= 0.5` (all undelivered, median
+`drawn_ratio` **0.00696**, above the area floor, 20 of them
+`has_gradation_fill=True`) and are now counted separately as "layers whose
+darkness is unknown". `用紙` was **harmless** -- all 65 peak at `preview_dark`
+0.4153 and never entered a dark set -- and is excluded explicitly anyway. On
+`folder` versus `layer_type`, L uses **`folder`**, because **`folder` is the
+exact complement of `rendered` on all 7,362 rows** (verified here), and
+**the disagreement with `layer_type` is 206 rows, not the 141 this file first
+said** -- 141 counted `folder=True & layer_type=2` (49) and
+`folder=False & layer_type=0` (92) and left out the 65 roots at
+`folder=True & layer_type=256`. 79 of those rows have content and sit in L's P2
+population.
 **The order the author set, unchanged**: look at the distributions, **then**
 write a file naming the `page_id`/`layer_id` to export at **native resolution
 with grey levels** -- the line layers that contain fill, which the colour test
@@ -171,9 +224,12 @@ distributions**; that is how the retracted L7 happened. Deliver by SCP to
   **The one destination from now on is
   `C:/Users/sh1/code/extract_line_and_sketch/inbox/`.**
 
-**Owed**: Track L owes the distribution read and the export list, and **this
-session owes the band check** on whatever re-cut condition L registers -- it is
-no longer at a stopping point. Track H holds H19 at **+0.044 against a
+**Owed**: Track L has done the distribution read (L8, `b9a2831`) and owes the
+condition, which waits on the 2,963 native layers it asked for at 07:42; **this
+session owes the band check on that condition and it is not payable yet**, for
+the reason L gave -- line or area is not decidable from the statistics. The
+extraction side owes those pixels and an answer on the three layers the written
+rule does not explain. Track H holds H19 at **+0.044 against a
 0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
 and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
