@@ -5200,3 +5200,40 @@ Two things the same message carries that the next entry has to live with:
   and **every number this track has ever reported inherits that
   approximation**, including the ones in the next entry. Written down now, as
   a standing caveat on the whole stage, not as a reason to delay the reading.
+
+## 2026-10-23 Stage 2 amendment J3: the stage-2 headline names its mask. Disclosure, not a bar
+
+The same shape as **J2** (2026-10-18), which made the headline name its
+metric. This one makes it name its **mask**: every fill number this track has
+reported is read **against the radius-4 distance-transform estimate** in
+`fill_mask.py`, which has never been checked against an external standard.
+IC1-IC7 all take the mask as given and check the quantities computed on top
+of it -- not out of negligence, but because **no external standard existed**.
+The author's production files may contain a separate fill layer (the
+extraction tool already identifies 519 such layers, 74% of normal pages), and
+if that inventory lands it is the **first** external standard the mask could
+be checked against.
+
+**Nothing moves.** No bar, no arm, no panel set, no number. The population
+was "against the radius-4 estimated mask" from the first measurement; the
+amendment makes an implicit term explicit, which is why it is registered as
+disclosure and not as a loosening.
+
+### The one thing this caveat must NOT become
+
+It is **not** a reason to soften or suspend C1-C5, and the report must not let
+it read that way. **The mask is common to every arm, `blank` and `all_black`
+included.** Therefore:
+
+- **C1, C2 and C3 are comparisons between arms on one shared mask.** A mask
+  error moves every arm in the same direction, so the **sign of a comparison
+  is unaffected**. (C1 demands an absolute margin of 0.05, so its *size* can
+  move with the fill area the mask defines; the comparison itself does not
+  break.)
+- What the caveat binds is the **outward absolute claim** -- a sentence of the
+  form "this much of the real solid fill is / is not recoverable". That
+  sentence inherits the mask's accuracy. The comparative verdicts do not.
+
+Registered before the table was read, like J2, so that a clean negative
+cannot be softened afterwards by the caveat that was added to be honest about
+the mask.
