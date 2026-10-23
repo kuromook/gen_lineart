@@ -175,16 +175,24 @@ L が考え直すべき前提でもある。
 
 ## 9. 運用
 
-- 🛑 **push 保留中(2026-10-23、基盤からの連絡)。`git push -u origin fill-region` を実行しないこと。**
-  この木の履歴は `7d7087d` で **ako6 のベタ納品 884ファイル / 75.2MB**(作者の原稿)を抱えている。
-  `github.com/kuromook/gen_lineart` は public。**内容自体は既に `origin/foundation` 経由で公開済み**
-  (`7d7087d`/`51623d3`/`f38a601` はいずれも origin/foundation 上)なので、push しても新しい内容は出ない。
-  **出るのは参照** —— `foundation` だけ書き換えて後からこの枝を素のまま push すると、
-  書き換えで消したはずの blob を public に連れ戻す。**書き換えが `fill-region` も覆うまで保留。**
-  解除は基盤からの連絡で。基盤は **(b) 木ごと書き換え → この木が `git reset --hard` で追従** を
-  打診済み(こちらの希望も (b))。
+- 🛑 **push 保留中(2026-10-23)。`git push -u origin fill-region` を実行しないこと。**
+  **解除条件はリポジトリが public に戻ること。基盤から「保留解除」の連絡が来るまで待つ。**
+  **履歴はもう clean なので、push 自体に技術的な問題は無い。** 待っているのは手順の受け入れ。
+  **理由**: ユーザーが書き換えを受け入れて public に戻すまで、**ロールバックが選択肢として残っている**
+  (基盤が `backup/*` タグと `refs/original/` を保持中)。この間に `origin/fill-region` を作ると
+  **新SHAがリモートに固定され、旧履歴へ戻す判断が出たときにこの枝も巻き戻す必要が出る**。
+  **条件が満たされたことと手順が完了したことは別** —— 自分の判断で緩めない。
+  **経緯(済んだこと)**: この木の履歴は `7d7087d` で ako6 のベタ納品 884ファイル / 75.2MB
+  (作者の原稿)を抱えていた。`github.com/kuromook/gen_lineart` は public だった。
+  2026-10-23 に `foundation` と `fill-region` を同時に `filter-branch` で書き換え、
+  この木は `349b541` へ追従済み(`data/` 884パス削除・それ以外 0 パス・コミット数 230/230 不変を
+  両者が独立に検証)。リモートに旧履歴を含む ref は無い。いまリポジトリは **private**。
   **基盤の最初の連絡は `7d7087d` を部位層24MBとしていたが、実測では ako6 75.2MB で、
-  `51623d3`(部位層 134ファイル/23.4MB)はこの枝の祖先ではない。** 訂正済み
+  `51623d3`(部位層134ファイル/23.4MB)はこの枝の祖先ではない。** 訂正済み
+- **この木に `data/` を置かないこと。** `fill-region` の `.gitignore` には `data/` がまだ無い
+  (`f38a601` は分岐点より後の `foundation` 側の変更)。次に `foundation` を merge すれば入る。
+  **納品物は基盤側の絶対パス** `/home/sh1/deepl/lineart/data/incoming_manuscript/<work>/fill/`
+  **を読む**(器具はそう直書きしてある)。この木には `results/` と `tools/` 以外を置かない
 - **解除後は push はこの木がやる**: `git push -u origin fill-region`。基盤は push しない
 - **通達は `../lineart/inbox/note_*.md`。冒頭に `発信: \`lineart-fill-region\`` の行を置く**
   (無いと基盤の audit が差出人を特定できない。2026-10-23 の偽陽性の原因)
