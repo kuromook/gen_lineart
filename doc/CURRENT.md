@@ -54,7 +54,8 @@ is the answer that statistic was asked for. **The trial work is `ako6`** (its
 own pick of `ako5`/`housei` retracted: `ako5`'s fill is not a separate layer at
 all), `fringe3` second as a part-name-free control, and the production fill
 turns out to be **hair** -- which sent the 2016-2018 **part-named line layers**
-(126 of 289 works; `face` and `hair` together on 223 pages) to **Track H**,
+(**117 of 270** works once the year-folder duplicates are folded; `face` and
+`hair` together on 223 pages) to **Track H**,
 whose author-marked labels they may partly replace at a coarser granularity.
 **Four defects surfaced in one day's cross-checking, each found by the other
 side**, and the standing rule they produced is J's: **a key, a name or a class
@@ -5022,7 +5023,8 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       corrects is the foundation's.** `config/fill_tone_inventory_layers.csv` on
       the extraction side: **45,533 layer rows**, one per layer, with year, work,
       page, layer id, the layer name itself, parent folder, class and pixel
-      statistics, over 289 works and 2,048 pages. Layer counts: **tone 8,072,
+      statistics, over 289 named works -- **270 once the year-folder duplicates
+      are folded** -- and 2,048 pages. Layer counts: **tone 8,072,
       gradient 1,999, ベタ 1,246, pure-black-but-unnamed 682, line-named-but-ベタ
       192, balloon 656, 描き文字 843, ノンブル 1,334, furniture 5,480, unknown
       14,069.**
@@ -5210,7 +5212,9 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       mismatch invisible.
     - **The 2016-2018 manuscripts separate the *line* layer by body part too,
       and that is a Track H input, not an item 11 input.** Measured on the same
-      2,048-page sample: **126 of 289 works (44%) have part-named layers**, with
+      2,048-page sample: **117 of 270 works (43%) have part-named layers**
+      after folding the year-folder duplicates (126 of 289 before; the fold is
+      recorded with the tone table above and moves no year before 2022), with
       the same mountain as the fill separation -- 2016 **14/14**, 2017 15/17,
       2018 15/19, falling to 0/11 by 2023. Counts: `線画 HEAD face` **2,332**,
       `線画 HEAD hair` **830**, `肌グラデ` 430, `線画 skin` 393, `線画 hair` 310,
@@ -5426,7 +5430,7 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       per-work and not per-page**. Its threshold (saturation >= 24 on >= 2% of
       pixels) is **declared uncalibrated**, justified only by JPEG bleed
       reaching about 10. **It also supersedes the author-label falsifier**: the
-      same check runs over all 289 works, so the tone-share hypothesis can be
+      same check runs over all 289 named works, so the tone-share hypothesis can be
       tested against a measurement instead of against hand labels, and the 46
       second-stage candidates take minutes. **Requested.**
     - **`ako6/color/` is one colour cover, and the reconciliation is exact.**
@@ -5444,7 +5448,7 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       (unknown 37.1%), `fringe2` (40.0%), `fringe3` (42.6%) -- while every
       monochrome work in the koma corpus runs **15.8% to 42.5% tone**
       (`ako6` 42.1%, `ako5` 42.5%, `pink` 41.6%, `copy` 32.7%, `pc` 15.8%).
-      **But zero tone cannot be the rule**: 212 of 289 works have zero tone in
+      **But zero tone cannot be the rule**: 212 of 289 named works have zero tone in
       their sampled pages, because tone is sparse per page (group 1 found tone on
       212 of 1,724) and an eight-page sample misses it. Inside the koma corpus the
       set is small and enriched -- **6 of 57 works are zero-tone, 427 panels**,
