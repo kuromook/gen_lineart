@@ -10,7 +10,9 @@ first job, run the day its tree opened, compared the radius-4 mask to `ako6`'s
 had. The error direction is **deficit** (area ratio 0.482, 64.0% of the
 production fill missed, region-F1 **0.1355** with 1.48x the region count, so it
 **shatters** rather than shrinks). **But the mask is not the main cause**: the
-line raster omits **46.4% of the production fill's pixels in `ako6` and 40.4% in
+line raster -- **a separate image composited from the line layers, not a copy of
+the manuscript** -- does not contain **46.4% of the production fill's pixels in
+`ako6`, 40.4% in
 `ako7`**, two works at the same level with `ako6`'s values reproduced as the
 known cell. **So Track J's "the rough does not mark the fill, 96%" and every
 figure built on `fill_mask.py` were measured against a raster that is itself
@@ -658,7 +660,10 @@ work, and the stated expectation is that the pieces make each other easier.
   `beta`-named layers against 83.71% for `line`-named ones**, so the mask cannot
   be charged for the difference. **The mechanism written here first -- "the
   extraction side's fill-classified layers are discarded when the raster is
-  composited" -- is CORRECTED by Track L's second work**: in `ako7` **38.05% of
+  composited" -- is CORRECTED twice, in wording and in substance. In wording,
+  because nothing is discarded: the raster is a separate image built from the
+  line layers, so a fill layer is simply **not among its inputs** (the
+  three-files statement above). In substance, by Track L's second work**: in `ako7` **38.05% of
   them are present**, against ako6's 14.21%. The surviving form: **how much
   separated fill stays in the raster varies by work (14.2% / 38.1%); "separated,
   therefore dropped" is a matter of degree and not a deterministic rule, and
@@ -702,7 +707,8 @@ work, and the stated expectation is that the pieces make each other easier.
   name fails in both directions**.
   **This gives the raster question its mechanism, which is the part that
   matters.** The line raster is composited from the layers classified as *line*,
-  so **separated fill drops out and fused fill stays**: ink-presence **14.2% for
+  so **a separated fill layer is not an input while fused fill rides along inside
+  a line layer that is**: ink-presence **14.2% for
   separated `black` against 83.7% for fused fill inside `線画 ...` layers**, and
   **ako6's raster is missing 46.4% of the production fill's pixels**
   (66,226,148 of 123,596,784). **The "function of the work's generation" reading
@@ -3717,9 +3723,27 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   Track J's verdict -- every arm there sat on the same mask and the comparison
   was internal -- but any **absolute** claim about how much fill is recoverable
   now has a figure to answer to.
-- **This project's line rasters ARE missing a large part of the fill the author
-  separated -- two works now, and it reaches further than the mask.** The raster
-  omits **46.4% of the production fill's pixels in ako6 and 40.4% in ako7** --
+- **Say this as three files, not as a loss. Track L spent three exchanges failing
+  to get it across and traced the failure to its own words "deleted" and
+  "discarded".** The wording that lands first time:
+  > **There are three different files. (1) the author's manuscript (`.clip`),
+  > which has every fill layer in it. (2) the delivered fill layers, which also
+  > have them. (3) this project's dataset image, which was **composited from
+  > (1)'s line layers only** and is therefore a *different image*, not a copy.
+  > The fill is in (1), is in (2), and was never in (3) -- and (3) is the only
+  > one this project has ever used.**
+  **Nothing was destroyed and nothing is missing from the author's files.** On
+  `page0118`, **61.0% of the fill layers' 2,293,008 black pixels are white in the
+  line image**. A side-by-side at native resolution is at
+  `../lineart-fill-region/results/explain/raster_vs_production_fill.png`.
+  **This file's earlier wording would have reproduced the same
+  misunderstanding** in the next reader, which is why it is corrected rather
+  than supplemented: *"discarded"*, *"drops out"* and *"missing"* all imply an
+  act on one object, and the truth is two objects with different contents.
+- **This project's line rasters DO NOT CONTAIN a large part of the fill the
+  author separated -- two works now, and it reaches further than the mask.** The
+  raster lacks **46.4% of the production fill's pixels in ako6 and 40.4% in
+  ako7** --
   the same level in both, measured by Track L in one run with ako6's values
   carried as the known cell and **reproducing to four decimals** (`black` keep4
   0.994, `beta` ink-presence 0.1421). **So "one work, not yet a claim" is
@@ -3785,10 +3809,50 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   ako6, 23.3% in ako7**, and Track L has put those two numbers on the same line
   as any agreement figure it reports.
   **Not a verdict: the mask's agreement against this standard is unmeasured.**
-  What exists so far is the standard's purity and coverage. Running it needs the
-  L1 procedure (`pid` key, train split, native resolution, two negative
-  controls, ako6 as the known cell) with a region-unit main value -- **and Track
-  L is waiting on the user rather than starting it.**
+  What exists so far is the standard's purity and coverage.
+- **The user redirected the fill line on 2026-10-24, and the reason is not
+  derivable from anything here.** Their words: **research should proceed first
+  on data where line and fill are cleanly separated; measuring mixed data as
+  mixed is low priority** -- *because what was measured cannot be stated*. And:
+  **if Track J's assets are to be validated, validate them on the cleanly
+  separated data.** So Track L's own recommendation -- re-measure door 2 (the
+  rough does not mark the fill) against real ground truth -- **was de-prioritised
+  by the user**, and the agreement run above was overtaken rather than refused.
+- **How much cleanly separated material exists: 35 koma, and the distribution is
+  what matters (Track L's L6, pre-registered at mixed-layer contribution < 0.10
+  and leak < 0.10).** ako6: 201 koma, 56 separated, 99 leak-free, **12 both**;
+  ako7: 136, 52, 67, **23 both**. **Total 35 koma over 28 pages, 38,982,636 true
+  fill pixels, median fill area per koma 19.0%.**
+  **The decile histograms are two spikes with a hollow middle** -- mixed-layer
+  share `[108, 32, 13, 19, 21, 14, 9, 5, 6, 110]`, dedicated-layer leak
+  `[69, 56, 7, 7, 7, 2, 5, 2, 3, 82]`. **A koma is either cleanly separated or
+  completely mixed, so the drawing method switches per koma**, and **the count
+  therefore does not depend on where the threshold sits** (78 at 0.20/0.20, 88 at
+  0.30/0.30). **So the generation wobbles at koma granularity, not only per
+  work** -- which is a finer grain than the author's "it goes back and forth" had
+  been written at here.
+  **Scale, stated as the limit it is**: 35 koma is enough to measure and **not
+  enough to train**; 39M pixels make pixel-level quantities precise; and door 2's
+  real re-measurement **cannot run on 28 pages** when the original was 167+73
+  koma on a different population. **The growth path is plausible and
+  unmeasured**: ako6/ako7 give 35 of 337 koma, about 10%, and the bimodality
+  suggests other works hold clean clusters too -- but **how many works keep fill
+  in separate layers at all has not been measured**, so that 10% extrapolates to
+  nothing. A request to the extraction side is the user's call and **has not been
+  made**.
+- **Track L's L7, running 2026-10-24: validate Track J's assets on the clean
+  data, with the false-positive rate, and with a stratum that can move the blame
+  off the mask.** Truth is **the author's fill, not the inferred mask**. Main
+  value **`precision = |mask ∩ truth| / |mask|`, so 1 - precision is the
+  false-positive rate**. **The design's sharp part**: `CLEAN` (leak < 0.10) and
+  `LEAKY` (leak >= 0.50) go in the **same table**, because **if precision is
+  determined by the stratum, then the mask's accuracy is a property of whether
+  fill leaked into its input and not a property of the mask**. Also on real
+  truth: the trivial arms (`all_black`'s IoU is the true fill area share,
+  `blank`'s region-F1) and **the connected-component count of the author's
+  fill** -- Track J's *"this corpus's line art encloses almost nothing, about 1.2
+  regions per koma"* came from the inferred mask and is being retaken against the
+  real thing.
 - **`git add -A` put the author's artwork into a public repository, and a
   force-push does not take it back out.** 2026-10-23, the foundation's own
   error, start to finish because the whole shape is reusable.
