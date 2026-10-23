@@ -269,6 +269,8 @@ DEAD_HASHES_OK = {
     "51623d3": "same rewrite -- one of the two commits that carried the data",
     "7d7087d": "same rewrite -- the other one",
     "53b8406cfbb4f4d1": "a content fingerprint, not a commit",
+    "30c5104": "Track L's briefing before the rewrite renumbered it to 7d9f080; "
+               "quoted to document the renumbering",
 }
 
 HASH_IN_PROSE = re.compile(r"`([0-9a-f]{7,40})`")
