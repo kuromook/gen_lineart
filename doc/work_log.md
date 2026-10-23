@@ -6470,3 +6470,49 @@ route is dead for area boundaries; the gradient layers' masks were measured
 2026-10-23 first run of that survey is invalid); and "the channel drops messages
 in both directions" is retracted by the extraction side itself -- all three
 requests had arrived. `page_layers_priority65.csv` was still in flight.
+
+## 2026-10-24 (morning) -- the 7,362-layer inventory arrived and was routed to Track L
+
+`inbox/page_layers_priority65.csv` landed at 02:25: 7,362 rows over 65 pages
+(`ako6` 31 / `ako7` 34, none missing), 20 columns, 5,544 raster layers and 2,963
+with content. ~25 s/page against the forecast 85 s. 759 layers pass the
+extraction side's ベタ colour signature; 128 fail it while being dark on the page,
+`black_among_drawn` median 0.823, just under their 0.95 cut -- and the extraction
+side states that 128 is *its* cut and asks us to re-cut with our own.
+
+**Reading the distributions was assigned to Track L, not to the foundation.**
+It sets where to cut, which is pre-registration work belonging to whoever
+registered L6/L7, and the foundation holds the band rather than setting it
+(規律5). Track L was already on it: `tools/evaluation/l8_inventory_reconcile.py`
+was in its tree at 07:38, uncommitted, with P1/P2/P3 written before looking.
+
+Routed at 07:39: the CSV, the JSON, the extraction side's notice and
+`outbox/reply_l_page_layers_priority65_20261024.md` copied into
+`../lineart-fill-region/inbox/`, **which did not exist and had to be created**.
+`inbox/` is gitignored, so a delivery that lands in the foundation is invisible
+to a track until it is copied -- the notice had been addressed to Track L from
+the start and had sat here for five hours. The track's tree was not otherwise
+touched; it has a live session in it.
+
+The foundation's own part was the receipt check, not the distribution: 7,362
+rows x 20 fields with nothing ragged, no duplicate `(page_id, layer_id)`, and
+`rendered=True` 5,544 / `drawn_ratio > 0` 2,963 both matching the notice's
+counts. Four structural facts went into the reply because a re-cut would
+otherwise trip on them:
+
+- the CSV carries a **UTF-8 BOM**, so the first column is `﻿page_id` unless
+  it is opened `utf-8-sig`
+- `layer_type` holds raw CLIP values beyond the documented 1/2/3 (`0` 1,796,
+  `256`/`1584`/`800` 65 each, `4098` 1) and **disagrees with the `folder` column
+  in 141 rows** -- `layer_type==1` and `folder==False` are not the same filter
+- **`用紙` returns `drawn_ratio 1.0` / `black_among_drawn 1.0` on all 65 pages**:
+  white on the page, entirely pure black as measured, so any blackness cut
+  passes the paper layer
+- **31 layers have content but no `preview_dark`** (`マンガ用グラデーション` 15,
+  `rendering_shadow_*` 9, `背景グラデ` 3), which a `preview_dark >= 0.5`
+  condition drops silently
+
+Lesson, and it is the day's pattern again: **a delivery is not delivered because
+it arrived.** The file was in the foundation's `inbox/` at 02:25 and the track
+that owned it could not see it. Nothing checks this -- the audit's notice column
+tracks what tracks *send*, not what the foundation forwards.

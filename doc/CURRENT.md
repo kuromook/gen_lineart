@@ -99,16 +99,51 @@ moved, and the rule each move followed:
   together -- that is the half of the bloat that was correct as a record and
   wrong as something to read.
 
-**Open, as of 2026-10-24 early.** **One thing is in flight and everything else
-waits on it**: the extraction side is producing **`page_layers_priority65.csv`**
--- every layer of the 65 priority pages (`ako6` 31 / `ako7` 34), pre-selection,
-with `visibility` / `opacity` / `has_mask` / `rendered` / `drawn_ratio` /
-`black_among_drawn` / `preview_dark` per layer. About 85 s/page, ~90 minutes,
-started around 02:00; it lands in `inbox/` with a notice.
-**What to do when it arrives**: look at the distributions, **then** write a file
-naming the `page_id`/`layer_id` to export at **native resolution with grey
-levels** -- the line layers that contain fill, which the colour test had been
-dropping. **Do not fix the selection condition before seeing the
+**Open, as of 2026-10-24 morning.** **The file everything was waiting on has
+arrived, and reading it is Track L's work, not this session's.**
+`inbox/page_layers_priority65.csv` landed **02:25**: every layer of the 65
+priority pages, pre-selection -- **7,362 rows over 65 pages** (`ako6` 31 /
+`ako7` 34, none missing), 1,818 folders, 5,544 raster layers, **2,963 with
+content**, 20 columns including `visibility` / `opacity` / `has_mask` /
+`rendered` / `drawn_ratio` / `black_among_drawn` / `preview_dark`. It cost
+**~25 s/page**, ~25 minutes in all, against the forecast 85 s.
+**The quantity the fill line was after**: **759 layers pass the extraction
+side's ベタ colour signature and 128 fail it while being dark on the page**
+(`preview_dark >= 0.5`), top names `線画` 24 / `effect` 17 / `black` 11, and
+**`black_among_drawn` median 0.823** -- just under the 0.95 cut, which is where
+an anti-aliased line layer carrying ベタ would fall. **The 128 is the extraction
+side's own cut, and it asks us to re-cut with ours** (every column is in the
+file). `preview_dark` is measured on the 1/4 preview, so it has **no boundary
+precision**.
+**Routed to Track L at 07:39** --
+`outbox/reply_l_page_layers_priority65_20261024.md`, copied with the CSV, the
+JSON and the notice into `../lineart-fill-region/inbox/`, which had to be
+created. **`inbox/` is gitignored, so a file that lands here is invisible to a
+track until it is copied**; the notice was addressed to Track L from the start.
+Reading the distributions sets where to cut, which is pre-registration, and this
+session holds the band rather than setting it (規律5). **L was already on it**:
+`tools/evaluation/l8_inventory_reconcile.py` was in its tree at 07:38,
+uncommitted, with P1/P2/P3 written before looking.
+**The foundation's receipt check** -- that what arrived arrived, not what it
+says: 7,362 rows x 20 fields with nothing ragged, no duplicate
+`(page_id, layer_id)`, and `rendered=True` 5,544 / `drawn_ratio > 0` 2,963 both
+matching the notice. Four things a re-cut has to know, all in the reply:
+- the CSV carries a **UTF-8 BOM**, so the first column name is `\ufeffpage_id`
+  unless it is opened `utf-8-sig`
+- **`layer_type` holds raw CLIP values beyond the documented 1/2/3** (`0` 1,796,
+  `256` / `1584` / `800` 65 each, `4098` 1) and **disagrees with the `folder`
+  column in 141 rows**, so filtering by `layer_type==1` is not filtering by
+  `folder==False`, and which one was used belongs in the registration
+- **`用紙` comes back `drawn_ratio 1.0` / `black_among_drawn 1.0` on all 65
+  pages** -- white on the page, entirely pure black as measured -- so **any
+  blackness cut passes the paper layer**
+- **31 layers have content but no `preview_dark`** (`マンガ用グラデーション` 15,
+  `rendering_shadow_*` 9, `背景グラデ` 3), which a `preview_dark >= 0.5`
+  condition **drops silently**
+**The order the author set, unchanged**: look at the distributions, **then**
+write a file naming the `page_id`/`layer_id` to export at **native resolution
+with grey levels** -- the line layers that contain fill, which the colour test
+had been dropping. **Do not fix the selection condition before seeing the
 distributions**; that is how the retracted L7 happened. Deliver by SCP to
 `C:/Users/sh1/code/extract_line_and_sketch/inbox/` and **verify with `dir`**.
 
@@ -136,8 +171,9 @@ distributions**; that is how the retracted L7 happened. Deliver by SCP to
   **The one destination from now on is
   `C:/Users/sh1/code/extract_line_and_sketch/inbox/`.**
 
-**Waiting, nothing owed by this session**: Track L is at a stopping point
-(`fill-region` pushed at `7a4df98`); Track H holds H19 at **+0.044 against a
+**Owed**: Track L owes the distribution read and the export list, and **this
+session owes the band check** on whatever re-cut condition L registers -- it is
+no longer at a stopping point. Track H holds H19 at **+0.044 against a
 0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
 and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
