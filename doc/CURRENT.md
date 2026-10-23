@@ -3834,22 +3834,42 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   favour**. The bias is bounded by what is left out: **14.0% of the fill area in
   ako6, 23.3% in ako7**, and Track L has put those two numbers on the same line
   as any agreement figure it reports.
-  **Measured 2026-10-24 as L7, and the stratum answered the question the design
-  was built to ask.** Truth is the author's fill; the main value is
-  `precision`, so `1 - precision` is the false-positive rate:
+  **Measured 2026-10-24 as L7, and then RETRACTED the same day on a hole the
+  user found.** The numbers are kept here because the retraction is the content.
+  Truth was taken to be the author's fill; the main value was `precision`, so
+  `1 - precision` was read as the false-positive rate:
 
   | stratum | koma | precision | **FP rate** | recall | mask area | true fill area |
   |---|---:|---:|---:|---:|---:|---:|
   | **CLEAN** | 35 | 0.2868 | **71.3%** | 0.0226 | 1.99% | 25.18% |
   | LEAKY | 94 | 0.7039 | 29.6% | 0.9235 | 13.91% | 10.60% |
 
-  **Same instrument, same threshold, same code -- only the stratum differs, and
-  precision moves 0.29 <-> 0.70.** So:
-  > **The mask's accuracy was a property of whether fill had leaked into its
-  > input, not a property of the mask.**
-  **Track J's figures were held up by the koma where fill happened to be mixed
-  into the line layers.** Identity holds (`truth_px` agrees with L6's
-  `clean_px` on all 129 koma).
+  **The hole, in the user's words**: *"if you run the radius-4 method on clean
+  line-only information, the image has no fill in it to find -- you haven't made
+  that blunder, have you?"* **Half of it was that blunder and the other half was
+  worse.**
+  **L6's "clean koma" means the *delivered* fill layers are in dedicated layers
+  and do not leak into the raster. It does not mean the raster has no fill.**
+  The delivery contains only layers that passed a **colour** test
+  (`black_among_drawn >= 0.95` and the rest). **If the author painted fill inside
+  an anti-aliased line layer, that layer fails the test and never enters the
+  delivery at all** -- not even as a "mixed" layer, so `share_mixed` could not
+  see it in principle. **So the raster holds real fill that the ground truth
+  knows nothing about: the mask found it correctly and it was counted as an
+  error.**
+  **The evidence is in the blob sizes.** Of the 2,194,338 px called false
+  positive, **54.2% sits in components of 5,000px or more** (27.7% at 5k-20k,
+  26.5% above 20k), and **a radius-4 opening cannot leave a 5,000px blob behind
+  from thick strokes** -- so at least that share is the standard's absence, not
+  the mask's error. A native 1:1 crop shows the mask outputting a hair mass and
+  a window frame with **11 pixels (0.0%)** corresponding in the delivery
+  (`results/explain/fp_koma_01704_...png`).
+  **Withdrawn: the 71.3%, the CLEAN/LEAKY precision contrast, and the sentence
+  this file had called a deeper question than L1's** -- *"the mask's accuracy is
+  a property of its input, not of the mask"*. The contrast cannot separate *fill
+  leaked into the raster* from *fill the delivery never captured*, and the
+  sentence rested on the contrast. Identity still holds (`truth_px` agrees with
+  L6's `clean_px` on all 129 koma); it was never the arithmetic.
   **The recall column is NOT a finding, and Track L found that itself before
   reporting it.** `mask` is a subset of `ink`, so `mask ∩ truth` is a subset of
   `ink ∩ truth` and **`recall <= leak` by construction**; CLEAN's pixel-weighted
@@ -3859,14 +3879,16 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   40.8%**. **`precision` carries no such bound**, which is why **71.3% is the
   result and the small recall is not.** The day's rule applied to one's own
   output, caught by walking the construction after seeing the number.
-  **Two of this file's inherited null values move, and they are quoted
-  everywhere.** On CLEAN: **`all_black`'s IoU 0.0939 / 0.1201 -> 0.2518**, and
-  **`blank`'s region-F1 0.0084 -> 0.0000**, because every koma in that stratum
-  has area in it and "paint nothing" cannot score. **The trivial-arm bar more
+  **What survives is what rests on the delivered layers themselves, and all of
+  it is a LOWER BOUND** -- fill outside the delivery can only add. **Two of this
+  file's inherited null values move, in that direction.** On CLEAN:
+  **`all_black`'s IoU 0.0939 / 0.1201 -> at least 0.2518**, and **`blank`'s
+  region-F1 0.0084 -> 0.0000**, because every koma in that stratum has area in it
+  and "paint nothing" cannot score. **The trivial-arm bar more
   than doubles**, so every fill verdict has to be re-read on this stratum before
   it can be quoted against clean data.
-  **And "1.2 regions per koma" is gone.** The author's fill has **median 3.0
-  connected components per koma** (mean 3.9, max 16, >=500px, stable at 3.0
+  **And "1.2 regions per koma" is gone.** The author's fill has **at least median
+  3.0 connected components per koma** (mean 3.9, max 16, >=500px, stable at 3.0
   across both strata), against the ledger's *"this corpus's line art encloses
   almost nothing -- about 1.2 regions per panel"*, which came from the inferred
   mask. **So "there are hardly any areas, so a region proposer is a poor bet"
@@ -3978,6 +4000,33 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   was written.** A new directory inherited nothing. **A rule expressed as a list
   of instances does not cover the next instance** -- which is why `data/` is now
   ignored as a directory rather than by what sits under it.
+- **If an external standard arrives through a filter, what the filter dropped is
+  not absent -- it is invisible. Counting invisible as negative turns an
+  instrument's correct firing into an error.** Track L's wording, 2026-10-24,
+  after the user asked whether its clean stratum simply had no fill in it to
+  find. **It did have fill**: the ground truth was the *delivered* layers, the
+  delivery admitted only layers passing a colour test, and fill painted inside
+  an anti-aliased line layer fails that test and **never appears in the delivery
+  at all** -- so the instrument that found it was marked wrong. The measured
+  consequence: 54.2% of the "false positives" sat in components of 5,000px or
+  more, which a radius-4 opening cannot produce from strokes.
+  **This is the sharpest form of the week's recurring failure.** The others were
+  a number attached to the wrong unit; this one is **a negative class built out
+  of a gap in the standard's own intake**. The check it implies: **before
+  counting anything as a negative, ask what the standard's acquisition path
+  cannot admit**, and treat every figure resting on it as a bound in the
+  direction of that gap.
+  **It also refutes a framing this file had written and praised twice** -- *"they
+  test colour, we test shape, neither was built from the other, so agreement is
+  informative"*. **The axes are not independent: the colour test is the entrance
+  to the shape test.** Two instruments are only two witnesses when neither sits
+  upstream of the other's intake.
+  **And the same shape appeared on the network the same day.** The extraction
+  host's recorded address, `.9`, returned `No route to host` with an `INCOMPLETE`
+  ARP entry, and Track L was about to conclude the machine was down; it had moved
+  to `.5`. **A recorded address is an implication too** -- the same class as a
+  name, a key or a tag, and the same rule applies: test the property, do not read
+  the record.
 - **A combined `git log -- pathA pathB` cannot tell you which commit added which
   path, and its ordering invites you to think it can.** 2026-10-23: having
   pushed two manuscript deliveries into the repository by `git add -A`, the
@@ -6307,9 +6356,14 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       `fill_mask.py`'s radius-4 opening is a shape test -- the region that can
       hold a disk of that radius -- which a stroke fails and an area passes.
       **So the instrument check is bidirectional and the circularity worry
-      resolves differently than it was framed**: they test colour, we test
-      shape, neither was built from the other, so **agreement is informative and
-      disagreement says which side to look at**. It remains a track's job to
+      resolves differently than it was framed**: they test colour, we test shape,
+      so **agreement is informative and disagreement says which side to look
+      at**. **But "neither was built from the other" -- the clause this file
+      wrote and praised twice -- is WRONG, and Track L found it by walking into
+      it (2026-10-24).** The two axes are not independent: **a layer that fails
+      the colour test never reaches the shape test at all.** The colour test is
+      the entrance, and it narrows what the shape test can ever see. **So the
+      pair is not symmetric and agreement cannot be read as two witnesses.** It remains a track's job to
       run, not the foundation's (discipline 5) -- and **it is now Track L's
       first job**.
       **The extraction side confirmed this with numbers the same night, and the
