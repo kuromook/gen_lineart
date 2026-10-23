@@ -574,8 +574,33 @@ work, and the stated expectation is that the pieces make each other easier.
       merge**: true parts through the same merge reach 0.83-0.94.
     - **Next, registered**: H18 retrains when orders 401-500 are marked, and
       **+0.025 over H17 on the original 193 buys another 100 faces; short of
-      that, marking stops.** H19 (adding the pixels around each stroke, aimed
-      at brow/hair and ear/hair) was registering as the notice was written.
+      that, marking stops.**
+    - **H19 read out 2026-10-23 and FAILED by six thousandths, bar not moved.**
+      Adding the pixels around each stroke -- aimed at brow/hair and ear/hair --
+      gives **Q1 - Q0 = +0.044 on the original 193 faces, up on all three
+      seeds, against a registered 0.05.** All four instrument checks passed
+      first. So the effect is real, consistent and **not worth what was
+      registered for it**, and Track H printed it that way rather than rounding
+      toward the bar.
+      **Where this leaves the part-identity ceiling**: H19 was the attempt to
+      get the hair distinction out of *pixels*, and it falls short, while the
+      2016-2018 manuscripts carry `線画 HEAD hair` as **a production label** --
+      the distinction H19 was trying to infer, already decided. That is an
+      argument for the manuscript route and **not a recommendation**: H decides
+      with the author, and the layer names have not been checked against their
+      own pixels yet.
+      **And H19 joins a pattern this file should name rather than enjoy.**
+      Track K closed six registrations without moving a bar, and **four of the
+      six would have passed on a bar moved by less than a hundredth**; H19 is
+      now +0.044 against 0.05. **Two readings fit and this file cannot choose
+      between them from the inside**: either the bars are set at about the right
+      place and these effects are genuinely too small to buy, or the bars are
+      being set just above what this problem affords, in which case a string of
+      near-misses is what a well-run project looks like on its way to concluding
+      nothing. **The discipline is identical under both** -- the bar does not
+      move after the fact -- but the second reading is a reason to ask, when
+      registering, *what would make this worth 0.05* rather than only *is 0.05
+      the right number*.
     - **Track G's dependency is not payable yet**: at group recall 0.351 the
       unit is not ready to hand over, and Track H says so itself.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
