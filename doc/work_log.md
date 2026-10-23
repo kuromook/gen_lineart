@@ -6420,3 +6420,53 @@ short chain of parabolas, and the earlier 95.7% came from the fragment unit,
 exactly as lesson 11 warned. The asymmetry is the part that may outrun Track J:
 the rough is describable by one curve and the finished line is not. Marked here
 as the foundation reading that track's files; a notice has been asked for.
+
+## 2026-10-24 (early, foundation) -- doc/CURRENT.md compressed 6,820 -> 2,436
+
+The ledger's own maintenance, which its 2026-10-24 handover named as the next
+session's first job. Nothing deleted, no measurement dropped, and the method was
+checked rather than asserted: for each section moved, every numeric token in the
+old text was extracted and looked up in the file that received it before the
+change was committed.
+
+**What moved, and the rule behind each move**
+
+| from `doc/CURRENT.md` | lines | to | what stays in the ledger |
+|---|---:|---|---|
+| Known Tool Traps | 1,768 | `doc/tool_traps.md` (T1-T83) | a grouped index, one line per rule |
+| Track K's two ledger bullets | 1,078 | `doc/track_k_record.md` | the summary K wrote to be read instead of them |
+| Next Actions item 11 | 1,045 | `doc/fill_line_record_20261023.md` | what is in flight and what is owed |
+| Approaches Never Taken Up | 230 | `doc/approaches_not_taken.md` | the claims, without the citations |
+| five "Current ..." sections + seven 2026-07 entries | 352 | `doc/archive/current_20260726_raw_extraction_era.md` | a 22-line pointer |
+| Next Actions preamble + items 1-10 | 490 -> 274 | compressed in place | each item's holder, bar and open question |
+
+**Three things worth keeping from doing it**
+
+- **A check has to follow the prose it was written for.** Moving sections took 19
+  quoted commit hashes out of `tools/audit_track_ledger.py`'s check 7 and nothing
+  would have been raised -- a check going quiet is the failure shape this project
+  pays most for. The hash check now reads `HASH_SOURCES`, four files, and its
+  comment says to extend that list the next time prose with provenance leaves the
+  ledger.
+- **Five sections were named `Current <something>` and had been frozen since
+  2026-07.** The word "Current" was the only thing keeping them in a reset
+  session's reading path. Same shape as the logged traps about a name not being a
+  check.
+- **One retraction had come loose and the compression found it.** The trap index
+  line for L7 said "running"; L7 was measured and retracted the same day, inside
+  T72. The index now says so and points there, and the entry itself is kept as it
+  stood, because the retraction is the content.
+
+Deliberately dropped, and the only thing dropped: three numbers that were a
+finished run's pace (M0 at step 29,050 of 40,000, 1.47 it/s, 50,950 steps
+remaining, and the 8,000 of a mid-run reading). A progress reading is not a
+measurement of the material.
+
+Also folded in while the head was rewritten: the three notices that arrived from
+the extraction side between 00:47 and 01:51. `CanvasPreview` is exactly a quarter
+of native and no native composite exists in the file, so the composited-page
+route is dead for area boundaries; the gradient layers' masks were measured
+(1,754 layers over 85 works, mask edge p50 0.744 against paint 131.1, and the
+2026-10-23 first run of that survey is invalid); and "the channel drops messages
+in both directions" is retracted by the extraction side itself -- all three
+requests had arrived. `page_layers_priority65.csv` was still in flight.

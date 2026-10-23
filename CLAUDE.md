@@ -52,7 +52,8 @@ audit は規律4。**5つの規律のうち唯一、誰の注意力にも依存�
 
 | ファイル | 規模 | 読み方 |
 |---|---|---|
-| `doc/CURRENT.md` | 5,600行超 | **全読みしない。** `grep -n '^## ' doc/CURRENT.md` で目次を出し、必要な節だけ `sed -n`。**track の tree にあるこのファイルは branch 時点の凍結コピー**(2026-10-23 時点で13〜82日・3,300〜5,300行遅れ)。読むなら `../lineart/doc/CURRENT.md` |
+| `doc/CURRENT.md` | 2,400行台 | 台帳の正本。2026-10-24 に 6,820 行から圧縮(証拠は下へ移送、削除はしていない)。**冒頭の番号付き段落と Open 段落だけで現状は足りる。** 全体は `grep -n '^## '` → `sed -n` で節単位。track の tree のコピーは branch 時点の凍結物 |
+| `doc/tool_traps.md` ほか3本 (`track_k_record` / `fill_line_record_20261023` / `approaches_not_taken`) | 230〜1,800行 | **CURRENT.md から移した証拠**。規則と要約は索引側に残っているので、**数値を引用する前にだけ**開く。罠は `T<n>` で参照 |
 | `doc/work_log.md` | 6,400行超 | 時系列。tail か grep のみ。5,000行を超えているので `doc/documentation_maintenance_policy.md` の維持作業対象 |
 | `doc/glossary.md` | 200行弱 | **全読みしてよい。** 確立した事実と既知の罠 |
 | `README.md` | 中 | 入口と索引。track 一覧つき |
@@ -61,8 +62,8 @@ audit は規律4。**5つの規律のうち唯一、誰の注意力にも依存�
 `archive/` 配下はユーザーが明示的に求めない限り読まない。
 
 CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
-`Known Tool Traps` / `Active Goal` / `Next Actions`。
-末尾の 2026-07 付の節は生データ抽出期のもので、再検証されていない。
+`Known Tool Traps`(索引) / `Active Goal` / `Next Actions`。
+生データ抽出期(2026-07)の節は 2026-10-24 に `doc/archive/` へ移した。
 
 ---
 

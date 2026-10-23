@@ -1,8 +1,9 @@
 # Current Project State
 
-Updated: 2026-10-23 JST (late). **The day Track J's slot closed, Track L opened
-and produced a result, and the foundation put the author's artwork on a public
-repository.** In order of what a reset session needs:
+Updated: 2026-10-24 JST (early). Items 1-5 are 2026-10-23: **the day Track J's
+slot closed, Track L opened and produced a result, and the foundation put the
+author's artwork on a public repository.** Item 6 is this file's own compression,
+done 2026-10-24. In order of what a reset session needs:
 
 **1. The fill line has a new target, and it is not the instrument.** Track L's
 first job, run the day its tree opened, compared the radius-4 mask to `ako6`'s
@@ -66,96 +67,122 @@ the thing it was a number *of* was wrong.** Three of the day's false positives
 came from `tools/audit_track_ledger.py` itself, which now carries checks 7 and
 the narrowed status reader (`--self-test`, 11 cases).
 
-**Open, as of the 2026-10-24 handover.** **One thing is in flight and everything
-else is waiting on it**: the extraction side is producing
-**`page_layers_priority65.csv`** -- every layer of the 65 priority pages
-(ako6 31 / ako7 34), pre-selection, with `visibility` / `opacity` / `has_mask` /
-`rendered` / `drawn_ratio` / `black_among_drawn` / `preview_dark` per layer.
-**About 85 s/page, ~90 minutes, started around 02:00.** It lands in `inbox/` as
-a file with a notice.
+**6. This file was compressed on 2026-10-24, and the shape is the point.** It
+had grown **4,361 -> 6,820 lines on 2026-10-23/24**, against a project whose one
+handover document stopped working at 900. **It is now 2,436**, with nothing
+deleted and no measurement dropped -- every numeric token removed from a section
+was looked up in the file that received it before the change was committed. What
+moved, and the rule each move followed:
+
+- **The rules stay in the reading path; the evidence moves to a focused doc.**
+  `Known Tool Traps` was 1,768 lines of 83 incidents and is now a grouped index
+  of one line per rule, citing `doc/tool_traps.md` as `T<n>`. Track K's 1,078
+  lines went to `doc/track_k_record.md`, keeping in the ledger the summary **Track
+  K itself wrote to be read instead of its bullets**. Next Actions item 11's
+  1,045-line record of one day's correspondence went to
+  `doc/fill_line_record_20261023.md`.
+- **A section called "Current" is not a check either.** Five sections named
+  `Current <something>` had been frozen since 2026-07; they are in
+  `doc/archive/current_20260726_raw_extraction_era.md` with the seven dated
+  entries of that era.
+- **A check has to follow the prose it was written for.** Moving sections took 19
+  quoted commit hashes out of `tools/audit_track_ledger.py`'s check 7 without
+  raising anything -- a check going quiet is this project's most expensive
+  failure shape -- so the check now reads `HASH_SOURCES`, and its comment says to
+  add to that list the next time prose with provenance leaves this file.
+- **What was deliberately dropped**: three numbers, all of them a finished run's
+  pace (M0 at step 29,050 of 40,000, 1.47 it/s, 50,950 steps remaining). A
+  progress reading is not a measurement of the material.
+- **Retractions were kept and one was repaired.** The index line for T75 said L7
+  was "running"; L7 was measured and retracted the same day, and the line now
+  says so and points at where. If a figure here has a retraction, they travel
+  together -- that is the half of the bloat that was correct as a record and
+  wrong as something to read.
+
+**Open, as of 2026-10-24 early.** **One thing is in flight and everything else
+waits on it**: the extraction side is producing **`page_layers_priority65.csv`**
+-- every layer of the 65 priority pages (`ako6` 31 / `ako7` 34), pre-selection,
+with `visibility` / `opacity` / `has_mask` / `rendered` / `drawn_ratio` /
+`black_among_drawn` / `preview_dark` per layer. About 85 s/page, ~90 minutes,
+started around 02:00; it lands in `inbox/` with a notice.
 **What to do when it arrives**: look at the distributions, **then** write a file
-naming the `page_id`/`layer_id` the extraction side should export at **native
-resolution with grey levels** -- the line layers that contain fill, which the
-colour test had been dropping. **Do not fix the selection condition before
-seeing the distributions**; that is how the retracted L7 happened. Deliver by
-SCP to `C:/Users/sh1/code/extract_line_and_sketch/inbox/` and **verify with
-`dir`**.
+naming the `page_id`/`layer_id` to export at **native resolution with grey
+levels** -- the line layers that contain fill, which the colour test had been
+dropping. **Do not fix the selection condition before seeing the
+distributions**; that is how the retracted L7 happened. Deliver by SCP to
+`C:/Users/sh1/code/extract_line_and_sketch/inbox/` and **verify with `dir`**.
+
+**Three notices arrived from the extraction side between 00:47 and 01:51 on
+2026-10-24, and two of them change what is written above.**
+- **The composited-page route is dead for area boundaries.** `CanvasPreview` is
+  **exactly a quarter** of native (7016x6543 -> 1754x1635, and 4.00x on `gakuen`
+  too) and **no native composite exists in the file**; halftone is burnt in but
+  at 1/4 a 60L screen's ~10px period averages to grey. It is enough for the
+  `preview_dark` statistic and not for a boundary. Visibility is probably
+  respected (one `visibility=0` layer at 0.064 against 0.720/0.798) on a sample
+  of **one layer**.
+- **The gradient layers' masks were measured**, 1,754 layers over 85 works, and
+  **the 2026-10-23 first run of that survey is invalid** (it stopped at the body
+  raster and never measured the mask in 68% of layers). 99.4% carry a mask with
+  content; **the mask is hard and the paint is soft** (edge p50 **0.744** against
+  **131.1**), and mixing the two produces a meaningless 77.3. Coverage separates
+  by use, 1 : 7 : 21 for `乳首グラデ` / `肌グラデ` / `背景グラデ`, and `背景グラデ`
+  is the most area-like family (**67 of 67 hard edges**) and the smallest (69
+  layers). 59 layers (3.4%) cover a tenth of a page or more.
+- **"The channel drops messages in both directions" is retracted by the
+  extraction side itself**: all three requests had arrived, and what was missing
+  was its own habit of looking in its inbox. One real fault remains -- a reply
+  with no destination recorded went to `C:/Users/sh1/inbox_from_lineart/`.
+  **The one destination from now on is
+  `C:/Users/sh1/code/extract_line_and_sketch/inbox/`.**
+
 **Waiting, nothing owed by this session**: Track L is at a stopping point
 (`fill-region` pushed at `7a4df98`); Track H holds H19 at **+0.044 against a
-0.05 bar, bar not moved**, and has the five-page part-layer export to review
-with the author; one question is out to the extraction side (why `line`-name
-ink-presence is 1.0000 in `ako7` and 0.8371 in `ako6`).
+0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
+and has the five-page part-layer export to review with the author; one question
+is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
+and 0.8371 in `ako6`).
 **Awaiting a user decision**: whether to ask the extraction side to look for
 cleanly-separated material in other works -- **better judged after the
-distributions above**, since the criterion may stop being the colour test. And
+distributions above**, since the criterion may stop being the colour test -- and
 **two candidate tracks queued behind L**: colour manuscripts (every area carries
-colour, so the area division is complete) and the gradient masks (the mask is an
-area, and inverting one that marks everything-but-the-character yields the
-character).
-**This file's own maintenance is the first job of the next session.** It grew
-**4,361 -> 6,800 lines on 2026-10-23/24** against a project that has one
-handover document that stopped working at 900. Several places carry a retracted
-statement and its retraction at equal weight, which is correct as a record and
-wrong as something to read. `doc/documentation_maintenance_policy.md` applies.
-**Compress the record, keep the retractions, and do not delete a measurement.**
+colour, so the area division is complete) and the gradient masks, which the
+survey above has just made measurable (the mask is an area, and inverting one
+that marks everything-but-the-character yields the character).
 
-Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
-and its second axis closed itself the day it opened: K19 landed on the
-registered "the axis dies" branch -- precision 0.3333, CP95 upper **0.4955**
-against a 0.50 bar, and **the bar was not moved** -- so the letter-L
-reservation is released and no `stroke-bridging` branch or worktree was ever
-created. Across six registrations K never moved a bar, and four of the six
-would have passed on one moved by less than a hundredth. It leaves three "must
-not do" statements, one confirmed mechanism, one direction the numbers have not
-killed (carry both tokenisations downstream, which was never K's to decide),
-and the author-judgment web UI, routed to Tracks H and J. K is **dormant**
-until `face_groups.jsonl` grows. **Track J's multi-day slot is running**,
-detached at PPID 1: M0 finished at step 40,000 and M1 is at 8,000 of 40,000,
-ETA tonight. Its completion checklist is in J's entry; the verdict is M1 - M0
-on the 956-panel table, not the trainer's own 40 panels, and the mid-run
-holdout figures are deliberately not reproduced here. **Track D returned the
-precision side of the pair measurement** -- the pair is loose in both
-directions. **Track L is proposed** (fills, in a clean tree, by user decision) on a lead the
-author supplied and this file could not derive -- the manuscripts carry ベタ and
-トーン as separate production layers, the inventory came back the same day, and it
-**corrects the premise**: ベタ was being discarded as expected, but **トーン was
-never seen at all** -- in CSP its dots do not exist as pixels, so **none of the
-519 layers is tone**, and 519 itself mixes fills with balloons and page
-furniture. 45,533 layer rows now stand in its place. **One retraction**: the enclosure reframing this file wrote in the morning
-is withdrawn in item 11, measured away by Track J on 2026-10-10.
-The nine paper-scout reports are triaged below against K's spec;
-the `main` -> `paper-scout` rename is in `doc/worktree_policy.md`. Added this
-day: a repo-root `CLAUDE.md` with the start-up procedure for a session that has
-been reset, and a fix to `tools/audit_track_ledger.py`, which had counted a
-path this file names *in order to deny it* -- a new tool trap, and the reason
-two ledger entries below now carry their status word in their opening lines,
-where the audit can read it.
-
-Earlier: 2026-10-18 JST. **Track K opened** by user approval: the 1px
-skeleton's connectivity, which is upstream of Tracks F, G and H. The error has
-two directions -- over-merge, which the author can mark, and under-connection,
-which has no mark and is the binding one (18.7% of arms joined). K1 registered
-before Track H's 300-face analysis returned.
-
-Before that, 2026-10-09 JST: Tracks G and H, two new lessons, the **withdrawn**
-`cy`/`cx` tool trap, Track G's placement question settled on the reference
-frame, **lesson 14** (86% of the apparent placement structure was the panel's
-aspect ratio, and every position-bits figure in F and G is replaced), and
-Track J opening to take the idle GPU; then 2026-10-10, Track J's stage 1 and
-the finding that this corpus's line art **encloses almost nothing**. The prose
-of those two entries was compressed away here on 2026-10-23; the content is in
-the sections below and in `doc/work_log.md`.
+**The lineage, compressed 2026-10-24.** Each of these is now a ledger entry or a
+record file rather than a paragraph here.
+- **2026-10-19**: Track K closed its tree (`25e4dec`, pushed) and its second axis
+  closed itself the day it opened -- K19 at precision 0.3333, CP95 upper 0.4955
+  against a 0.50 bar, **bar not moved** -- so the letter-L reservation was
+  released. Across six registrations K never moved a bar and four of the six
+  would have passed on one moved by less than a hundredth. Track D returned the
+  precision side of the pair measurement: **the pair is loose in both
+  directions**. Track L was proposed on a lead the author supplied and this file
+  could not derive -- the manuscripts carry ベタ and トーン as separate production
+  layers -- which **corrected the premise**: ベタ was being discarded as expected,
+  but **トーン was never seen at all** (in CSP its dots are not pixels), so **none
+  of the 519 layers was tone** and 519 itself mixed fills with balloons and page
+  furniture. 45,533 layer rows stand in its place.
+- **2026-10-18**: Track K opened by user approval on the 1px skeleton's
+  connectivity, upstream of Tracks F, G and H. The foundation's `diffusion`
+  branch was renamed `foundation`.
+- **2026-10-09/10**: Tracks G and H, two lessons, Track G's placement question
+  settled on the reference frame, **lesson 14** (86% of the apparent placement
+  structure was the panel's aspect ratio, and every position-bits figure in F and
+  G is replaced), Track J opening to take the idle GPU, and the finding that this
+  corpus's line art **encloses almost nothing**.
+- **2026-09-30**: the ledger was rebuilt by reading every track's own files after
+  this file had fallen 13 days behind. The structural cause -- Tracks G and H in a
+  separate clone, invisible to `git worktree list` -- is still true and is in
+  Next Actions item 9.
 
 The Track Ledger, Lessons, Known Tool Traps and Next Actions are current as of
-the Updated date above. **Active Goal is not**: the goal itself stands, but its
-"where the work is" paragraph names its own date, 2026-10-04, and was written
-before Tracks J and K existed -- read the Track Ledger for who is working. The
-ledger was rebuilt on 2026-09-30 by
-reading every track's own files after this file had fallen 13 days behind. The
-descriptive sections further down -- Current Data Direction, Current Model
-Interpretation, Current Extraction Rules, Current Data Pipeline Stage, and the
-dated 2026-07-26/31 entries -- are still from the raw-extraction era and have
-not been re-verified.
+the Updated date above, **and so is Active Goal**: its "where the work is"
+paragraph was rewritten on 2026-10-24, having stood at 2026-10-04 and named
+neither Track J nor K nor L. Status still belongs to the Track Ledger; Active
+Goal is the route. The raw-extraction-era sections that used to sit below it are
+archived (item 6).
 
 **Check where you are reading this from first.** If this copy is inside a track
 worktree (`../lineart-<topic>/doc/CURRENT.md`), it is **frozen at that branch's
@@ -814,8 +841,8 @@ work, and the stated expectation is that the pieces make each other easier.
 
 - `../lineart-image-prompt` (branch `image-prompt`, **Track I**) -- **opened
   2026-09-30, closed 2026-10-04** (`7c2f470`, on a clean negative; the closure
-  is read out further down this entry). Read `## Approaches Never Taken Up`
-  below for why it opened. Does an
+  is read out further down this entry). Read `doc/approaches_not_taken.md`
+  for why it opened. Does an
   IP-Adapter image-prompt channel change lesson 8's mechanism, or only add a
   second thing to copy? **Its first probe is void and the reason is worth
   carrying**: it ran 8 arms x 192 tiles and measured nothing, because cs was
@@ -1820,237 +1847,58 @@ withdrawal.
 - **T80** The koma corpus holds the same page more than once, at different drawing stages, and a naive check reads that as duplication.
 - **T81** Every solid-fill number on record inherits a mask that has never been checked against anything.
 
-
 ## Approaches Never Taken Up
 
-### The paper scout's nine reports, triaged against Track K's spec (2026-10-19)
+**The reasoning is in `doc/approaches_not_taken.md`** (moved 2026-10-24,
+verbatim, 231 lines). This section keeps the claims, so that nothing below is
+re-asked from scratch and "we must have tried that" is not assumed.
 
-The scout on `main` (renamed `paper-scout` later the same day; see `doc/worktree_policy.md`) has accumulated **9 runs since 2026-08-10 -- 11 topology
-papers and 15 diffusion papers -- and nothing on `foundation` had ever cited
-it.** Read in full and judged against the one open requirement this project
-has: **K's registered spec, a feature that lifts the precision of the author's
-`broken` mark among collapsed-bridge-passing tokens from 3.8% past 50%.**
+**The paper scout's nine reports, triaged against Track K's spec (2026-10-19).**
+- **One entry is of the right type** -- individual fibre separation in 3D fibrous
+  materials -- and it is the one the scout rated **lowest**, while the five
+  highest-rated entries are losses Track K cannot use. **The mis-rating is
+  systematic, not random**, so the fix is a focus-area line, not a re-read.
+- **The reusable reading is about the instrument**: a 13.3x precision lift is
+  **information**, and a loss function is not information. K's question is *what
+  distinguishes a junction from a continuation*; the scout's focus areas ask
+  *how to train for connectivity*.
+- **CtrLoRA (ICLR 2025, arXiv:2410.09400) would reopen a closed line.** It is the
+  only paper in the log that treats the **condition encoder** as the suspect, and
+  its budget fits -- but the ControlNet lineage is closed by Tracks A and B, and
+  **the bar for reopening is a new yardstick, not a new paper.** Logged, not
+  promoted.
+- **One of its premises was wrong and this file repeated it**: the frozen VAE's
+  round-trip is not an unmeasured ceiling. Track D measured GT round-tripping at
+  f1 **0.9605** (SD1.5) and **0.9806** (SDXL) on lineart_family against a best
+  trained model of 0.25, so the "run the round-trip test first" caveat is void.
+  T23's trap -- cite the file when stating a fact about a track's material --
+  walked into a second time, and the entry to cite was four hundred lines up in
+  this document.
 
-Criteria, fixed before the verdicts: a candidate answers the spec only if it
-supplies (1) a **per-token quantity**, since the decision is per token, not an
-image-level loss or score; (2) computable from **material this project has**
-(ink raster, skeleton, spans; GT line art for training), not from labels the
-corpus lacks; (3) discriminating **inside** the exposure, separating the 134
-marked tokens from the 4,048 unmarked -- merely detecting that a bridge exists
-is the exposure itself, at precision 3.2%.
-
-**Verdict: one candidate of the right type, none that can be said to reach the
-bar. The spec is not answered.**
-
-- **The one**: *Individual fibre separation in 3D fibrous materials imaged by
-  X-ray tomography* (Depriester et al. 2022, J. Microscopy, DOI
-  10.1111/jmi.13096). It splits a binary mask of touching and crossing fibres
-  using **only the local orientation field**: compute the misorientation angle
-  between neighbouring local orientations and cut where it exceeds one
-  threshold. That is a per-location split/no-split decision keyed on a quantity
-  computable from the ink alone, taken **inside** the merged-object set -- K's
-  exact position. It also lands on the axis this project already measured as
-  the one that works at crossings: **tangent agreement and lateral offset, not
-  curvature**. So it is not a new hope; it is a published, single-parameter
-  instantiation of an axis the stroke-curve work already established.
-  Why it still cannot be said to clear the bar: nothing in it bears on the
-  **rate** in this material, and its own named failure mode is that **a sharp
-  corner looks like a contact** -- in hand-drawn line art a deliberate sharp
-  bend is common, and that is precisely the false-positive population that
-  holds precision down. The scout rated it **low**, mainly for being a
-  heuristic post-process rather than a trainable loss and for being 3D; **for K
-  that downgrade does not apply**, because K needs a feature, not a loss.
-- **A partial contributor**: Batra et al. 2019's auxiliary **orientation head**
-  (per-pixel tangent angle, supervision derivable free from GT line art) is the
-  learned way to produce the field the fibre method thresholds, and would be
-  more robust than tangents computed on a 1px skeleton near a junction -- which
-  is where K has measured the skeleton to be least trustworthy. It decides
-  nothing by itself.
-- **Three families that answer a different question.** (a) *Losses that stop a
-  model breaking a line*: region-separation (Oner 2020), CAPE, MALIS/TOPO-Loss,
-  TopoM-CrackNet, Betti matching, Topograph, Beyond-pixel-wise. These address
-  **under-connection** -- K's other direction, the one with no author mark --
-  and none is a per-token feature. (b) *Metrics*: APLS, Cracks-Per-Patch, and
-  SAMSEM's **ESD** (per-instance open/short rate), which is the closest thing
-  to the measurement this project wants and **shares K's own obstacle**: it
-  presumes a per-instance decomposition, and crossings are exactly where that
-  is ambiguous. (c) *The entire diffusion file*, 15 papers on condition
-  adherence, over-inking, attention control and the VAE bottleneck: **none of
-  them is about splitting a merged token.** Zero bear on the spec.
-
-**The tenth report arrived the same day** (2026-10-19, diffusion track:
-"control-signal representation -- how sparse, noisy, or weak conditions are
-encoded"), hours after the triage above, and is the strongest of the ten for
-*this project* while still **not touching K's spec at all** -- it is entirely
-input-side diffusion. Two things in it are worth a decision rather than a read:
-
-- **One free measurement that has never been done here.** From the inverted
-  diagnosis of *Block and Detail* (arXiv:2402.18116): measure, over the
-  training pairs, the **per-pixel correspondence between dilated rough ink and
-  line ink** -- precision and recall of rough-ink as a predictor of line-ink.
-  High recall with low precision would say the condition is *intrinsically
-  ambiguous* (the inker discards much of the rough), which would implicate the
-  dataset rather than the architecture. Evaluation-only, no GPU.
-  **Checked 2026-10-19, and half of it already exists** -- read, not
-  re-measured, from Track D's
-  `../lineart-pair-signal/results/pair_alignment_strata_20260915/per_pair.csv`
-  (8,467 pairs). Its `rough_le3` / `rough_3to8` / `rough_gt8` columns are the
-  **recall side**: the share of GT stroke length whose nearest rough ink lies
-  within 3px, 3-8px, and beyond. Medians **by pool** (never pooled):
-
-  | pool | n | <=3px | 3-8px | >8px | `aligned` |
-  |---|---:|---:|---:|---:|---:|
-  | clippairskoma | 6,978 | **0.3537** | 0.3795 | 0.1976 | 0.3014 |
-  | ako5ver2koma | 536 | **0.2005** | 0.4366 | 0.3152 | 0.1742 |
-  | fitnesskoma | 455 | **0.2007** | 0.4301 | 0.2940 | 0.1873 |
-  | gakuenkoma | 202 | **0.2417** | 0.4373 | 0.2392 | 0.2198 |
-  | hamlabikoma | 164 | **0.2026** | 0.4734 | 0.2631 | 0.1766 |
-  | houseikoma | 132 | **0.2450** | 0.4020 | 0.2283 | 0.2176 |
-
-  Chance (the conditioning map rotated 180 degrees) is 0.000-0.012, so the
-  signal is real, and **the shape is not the one the paper predicted**: the
-  expected case was high recall with low precision, a messy superset the inker
-  thins. Instead **recall at 3px is 0.20-0.35, and 20-32% of GT stroke length
-  has no rough ink within 8px at all.** The rough has ink *near* most GT
-  strokes (the `<=8px` share totals 0.63-0.73) but does not place it. This is
-  the **rough**, not the conditioning map, so it is not the 0.604
-  oracle-recall cap already on record -- it is a harder number about the task
-  itself, and it bounds what any rough-conditioned model can be asked to do,
-  the words line included.
-  **What is missing is the precision side, and the unit is not the pixel** --
-  corrected here before the measurement was commissioned, because the two
-  directions have to be the same construction to be comparable. D's script
-  cuts the **GT skeleton into segments** and takes each segment's **median**
-  distance to the source skeleton, classifying the whole segment into
-  <=3 / 3-8 / >8 and weighting by segment length; both sides are skeletons, the
-  rough's at `dark < 200`. So the precision side is that mirrored: the rough's
-  skeleton cut into segments, each segment's median distance to the GT
-  skeleton, weighted by the rough's segment length, with the chance arm the GT
-  skeleton rotated 180 degrees. The script in D's tree already
-  computes distance transforms, so this is one direction added to code that
-  exists rather than a new measurement -- which is also why **the owner is
-  Track D**, closed since 2026-09-17 and holding exactly this machinery.
-  **Reopened for this one measurement by user approval 2026-10-19**;
-  registration in `../lineart-pair-signal/doc/track_d_reopen_precision_20261019.md`
-  (commit `6193385` in that tree, unpushed -- D pushes its own branch).
-  **The band is registered before the number exists, and it is deliberately
-  not a pass mark**: nothing is being accepted or rejected, so what is frozen
-  is a reference. The reference is derived rather than picked -- if the <=3px
-  correspondence is roughly symmetric then recall ~ M/L_gt and precision ~
-  M/L_rough for the same matched length M, so
-
-  > **predicted precision = recall x (L_gt / L_rough)**
-
-  with `L_gt` the median `gt_len` and `L_rough` the median `rough_density` x
-  230,400. Frozen today: **0.139 / 0.084 / 0.113 / 0.172 / 0.088 / 0.143** for
-  clippairskoma / ako5ver2koma / fitnesskoma / gakuenkoma / hamlabikoma /
-  houseikoma, from `L_gt/L_rough` of 0.394 / 0.421 / 0.563 / 0.712 / 0.433 /
-  0.586. **The rough's skeleton is 1.4-2.5x longer than the GT's**, so a low
-  precision is explainable by quantity alone and the reading turns on measured
-  against predicted: at the prediction, the rough's extra length explains
-  everything and it carries no placement information beyond what its length
-  buys; far above, the rough's ink concentrates where the line goes; far below,
-  it is worse than its own length allows. **No abstention condition**, and the
-  reason is on the record: this is a census of all 8,467 pairs, not a sample,
-  so the reachability computation that every bar otherwise owes does not
-  apply.
-  **Done the same day**: Track D was reopened for it, measured it, and closed
-  again -- see its ledger entry above. The shape is that **the pair is loose in
-  both directions**, with about half the rough's ink having no GT line within
-  8px, bounded by Track D's own caveat that a `gray < 200` threshold
-  skeletonises pencil grain.
-- **One entry that would reopen a closed line.** CtrLoRA (ICLR 2025,
-  arXiv:2410.09400) is the only paper in the whole log that treats the
-  **condition encoder** as the suspect -- ControlNet's randomly-initialised
-  4-layer conv stack "cannot extract any useful information from the condition
-  image at the beginning of training" -- and it re-frames the hypothesis this
-  project already spent a 10x-steps run rejecting: not undertrained, but
-  badly *started*, which more steps cannot fix. Its budget fits (~37M LoRA
-  params against 361M, ~1,000 pairs, released SD1.5 Base ControlNet). But the
-  ControlNet lineage is **closed** by Tracks A and B, so this is a request to
-  reopen it, and the ledger's bar for reopening a held or closed track is a new
-  yardstick, not a new paper. Logged, not promoted.
-
-**The reusable reading, and it is about the instrument**: a 13.3x precision
-lift is **information**, and a loss function is not information. The literature
-K needs answers *"what distinguishes a junction from a continuation"*, and the
-scout's topology focus areas are pointed at *"how to train for connectivity"*.
-That is why its ratings invert against K's need -- the only entry of the right
-type is rated lowest, and the five highest-rated entries are losses K cannot
-use. **The mis-rating is systematic, not random**, so the fix is a focus-area
-line, not a re-read. Two diffusion entries looked worth their own decision for reasons unrelated to
-K, and **one of them was wrong on the facts -- the foundation's error, found
-2026-10-19 while writing back Track D's result.** The scout calls the frozen
-VAE's round-trip on GT line tiles an unmeasured ceiling, and this file repeated
-it; **Track D measured it and refuted it** long before, in its own ledger entry
-above: GT round-trips at f1 **0.9605** (SD1.5) and **0.9806** (SDXL) on
-lineart_family, against a best trained model of 0.25. So the VAE is not the
-ceiling, and the CtrLoRA caveat built on "run the round-trip test first" is
-void -- the test is on record. **This is the logged trap about citing the file
-when stating a fact about a track's material, walked into a second time**, and
-the file it should have cited was four hundred lines up in this document.
-The other entry stands as logged: the flat `MSE` spends ~90% of its gradient on
-blank paper. Neither is promoted here.
-
-Recorded so they are not re-asked from scratch, and so that "we must have tried
-that" is not assumed.
-
-**ControlNet + IP-Adapter (image-prompt / image-embedding conditioning) has
-never been tried, and was never even proposed.** Surveyed 2026-09-30 across
-every worktree's `doc/`, `inbox/`, `outbox/`, `experiments/`, `scripts/`,
-`tools/`, all branches' commit messages, and the Directions 1-9 survey in
-`doc/model_directions.md`: zero occurrences, of the name or of the concept
-(`image_encoder`, `CLIPVision`, T2I-Adapter, reference-only, unCLIP-style image
-conditioning, exemplar conditioning). Direction 3's "learned line-art encoder if
-available later" is a perceptual-loss feature extractor, not conditioning, and
-Track E's "CLIP features + linear" feeds a judge, not a generator.
-
-**It fell off by expiry, not by judgement.** The one sentence in the corpus that
-would have covered it is `doc/work_log.md` 2026-08-08, Next Action 2: after
-finding that stacking the unconditional line-domain LoRA on the ControlNet was
-actively harmful, it says to *"revisit whether any form of style adapter is safe
-to add only after the paired fine-tune itself is working."* The paired fine-tune
-never started working -- Tracks A and B both closed below the preprocessor
-baseline -- so the revisit never triggered.
-
-**Tooling was never the constraint**: diffusers 0.39.0 with `IPAdapterMixin`,
-and both `StableDiffusionControlNetPipeline.load_ip_adapter` and
-`set_ip_adapter_scale` are available in the venv today, no new dependencies.
-
-**Assessment (2026-09-30), against what is now measured.** It does not address
-the failure in lesson 8, because that failure is *spatial*: where the
-conditioning map lacks a GT stroke the model draws it 9.3% of the time, and
-output skeletons sit near the map (36%) rather than near GT alone (9%). An
-IP-Adapter embedding is pooled and spatially unlocalised -- it carries
-appearance, not where a stroke goes -- so against this project's own
-decomposition it addresses neither half: not which of the preprocessor's
-1.4x-GT strokes to delete, and not the ~16% of GT stroke length the map never
-finds that caps oracle recall at 0.604. The closest analogue this project has
-actually measured points the wrong way: the 2026-08-08 result above, where a
-strong global style prior **overrode** the ControlNet's conditioning.
-Architecturally IP-Adapter sits nearer that failure than a fix -- it injects at
-cross-attention (`attn2`), which is precisely the layer
-`scripts/pnp_line_from_rough.py` deliberately left alone, its docstring naming
-`attn2` as carrying the signal it wanted to keep steering with.
-
-**Where it would fit is a different axis.** The one thing training demonstrably
-moves is tone (near_white 0.13 -> 0.83; fixed-`t` loss correlates with paper
-white at r -0.98 and not with f1), and a reference-image channel is the right
-instrument for tone. That makes it relevant to Track E's question -- aim at the
-base model's own look rather than at GT -- and most natural of all in a
-line-art-to-line-art framing, where spatial content comes from the source and a
-clean exemplar supplies style. **Note that no line-to-line theme exists in this
-project**: `line2line` and equivalents return nothing across `doc/`, and
-`lineart-cleanup-refiner` is the nearest thing and has no reference
-conditioning either.
-
-**If it is tested, the honest first move is inference-only**: public ControlNet
-at its best config (`lineart_coarse`, cs2.5) plus IP-Adapter with a line-art
-tile as image prompt, scored on the usual axes *plus* the conditioning map's own
-baseline (lesson 6) and Track D's `gt_only` / `vs_condition` columns. Using GT
-as the reference leaks, so like the delete oracle it bounds the mechanism rather
-than demonstrating an achievable score -- which is this project's established
-way of starting.
+**ControlNet + IP-Adapter has never been tried, and was never proposed**
+(surveyed 2026-09-30 across every worktree's docs, scripts, branches and the
+Directions 1-9 survey: zero occurrences of the name or of the concept). **It fell
+off by expiry, not by judgement** -- the 2026-08-08 note said to revisit style
+adapters *after* the paired fine-tune worked, and Tracks A and B both closed
+below the preprocessor baseline, so the revisit never triggered. Tooling was
+never the constraint.
+- **It does not address lesson 8, because that failure is spatial.** Where the
+  conditioning map lacks a GT stroke the model draws it 9.3% of the time, and
+  output skeletons sit near the map (36%) rather than near GT alone (9%). A
+  pooled, unlocalised embedding touches neither which of the preprocessor's
+  1.4x-GT strokes to delete nor the ~16% of GT stroke length the map never finds
+  (oracle recall cap **0.604**). Architecturally it injects at `attn2`, the layer
+  `scripts/pnp_line_from_rough.py` deliberately left alone.
+- **Where it would fit is a different axis**: the one thing training demonstrably
+  moves is **tone** (near_white 0.13 -> 0.83; fixed-`t` loss correlates with
+  paper white at r -0.98 and not with f1), which makes it Track E's question and
+  most natural in a line-to-line framing -- **and no line-to-line theme exists in
+  this project.**
+- **If it is tested, the honest first move is inference-only**: public ControlNet
+  at `lineart_coarse` cs2.5 plus a line-art tile as image prompt, scored with the
+  conditioning map's own baseline beside it (lesson 6) and Track D's `gt_only` /
+  `vs_condition` columns. Using GT as the reference leaks, so like the delete
+  oracle it bounds the mechanism rather than demonstrating a score.
 
 ## Active Goal
 
@@ -2076,10 +1924,13 @@ made before this was known, on the judgement that pixel-matching had stalled.
 is a mechanism that *draws* strokes at uniform weight, not one that chooses
 among the rough's existing marks.
 
-**Where the work is, as of 2026-10-04.** The words line (Tracks G and H) is the
-active front, by user decision the same day. Tracks C, E and F are **held, not
-closed** -- kept in place to be re-measured when a new yardstick exists, with
-each one's trigger named under Next Actions.
+**Where the work is, as of 2026-10-24.** Two fronts: the words line's unit
+(Track H, on the author's time, with Track G waiting on its unit and holding an
+open slot) and **the fill line (Track L)**, which is the only one with work in
+flight. Tracks C, E and F are **held, not closed** -- kept in place to be
+re-measured when a new yardstick exists, each trigger named under Next Actions
+item 3. Track J closed on a clean negative 2026-10-23 and Track K is dormant.
+The Track Ledger is where status lives; this section is the route.
 
 **What survives unchanged, regardless of route.** These are measurements, not
 strategy:
@@ -2158,56 +2009,50 @@ predicting positions, which is the reason the route is being rebuilt at the unit
 and not anywhere else.
 
 **The user raised the importance of fills on 2026-10-10, with a reason that
-reaches back into the words line.** Recorded as the author's framing (Working
-Discipline 6), in the author's own terms: in hair, a **region** -- an area
-closed off by lines -- is sometimes filled and sometimes not, and **if the line
-can be recovered from the region, fills become much easier to handle**, because
-a filled area is not a separate kind of ink but a region that has an outline.
-Separately, the **highlight fills in hair are a kind of texture**, and being
-able to split that from the line art is what keeps a pipeline from growing
-branches it cannot otherwise avoid. Two consequences the foundation draws from
-it, which need keeping apart because they need different things:
-- **The ground-truth side needs no rough at all.** Whether a fill's boundary
-  coincides with line ink, and whether highlight fills separate from solid
-  fills by shape alone, are measurable on GT, with no model and no GPU. And it
-  lands on the unit problem: the reason `cluster_set` mixes parts is
-  overwhelmingly hair and shading hatch -- w342/w343/w344 turned out to be
-  "arc, short stroke bundle" holding hair, hatch and panel borders; three
-  quarters of labelled brows share a cluster with the bangs above them; 14.6%
-  of all strokes enter no cluster. **So a line/fill/texture decomposition is
-  not only Track J's business: part of the words line's unit problem is a fill
-  problem.**
-- **The rough side has an unmeasured premise.** Predicting which regions are
-  filled requires that the information be present in the rough. If it is not,
-  the task is not prediction but proposal, and the goal changes. That is the
-  fork Track J's stage 2 has to settle before it registers anything.
-One constraint is already measured and bears on both: some `ako5` tiles sit
-entirely inside a fill with no boundary inside the 480px window (0.5% entirely
-filled, 31.3% near-blank), so **a region-level formulation may not fit the tile
-size this project evaluates on** and may need panel-level inputs.
-**Both of those were then measured on GT alone, 2026-10-10, and both came back
-against the easy reading** (Track J, `results/region_closure_20261010/`; the
-direction and the size of each were reproduced here from the images with an
-independent implementation):
-- **The 480px window is the wrong unit, and by a wide margin.** On a 480 tile
-  **87.6%** (`housei`) and **92.9%** (`ako5`) of the solid-fill *area* sits in
-  a connected component whose own boundary is outside the window; on a koma
-  panel of the same material at the same drawing scale it is 26.4% / 48.5%.
-  Stage 2 therefore takes the **koma panel** as its input unit. A model shown a
-  480 tile is being asked about an object it is never shown whole.
-- **The line art does not enclose anything, and this one is not only Track J's
-  problem.** Taking strokes alone (`ink & ~fill`) and flood-filling what they
-  close gives **1.2 regions per panel** on both `ako5ver2` and `housei` koma
-  (5.7 on `clip_pairs_v3`), the largest background component is **100.0% of the
-  background in every panel inspected**, and **95-100% of the fill area lies
-  outside any enclosed region**. So "propose closed regions, then classify
-  each" has no ground truth to be scored against on this corpus. Track J's
-  answer is to take the 面 to be the **fill connected component**, keeping the
-  model pixel-wise while the metric becomes region-wise. The consequence worth
-  carrying to the words line: **any proposal that assumes a part or a region
-  can be recovered as an area enclosed by the line art cannot be built on this
-  corpus by that construction** -- offered as a fact about the corpus, not a
-  finding about Track H's or Track G's own units.
+reaches back into the words line.** The author's framing (Working Discipline 6),
+in the author's own terms: in hair, a **region** -- an area closed off by lines --
+is sometimes filled and sometimes not, and **if the line can be recovered from
+the region, fills become much easier to handle**, because a filled area is not a
+separate kind of ink but a region that has an outline. Separately, the
+**highlight fills in hair are a kind of texture**, and splitting that from the
+line art is what keeps a pipeline from growing branches it cannot otherwise
+avoid.
+
+The consequence for this route, and it is the reason the fill line is not only
+Track J's business: **the reason `cluster_set` mixes parts is overwhelmingly hair
+and shading hatch** -- w342/w343/w344 turned out to be "arc, short stroke bundle"
+holding hair, hatch and panel borders, three quarters of labelled brows share a
+cluster with the bangs above them, and 14.6% of all strokes enter no cluster.
+**So part of the words line's unit problem is a fill problem.**
+
+**Three measurements on GT alone decided the shape of it** (Track J, 2026-10-10,
+`results/region_closure_20261010/`, direction and size reproduced here from the
+images with an independent implementation; the full figures are in Next Actions
+item 5):
+
+- **The 480px window is the wrong unit, by a wide margin.** On a 480 tile 87.6%
+  (`housei`) / 92.9% (`ako5`) of solid-fill *area* sits in a component whose own
+  boundary is outside the window; on a koma panel of the same material at the
+  same drawing scale it is **26.4% / 48.5%**. A model shown a 480 tile is being
+  asked about an object it is never shown whole. Some `ako5` tiles sit entirely
+  inside a fill with no boundary in the window at all (**0.5% entirely filled,
+  31.3% near-blank**).
+- **The line art does not enclose anything.** Strokes alone (`ink & ~fill`)
+  flood-filled give **1.2 regions per panel** on `ako5ver2` and `housei` koma
+  (**5.7** on `clip_pairs_v3`), the largest background component is **100.0% of
+  the background in every panel inspected**, and 95-100% of the fill area lies
+  outside any enclosed region. **The author's own fill gives median 3.0 regions**
+  (Track L, 2026-10-24), which is the number to compare against rather than 1.2.
+  So "propose closed regions, then classify each" has no ground truth to be
+  scored against on this corpus, and **any proposal that assumes a part or a
+  region can be recovered as an area enclosed by the line art cannot be built on
+  this corpus by that construction** -- a fact about the corpus, not a finding
+  about Track H's or Track G's units.
+- **And the rough does not carry the answer either**, which was the other fork:
+  predicting which regions are filled requires the information to be in the
+  rough. It is not, so the task is proposal rather than prediction -- Track J's
+  verdict (item 5) closed the prediction formulation, and what replaces it is an
+  external standard, which is Track L.
 
 Two things follow that are worth stating plainly, because they are easy to lose:
 
@@ -2246,9 +2091,9 @@ clip_pairs v3 re-extraction, the 8,798-tile combined pool
 (`dataset/pairs_480/valid_train_combined_v3_20260830.txt`), its WD14 captions,
 and its `lineart_anime` conditioning are all in place and verified 1:1 as of
 2026-08-30. What remains on the data side is cleanup and a few open questions,
-listed under Next Actions -- not an active build-out. The sections below this
-one still describe that era and should be read as reference, not as current
-direction.
+listed under Next Actions -- not an active build-out. The sections that used to
+follow this one and still described that era were archived on 2026-10-24; see
+"The 2026-07 raw-extraction era" below for where they went.
 
 Old leak-era `shape1` scores are not adoption targets. Use clean eval metrics
 and montage review only as current references. Evaluate line art with the

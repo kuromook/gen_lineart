@@ -71,6 +71,7 @@ HASH_SOURCES = (LEDGER,) + tuple(
         "tool_traps.md",
         "track_k_record.md",
         "fill_line_record_20261023.md",
+        "approaches_not_taken.md",
     )
 )
 INBOX = FOUNDATION / "inbox"
