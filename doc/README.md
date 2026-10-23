@@ -71,6 +71,10 @@ working on extraction/tiling/panel-matching.
 
 ## Historical Or Noisy
 
+- `doc/archive/current_20260726_raw_extraction_era.md`: the twelve 2026-07
+  sections `doc/CURRENT.md` carried until 2026-10-24 (ako5ver2 keep281, the
+  native re-materialization, the Direction 6/8/9 survey). Audit only;
+  unverified since 2026-07.
 - `doc/archive/*.txt`: old leak-era or pre-clean-eval history. Read only for
   audit, not for current decisions.
 - `results/archive/**`: old generated artifacts. Do not inspect unless the user
