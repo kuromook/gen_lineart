@@ -83,8 +83,28 @@ def main():
     bpan = {r["panel"] for r in brows}
     print(f"models: {len(mpan)} panels, {len(mrows)} rows  {args.models_csv}")
     print(f"base  : {len(bpan)} panels, {len(brows)} rows  {args.base_csv}")
-    print(f"panels in both: {len(mpan & bpan)}  "
+    shared = mpan & bpan
+    print(f"panels in both: {len(shared)}  "
           f"models-only {len(mpan - bpan)}  base-only {len(bpan - mpan)}")
+    if mpan != bpan:
+        print(f"PANEL SETS DIFFER -- every verdict below is read on the "
+              f"{len(shared)} shared panels only, and the two tables are "
+              f"filtered to them first. A learned arm compared against a "
+              f"non-learned arm measured on a different panel set is the "
+              f"defect this guard exists to refuse.")
+        mrows = [r for r in mrows if r["panel"] in shared]
+        brows = [r for r in brows if r["panel"] in shared]
+
+    # A1, checked INSIDE the table rather than against a printed figure: the
+    # models tool recomputes `blank` through its own mask path, so the two
+    # tables must agree on it panel by panel, not just in the mean.
+    mb = {r["panel"]: r["region_f1"] for r in mrows if r["arm"] == "blank"}
+    bb = {r["panel"]: r["region_f1"] for r in brows if r["arm"] == "blank"}
+    both = sorted(set(mb) & set(bb))
+    dis = [q for q in both if abs(mb[q] - bb[q]) > 1e-12]
+    print(f"A1  blank agrees on {len(both) - len(dis)}/{len(both)} shared panels "
+          f"between the two tools -> {'PASS' if both and not dis else 'FAIL'}"
+          f"{'' if not dis else '  first disagreement: ' + dis[0]}")
 
     for stratum in ("normal", "near_blank"):
         m, b = by_arm(mrows, stratum), by_arm(brows, stratum)
