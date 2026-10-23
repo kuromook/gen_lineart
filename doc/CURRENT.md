@@ -609,6 +609,22 @@ work, and the stated expectation is that the pieces make each other easier.
       the right number*.
     - **Track G's dependency is not payable yet**: at group recall 0.351 the
       unit is not ready to hand over, and Track H says so itself.
+- `../lineart-fill-region` (branch `fill-region`, **Track L**) -- **active,
+  opened 2026-10-23 by user approval**, worktree of this repo, briefing
+  committed at `30c5104`. Catching the fill as an **area**, in a clean tree, on
+  the user's judgement that Track J went toward muddle and stopped, and that
+  only some ideas have been refuted rather than the question. Proposal:
+  `doc/track_l_fill_region_proposal_20261023.md` (161 lines, eight closed doors
+  with their measurements, five candidates, the trivial arms, the unit
+  constraints). **It borrows Track J's instruments read-only and does not borrow
+  the framing** -- J's tree houses prohibitions and near-closed registrations
+  alongside the tools, correct for J's registrations and exactly what L must be
+  free to reconsider. **Its first job is the instrument check, and the check is
+  bidirectional**: `fill_mask.py`'s radius-4 mask has never been compared to
+  anything external, and the extraction side's layer selection has no shape
+  term, so each side holds the instrument the other lacks. **The motive, in
+  Track J's wording**: a person can look at the outline and tell which area is
+  filled; cheap closing cannot extract it; what can is unmeasured.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
@@ -5612,7 +5628,47 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       resolves differently than it was framed**: they test colour, we test
       shape, neither was built from the other, so **agreement is informative and
       disagreement says which side to look at**. It remains a track's job to
-      run, not the foundation's (discipline 5).
+      run, not the foundation's (discipline 5) -- and **it is now Track L's
+      first job**.
+      **The extraction side confirmed this with numbers the same night, and the
+      consequence lands on its own delivery.** Of the 124 part-named layers it
+      exported for Track H, **63 pass `black_among_drawn >= 0.95`** -- half of
+      them meet the fill signature's colour test -- but their `drawn_ratio` runs
+      **median 0.0004, min 0.00004**, and **only 3 of the 63 reach the
+      inventory's 0.01**. That is not an area: **this corpus draws line art
+      without anti-aliasing, so its strokes are 100% pure black.** Its own
+      conclusion: the point applies to the 781 layers it delivered, because
+      **size is not shape** -- 0.5% as a bundle of thin strokes and 0.5% as a
+      blob give the same number.
+      **Measured here on the manifests, which is inspection and not an
+      experiment**: the delivered 781 run `drawn_ratio` p10 **0.00226**, median
+      **0.00431**, p90 **0.02298**, max 0.3964, and **75.7% sit below 0.01**.
+      So **the delivery's own floor of 0.002 already removes the bulk of the
+      1-bit line layers** (whose median, 0.00045, is well under it), and it
+      cannot remove a *dense* line layer above that floor, with three quarters
+      of the delivery inside the band where the two populations can overlap.
+      **So the 781 are candidate fills until the shape test runs.** The header's
+      claim that this is the first production fill this project holds stands;
+      the claim that all 781 are fill does not, and was never made.
+    - **Track H's five pages arrived the same night**:
+      `data/incoming_manuscript/part_layers/`, **129 layer records, 24MB** --
+      each part-named layer as its own PNG at full canvas in the same position,
+      a per-page JSON (layer id, name, parent folder, matched part word, pixel
+      statistics, whether it rendered), and **the line composite copied from the
+      August delivery rather than rebuilt**, so it is the very file this
+      corpus's panels were cut from. Five layers did not render because they are
+      **empty**, recorded as such. **The extraction side judged nothing**, which
+      is what H asked for. One row it flagged without interpreting:
+      `gakusai1-3DL p15`'s `線画 HEAD face` has **`drawn_ratio` 0.9984** -- a
+      part-named layer covering 99.8% of the page in pure black, probably
+      inverted or an underlay, **unverified**.
+      It also found the cause of the three `sketch set` layers in the ako6
+      delivery: its exclusions are by **name family** only and never look at
+      whether the **parent folder** is a sketch folder. `ancestors` is in the
+      manifest, so this side can drop them. **It declined to change the
+      delivery rule for 0.4%**, on the reasoning that doing so would be the same
+      kind of judgement as ranking by a screening number -- so it waits to be
+      asked.
     - **Relayed for Track H, 2026-10-23**: five pages exported layer by layer at
       full canvas, with a JSON of layer id, name and parent folder, so H and the
       author can check **whether the part names match their own pixels** against
