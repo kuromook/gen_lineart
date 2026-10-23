@@ -13,7 +13,12 @@ the headline, not a footnote.
 
 M1 - M0 is the registered question: does seeing the whole 面 help predict it?
 NC4 (M1 run with another panel's context) is what says whether the answer came
-from the context stream; it lives in the scorer, not here.
+from the context stream. It lives in `tools/evaluation/score_fill_seg_models.py`,
+on the 956-panel table -- NOT here: `score_holdout` below takes a `ctx_from`
+argument, but this script never passes it, so no NC4 was ever produced by a
+training run. Until 2026-10-23 this docstring said NC4 lived in the scorer
+while the scorer said it lived in the trainer; it existed in neither, and C2
+was unreadable.
 
 The target is the fill mask of the GT line art, computed on the WHOLE panel
 and then cropped -- a distance transform is global, so computing it per window
@@ -207,8 +212,11 @@ def bce_dice(logits, target, eps=1.0):
 
 @torch.no_grad()
 def score_holdout(model, names, arm, device, ctx_from=None, limit=40):
-    """ctx_from: if given, panel i is scored with panel ctx_from[i]'s context
-    -- that is NC4, and it lives here so the same code path produces it."""
+    """ctx_from: if given, panel i is scored with panel ctx_from[i]'s context.
+    That is the NC4 mutation, but **this script never passes it** -- the
+    verdict-grade NC4 runs in `tools/evaluation/score_fill_seg_models.py` on
+    the 956-panel table, because the 40 panels scored here are not the table
+    any criterion is read on (2026-10-23)."""
     model.eval()
     rows = []
     for i, name in enumerate(names[:limit]):

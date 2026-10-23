@@ -26,7 +26,10 @@ Negative controls, one named error each
                      flip can -- and manga is read right to left, so flipped
                      copies are the error this material actually invites
   NC5 shift50        the prediction rolled 50px. Sensitivity, no bar
-  (NC4 is the context shuffle and belongs to M1; it lives in the trainer)
+  (NC4 is the context shuffle and belongs to M1; it lives in
+   tools/evaluation/score_fill_seg_models.py, which is the only place that
+   loads a checkpoint. Until 2026-10-23 this line said "in the trainer"
+   while the trainer said "in the scorer", and NC4 existed nowhere)
 
 Every number carries both readings (area_frac and the ink-normalised
 fill_ratio) and the near-blank / normal strata stay apart, as C5 requires.

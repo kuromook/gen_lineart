@@ -5008,3 +5008,153 @@ curve is oscillating, not rising. **This is not a verdict and is not to be
 quoted as one**; it is recorded so that a later reader can see it was watched
 and not acted on mid-run -- stopping on it would be a bar placed after the
 numbers.
+
+## 2026-10-23 The two instruments the slot's verdict needed, and the order they were written in (NO numbers read yet)
+
+Written and committed **before `per_panel_held_models.csv` exists**. The slot
+finished 2026-10-19 23:43:35 with `M0 exit 0` / `M1 exit 0`; the session that
+launched it had ended at ~14:00, so the handoff note's step 1 ("read it in
+the session it finishes in") was structurally unperformable, and the
+checkpoints sat unread for four days. The foundation's 2026-10-23 notice is
+what re-opened them.
+
+### Order disclosure, stated first because it is the weakest part of this reading
+
+**The scorer did not exist when the slot ran.** It is being written today,
+**after** `slot_20261019.log` and both `train_*.jsonl` had been seen -- that
+is, after I had seen the trainer's own 40-panel holdout curve sit at
+region-F1 0.0000-0.0020 for every snapshot of both arms. The bars are the
+ones registered 2026-10-10 and nothing about them moved, and the trainer's 40
+panels are not a quantity any criterion may be read on (so what I saw is not
+the table I am about to read). But the *implementation choices* in the new
+tool were made with that curve already in view, and that is the kind of fact
+that belongs in the record rather than in a footnote. The two obligations the
+notice attaches to it -- mandatory anchors, and reuse instead of
+re-derivation -- are what reduce the remaining room, and both are honoured
+below.
+
+### What was missing, and it was missing in a shape this track has met before
+
+- `score_fill_koma.py` scores the non-learned arms and NC1/NC2/NC3/NC5. It
+  **never loads a checkpoint**. Ten scripts in this tree read `.pt` files;
+  all ten are the old line-art models and none of them knows what a fill mask
+  is. **The only numbers that existed for M0 and M1 were the trainer's own
+  40-panel holdout**, which section 6 of the notice and this log both
+  forbid as a verdict quantity.
+- **NC4 existed nowhere.** `score_fill_koma.py:29` said it "lives in the
+  trainer"; `train_fill_seg.py`'s docstring said it "lives in the scorer, not
+  here". Each file pointed at the other. The trainer's `score_holdout` does
+  take a `ctx_from` argument -- but **the trainer never passes it**, so no
+  training run ever produced an NC4 row. C2 requires NC4 to drop by >= 0.03,
+  so **C2 was unreadable**, and had been since the registration.
+
+This is IC-j10's shape a second time. That entry's headline was *"the
+registration's second expected value cites a measurement that does not
+exist"*; here the same defect sat in the pass criterion of the four-day slot
+itself. Two instances is a pattern, and the rule it earns is narrow enough to
+check mechanically: **a criterion that names a control must name the file the
+control runs in, and that file must exist when the criterion is registered.**
+A cross-reference between two files is not an implementation.
+
+### The two instruments
+
+`tools/evaluation/score_fill_seg_models.py` -- loads `M{0,1}_step40000.pt`,
+predicts every held panel through the registered window grid and stitcher,
+crops back to the panel's own (h, w) (the panel is the unit of judgement, and
+it is the geometry the non-learned table was read on), and emits per-panel
+rows in the same schema as `score_fill_koma.py`: arms `M0`, `M1`, `blank`,
+plus `nc3_hflip:`, `nc5_shift50:`, the H1 NC2 pair (`arm@nc2crop` against
+`nc2_offbyone:arm`, same 25% overlap guard), and **`nc4_ctxshuffle:M1`**.
+
+**NC4 is implemented here, in the scorer** -- the choice the notice left to
+this track. The shuffle is a seeded derangement (`SHUFFLE_SEED = 20261023`)
+over the 969 held panels: no panel keeps its own context, every panel's
+context is some other panel's, and the assignment is reproducible from the
+seed. Both docstring cross-references are corrected in the same commit, and
+the trainer's `score_holdout` docstring now says plainly that the argument
+exists and is never passed.
+
+`tools/evaluation/report_fill_seg.py` -- reads the models table **and** the
+non-learned table together, because C1 ranks all arms against `blank` /
+`all_black` / their own NC2 and C3 compares the best non-learned arm with the
+best model. Controls print first, strata stay apart, families are never
+pooled, and `npred/ngt` sits beside every region-F1 (IC7).
+
+### Reuse, named, so that a re-derivation would be visible
+
+`fill_mask` / `region_metrics` / `koma_windows` / `koma_split` /
+`train_fill_seg.UNet` are imported, not reimplemented. `MERGE_PX = 6`,
+`C_UNMATCHED = 1.0`, `FILL_HALF_WIDTH_PX`, `MIN_REGION_PX = 500` and
+`MATCH_IOU = 0.5` are untouched (IC-j9 / IC-j11 / IC-j12 / IC-j10 closed
+them). The NC2 geometry is amendment H1's, unchanged.
+
+One shortcut is named rather than hidden: NC4 needs another panel's context
+969 times, so `ctx_of(name)` loads the context channel without the distance
+transform. It is asserted equal to `panel_tensors(name)[2]` on three panels
+before anything else runs.
+
+**Batched inference was tried and rejected on measurement.** Four windows per
+forward pass ran 8.3s against 8.7s on an 88-window panel -- a single 480x480
+window already saturates the card -- and it moved the stitched probability by
+up to 1.2e-4, flipping 8 pixels of 15M across the 0.5 threshold. The scorer
+therefore uses the trainer's own one-window path, which is also the path
+anchor A2 covers.
+
+### The two anchors, and what each one is for
+
+- **A1** `blank`'s region-F1 on the 956 normal-stratum panels must reproduce
+  **0.0084** (`report_held_nc2repaired.txt`, 2026-10-18). This checks the GT
+  mask and region path of the **new** tool against a number a **different**
+  tool produced. A 30-panel smoke of A1 reads 0.0000 and that is expected,
+  not a failure: `blank` scores above zero only on a panel whose GT has no
+  region >= 500px, and 0.0084 is about 8 such panels in 956. The anchor is
+  the full set and nothing else.
+- **A2** the trainer's 40-panel holdout at step 40,000 must reproduce
+  `train_M0.jsonl` / `train_M1.jsonl` exactly -- and it is reproduced by
+  **calling the trainer's own `score_holdout`**, not by a re-implementation.
+  This is the one legitimate use of those forbidden numbers: they say the
+  checkpoint loads as the trainer wrote it, and nothing about fills.
+  **Already read, before the table run: M0 region-F1 0.0004397160 against
+  0.0004397160 and pixel IoU 0.0292916226 against 0.0292916226; M1
+  0.0000000000 and 0.0173674474 against the same -- PASS on both arms to 1e-9.**
+  These two values are quoted here as a checkpoint-loading check and are
+  **not** a fill result.
+
+**If A1 fails, no verdict is read from the table at all**, and the entry that
+follows this one will say so instead of quoting a model number.
+
+### What is about to be read, and what each outcome will mean
+
+Fixed here, before the table exists, so that none of it can be chosen
+afterwards:
+
+- **C1** the best arm of all arms vs `blank`, `all_black` and its own NC2,
+  bar +0.05 absolute, per family group, strata apart.
+- **C2** `M1 - M0 >= 0.03` paired per panel **and** `M1 - NC4 >= 0.03`.
+  **Both.** If M1 - M0 clears the bar and NC4 does not drop, the difference
+  did not come from the context stream and C2 FAILS -- that reading is the
+  whole reason NC4 had to be built.
+- **C3** if the best non-learned arm is within 0.05 of the best model, the
+  registered conclusion is **"no learned model is needed for this"** and that
+  is the headline, not a footnote. Given lesson 6 and given that every
+  non-learned arm already failed C1 by two orders of magnitude, the likely
+  shape is that **both** sides are near zero and C3 fires on a comparison
+  between two numbers that are both ~0.00x. **That is still a C3 reading and
+  will be reported as one**, with the absolute values in the same sentence,
+  because "the model does not beat an arm that itself predicts nothing" is a
+  different statement from "no model is needed" and the registration asks for
+  the second one's wording.
+- **C4** an arm that falls to NC2 or NC3 is excluded from every verdict. For
+  a model arm whose prediction is nearly empty, the NC3 gap will be ~0 and
+  the exclusion will fire; that is the control working, not a defect, and it
+  is reported with the gap printed.
+- **C5** pixel micro-IoU beside every region-F1, strata separate, no pooled
+  headline. Every number beside "don't paint" (`blank` region-F1 **0.0084**
+  on the 956 normal panels) and the preprocessor (readable fill ceiling
+  **pixel IoU 0.0000**; IC1's 0.0002 is an arm that fell to a control).
+
+Runs launched 2026-10-23, detached (`setsid`, stdout to
+`results/fill_koma_20261010/models_held_20261023.log` and
+`anchors_20261023.log`), so they do not depend on this session staying open.
+Measured cost: 9.5 s/panel over 8 panels, i.e. ~2.5h for 969 panels x 3
+inference arms. **The verdict goes in the next entry, not this one.**
