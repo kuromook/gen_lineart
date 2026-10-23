@@ -3688,6 +3688,63 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   selected by name are the ones largely absent from the raster. **So the three obvious
   routes each fail for a different reason**, which is a better map than "we have
   no ground truth".
+- **`git add -A` put the author's artwork into a public repository, and a
+  force-push does not take it back out.** 2026-10-23, the foundation's own
+  error, start to finish because the whole shape is reusable.
+  **What happened**: the extraction deliveries arrive by SCP into `data/`, a
+  directory created that day and **not added to `.gitignore`** -- while this
+  project's convention keeps data out of the repository (`dataset/*` and
+  `results/**` are both ignored). Two `git add -A` commits carried **1,018 files,
+  about 99MB**, and both were pushed to `origin/foundation` at
+  `github.com/kuromook/gen_lineart`, **which was public**. Contents: **884
+  binary fill masks at 7016x6543 covering 107 pages** (black = fill, no
+  gradations, so the composition is legible and the drawing is not), and **134
+  part-layer files including five `_line.jpg` page composites at full resolution
+  with 256 grey levels** -- those five are the artwork itself.
+  **Why removal is not what a force-push does.** A commit is a content-addressed
+  object; a branch is a pointer. The force-push moved pointers, and **the
+  protocol has no "delete object" operation** -- a client can only say which refs
+  exist. Pruning unreferenced objects is GC, **GitHub does not expose GC to
+  users, and it serves `git fetch <sha>` for unreachable objects**. Measured: a
+  fresh bare repo fetched `--depth=1` by SHA pulled **285MB** and read a named
+  PNG at its exact byte size. **So after the force-push the data was still
+  retrievable by anyone.**
+  **And the SHAs were not a secret: this file published them.** The commit
+  message recording the mistake named both offending commits, and so did the
+  trap entry below. **Documenting the error created the path to the data.** A
+  retraction has to ask whether its own text is an index to the thing being
+  retracted.
+  **The verification trap, hit twice before being noticed.** `git fetch origin
+  <sha>` **succeeds as a no-op when the object is already in the local
+  repository** -- and ours was, through the backup refs. Both times the first
+  reading was wrong in the safe-looking direction once and the alarming
+  direction once. **The only valid test is a fresh bare repo holding no objects**,
+  and the final one must be anonymous, since a probe over SSH shows only what a
+  key-holder sees.
+  **The fix that worked, and why each step was that step.** (1) `data/` into
+  `.gitignore` and `git rm -r --cached`, so it stops growing -- the tip is clean
+  but history is not. (2) **Private first**, which is immediate and certain while
+  the rest is arranged. (3) `git filter-branch --index-filter` over
+  `7d7087d^..` for **both affected branches in one invocation**, because
+  rewriting them separately would give the shared commits two different new SHAs
+  and leave a duplicated history. (4) **Delete the repository and recreate it**
+  -- the only self-service way to destroy the objects, **viable only because
+  forks and network count were 0**; with a fork, the objects move into the fork
+  network and survive. Stars, watchers and issues were also 0, so nothing was
+  lost but the URL's continuity. (5) **An explicit refspec, never
+  `push --mirror`**: mirror pushes every ref, and the rollback tags were the one
+  remaining path to the data, so a mirror would have re-uploaded it. `foundation`
+  went first, which is what sets the default branch. (6) The rollback refs were
+  kept until the **anonymous** probe passed, then deleted and `git gc
+  --prune=now` run. **Verified after**: `fsck` clean, all 21 branches matching
+  origin, both objects pruned locally, and `.git` fell from **6.8G to 207M**,
+  most of it unrelated unreachable history that had been accumulating.
+  **The general lesson is not "be careful with `git add -A`".** It is that
+  **this repository had a convention against committing data and the convention
+  lived only in `.gitignore` entries for the directories that existed when it
+  was written.** A new directory inherited nothing. **A rule expressed as a list
+  of instances does not cover the next instance** -- which is why `data/` is now
+  ignored as a directory rather than by what sits under it.
 - **A combined `git log -- pathA pathB` cannot tell you which commit added which
   path, and its ordering invites you to think it can.** 2026-10-23: having
   pushed two manuscript deliveries into the repository by `git add -A`, the
