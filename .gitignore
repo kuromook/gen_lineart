@@ -32,3 +32,6 @@ config/autoloop_notify.env
 # Local file-exchange with the extraction-tool session (Windows machine).
 inbox/
 outbox/
+
+# 原稿由来の納品物(抽出ツールからの SCP 受け)。dataset/ と同じ扱いで追跡しない
+data/
