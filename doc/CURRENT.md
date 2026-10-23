@@ -240,7 +240,21 @@ in its tree this morning to commit L8, and nothing was swept in only because
 `results/**` and `inbox/` were already ignored. **`fill-region` is fixed**
 (`1d77d86`, pushed, three lines taken verbatim from the foundation), and its own
 reading of it is the one to keep -- it had *stated* the hole in a notice and not
-closed it, so knowing and checking were on different sides. **`tools/audit_track_ledger.py` now checks it as check 9**
+closed it, so knowing and checking were on different sides. **Seven of the ten were fixed by this session the same day, on the user's
+instruction to take the dormant trees only**: `aesthetic-judge` `46f34c0`,
+`cleanup-refiner` `3428d0f`, `image-prompt` `c22bfc7`, `pair-signal` `4235dc3`,
+`stroke-grammar` `de593f6`, `stroke-topology` `0e7eb02`, `solid-fill` `4af934c`
+-- each tree clean before and after, each `.gitignore` taken verbatim from
+`foundation`, **committed and not pushed** (the foundation may act on a dormant
+branch with nobody sitting in it, and outward approval is still the user's).
+**Two are left and both belong to someone else**: `face-words` has a live
+session in it, and `panel-generation` is Track G, active and waiting on H.
+**The remedy was quietly breaking something else, which is why each tree was
+checked after**: the foundation's rule read `venv/`, several trees keep `venv`
+as a **symlink** to the foundation's, and `venv/` does not match a symlink -- so
+the first import left the symlink untracked in three trees. Fixed at the source
+first (`f6faae0`, the rule is now `venv`), then re-imported: **T85**.
+**`tools/audit_track_ledger.py` now checks the `data/` rule as check 9**
 (asked of git, so a rule in any form counts; a plain directory that is not a
 repo is not flagged), self-test 13 cases. The rule was already in CLAUDE.md and
 in every briefing, which is exactly what made it worth checking mechanically:
@@ -1078,8 +1092,14 @@ work, and the stated expectation is that the pieces make each other easier.
   tone gain reported earlier was mostly content leaking in (`near_white` 0.464
   under uniform injection falls to 0.075 when only the style blocks are used).
 
-- `../lineart-solid-fill` (branch `solid-fill`, **Track J**) -- **opened
-  2026-10-09 by user decision**, reopening Next Actions item 5 after the GPU
+- `../lineart-solid-fill` (branch `solid-fill`, **Track J**) -- **CLOSED
+  2026-10-23 on a clean negative; nobody is sitting in the tree.** The verdict
+  and its anchors are in Next Actions item 5, and the registered headline is
+  **"no arm predicts fill in this formulation"** -- not "the non-learned route
+  suffices". **Found 2026-10-24: this entry had carried no status word at all
+  while item 5 and the Active Goal both said closed**, so the ledger disagreed
+  with itself and the audit read the track as active. Opening history, kept:
+  **opened 2026-10-09 by user decision**, reopening Next Actions item 5 after the GPU
   was found idle with nothing held anywhere that is GPU-bound. Predict the
   **solid fills** from the rough: a region problem, not a line problem. The
   reason this and not another GPU slot: the preprocessor's `fill_ratio` is
@@ -2032,6 +2052,7 @@ withdrawal.
 - **T77** A quoted commit hash can stop resolving, and then it is a number that looks like provenance and leads nowhere.
 - **T82** A multi-day run's completion procedure must not be addressed to the session that launched it.
 - **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9).
+- **T85** A `.gitignore` rule with a trailing slash does not match a symlink, so importing the integration tree's ignore file into a tree that symlinks `venv` silently un-ignores it. The fix for one hole opened another, in the same command.
 
 ### 素材の性質と外部標準(塗り)
 

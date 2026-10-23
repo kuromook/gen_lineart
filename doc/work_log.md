@@ -6653,3 +6653,38 @@ reading is worth keeping: it had **stated** the hole in a notice without closing
 it, and it had run `git add -A` in that tree this morning -- nothing was swept in
 only because `results/**` and `inbox/` were already ignored. Knowing and
 checking were on different sides.
+
+## 2026-10-24 (afternoon) -- the dormant trees got the incident fix, and the fix broke something else first
+
+User instruction: fix the `.gitignore` hole in the dormant trees only. Seven
+qualified -- clean, nobody sitting, finished per the ledger: `aesthetic-judge`
+(`46f34c0`), `cleanup-refiner` (`3428d0f`), `image-prompt` (`c22bfc7`),
+`pair-signal` (`4235dc3`), `stroke-grammar` (`de593f6`), `stroke-topology`
+(`0e7eb02`), `solid-fill` (`4af934c`). Each `.gitignore` taken verbatim from
+`foundation`. **Committed, not pushed**: the foundation may act on a dormant
+branch with nobody in it, and outward approval is the user's.
+
+**Two are left and both belong to someone else**: `face-words` has a live
+session in it (PID 827258), and `panel-generation` is Track G, active and
+waiting on Track H's unit.
+
+**`solid-fill` only became eligible because of a disagreement found on the way.**
+Its Track Ledger entry carried **no status word at all**, while Next Actions
+item 5 and the Active Goal both said Track J closed on 2026-10-23 -- so the
+ledger disagreed with itself and the audit read the track as active. The entry
+now says CLOSED in its first sentence, where both the parser and a skimming
+reader look, with the opening history kept below it. **This is the second time
+today a status word was in the wrong place**; T75's index line was the first.
+
+**The remedy was quietly breaking something else.** The foundation's rule read
+`venv/`; several trees keep `venv` as a **symlink** to the foundation's venv;
+and `venv/` does not match a symlink. The first import therefore left the
+symlink untracked in `aesthetic-judge`, `cleanup-refiner` and `pair-signal` --
+visible only because each tree was re-checked after the change rather than
+before. Fixed at the source first (`f6faae0`, the rule is now `venv`, with the
+reason in a comment), then re-imported into all seven, and every tree verified
+for **both** rules with zero untracked paths. **T85**: a trailing slash does not
+match a symlink, and the fix for one hole opened another in the same command.
+
+A session sat down in `../lineart-colour-manuscripts` at 09:0x; Track M is
+being worked now.
