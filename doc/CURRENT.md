@@ -50,7 +50,21 @@ user's decision and Track J's own request. **The manuscript-layer scan's first
 group is in** (1,724 pages / 9 works; 212 pages carry tone, 595 layers), with
 two corrections that both run high-to-low -- **ベタ works 84 -> 55, ベタ layers
 1,246 -> 299** -- and the hard/graded tone split measuring **bimodal**, which
-is the answer that statistic was asked for.
+is the answer that statistic was asked for. **The trial work is `ako6`** (its
+own pick of `ako5`/`housei` retracted: `ako5`'s fill is not a separate layer at
+all), `fringe3` second as a part-name-free control, and the production fill
+turns out to be **hair** -- which sent the 2016-2018 **part-named line layers**
+(126 of 289 works; `face` and `hair` together on 223 pages) to **Track H**,
+whose author-marked labels they may partly replace at a coarser granularity.
+**Four defects surfaced in one day's cross-checking, each found by the other
+side**, and the standing rule they produced is J's: **a key, a name or a class
+carries an implication, and an implication is not a check.** The two audits
+whose names cover the koma dataset had never read it; this file's own
+recommendation travelled a *population* without its measurement; and a
+geometry-first duplicate search was corrected by hashing all 5,018 panels, which
+found **byte-identical pages across two works** and settled that the split
+leaks nothing (**0 groups straddle train and held**) while moving no verdict
+figure before the fourth decimal.
 
 Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
 and its second axis closed itself the day it opened: K19 landed on the
@@ -3496,7 +3510,11 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   **unchecked**, not *already reported*. **Third instance that day of a name read
   as a measurement** -- after `NC4` and the extraction side's `black` -- and this
   one is the dangerous sub-case, because the name belonged to a *check*, so its
-  existence was read as coverage.
+  existence was read as coverage. **An inventory named wrongly gets caught when
+  its counts stop adding up; a check named wrongly never does, because a check
+  that reports nothing is a check that passed.** The general rule, from J:
+  **a key, a name or a class carries an implication, and an implication is not a
+  check -- test the property directly.** It has lesson 14's reach.
   **Why the split held, stated as a mechanism rather than as reassurance.** Of
   the 35 duplicate groups spanning different `work_id`s, **11 would have landed
   on both sides had the split been keyed on `work_id` instead of `family`**
