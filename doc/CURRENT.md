@@ -3440,6 +3440,21 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   panels (66%) inside a multi-version group**. So the extraction side was asked
   for page frames (`_koma`) on the same canvas, and **page identity is to be
   fixed by coordinates, not inferred from shape**.
+  **The identifier was there; the relation was not.** The manifest's
+  `content_fingerprint` differs between versions (`page0051` and `done/ako6-3`
+  carry different fingerprints; 63 pids, one fingerprint each, **none shared
+  across pids**), so this corpus never confused two states -- what was missing
+  was any record that two pids are **one page at two stages**. And the crop is
+  recoverable without asking anyone: `manifest.csv` carries `work_id`, `slug`,
+  `page`, `pid` and **`x0,y0,x1,y1` in page coordinates** (`ako6` tops out at
+  x1=6491 / y1=6541 inside the stated 7016x6543 canvas, and bbox size equalled
+  panel size on 40 sampled rows with no mismatch), so **the page frames asked of
+  the extraction side were not needed and the request was withdrawn**. One
+  unverified step remains: `scale` is 1.0 on 153 of 227 ako6 rows and 0.85-1.15
+  on the rest, with `dx`/`dy` offsets -- read here as the *rough*-side alignment
+  leaving the line-side box alone, which is consistent with the sizes matching
+  but **has not been checked against the semantics**, so one page's overlay gets
+  eyeballed before any mask is cut.
   **What it does not touch: Track J's verdict.** C1's best arm is 0.0110 against
   a 0.05 bar, C2's legs are -0.0012 and -0.0017 against +0.03, both models fall
   to controls drawn from the same population, and the sign is identical in all
@@ -5046,6 +5061,57 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       are this side's work** -- accepted deliberately, because a correction made
       here can be checked here, while one made on their side would make the
       mismatch invisible.
+    - **The 2016-2018 manuscripts separate the *line* layer by body part too,
+      and that is a Track H input, not an item 11 input.** Measured on the same
+      2,048-page sample: **126 of 289 works (44%) have part-named layers**, with
+      the same mountain as the fill separation -- 2016 **14/14**, 2017 15/17,
+      2018 15/19, falling to 0/11 by 2023. Counts: `線画 HEAD face` **2,332**,
+      `線画 HEAD hair` **830**, `肌グラデ` 430, `線画 skin` 393, `線画 hair` 310,
+      `線画 HEAD skin` 224, `線画 cloth` 141, then `SKIN` 52, `HAIR` 30,
+      `TEETH` 26, `EYE` 19, `MOUTH` 18. **The extraction side's caveat is the
+      load-bearing part and was adopted**: *a layer having a part name and a
+      layer being an area are different facts -- most of `線画 HEAD face` is the
+      face's **lines** and does not meet the fill signature.* Fifth instance of
+      the same shape in one week, so it is taken as given rather than argued.
+      **So it does nothing for the fill decomposition.** What it may do is Track
+      H's work: H is paying author time to mark which stroke belongs to which
+      facial part (518 rows over weeks, group recall 0.351 against a 0.80/0.60
+      bar), and **830 `線画 HEAD hair` layers mean "this stroke is hair" was
+      already decided in production**, which is exactly the hair/brow and
+      hair/ear discrimination H19 is being built for. **The granularity is
+      coarser than H's unit** -- eye, brow, nose and mouth are not separated
+      (`EYE` 19, `MOUTH` 18), so it is face / hair / skin / cloth, not H's five
+      parts, and it cannot replace H18's ground truth. **Routed to Track H to
+      judge, not adopted here**: discipline 6 puts what a picture depicts with
+      the author, and whether the names match the content is for H to check on
+      the pixels. Three of the top part-named works are in the koma corpus
+      (`2017_pink` 107 panels and in the held set, `2018_ako6` 227,
+      `2017_copy` 74). Asked of the extraction side, for after the tone scan:
+      **how many pages carry `線画 HEAD face` and `線画 HEAD hair` together**,
+      since a page with only one of them teaches no distinction.
+    - **Trial works settled: `ako6` first, `fringe3` second, and the pair is a
+      contrast rather than a repetition.** All three fringe volumes scouted
+      (2019, 24/26/24 pages): `fringe` 9 black / 1 white, `fringe2` 13/4,
+      `fringe3` 9/4. **`fringe3` is chosen on match thickness** -- 119 koma here
+      against `fringe`'s 71 -- since white-fill contamination is the kind
+      `preview_dark` removes. **And `fringe` carries no part-name system at all**
+      (`線画`, `effect`), which makes it the control: **if the fill signature
+      works the same on a part-named work and on one without, the part naming is
+      not load-bearing for area detection.** `2024c ako` stays next in line
+      (black 5 / white 0, 139 koma).
+    - **The extraction side's output naming would have overwritten pages
+      silently, and this file's version report is what caught it.** Its name was
+      `{prefix}_{page}_beta.png` with no subfolder, so `ako6/page0028` and
+      `done2/page0028` collided. Now
+      `018_2018_ako6_<subdir>_<page>_beta.png`, which maps to this corpus's
+      `pid` by replacing `__` with `_`. **Fourth time this week one side's check
+      found the other's defect** (519, `black`, the foundation's population, this
+      naming) -- and the only reason any of them surfaced is that both sides were
+      reporting measurements rather than conclusions.
+      Also recorded, from the same reply: **the composited `_beta.png` has the
+      floor already applied, so a re-cut must be built from the per-layer PNGs.**
+      Reversibility lives in the per-layer output and not in the composite,
+      which is the concrete form of the threshold rule above.
     - **Delivered 2026-10-23 to `inbox/`**: `fill_tone_inventory_layers.csv`
       (45,533 rows), `..._works.csv` (289), `..._inventory.json`,
       `tone_layers_local.csv` (1,114 structurally-confirmed tone layers with
