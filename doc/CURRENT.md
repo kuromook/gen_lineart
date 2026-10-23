@@ -3612,6 +3612,18 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   objection to it but a demand for the matching provision, in three stages --
   Track J's wording, and J had the first two in place at 10:46, before the
   foundation raised the question:
+  **Third instance, 2026-10-23 evening, and it lands on stage (2).** On the
+  extraction machine, **memory pressure killed the completion watcher twice
+  while all three real jobs survived** (`ako6`'s fill extraction, the saturation
+  pass, the final tone group) -- three concurrent runs on one box, with the
+  watcher the cheapest thing to reap. **So the harness-tracked watcher is itself
+  a single point of failure, and under memory pressure it is the *first* thing
+  to go** -- the opposite of the assumption that the watcher outlives the run.
+  **Stage (3), the independent second route, is what covered it, and it was
+  exercised rather than theorised**: the foundation asked for status over the
+  session channel and got the page counts back. That is the first time this
+  file's three-stage provision has been tested end to end, and the stage that
+  earned its place is the one added last.
   **(1)** detach the run. **(2)** In the same sitting, stand up a *separate*
   harness-tracked watcher -- not the run itself, which would throw away the
   point of detaching. J's is a `run_in_background` until-loop over the log
@@ -5062,8 +5074,24 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
         are inflated by an amount that differs per year, and the direction
         depends on whether the duplicated work carries the feature. The
         duplicate list runs 2020b-2024c, so **the late years are the inflated
-        ones**. Deduplicated versions requested; until they arrive **no per-year
-        row here is quotable**. `ako8` is confirmed *not* a duplicate
+        ones**. **Deduplicated the same evening, and the mountain does not
+        move** (`scripts/inspect/dedupe_works.py`,
+        `config/work_duplicates.json`): **2015-2021 lose nothing at all** bar one
+        work in 2019b, every duplicate sits in 2022 or later, and **the
+        2016-2018 rows are unchanged to the work** -- tone 13/14, 14/17, 8/19 and
+        part names 14/14, 15/15, 15/19. So *"2016-2018 is nearly every work"*
+        **stands verbatim and Track H needs no correction**. Totals fall tone
+        **77 -> 75**, ベタ **55 -> 53**, part-named **126 -> 117**, the last being
+        the largest because the `bakugi` family carries part names. **What was
+        inflated was the absolute count and not the shape**: the late-year
+        shares barely move, since folding removes numerator and denominator
+        together (part names 2024 11/22 -> 8/16, both 50%; 2022b 9/26 -> 7/22,
+        35% -> 32%). **The quoting ban is lifted for the deduplicated rows
+        only.** One limit to carry with them: **the representative was taken as
+        the oldest year folder by presumption, not by rule** -- if a later folder
+        is a revision then the older one is the wrong representative, and this is
+        `ako6`'s `done` problem again, which neither side can settle from its own
+        data. `ako8` is confirmed *not* a duplicate
         (`2019_ako8` and `2019b_ako8` have different fingerprints and different
         layer counts), so the pattern is per-work and not a rule about `b`
         suffixes. **The matching itself is bounded**: page name plus byte size
@@ -5354,6 +5382,13 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       practice, not content.** For finding training data that is the right
       measure, because what is wanted *is* the separated practice. For any claim
       about what the author drew it is the wrong one.
+      **The extraction side then applied it to its own deliverables**, which is
+      where it bites hardest: `fill_tone_inventory_works.csv`'s tone-layer and
+      ベタ-layer columns are **layer counts**, and the tone column **includes the
+      empty template layers** -- the locally measured case being 444 of 1,114
+      actually in use. So every figure in the inventory is a figure about
+      practice, and the whole file inherits this sentence rather than just the
+      ako9/ako10 reading.
     - **The manuscript tree duplicates works across year folders too.**
       `2019_ako7` and `2019b_ako7` are identical down to the layer count (512),
       the ベタ count (14), the tone count (168) and the page file
