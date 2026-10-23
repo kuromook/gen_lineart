@@ -245,8 +245,11 @@ instruction to take the dormant trees only**: `aesthetic-judge` `46f34c0`,
 `cleanup-refiner` `3428d0f`, `image-prompt` `c22bfc7`, `pair-signal` `4235dc3`,
 `stroke-grammar` `de593f6`, `stroke-topology` `0e7eb02`, `solid-fill` `4af934c`
 -- each tree clean before and after, each `.gitignore` taken verbatim from
-`foundation`, **committed and not pushed** (the foundation may act on a dormant
-branch with nobody sitting in it, and outward approval is still the user's).
+`foundation`, **and all seven pushed on the user's instruction the same day**
+(the foundation may act on a dormant branch with nobody sitting in it, and the
+outward step was the user's to approve, which is why it was asked for
+separately). Every commit touches `.gitignore` and nothing else, checked before
+the push; all seven were fast-forwards.
 **Two are left and both belong to someone else**: `face-words` has a live
 session in it, and `panel-generation` is Track G, active and waiting on H.
 **The remedy was quietly breaking something else, which is why each tree was
