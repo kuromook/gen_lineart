@@ -5410,3 +5410,55 @@ registered on 2026-10-10 with an NC4 leg. NC4 was written on 2026-10-23. For
 thirteen days C2 was unreadable and read as registered, and a four-day GPU
 slot was spent in that state. The cost of the missing instrument was not the
 hour it took to write it; it was the slot.
+
+## 2026-10-23 Retraction: the "519 fill layers" this track called its first external standard is gone
+
+Three entries written today -- amendment J3, the quoting rule, and the verdict
+entry above -- name an inventory of **519 fill layers, 74% of normal pages**
+as the first external standard the radius-4 mask could ever be checked
+against. **That number is withdrawn**, by the manuscript-layer side's first
+scan batch, relayed by the foundation this afternoon:
+
+- works with fill: 84 -> **55**
+- fill layers: 1,246 -> **299**
+- cause: `black` was the name of the **line** layer in that manuscript group.
+  Of 1,012 layers named that way, **70** met the fill signature.
+
+The lines at the end of the J3 entry, the quoting rule, and the verdict entry
+stand as written -- they are dated entries and this is how the retraction is
+recorded -- but **anyone reading them must substitute: the external standard
+does not exist, and no inventory is currently expected to supply one.**
+`doc/initial_notice.md` has been corrected directly, since the briefing is a
+living document rather than a timeline.
+
+**No verdict moves.** Nothing in today's table was read against a production
+fill layer; every number was read against the radius-4 estimate, which is
+exactly what the quoting rule says out loud. If anything the retraction
+*tightens* J3: the caveat "this has never been checked against an external
+standard" now has no end date attached to it.
+
+What the retraction costs is the plan, not the result. §6 of today's notice
+argued that item 11 should be an independent track partly because an
+independent track could go get those 519 layers as its first job. **That
+first job no longer exists in that form** -- 299 layers across 55 works, with
+a name-based filter already shown to be wrong once, is a different and
+smaller errand. The other two reasons for independence (a negative should
+close as a negative; J's next slot belongs to a region proposer) do not
+depend on the inventory and are unaffected.
+
+### The shape this shares with J's own failure today
+
+The manuscript side's own words: "**on the side of the name, not the pixel
+statistics -- the same structure as your 519 trap**". Both are the same
+error in two places: **a name was read as if it were a measurement.** `black`
+was assumed to mean a black-filled region; `black_among_drawn == 1.00` was
+assumed to mean a fill layer. Neither was checked against what the layer
+actually contained until something forced it.
+
+That is the same family as this morning's rule about NC4 -- **a cross-
+reference between two files is not an implementation** -- and it earns a
+sibling:
+
+> **An inventory counted by names is not an inventory of the things the names
+> describe, and it may not be quoted as a standard until the signature has
+> been checked on the things themselves.**
