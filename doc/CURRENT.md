@@ -648,9 +648,17 @@ work, and the stated expectation is that the pieces make each other easier.
   uniformly, **it shatters**.
   **The headline, and the reason this is not simply a verdict on the mask**:
   production pixels present as ink in the line raster run **14.21% for
-  `beta`-named layers against 83.71% for `line`-named ones**. **The extraction
-  side's fill-classified layers were discarded when the line raster was
-  composited**, so the mask cannot be charged for them. **Restricted to area that
+  `beta`-named layers against 83.71% for `line`-named ones**, so the mask cannot
+  be charged for the difference. **The mechanism written here first -- "the
+  extraction side's fill-classified layers are discarded when the raster is
+  composited" -- is CORRECTED by Track L's second work**: in `ako7` **38.05% of
+  them are present**, against ako6's 14.21%. The surviving form: **how much
+  separated fill stays in the raster varies by work (14.2% / 38.1%); "separated,
+  therefore dropped" is a matter of degree and not a deterministic rule, and
+  which layers drop cannot be predicted from names alone.** L's own diagnosis is
+  that a mechanism seen in one work had been written as a rule -- **the day's
+  pattern a fourth time, a name's implication taken for the mechanism** -- and
+  that the second work is what caught it. **Restricted to area that
   exists as ink at all, the radius-4 opening keeps 72.8%** -- so path loss
   (primary) and instrument loss (secondary, about 27%) had been folded into one
   number. **L read this first as "the tone folder is the cause" and corrected it
@@ -3649,21 +3657,35 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   Track J's verdict -- every arm there sat on the same mask and the comparison
   was internal -- but any **absolute** claim about how much fill is recoverable
   now has a figure to answer to.
-- **This project's line rasters may be structurally missing the fill the author
-  separated, and that would reach further than the mask.** In ako6, **85.8% of
-  the area in `beta`-named production layers is not ink in the line raster** --
-  because the extraction pipeline identifies those layers and drops them when
-  compositing. If it generalises, then **Track J's "the rough does not mark the
-  fill, 96%" was measured against a raster that is itself missing fill**, and so
-  was every fill figure built on `fill_mask.py`. **It is one work and it is not
-  yet a claim**: `ako7` is in flight and will be the second. **This is the single
-  most load-bearing open question in the fill line**, because it would move the
-  target rather than the instrument -- and it was reachable only once a
+- **This project's line rasters ARE missing a large part of the fill the author
+  separated -- two works now, and it reaches further than the mask.** The raster
+  omits **46.4% of the production fill's pixels in ako6 and 40.4% in ako7** --
+  the same level in both, measured by Track L in one run with ako6's values
+  carried as the known cell and **reproducing to four decimals** (`black` keep4
+  0.994, `beta` ink-presence 0.1421). **So "one work, not yet a claim" is
+  upgraded**: the loss is not an artefact of one manuscript. **Which means Track
+  J's "the rough does not mark the fill, 96%" was measured against a raster that
+  is itself missing fill**, as was every fill figure built on `fill_mask.py`.
+  **This is the single most load-bearing finding in the fill line**, because it
+  moves the target rather than the instrument -- and it was reachable only once a
   production standard existed, which is what the inventory bought.
+  **What is still not claimed**: the *per-layer* rule. The share of separated
+  fill that survives differs 2.7x between the two works (14.2% / 38.1%) and
+  **why is unmeasured**. And **ako8 onward is unmeasured** -- the inventory's
+  eight-page sample shows `beta`-named mass at 0, but that is a sample with no
+  shape term, so **the end of the generation is not known** and saying it needs
+  pixels.
+- **The separation is progressing, not static, and one step of the author's
+  "back and forth" now has a direction.** From ako6 to ako7 the area share
+  inverts: `beta`-named **30.8% -> 53.1%**, `line`-named **54.3% -> 37.5%**, and
+  the largest single layer name goes from the unnamed `線画` (41.4%) to **`black`
+  (53.1%)**. `black` is fill in both (keep4 0.994 / 0.993, median inscribed
+  radius 135.2 / 174.4px). **So 2018-2019 is a generation mid-move**, which is
+  why a date cannot stand in for it.
 - **Still no external standard for areas, stated precisely by Track L.** Whole
   production layers mix line and area (line-named layers are 86.3% area by
   pixel); cutting them with radius 4 is circular; and the `beta`-named layers
-  selected by name are the ones absent from the raster. **So the three obvious
+  selected by name are the ones largely absent from the raster. **So the three obvious
   routes each fail for a different reason**, which is a better map than "we have
   no ground truth".
 - **A combined `git log -- pathA pathB` cannot tell you which commit added which
