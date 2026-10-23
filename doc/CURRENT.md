@@ -3803,12 +3803,34 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `black_among_drawn` / `drawn_gray_mean` / `preview_dark` per layer. **The
   request had called item 1 "statistics only, no rendering" and this file passed
   that on** -- a cost estimate inherited from the wrong operation.
-- **The cross-session channel drops messages in both directions, and the author
-  has ruled on it (2026-10-24).** Track L's three requests **never reached the
-  extraction side over the bridge**; it found them by reading this tree's
-  `outbox/` directly. And **every message it sends back reports "delivery
-  unconfirmed"**. So the losses are not one-sided and nothing sent by message
-  alone can be assumed to have arrived *or* to have been recorded.
+- **"The channel drops messages in both directions" is RETRACTED within the hour:
+  nothing was ever lost (2026-10-24).** Verified over SSH from here -- all four
+  files sit in `C:/Users/sh1/code/extract_line_and_sketch/inbox/`
+  (`request_composited_page` 01:02, `..._addendum` 01:17,
+  `request_priority_65pages` + `priority_pages` 01:23). **The delivery route was
+  working the whole time.**
+  **Two separate things had looked like one.** (1) **The extraction side had no
+  procedure for checking its own inbox** -- the day's traffic ran over messages,
+  so the habit of looking for files never formed; it noticed only when the author
+  asked whether the priority request had arrived, and then **read this tree's
+  `outbox/` over SSH before looking in its own inbox**. (2) **The foundation's
+  reply went to a second, older destination**, because `CLAUDE.md` recorded the
+  procedure and not the path -- that half stands. **The symptoms resembled each
+  other and were reported as one cause, unverified.**
+  **Its general form is sharper than this file's**: it had **no procedure**, not
+  a missing parameter -- and **it used "no message arrived" as evidence that "no
+  file arrived", which are different routes, so it is not evidence.** The day's
+  five units were numbers attached to the wrong thing; this one is **the silence
+  of one channel read as the state of another.**
+  **And the foundation acted on that diagnosis without checking the symptom.**
+  It opened an SSH session to find the destination path and **did not look for
+  the three files while it was there**, then rewrote `CLAUDE.md` on a peer's
+  report. The check was one `dir` away in a shell already open. **A peer's
+  diagnosis of its own failure is a report, not a measurement** -- the rule this
+  file applies to peers' findings, not applied to a peer's self-diagnosis.
+  **The file-per-exchange rule stands on its own footing**: the author
+  instructed it (*direct exchange is fine, but nothing may be left without a
+  record*), and its reason is recording, not delivery.
   **The author's instruction: direct exchange is fine, but nothing may be left
   without a record.** Adopted on both sides: **every exchange leaves a file --
   `inbox/` for what arrives, `outbox/` for what goes out -- and a message is
@@ -3825,7 +3847,13 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   written down, and delivery was verified by listing it afterwards. **The
   procedure was recorded and its parameter was not** -- the same shape as the
   address that had moved from `.9` to `.5`. **A procedure without its parameters
-  is an instruction to guess.**
+  is an instruction to guess.** **And the path found that way was the wrong one
+  of two**: the live destination is
+  **`C:/Users/sh1/code/extract_line_and_sketch/inbox/`**, while
+  `inbox_from_lineart/` had been used once in August -- so **"found it on the
+  remote disk" is not "found the one in use"**, and the extraction side has asked
+  that everything standardise on the first. It copied the misdirected reply
+  across itself.
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is in Next Actions item 11.
