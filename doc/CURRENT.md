@@ -5265,16 +5265,51 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       background placement, representing an area only in part* -- describes an
       **appearance**, and the production record has now shown two mechanisms
       under it.
-    - **Trial works settled: `ako6` first, `fringe3` second, and the pair is a
-      contrast rather than a repetition.** All three fringe volumes scouted
-      (2019, 24/26/24 pages): `fringe` 9 black / 1 white, `fringe2` 13/4,
-      `fringe3` 9/4. **`fringe3` is chosen on match thickness** -- 119 koma here
-      against `fringe`'s 71 -- since white-fill contamination is the kind
-      `preview_dark` removes. **And `fringe` carries no part-name system at all**
-      (`線画`, `effect`), which makes it the control: **if the fill signature
-      works the same on a part-named work and on one without, the part naming is
-      not load-bearing for area detection.** `2024c ako` stays next in line
-      (black 5 / white 0, 139 koma).
+    - **Trial works: `ako6` first. `fringe3` is RETRACTED on author knowledge the
+      same day** -- **the fringe manuscripts are drawn for colour, not
+      monochrome.** The user's statement: a colour manuscript **puts colour on
+      every area**, which makes it an excellent source for *knowing how areas
+      divide* but **a different type of manuscript**, and taking it on deserves
+      a separate track. All three volumes had been scouted (2019, 24/26/24
+      pages: `fringe` 9 black / 1 white, `fringe2` 13/4, `fringe3` 9/4) and
+      `fringe3` had been picked on match thickness (119 koma against 71).
+      **The control argument that justified it was confounded.** `fringe` was
+      chosen as a part-name-free contrast to `ako6`, to test whether part naming
+      is load-bearing for area detection -- but it **differs on two axes at
+      once**, part naming *and* colour, so either result would have been
+      unreadable. **A control must differ on the one axis under test**; this one
+      was picked for the axis it was wanted for and not checked for others.
+      The replacement second work should be **monochrome with no part-name
+      system**: `2024c ako` is the candidate (black 5 / white 0 in scouting, 139
+      koma, layer names `線画` / `レイヤー 2` / `成人修正`, and 30.2% of its
+      sampled layers are tone, which is a monochrome signature), pending the
+      author's confirmation that it is monochrome.
+    - **A candidate signature for colour manuscripts, stated as a hypothesis
+      because the obvious version of it is already dead.** In the sampled layers,
+      the four works known or named as colour carry **zero tone layers** --
+      `2022b_hyoui_color` (adjustment **14.7%**, unknown 47.1%), `2019_fringe`
+      (unknown 37.1%), `fringe2` (40.0%), `fringe3` (42.6%) -- while every
+      monochrome work in the koma corpus runs **15.8% to 42.5% tone**
+      (`ako6` 42.1%, `ako5` 42.5%, `pink` 41.6%, `copy` 32.7%, `pc` 15.8%).
+      **But zero tone cannot be the rule**: 212 of 289 works have zero tone in
+      their sampled pages, because tone is sparse per page (group 1 found tone on
+      212 of 1,724) and an eight-page sample misses it. Inside the koma corpus the
+      set is small and enriched -- **6 of 57 works are zero-tone, 427 panels**,
+      three of them the fringe family and `hyoui_color` -- which is suggestive and
+      is not a measurement. **The falsifier to run before anyone relies on it**:
+      have the author label a dozen works colour or monochrome and see whether
+      tone share separates them; a high `adjustment` share is the second
+      candidate axis and only nine works carry one.
+    - **Colour manuscripts as their own track, the user's call (2026-10-23).**
+      The reasoning is the author's and this file could not have produced it:
+      **colour places a colour in every area, so the area division is complete
+      rather than sparse** -- against ベタ, which covers hair, tops and tights and
+      nothing else. That makes it the richest source of area ground truth on the
+      shelf **and** a different problem, since a coloured area is not a filled
+      area and the decision being learned is not the same decision. It is
+      recorded here as a candidate track and not as part of item 11; the corpus
+      already holds **427 panels over 6 candidate works**, `2022b_hyoui_color`
+      the largest at 190.
     - **The extraction side's output naming would have overwritten pages
       silently, and this file's version report is what caught it.** Its name was
       `{prefix}_{page}_beta.png` with no subfolder, so `ako6/page0028` and
