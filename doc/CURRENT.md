@@ -2305,6 +2305,12 @@ incident that actually happened here.
    `NC4` trap below. Discipline 2 binds the instrument before a result is read;
    this binds the quantity before the work starts, and it is checkable the
    moment a criterion is written down.
+   **And the case where no known value exists, Track J's wording, 2026-10-23**:
+   **a newly built control, lacking a known value, must carry an identity
+   inside itself.** It produced two while building `NC4`: `ctx_of` asserted
+   byte-equal to the trainer's own context channel, and the derangement
+   asserted to be a permutation with zero fixed points. The foundation's notice
+   asked for the two anchors and had no rule for this; J supplied it.
 3. **A retraction is a pass, not an entry.** When a number is withdrawn, correct
    every store that repeated it in the same sitting, and say what replaced it.
    `0.2582` stayed in memory as "best ever" for weeks after it was retracted.
@@ -3296,6 +3302,19 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   author standing by to say "that one is fine" and its output is read as
   authoritative -- discipline 4's most of all, being the one check that depends on
   nobody's attention.
+- **Every solid-fill number on record inherits a mask that has never been
+  checked against anything.** Stated by Track J 2026-10-23, of its own corpus:
+  `fill_mask.py` infers the fill from a *flattened* line-art raster by distance
+  transform at radius 4, and **`IC1` through `IC7` all take that mask as given**
+  and check the metrics built on top of it. So the one core the whole track rests
+  on is the one instrument no instrument check has been aimed at -- not through
+  negligence but because **there was nothing to check it against**. The
+  manuscripts' production ベタ layer would be the first external standard it has
+  ever had (Next Actions item 11), which is why J asks not only for agreement but
+  for **the direction of the error**: a mask that is dilated and a mask that is
+  deficient send every existing figure the opposite way when re-read. Until then,
+  a fill figure is quotable only as *"against the radius-4 inferred mask"*, the
+  same way a diffusion f1 is quotable only beside its conditioning map.
 - **A multi-day run's completion procedure must not be addressed to the session
   that launched it.** Track J's handoff note of 2026-10-19 opens its checklist
   with "read `slot_20261019.log` and both jsonls **in the session it finishes
@@ -3341,6 +3360,16 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   once, at the end** -- so look there. Track H is safe for the matching reason, its
   C1/C2 being anchored to figures it has already produced and re-reads every cycle.
   The registration-time rule is now discipline 2's second paragraph.
+  **The form both of 2026-10-23's failures share, Track J's reading:** each was
+  *reading one of two adjacent records*. `NC4` needed two files crossed, and
+  either alone is coherent; the foundation's retracted enclosure claim sat in
+  section 2 of a work-log entry whose section 3, two screens down, measures it.
+  Stated so as to be actionable rather than as "read more carefully":
+  **before quoting a passage that supports a claim, search the same document for
+  a passage that measured it.** J's own countermeasure, for the other direction:
+  a refuted framing belongs in the briefing's current-state section *with its
+  measurements*, not only deep in the work log, so a fresh session cannot pick
+  it up at the entrance.
 
 
 ## Approaches Never Taken Up
@@ -4615,9 +4644,23 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **The user expects the extraction to take days.** The reply will land in
       `inbox/` or as a message; `ls -t inbox | head` is step 2 of this project's
       start-up procedure, which is what will catch it.
+    - **How Track J's door closes changes how L reads candidate 2, and J sent
+      this ahead of its verdict (2026-10-23).** If C3 fires, *"no learned model
+      is needed"* will most likely hold in the form **"both arms are near
+      zero"** rather than *"the non-learned arm won"* -- the best non-learned arm
+      beats *paint nothing* by only **+0.0026**. These are different claims and
+      J will print the distinction. **"Both near zero" closes the formulation and
+      leaves the semantic route open; "the non-learned arm won" would say the
+      frequency table is already enough.** L counts the eighth door accordingly.
     - Open before a registration: approval for the L tree, and whether to create
       it now or after the inventory returns. Track J's verdict (item 5) bounds
       candidate 2 and is still unread.
+    - The retracted enclosure framing had a **fourth** store nobody here knew
+      about: Track J had copied it into the briefing it rewrote the same morning,
+      which is the first file a fresh session in that tree reads. J found and
+      fixed it unprompted, with the 2026-10-10 measurements beside it. A
+      retraction pass is only as wide as the list of stores, and this one was
+      wider than the foundation's list.
 12. **Pre-annotated marking: let a model propose the groups and have the author
     correct them -- under Track H, registered separately, and not before H18
     reads out.** Proposed by the user 2026-10-23, on the reasoning that
