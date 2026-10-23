@@ -26,6 +26,12 @@ working on extraction/tiling/panel-matching.
 - `doc/approaches_not_taken.md`: what has *not* been tried and why -- the paper
   scout triage and the ControlNet + IP-Adapter survey. Keeps "we must have tried
   that" from being assumed. Moved out of `doc/CURRENT.md` 2026-10-24.
+- `doc/track_m_colour_manuscripts_proposal_20261024.md`: Track M 起案 -- taking the
+  area division from colour manuscripts, where every area carries a colour.
+  Written 2026-10-24, **awaiting user approval; no tree exists**. Holds the
+  closed doors (work-level colour classification, the uncalibrated saturation
+  threshold, the retracted `fringe3` trial, the zero-tone signature) so they are
+  not re-derived.
 - `doc/track_k_record.md`: Track K's working record, both axes, moved out of
   the Track Ledger 2026-10-24. The ledger keeps K's own "Where Track K stands"
   summary; this is the 1,078 lines behind it.

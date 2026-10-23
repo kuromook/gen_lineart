@@ -235,12 +235,25 @@ and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
 and 0.8371 in `ako6`).
 **Awaiting a user decision**: whether to ask the extraction side to look for
-cleanly-separated material in other works -- **better judged after the
-distributions above**, since the criterion may stop being the colour test -- and
-**two candidate tracks queued behind L**: colour manuscripts (every area carries
-colour, so the area division is complete) and the gradient masks, which the
-survey above has just made measurable (the mask is an area, and inverting one
-that marks everything-but-the-character yields the character).
+cleanly-separated material in other works -- it was to be **judged after the
+distributions above, and the distributions have now answered the conditional
+part**: the criterion **has** stopped being the colour test, since the area floor
+is what removes areas from the standard, so the question to put to other works
+is about area and not colour. And **two candidate tracks queued behind L**:
+- **colour manuscripts, now written up as Track M**:
+  `doc/track_m_colour_manuscripts_proposal_20261024.md` (116 lines, the author's
+  premise that colour puts a colour in **every** area so the division is
+  complete rather than sparse, four closed doors with their measurements, the
+  stock -- 28 all-colour works over 233 pages, 47 mixed over 1,566, 427 panels
+  already in the koma corpus -- three candidates, the trivial arm, and the two
+  questions that are the author's). **The foundation wrote the proposal, which is
+  recording and not experimenting; opening the tree is the user's call** and
+  nothing has been opened. It **does not take over Track L's homework**: whether
+  a colour area can serve as the standard for a filled area is a separate
+  registered question, because a coloured area is not a filled area
+- **the gradient masks**, which the survey above has just made measurable (the
+  mask is an area, and inverting one that marks everything-but-the-character
+  yields the character)
 
 **The lineage, compressed 2026-10-24.** Each of these is now a ledger entry or a
 record file rather than a paragraph here.
