@@ -61,7 +61,8 @@ the thing it was a number *of* was wrong.** Three of the day's false positives
 came from `tools/audit_track_ledger.py` itself, which now carries checks 7 and
 the narrowed status reader (`--self-test`, 11 cases).
 
-**Open**: Track L is live on `fill-region` and pushes its own branch; the
+**Open**: Track L has pushed `fill-region` (`7a4df98`, verified `data/`-free
+from an anonymous clone) and is at a stopping point; the
 extraction session has the gradient mask survey rerunning and one question
 outstanding (why `line`-name ink-presence is 1.0000 in `ako7` and 0.8371 in
 `ako6`); Track H holds H19 at **+0.044 against a 0.05 bar, no bar moved**, and
@@ -667,6 +668,15 @@ work, and the stated expectation is that the pieces make each other easier.
   number. **L read this first as "the tone folder is the cause" and corrected it
   the same day**: it was correlation, name family and folder being confounded
   (`line`-named layers have 0 of 549 under a tone folder, so the 2x2 degenerates).
+  **Pushed 2026-10-23 (`7a4df98`)**, after the repository was recreated, and
+  verified `data/`-free from an **anonymous** clone of that branch -- a second
+  path beside the pre-push check. **Track L is at a stopping point.** Its own
+  next moves are not things it will ask for: the extraction side's answer on why
+  compositing differs by work, or `ako8`/`ako9` pixels, which are what the end of
+  the generation needs. **Its standing homework is the one this file cannot
+  answer either**: how to build an external standard for areas at all, given
+  that whole layers mix line and area, radius-4 cutting is circular, and the
+  `beta`-named layers are the ones largely absent from the raster.
   **Second result, same night: whether `black` is a fill layer is a property of
   the GENERATION, and the author answered by telling L to measure.** The author's
   process knowledge, which nothing here could derive: when the tone-layer method
@@ -2527,6 +2537,17 @@ incident that actually happened here.
    routing. Theme work belongs in a track, started in a clean session from that
    track's briefing. This is a role boundary rather than a caution, because the
    caution failed.
+   **And it cannot stand in for the user on an outward-facing action, which
+   Track L had to point out on 2026-10-23.** The foundation had told a track not
+   to push, for a reason of its own, and later wrote *"the hold is lifted, you
+   may push"*. **Track L did not push on that**: it waited for the user, on the
+   grounds that **approval for an action that leaves this machine is the user's
+   and the foundation cannot proxy it.** It was right, and the wording here was
+   wrong. **The hold had two components and they were conflated** -- the
+   foundation may lift the condition *it* imposed and say so, but **lifting a
+   condition is not granting an approval.** The same asymmetry applies to any
+   peer session: a release from the party that imposed a hold removes that hold
+   and nothing else.
 6. **On what a picture depicts, the author decides.** Added 2026-10-04 from
    Track H. A session read that track's verified closed-eye seed as "an open
    mouth with teeth" off a 0.3x montage, wrote the retraction into the work log
