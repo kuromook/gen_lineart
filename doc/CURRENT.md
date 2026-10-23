@@ -5470,9 +5470,25 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **zero for 100% of tone rows, zero for 66% of `beta` rows and 26% of
       `gradient` rows** -- so a table of gradient `drawn_ratio` would be the
       "instrument not attached to the property" trap a second time, and was not
-      published. **Requested**: the tone survey's mask columns
-      (`mask_cover`, `mask_boundary_px`, `mask_mid_per_boundary`) for the
-      `gradient` class.
+      published. **Requested, and already running before the request arrived**: the
+      tone survey's mask columns for the `gradient` class
+      (`scripts/inspect/survey_soft_fill_layers.py`, **85 works x 6 pages**),
+      with the density range beside them.
+      **And it carries the countermeasure this file should adopt as a rule: the
+      instrument records what it was attached to.** The tool measures the body
+      raster first and falls back to the mask, and **it emits a `source` column
+      saying which one it read**. So "is this number about the mask or about the
+      body" stops being a thing to remember and becomes **data on the row** --
+      and the 26% of `gradient` rows whose `drawn_ratio` was non-zero will be
+      explained rather than guessed at. The extraction side's own note is that
+      **without that column it would have fallen into the same hole** this file
+      stopped at. **Generalised: where a measurement can attach to more than one
+      thing, the attachment point is a column, not a convention.** It is the
+      stronger form of "ask what the instrument is physically attached to",
+      because it does not depend on anyone asking. Expected to read `mask`
+      throughout for gradient layers -- ako5's 17 all did -- **but not verified
+      across the 85 works**, so a `raster` row is a differently-built layer and
+      is to be read separately.
       **On the tone side the mask columns do exist, and the pattern is real but
       cannot be sized at page scale.** `mask_cover` over 17,695 used tone layers
       runs median **0.0088**, p90 **0.0704**, max 0.852, with only **3 layers
@@ -5486,6 +5502,15 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       mask intersected with the panel boxes this corpus already has in
       `manifest.csv`. The densities in that tail are the ordinary ones (10%, 20%,
       30%, 11%) and the works at the top are `ako6` and `ako7` again.
+      **Three independent rankings now put `ako6` and `ako7` on top -- fill,
+      tone, and this high-coverage tail -- and the extraction side reads it as
+      "these two separate their layers well". The general version of that is
+      already refuted**: `ako5` is second for tone and supplies no fill standard
+      at all, so **there is no single "separation quality" that ranks works once
+      for every target**. What the agreement supports is narrower and still
+      useful -- **`ako6` and `ako7` are jointly good**, which is why taking tone
+      up later needs no new selection. Unverified either way, and flagged as
+      such by the side that raised it.
       **The extraction side declined to say whether the two are one class, and
       that was correct.** Its reasoning: it holds **records of how the thing was
       made, not of how it looks**, and it had just been burned by
