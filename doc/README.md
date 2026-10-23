@@ -23,6 +23,9 @@ working on extraction/tiling/panel-matching.
 ## Current — Architecture / Research (doc/*.md)
 
 - `doc/CURRENT.md`: authoritative current status and next actions.
+- `doc/track_k_record.md`: Track K's working record, both axes, moved out of
+  the Track Ledger 2026-10-24. The ledger keeps K's own "Where Track K stands"
+  summary; this is the 1,078 lines behind it.
 - `doc/fill_line_record_20261023.md`: the fill line's 2026-10-23/24
   correspondence record (layer inventory, class scheme, deliveries, colour and
   tone surveys), moved out of `doc/CURRENT.md` item 11. A record, not a state --

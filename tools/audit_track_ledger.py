@@ -65,7 +65,14 @@ LEDGER = FOUNDATION / "doc" / "CURRENT.md"
 # `doc/tool_traps.md`, and a check whose reach does not follow the prose it was
 # written for goes quiet without failing. Add a file here when prose with
 # provenance in it moves out of the ledger.
-HASH_SOURCES = (LEDGER, FOUNDATION / "doc" / "tool_traps.md")
+HASH_SOURCES = (LEDGER,) + tuple(
+    FOUNDATION / "doc" / name
+    for name in (
+        "tool_traps.md",
+        "track_k_record.md",
+        "fill_line_record_20261023.md",
+    )
+)
 INBOX = FOUNDATION / "inbox"
 
 # A track whose last commit is older than this many days behind its last notice is
