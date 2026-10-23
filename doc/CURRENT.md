@@ -5511,6 +5511,33 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       filling* or *the author stopped separating the fill*, and **a layer count
       cannot tell those apart**; the paper side can (black area from
       `CanvasPreview` or the line raster), and it comes out in the same pass.
+      **Settled 2026-10-23 night, 25 pages per work, and the answer is "stopped
+      separating", not "stopped drawing".**
+
+      | work | pages with fill | fill layers | layers/page | thick black on paper (r4) |
+      |---|---:|---:|---:|---:|
+      | 2018 ako6 | 102/107 | 781 | **7.3** | not measured |
+      | 2019 ako7 | 23/25 | 149 | **6.0** | 4.0% |
+      | 2019b ako8 | 23/25 | 58 | 2.3 | 5.9% |
+      | 2020 ako9 | 20/25 | 30 | 1.2 | 2.6% |
+      | 2020b ako10 | 16/25 | 22 | **0.9** | **7.9%** |
+
+      **The two measures are decoupled, and that is the finding.** Layers per
+      page falls monotonically by **6.7x** across the five works, while the ink
+      on the paper **has no trend at all** (4.0, 5.9, 2.6, 7.9) -- `ako10` has
+      the fewest fill layers and the most thick black of any of them. **So the
+      fill goes on being drawn and stops being separable**, exactly as `ako5`
+      does. **And this file's "maybe the eight-page sample missed them" is
+      refuted**: at 25 pages the ordering is unchanged and ako9/ako10 stay low.
+      **The caveat the extraction side attached, which bounds the claim**: the
+      paper measure is **not a fill area** -- `CanvasPreview` cropped to the
+      white bounding box (some manuscripts are black outside the paper;
+      `paper_fraction` is recorded), black at luminance < 128, eroded at radius
+      1/2/4 with **the radius deliberately not chosen** (native radius 4 is about
+      r1 in a preview at quarter size). It keeps line art, thick frames and
+      balloon edges. So a work with more black *backgrounds* would read the same
+      way, and what is established is **the decoupling**, which refutes "the
+      author stopped filling" unless every extra mark is frame or background.
       **The general form, which this file needs because its whole "separated
       period" argument rests on layer counts: a layer count measures production
       practice, not content.** For finding training data that is the right
@@ -5703,6 +5730,24 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       delivery rule for 0.4%**, on the reasoning that doing so would be the same
       kind of judgement as ranking by a screening number -- so it waits to be
       asked.
+    - **`ako7` is being delivered too, by the author's instruction (2026-10-23
+      night).** 72 pages (`ako7/` 53, `done/` 13, `done2/` 5), identifiers
+      `026_2019_ako7_<subdir>_<page>` matching this corpus's `work_id`, landing
+      in `data/incoming_manuscript/ako7/fill/`. **`color_rejected/ako7.clip` is
+      excluded at 25.4% coloured pixels**, the same treatment as `ako6/color/`.
+      `2019b_ako7` is untouched, being the year-folder duplicate (fingerprints
+      agree; this corpus has 157 panels under one and 0 under the other). At
+      6.0 layers per page the full pass should land near 430 fill layers, which
+      would roughly halve again the distance to a second work's worth of
+      production fill.
+    - **`2019_ako8` is a different kind of thing and must not be counted as
+      ako8.** Not the duplicate question -- that was settled, the two ako8
+      entries genuinely differ -- but the **character**: `2019_ako8` has fill on
+      **2 of 25 pages and 0.1% black on the paper**, where every other work in
+      the sweep runs 9-18%. Probably roughs or an unfinished bundle,
+      **unverified**. **The ako8 row above is `2019b_ako8`.** So the year-folder
+      pair needed two separate checks -- are they the same file, and are they
+      the same kind of material -- and only the first had been run.
     - **Relayed for Track H, 2026-10-23**: five pages exported layer by layer at
       full canvas, with a JSON of layer id, name and parent folder, so H and the
       author can check **whether the part names match their own pixels** against
