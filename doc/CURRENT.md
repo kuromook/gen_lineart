@@ -913,7 +913,9 @@ work, and the stated expectation is that the pieces make each other easier.
     `housei` test (n=782) and 0.1201 on `ako5` held (n=474). **C1 holds**: the
     premise of the track is intact and stage 2 is cleared to register.
   - **The trivial arm is the comparison to beat, and its score is an identity,
-    not a measurement.** `all_black` scores micro IoU 0.0939 / 0.1201 --
+    not a measurement.** (**0.2518 on the cleanly-separated stratum** -- Track L's
+    L7, 2026-10-24, so this null value is population-bound and more than doubles
+    there.) `all_black` scores micro IoU 0.0939 / 0.1201 --
     exactly the GT fill-area share, because painting everything makes the
     intersection the GT and the union the tile (the track's IC2 confirms it on
     2,308/2,308 tiles; re-derived here as 0.093921 / 0.120147). "The trivial
@@ -3808,8 +3810,49 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   favour**. The bias is bounded by what is left out: **14.0% of the fill area in
   ako6, 23.3% in ako7**, and Track L has put those two numbers on the same line
   as any agreement figure it reports.
-  **Not a verdict: the mask's agreement against this standard is unmeasured.**
-  What exists so far is the standard's purity and coverage.
+  **Measured 2026-10-24 as L7, and the stratum answered the question the design
+  was built to ask.** Truth is the author's fill; the main value is
+  `precision`, so `1 - precision` is the false-positive rate:
+
+  | stratum | koma | precision | **FP rate** | recall | mask area | true fill area |
+  |---|---:|---:|---:|---:|---:|---:|
+  | **CLEAN** | 35 | 0.2868 | **71.3%** | 0.0226 | 1.99% | 25.18% |
+  | LEAKY | 94 | 0.7039 | 29.6% | 0.9235 | 13.91% | 10.60% |
+
+  **Same instrument, same threshold, same code -- only the stratum differs, and
+  precision moves 0.29 <-> 0.70.** So:
+  > **The mask's accuracy was a property of whether fill had leaked into its
+  > input, not a property of the mask.**
+  **Track J's figures were held up by the koma where fill happened to be mixed
+  into the line layers.** Identity holds (`truth_px` agrees with L6's
+  `clean_px` on all 129 koma).
+  **The recall column is NOT a finding, and Track L found that itself before
+  reporting it.** `mask` is a subset of `ink`, so `mask ∩ truth` is a subset of
+  `ink ∩ truth` and **`recall <= leak` by construction**; CLEAN's pixel-weighted
+  leak is **0.0554**, so a recall of 0.0226 being small is **half-automatic --
+  the stratum's own definition caps it.** What is informative is only what sits
+  inside that cap: **of the 2,161,246 reachable pixels the mask took 882,485 =
+  40.8%**. **`precision` carries no such bound**, which is why **71.3% is the
+  result and the small recall is not.** The day's rule applied to one's own
+  output, caught by walking the construction after seeing the number.
+  **Two of this file's inherited null values move, and they are quoted
+  everywhere.** On CLEAN: **`all_black`'s IoU 0.0939 / 0.1201 -> 0.2518**, and
+  **`blank`'s region-F1 0.0084 -> 0.0000**, because every koma in that stratum
+  has area in it and "paint nothing" cannot score. **The trivial-arm bar more
+  than doubles**, so every fill verdict has to be re-read on this stratum before
+  it can be quoted against clean data.
+  **And "1.2 regions per koma" is gone.** The author's fill has **median 3.0
+  connected components per koma** (mean 3.9, max 16, >=500px, stable at 3.0
+  across both strata), against the ledger's *"this corpus's line art encloses
+  almost nothing -- about 1.2 regions per panel"*, which came from the inferred
+  mask. **So "there are hardly any areas, so a region proposer is a poor bet"
+  does not hold on the real thing** -- and that reading was the basis of Track
+  L's own unit constraint, so **the candidate ordering can move.**
+  **What this does not do, stated by Track L rather than asked of it**: Track J's
+  **arm-to-arm comparisons remain valid**, every arm having sat on the same
+  ground truth, so the ordering is intact. What broke is the **absolute claims,
+  the trivial arms' null values, and the region unit** -- three things, and **not
+  J's verdict.**
 - **The user redirected the fill line on 2026-10-24, and the reason is not
   derivable from anything here.** Their words: **research should proceed first
   on data where line and fill are cleanly separated; measuring mixed data as
@@ -3850,7 +3893,8 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   fill leaked into its input and not a property of the mask**. Also on real
   truth: the trivial arms (`all_black`'s IoU is the true fill area share,
   `blank`'s region-F1) and **the connected-component count of the author's
-  fill** -- Track J's *"this corpus's line art encloses almost nothing, about 1.2
+  fill** -- **answered 2026-10-24: median 3.0 components per koma on the author's
+  fill, against** Track J's *"this corpus's line art encloses almost nothing, about 1.2
   regions per koma"* came from the inferred mask and is being retaken against the
   real thing.
 - **`git add -A` put the author's artwork into a public repository, and a
@@ -5319,7 +5363,9 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
    unit before stage 2 was registered**: a fill region does not close inside a
    480px window (87.6% / 92.9% of fill area is in a border-cut component), so
    the input is now the **koma panel**; and the line art encloses almost
-   nothing (1.2 regions per panel, 95-100% of fill area outside any of them),
+   nothing (1.2 regions per panel, 95-100% of fill area outside any of them;
+   **the 1.2 is from the inferred mask and the author's fill gives median 3.0**,
+   Track L 2026-10-24),
    so the 面 is taken to be the fill connected component rather than a proposed
    closed region. Stage 2 is registered in the track's log on `clip_pairs_v3`
    koma panels, split on **work family** with the `ako` series collapsed (9
@@ -5369,7 +5415,8 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
      `all_black` wins nothing at region level (0.0037), but any claim that a
      model learned where fill goes must clear that row first.
    - **The floor and the ceiling travel in the same sentence as the verdict**:
-     `blank` **0.0084**, the preprocessor's readable ceiling **pixel IoU
+     `blank` **0.0084** (**0.0000 on the cleanly-separated stratum**, where every
+     koma has area -- Track L's L7), the preprocessor's readable ceiling **pixel IoU
      0.0000**, and **every arm on the table, learned and not, sits inside that
      band. Nobody won.** No family hides a success -- where `rough_dark@budget`
      reads high the `blank` column tracks it, and what that column measures is
