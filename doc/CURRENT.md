@@ -53,9 +53,11 @@ holdout figures are deliberately not reproduced here. **Track D returned the
 precision side of the pair measurement** -- the pair is loose in both
 directions. **Track L is proposed** (fills, in a clean tree, by user decision) on a lead the
 author supplied and this file could not derive -- the manuscripts carry ベタ and
-トーン as separate production layers, and the extraction tool has already counted
-519 of them while discarding them; the request is out and is expected to take
-days. **One retraction**: the enclosure reframing this file wrote in the morning
+トーン as separate production layers, the inventory came back the same day, and it
+**corrects the premise**: ベタ was being discarded as expected, but **トーン was
+never seen at all** -- in CSP its dots do not exist as pixels, so **none of the
+519 layers is tone**, and 519 itself mixes fills with balloons and page
+furniture. 45,533 layer rows now stand in its place. **One retraction**: the enclosure reframing this file wrote in the morning
 is withdrawn in item 11, measured away by Track J on 2026-10-10.
 The nine paper-scout reports are triaged below against K's spec;
 the `main` -> `paper-scout` rename is in `doc/worktree_policy.md`. Added this
@@ -3309,6 +3311,25 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   author standing by to say "that one is fine" and its output is read as
   authoritative -- discipline 4's most of all, being the one check that depends on
   nobody's attention.
+- **A layer can be present, intended and fully specified, and still measure as
+  empty, because its content is a render-time effect rather than pixels.**
+  Found 2026-10-23 by the extraction session. A CLIP STUDIO tone layer keeps its
+  shape in `LayerLayerMaskMipmap` and its density, LPI and angle in
+  `LayerEffectInfo`, while `LayerRenderMipmap` -- the only field the extractor
+  and the surveyor read -- is **empty**, since the dots are composited when the
+  page is drawn. So every tone layer in this corpus logged `drawn_ratio = 0`,
+  and a project whose every instrument counts ink had **no way to notice that an
+  entire category of area was there**. The foundation compounded it by reasoning
+  from the discard side: "you already identify these layers, so export them
+  instead of discarding them" was right for ベタ and wrong for トーン, where
+  nothing was being discarded because nothing had been seen. **The check: when a
+  class of content is expected and the measurement says zero, ask whether the
+  measurement can see that class at all before concluding it is absent.** The
+  sibling failure in the same reply is the mirror image -- **a class defined by a
+  pixel statistic collects everything that shares the statistic**: page
+  furniture (paper, MASK, トンボ, bleed and panel frames, 集中線) is 100% pure
+  black among drawn pixels exactly as a fill is, 5,480 layers of it, so it has
+  to be dropped by name before any fill count means anything.
 - **Every solid-fill number on record inherits a mask that has never been
   checked against anything.** Stated by Track J 2026-10-23, of its own corpus:
   `fill_mask.py` infers the fill from a *flattened* line-art raster by distance
@@ -4658,11 +4679,18 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       also exists as its own layer**. So the fill ground truth does not have to
       be inferred or asked for -- **it can be dug out of the manuscripts from
       the period when the work was done in separated layers**. And the
-      extraction tool **already identifies those layers in order to discard
+      extraction tool **already identifies the ベタ layers in order to discard
       them**: its 2026-08-21 reply records that layers with
       `black_among_drawn == 1.00` are "2値のベタ・フキダシ" and that admitting
       them would add **519 layers across 74% of normal pages** (of 2,048 pages
-      surveyed). The inventory is already counted. The tool also already emits a
+      surveyed). **That reading of 519 is superseded by the 2026-10-23 inventory
+      and was wrong twice over** -- it was a by-product of a line-extraction
+      threshold test rather than a fill inventory, it holds **no tone at all**,
+      and it mixes ベタ with balloons *and* with page furniture (paper, MASK,
+      トンボ, bleed and panel frames, 集中線 -- all 100% pure black among drawn
+      pixels and therefore indistinguishable from fill by pixel statistics,
+      5,480 layers of them on the same 2,048 pages). **A class defined by a pixel
+      statistic collected everything that shares the statistic.** The tool also already emits a
       third raster on the **same folder, naming and canvas** as line/sketch
       (`{prefix}_{page}_koma.jpg`, 1,645 pages), so **existing alignment
       carries over** -- the heaviest technical question is answered before it is
@@ -4670,6 +4698,60 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       (speech balloons, which are lettering furniture and not drawn fill), and
       the author's "separated period" is to be **measured from the inventory,
       not assumed**.
+    - **(A) the inventory came back the same day, 2026-10-23, and the premise it
+      corrects is the foundation's.** `config/fill_tone_inventory_layers.csv` on
+      the extraction side: **45,533 layer rows**, one per layer, with year, work,
+      page, layer id, the layer name itself, parent folder, class and pixel
+      statistics, over 289 works and 2,048 pages. Layer counts: **tone 8,072,
+      gradient 1,999, ベタ 1,246, pure-black-but-unnamed 682, line-named-but-ベタ
+      192, balloon 656, 描き文字 843, ノンブル 1,334, furniture 5,480, unknown
+      14,069.**
+      - **トーン was not being discarded. It was invisible.** In CLIP STUDIO a
+        tone layer carries no halftone pixels: `LayerEffectInfo` holds the
+        enable flag, density %, LPI and angle; `LayerLayerMaskMipmap` holds
+        **the shape of the area**; and `LayerRenderMipmap` is **empty**, because
+        the dots are composited at render time. Both the extractor and the
+        surveyor read only `LayerRenderMipmap`, so every tone layer was logged
+        as empty. **The foundation's instruction -- "you already identify them,
+        so export instead of discarding" -- was right for ベタ and wrong for
+        トーン, where the fix was to read a different field.**
+      - **And this is the good outcome**: the area's shape and its density both
+        survive intact, so **`mask coverage / 255 x density% / 100` is the
+        density map outright, with no inference** -- against a project whose
+        fill ground truth has so far been a radius-4 distance transform.
+      - **"Has a layer" and "is used" are different facts.** Of 1,114
+        tone-configured layers, only **444** have the effect enabled and area in
+        the mask; the rest are empty templates duplicated on every page, so
+        **the inventory's tone counts are inflated 2-3x**. Real use averages
+        **3.4 layers per page** (max 12). Names are accurate about role (443 of
+        444 carry a `60L 20%`-style name, one miss) but **7 layers' L notation
+        disagrees with their actual LPI**, so density and LPI are read from the
+        settings and never from the name. Measured: density 10/11/20/22/30/50%,
+        LPI 30/50/60/61, angle 45 degrees and some 29.
+      - **The period, measured rather than assumed, is 2015-2017** (2016: 13 of
+        14 works; 2017: 14 of 17), falling from 2018 on. **The user's wording was
+        right and the foundation's gloss of it was wrong** -- it read "the period
+        that is not very old" as the recent side. **But the later years are not
+        empty**: every locally inspected work -- 4th (2022b), hamlabi (2023b,
+        2024b), housei (2024) -- has tone structurally. The table measures only
+        whether a tone-*looking name* exists, so a later-year decline cannot be
+        told from a change of naming.
+      - **(B) tone output already exists and is tested on two works**,
+        `dataset_tone_4th` (26 of 33 pages, 46 layers) and `dataset_tone_gakuen`
+        (16 of 16, 87): per-layer **density maps**, 8-bit grey, white = no tone,
+        one PNG per layer plus a composite, with a manifest carrying name,
+        density, LPI, angle, coverage and the source `.clip` path. **Same canvas
+        confirmed against real data**, not by precedent: 4961x7016 on 26 of 26
+        pages of `4th`, matching the existing `4th_pageNNNN_line.jpg`. **No
+        alignment work.**
+      - **ベタ output is not started** and costs about **1.2 min/page** against
+        0.67 s/page for the tone scan, because it needs every layer in the page
+        rendered.
+      - **Blocked on hardware**: the `F:` drive holding the manuscripts and the
+        existing `clip_pairs` output is **offline**, so all of the above comes
+        from a 6-work, 232-page mirror on `D:`. When it returns, a 7,663-page
+        structural scan (about 25 minutes at 4-way parallelism) replaces the
+        name-based table with measurement.
     - **Request sent 2026-10-23** to the manuscript-layer session on `um350`
       (now 192.168.1.5; host key verified identical to the old .9 entry, key
       auth confirmed), asking for the inventory first and output second. Text:
