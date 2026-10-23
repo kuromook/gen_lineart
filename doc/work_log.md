@@ -5462,3 +5462,107 @@ sibling:
 > **An inventory counted by names is not an inventory of the things the names
 > describe, and it may not be quoted as a standard until the signature has
 > been checked on the things themselves.**
+
+## 2026-10-23 The corpus holds the same page twice. No verdict moves, and the split is why -- mostly
+
+The foundation found this while choosing works for item 11 and checked it
+against J's verdict before sending. Their framing: the corpus keeps the same
+page at more than one **drawing stage**, grouped by page shape -- 95 shapes
+in multiple versions, 667 panels (13.3%), of which 69 (7.1% of the held 969)
+sit inside the held set, all in `015_2017_pink`.
+
+**Answering it on the content rather than on the shape changes the picture in
+two ways, and neither of them touches a verdict.**
+
+### 1. Shape grouping over-counts, and the thing it finds is sharper than "a different stage"
+
+Reproducing their grouping (native canvas + the panel boxes) gives 129 groups
+/ 989 panels, *more* than their 95 / 667 -- because two unrelated works can
+share a canvas and a single full-page panel box. The first such pair I
+checked, `044_2021_nanami` vs `045_2021_nurse`, looked like exactly that
+coincidence. It is not: **pixel disagreement 0.0000, ink IoU 1.000.** The
+pages are byte-identical across two different work ids in two different
+families.
+
+So the audit belongs on content, not shape. `tools/evaluation/audit_koma_duplicates.py`
+(new, with `--self-test` pinning the numbers below): a panel is a copy when
+**both** its line and its rough are byte-identical.
+
+| | |
+|---|---|
+| duplicate groups | **201** |
+| panels inside them | **412 / 5018 (8.2%)** |
+| groups spanning more than one family | **3** |
+| groups entirely inside held | **8 (19 panels, 2.0% of 969)** |
+| **groups spanning train AND held** | **0** |
+
+The held-side number is 19 panels (2.0%), not 69 (7.1%): the other 50 are
+same-shape panels that are **not** the same image. Both numbers describe real
+properties -- theirs counts versions of a page, mine counts exact copies --
+and the leakage question is the second one.
+
+### 2. The verdict was re-read with the duplicates removed
+
+Not argued from the margins; recomputed. Keeping one panel per duplicate
+group leaves **946** of the 956 normal panels:
+
+| | 956 panels | 946, deduplicated |
+|---|---|---|
+| `blank` | 0.0084 | 0.0085 |
+| best non-learned `rough_dark@budget` | 0.0110 | 0.0111 |
+| M0 / M1 / NC4 | 0.0017 / 0.0005 / 0.0023 | 0.0017 / 0.0005 / 0.0023 |
+| C1 best vs `blank` | +0.0026 | +0.0026 |
+| C2 leg 1, M1 - M0 | -0.0012 | -0.0012 |
+| C2 leg 2, M1 - NC4 | -0.0017 | -0.0018 |
+| C3 model - non-learned | -0.0093 | -0.0094 |
+
+**Every verdict is unchanged, and nothing moves before the fourth decimal.**
+C4 is unaffected by construction: the controls live on the same panels as the
+arms they exclude.
+
+### 3. Was it known here? No, and the two audits that sound like they cover it do not
+
+`audit_split_leakage.py` and `audit_pair_dataset_integrity.py` both operate on
+`dataset/pairs_480`, the 480px tile corpus. **Neither has ever looked at the
+koma panel dataset.** Nothing in this tree had asked this question of the
+stage-2 corpus until today. That is the same shape as NC4 this morning -- a
+check that is assumed to exist because something with the right name exists
+somewhere else -- and it is the third instance today of a name being read as
+a measurement.
+
+### 4. Is the clean split a design consequence? Mostly yes, and it is load-bearing
+
+The family rule was registered for **character identity** ("whether a
+character's hair is blacked in is a property of that character"), not for
+duplicate pages. It nevertheless absorbs most of this hazard, because both
+hazards are the same thing: one work appearing under several ids.
+
+Measured on the 35 shape groups whose members carry **different** work ids: a
+split keyed on `work_id` instead of `family` would have put copies of the
+same page on both sides of **11 of them** -- `051_2022b_4th` vs
+`059_2023b_4th`, `065_2024_ako3B` vs `067_2024b_ako3B`, and so on. The
+trailing-digit strip and the `ako` collapse are what swallow those. **So it is
+not luck, and it is not decoration either: the key is doing work the task
+needed for a reason nobody wrote down.**
+
+But it is not complete. `nanami` vs `nurse` is a byte-identical pair across
+**two different families**, which the family rule cannot see. It landed
+train/train. **That one is luck**, and if it had landed otherwise the family
+rule would not have caught it. Hence the audit above, which tests the
+property directly rather than trusting the key to imply it.
+
+### 5. What this does and does not license
+
+The absolute quantities -- GT fill is 10.40% of panel area, `all_black` pixel
+IoU 0.1040 -- are means over a set in which 2.0% of the held panels are a
+second copy of another. The dedup column above shows the effect is below the
+fourth decimal, so unlike the radius-4 mask this does **not** earn a clause in
+the headline. Recording it as measured and closed is the right weight. J3's
+own condition applies in the other direction here: a clean negative must not
+be diluted by a caveat that does not touch it.
+
+Where it does bite is item 11, exactly as the foundation says: matching a
+production fill layer against a panel whose page exists at several stages can
+read as "the mask missed every region" when the truth is "that version was
+not drawn yet". That is a defect report waiting to be filed against the
+instrument instead of the corpus, and it is theirs to avoid, not J's to fix.
