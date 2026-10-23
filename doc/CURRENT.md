@@ -2318,6 +2318,16 @@ incident that actually happened here.
    cs2.5 above; `0.2582` credited to a model when it was the preprocessor's;
    `line_width_p50 7.59` read as thick strokes when it was solid fill; the
    `0.651` endpoint-gap that was a tokeniser artefact.
+   **A fifth, 2026-10-23, where what travelled was a *corpus* rather than a
+   number.** The foundation told the extraction side to trial `ako5` and
+   `housei` because *"every fill figure on record sits on those pools"* -- true
+   of the 480px tile figures, and not of the koma panel corpus Track J actually
+   used (5,018 panels, 57 works, 2015-2024). **It inferred the instrument's
+   corpus from the corpus of the figures it was quoting**, and the pick was the
+   worst available: `ako5`'s fill is not a separate layer at all. So the rule
+   covers more than numbers -- **a population is quotable only with the
+   measurement it was the population of**, and "the pools our figures sit on" is
+   two different sets depending on which figures.
    **The verdict-word sibling, added 2026-10-23 from Track J's C3 reading.**
    A conclusion of the form *"the simple thing suffices"* -- no learned model is
    needed, the frequency table is enough, the preprocessor is the baseline --
@@ -4913,10 +4923,53 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       no halftone dots** -- in the user's words, the dots would multiply the data
       for nothing when what is wanted is an analysis of areas; the settings are
       recorded, so dots can be generated later if the look ever matters. The
-      foundation's pick for the trial works, stated as its own: **`ako5` and
-      `housei`**, because they are the pools every fill figure on record sits on
-      and both are in the `D:` mirror -- 78 pages, about 1.6 hours, and it is
-      what makes the mask instrument check (above) possible at all.
+      foundation's pick for the trial works was **`ako5` and `housei`**, on the
+      stated reason that they are the pools every fill figure on record sits on,
+      and **both the pick and the reason are RETRACTED the same day**. See the
+      next bullet.
+    - **The trial-works pick was wrong, and its reason was wrong in this week's
+      recurring shape (2026-10-23).** The reason given was that every fill
+      figure on record sits on `ako5` and `housei`. That is true of the **480px
+      tile** pools and not of the corpus Track J actually used: the koma panel
+      corpus `dataset/regions_clip_pairs_v3_koma_panels_20260826` holds **5,018
+      panels over 57 works, 2015 to 2024, at native manuscript resolution**
+      (panels run from about 900px to 4,600px on a side). **The foundation
+      inferred the instrument's corpus from the corpus of the figures it
+      happened to be quoting** -- the same act as reading a name as a
+      measurement, on a fourth target this week. **And the manuscripts refused
+      the pick independently**, which is the part worth keeping: the extraction
+      side ran both works to the end and reports `ako5` **5 of 60 pages with
+      ベタ, 5 layers** and `housei` **9 of 19, 9 layers**, because **`ako5`'s
+      fill is not a separate layer at all -- it is dissolved into the line
+      layer**. Per the author, both works are late-generation with complex
+      manuscript handling. So **the work this project's tile figures rest on
+      most heavily is a work whose manuscripts cannot supply an external
+      standard**, and the author's "separated period" is a property of the
+      **work**, not only of the year.
+    - **The pick that replaces it: `ako6` (2018), on a convergence from both
+      sides.** The extraction side's own two-stage screen -- a free pass over
+      the survey JSON's per-layer pixel statistics (137 works pass), then
+      rendering **only the candidate layers** and measuring darkness on the page
+      through `CanvasPreview` -- put `ako6` top with **8 black fill layers on a
+      single page**, the highest of a one-work-per-year scout. It is also the
+      **third largest work in the koma corpus at 227 panels**. Next: `akogoods`
+      179, `fringe3` 119, `ako10` 87, `copy` 74, `pc` 49, `hamlabi` 35,
+      `gakusai3` 16. Not in the koma corpus at all: hitoduma, yakuza_c, fujiko,
+      marisa, tama. **Two conditions sent with it**: use **train-split** panels,
+      since the 969-panel held set spans only ten works and holds just `housei`
+      45 and `gakusai3` 16 of the candidates -- an instrument check scores no
+      model, so the holdout should stay unopened; and **state the resolution on
+      both sides**, because the radius-4 mask is applied at native koma scale
+      and **a panel's side varies five-fold**, so the radius does not mean the
+      same thing across the corpus. That has to be settled before any agreement
+      or disagreement is read as a fact about the mask (`sens_fill_radius.py`
+      already carries radius 3 and 6).
+    - **Delivered 2026-10-23 to `inbox/`**: `fill_tone_inventory_layers.csv`
+      (45,533 rows), `..._works.csv` (289), `..._inventory.json`,
+      `tone_layers_local.csv` (1,114 structurally-confirmed tone layers with
+      edge-hardness statistics), `reply_fill_tone_layers_20261023.md` (whose
+      figures predate the `black` correction; the CSVs do not) and a one-page
+      notice. The structural scan stands at **3 of 4 groups complete**.
     - **A second category inside tone, from the author, and it changes
       candidate 5.** The user's wording: *"some tone is not a cleanly cut area
       but has blur or gradation (mostly shading, or placed in the background);
