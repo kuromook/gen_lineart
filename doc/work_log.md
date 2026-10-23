@@ -5237,3 +5237,176 @@ included.** Therefore:
 Registered before the table was read, like J2, so that a clean negative
 cannot be softened afterwards by the caveat that was added to be honest about
 the mask.
+
+## 2026-10-23 The slot's verdict, read: C4 excludes both models, C2 fails on both legs, C3 fires
+
+The 969-panel table is in. Run `results/fill_koma_20261010/per_panel_held_models.csv`
+(11,620 rows, finished 14:06), read by `report_fill_seg.py` into
+`results/fill_koma_20261010/report_held_models_step40000.txt`. Both anchors
+passed before a single verdict line was read: **A1** `blank` region-F1
+0.008368 on the 956 normal panels against the base table's 0.0084, and
+agreeing with it on **969/969 panels individually**; **A2** both checkpoints
+through the trainer's own `score_holdout` to 1e-9. The trainer's 40-panel
+holdout numbers appear here only as A2 -- per the notice's §6 they are **not
+used in any of C1-C4**.
+
+Every number below is region-F1 (8-connected fill components >= 500 px,
+IoU >= 0.5, greedy 1-1) **against the radius-4 estimated mask**, on the
+**normal stratum, 956 panels**, strata never pooled.
+
+### The headline (C3, as registered)
+
+**No learned model is needed for this.** The best non-learned arm,
+`rough_dark@budget`, reads **0.0110**; the best model, M0, reads **0.0017**.
+The model is **0.0093 below** the non-learned arm, against a C3 window of
+0.05 -- so C3 does not merely tie, it fires with the model on the losing side.
+
+The second sentence that must travel with the first: **the floor is not zero
+and the ceiling is not high.** `blank` -- painting nothing at all -- reads
+**0.0084**, and the preprocessor's own ceiling on this corpus is **pixel IoU
+0.0000**. Every arm in this table, learned and not, sits inside a band
+between "don't paint" and a preprocessor that recovers none of the fill.
+Nobody won; the band is where the whole experiment lives.
+
+### C4 first: both learned arms are excluded before any comparison
+
+This is why no model number above can be quoted as a result.
+
+| arm | region-F1 | on the NC2 crop | its NC2 | NC3 hflip | verdict |
+|---|---|---|---|---|---|
+| M0 | 0.0017 | 0.0028 | 0.0010 | 0.0011 | falls to NC3 (gap +0.0006 < 0.05) |
+| M1 | 0.0005 | 0.0026 | 0.0031 | 0.0000 | falls to **NC2** (0.0026 <= 0.0031, 9 panels differ) **and** NC3 |
+
+**Excluded from every verdict by C4: M0, M1.** M1 is the sharper case -- it
+scores no higher on a panel's own crop than it does scored against the *next
+panel's* ground truth. A model that cannot tell its own panel from its
+neighbour's has not learned the panel.
+
+### C1: nothing clears the bar, by two orders of magnitude
+
+Best arm of all is `rough_dark@budget` at 0.0110.
+
+- vs `blank` 0.0084 -> gap **+0.0026**, bar 0.05 -> **FAIL**
+- vs `all_black` 0.0037 -> gap **+0.0072**, bar 0.05 -> **FAIL**
+- vs its own NC2 on the same crop, 0.0155 vs 0.0052 -> gap **+0.0102**, bar 0.05 -> **FAIL**
+
+The bar is 0.05 and the largest margin anyone achieves is 0.0102. This is not
+a near miss.
+
+### C2: the koma unit does not earn its cost, and both legs say so
+
+C2 required **both** legs. Paired per panel on the 956 normal panels:
+
+- **leg 1**, M1 - M0 = **-0.0012** against a bar of +0.03 -> FAIL. (M1 higher
+  on 9 panels, lower on 10. The other 937 are zero for both.)
+- **leg 2**, M1 - NC4 = **-0.0017** against a bar of +0.03 -> FAIL. (M1 higher
+  on 8, lower on 6.)
+
+**C2 -> FAIL.** Note what leg 2 is saying now that NC4 exists: giving M1
+**another panel's** context produces a *marginally higher* score than giving
+it its own. The 4-channel arm's whole-koma context channel is not being used
+as context. Since this is the instrument that did not exist until today, it
+is worth being exact: NC4 is a seeded derangement (`SHUFFLE_SEED=20261023`,
+0 fixed points over the 969 held panels, asserted a permutation), and the
+context channel it swaps was asserted byte-equal to the trainer's own
+`panel_tensors()[2]`.
+
+### Is this an artifact of where the thresholds were set? No.
+
+The scorer writes region-F1 at 9 (MIN_REGION_PX, MATCH_IOU) cells. The
+loosest cell that still means anything -- 500 px, IoU >= 0.25 -- reads:
+
+| arm | m500_t0.25 | m500_t0.5 (registered) |
+|---|---|---|
+| blank | 0.0084 | 0.0084 |
+| M0 | 0.0198 | 0.0017 |
+| M1 | 0.0134 | 0.0005 |
+| nc4_ctxshuffle:M1 | 0.0153 | 0.0023 |
+
+Loosening the match threshold by half moves M0 above `blank` -- by +0.0114,
+still a fifth of the C1 bar -- and **leaves both C2 legs negative** (M1-M0
+-0.0064, M1-NC4 -0.0019). Every verdict above holds in every cell. The
+registered thresholds are not what produced the negative.
+
+### What the models actually do, by IC7's reading rule
+
+GT fill is **10.40%** of the normal-stratum panel area. M0 paints **0.71%**,
+M1 **0.34%**. The component counts are `npred/ngt` 0.531 and 0.328 -- about
+half as many components as the ground truth -- while the **area** ratio is
+0.068 and 0.033. Half the components covering a fifteenth to a thirtieth of
+the area means the components are roughly **14 to 30 times too small**: this
+is IC7's speckle defect, and the area ratio is the sharper tell than the
+count ratio. By eye, on the contact sheet
+`results/fill_koma_20261010/montage_models_held_normal_step40000.png`, that
+is red dust along strokes rather than filled regions.
+
+Two more facts in the same shape:
+
+- M0 scores above zero on **17 of 956** panels, M1 on **11**. `blank` scores
+  above zero on **8** (the panels whose GT has no region >= 500 px). So the
+  learned arms beat "paint nothing" on **9** and **3** panels respectively,
+  out of 956.
+- `all_black` reads **pixel IoU 0.1040** against M0's 0.0204 and M1's 0.0124.
+  Painting the entire panel black recovers 5 to 8 times more fill *pixels*
+  than either trained model. `all_black`'s region-F1 is 0.0037, which is why
+  it is not a winner either -- but any claim that the models learned
+  something about where fill goes has to get past this row first.
+
+### Per family, never pooled
+
+| family | panels | M0 | M1 | rough_dark@budget | blank |
+|---|---|---|---|---|---|
+| avbu | 42 | 0.0007 | 0.0003 | 0.0000 | 0.0000 |
+| ben | 89 | 0.0015 | 0.0016 | 0.0126 | 0.0112 |
+| china | 69 | 0.0000 | 0.0005 | 0.0002 | 0.0000 |
+| gakusai | 374 | 0.0035 | 0.0002 | 0.0139 | 0.0107 |
+| hero | 93 | 0.0004 | 0.0020 | 0.0020 | 0.0000 |
+| housei | 43 | 0.0019 | 0.0000 | 0.0250 | 0.0233 |
+| pink | 105 | 0.0000 | 0.0003 | 0.0095 | 0.0095 |
+| poolsideidle | 79 | 0.0008 | 0.0005 | 0.0023 | 0.0000 |
+| stoptime | 62 | 0.0000 | 0.0000 | 0.0277 | 0.0161 |
+
+No family is carrying a hidden success. In the three families where
+`rough_dark@budget` is highest (`stoptime` 0.0277, `housei` 0.0250,
+`gakusai` 0.0139) the `blank` column tracks it closely -- so what that column
+measures is largely how many panels in the family have no scoreable region,
+not how well the arm paints. There is no family in which a model is the top
+arm by a margin worth the name.
+
+### near_blank, 13 panels: NO VERDICT (C5, IC6)
+
+Printed in the report and deliberately not read. `blank` reads 0.6923 there
+and M1 0.2308, and both numbers are artifacts of a stratum where most panels
+have zero regions -- a single panel is 7.7% of the mean. Pooling these 13
+with the 956 is exactly what C5 forbids.
+
+### What this closes and what it does not
+
+**Closed.** The 2026-10-19 four-day slot has been read. The question it was
+spent on -- does a U-Net trained 40,000 steps on this corpus predict solid
+fill at the koma unit, and does the whole-koma context channel earn its cost
+-- is answered **no** on both counts, with the negative controls doing the
+work rather than a thin margin. C1 fails for every arm, C4 excludes both
+models before C1 is even relevant, C2 fails on both legs, and C3's registered
+conclusion is the headline.
+
+**Not closed, and not touched by this table.** What was refuted is *this*
+architecture at *this* scale against *this* mask -- not the proposition that
+solid fill is predictable. Two specific doors stay open, and neither is
+weakened by anything above: a **region proposer** (today's negative is about
+cheap morphology and about a per-pixel U-Net, not about proposing candidate
+regions and classifying them), and an **external fill-layer standard** from
+the production files (519 layers, 74% of normal pages), which would be the
+first thing the radius-4 mask could be checked against. Per amendment J3, the
+mask caveat qualifies the outward absolute claims above; it does not soften
+the comparisons, because the mask is common to every arm.
+
+### The rule this day earned
+
+Already registered this morning, and the table is what it was protecting:
+**a criterion that names a control must name the file the control runs in,
+and that file must exist when the criterion is registered.** C2 was
+registered on 2026-10-10 with an NC4 leg. NC4 was written on 2026-10-23. For
+thirteen days C2 was unreadable and read as registered, and a four-day GPU
+slot was spent in that state. The cost of the missing instrument was not the
+hour it took to write it; it was the slot.

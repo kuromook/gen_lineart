@@ -85,7 +85,7 @@ def main():
 
     labels = ["rough", "GT line", "GT fill", "M0", "M1", "NC4 ctx-shuffled M1"]
     font = ImageFont.load_default()
-    head = 20
+    head = 34   # the title gets its own row; at 20 it overlapped the column labels
     sheet = Image.new("RGB", (len(labels) * CELL + 300,
                               head + len(picked) * (CELL + 14)), (255, 255, 255))
     d = ImageDraw.Draw(sheet)
