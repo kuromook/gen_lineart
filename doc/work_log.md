@@ -5158,3 +5158,45 @@ Runs launched 2026-10-23, detached (`setsid`, stdout to
 `anchors_20261023.log`), so they do not depend on this session staying open.
 Measured cost: 9.5 s/panel over 8 panels, i.e. ~2.5h for 969 panels x 3
 inference arms. **The verdict goes in the next entry, not this one.**
+
+## 2026-10-23 Foundation retracts the "information is there as enclosure" framing, and this track's own 10-10 §3 is why
+
+Received by cross-session message while the 969-panel table runs. The
+foundation withdraws section 7 of this morning's notice -- *"the information
+is absent as ink and present as enclosure; the question is which enclosed
+region is filled"* -- because **this track measured that and rejected it on
+2026-10-10**, in the entry two screens below the montage observation the
+framing was built on: downscale gives **enclosed 0.0% at every setting**
+(a 2.7px stroke breaks into dashes as the image shrinks -- the eye bridges
+the gap, the operation widens it); morphological closing reaches 9.3% at
+r=16 and 15.4% at r=32, and the "enclosing" region is then **about 30x the
+size of the fill** (median tightness 0.033); D1 read the fill contour at
+2.24x against a registered bar of 2.00x and FAILED.
+
+Recorded here because the distinction matters for whoever reads it next, and
+it is the distinction this log already drew: **what was refuted is cheap
+morphology, not a region proposer.** The user's requirement -- the unit is
+the 面 -- stands; the 10-10 conclusion was that the cheap readings do not
+deliver one and that this track would not build one.
+
+**Nothing in the verdict moves.** C1-C5 are the 2026-10-10 registration,
+both anchors are the ones already passed, and the retraction changes no bar,
+no arm and no panel set. It is logged, not acted on.
+
+Two things the same message carries that the next entry has to live with:
+
+- **Track L** (fills as regions) was proposed by the user on 2026-10-23 as a
+  **separate tree**, not this track's next stage, with this track's
+  instruments borrowed read-only and the seven closed doors listed from its
+  measurements. If C3 fires, that is an eighth. The verdict entry therefore
+  reports C3 in the registration's own wording and does not reach into L's
+  design.
+- **The GT may stop being an estimate.** The author's production files carry
+  a tone layer and, in some periods, **a separate fill layer**; the
+  extraction tool already identifies it (519 layers, 74% of normal pages, at
+  `black_among_drawn == 1.00`) and has been discarding it. If that inventory
+  lands, the first instrument check it enables is **how close `fill_mask.py`'s
+  radius-4 distance-transform mask is to a real production fill layer** --
+  and **every number this track has ever reported inherits that
+  approximation**, including the ones in the next entry. Written down now, as
+  a standing caveat on the whole stage, not as a reason to delay the reading.
