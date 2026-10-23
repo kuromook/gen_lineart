@@ -120,9 +120,8 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 
 - **触る前に生存確認。** `ListAgents` と `ps aux | grep claude` で、その worktree に
   別セッションが座っていないか確認する。ブランチは座っている者のもの
-- **push は track 自身がやる。** 基盤は push せず、ブランチ名と
-  `git push -u origin <branch>` を書いた**通達を出す**。基盤が push するのは
-  `foundation` だけ。例外は休止・終了して誰も座っていない tree のみ
+- **push は track 自身がやる。** 基盤は `foundation` だけ。例外は休止・終了して
+  誰も座っていない tree のみ。**条件の解除は承認ではない**(外向きの承認はユーザーのもの)
 - track の文書は2本だけ: `doc/initial_notice.md`(引き継ぎ、短く保つ、履歴を溜めない)と
   `doc/work_log.md`(時系列)
 - 新しい track: `git worktree add ../lineart-<topic> -b <topic> foundation`。
@@ -138,12 +137,11 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 - **長時間 GPU ジョブは月〜木の連続バッチが標準枠。** 完全にデタッチして起動し
   (`nohup ... & disown`、`PPID=1` を確認)、3日目のクラッシュで全部失わない頻度で
   checkpoint を取る。**先に smoke test。** 完了通知は最後の1回だけ
-- ログを `"w"` で開くランナーは、クラッシュ+再起動で曲線を消す。
-  再実行の前にログをコピーする
-- 実行ファイル名には明示的なタグを付ける(`halo_loss_e2_*` 等)。worktree ローカルな
-  `results/` の名前で実験を分離しない
-- 目視用の画像は `/tmp` ではなく `results/` 配下に置く。モンタージュと数値報告の
-  作法は `experiment-montage-hygiene` skill にある
+- ログを `"w"` で開くランナーは再起動で曲線を消す。再実行の前にコピーする
+- 実行ファイル名に明示的なタグを付ける(`halo_loss_e2_*` 等)。`results/` の名前で
+  実験を分離しない
+- 目視用の画像は `results/` 配下(`/tmp` でなく)。モンタージュと数値報告の作法は
+  `experiment-montage-hygiene` skill
 
 ---
 
