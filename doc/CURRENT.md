@@ -625,6 +625,43 @@ work, and the stated expectation is that the pieces make each other easier.
   term, so each side holds the instrument the other lacks. **The motive, in
   Track J's wording**: a person can look at the outline and tell which area is
   filled; cheap closing cannot extract it; what can is unmeasured.
+  **First result, 2026-10-23, the same day the tree opened: the radius-4 mask has
+  met an external standard, and the error direction is DEFICIT -- but the mask is
+  not the main cause.** 225 koma over 62 pids, all train split, version-exact by
+  `pid` (notice `inbox/note_fill_region_20261023_instrument_check.md`, 90 lines).
+  **Anchors first**: `blank` region-F1 reproduces at **0.0084 with the strata
+  counts 956/13 intact**, `koma_split` self-test passes, and a new **IC-L1** puts
+  the crop box on the page at ink **IoU 1.000** while printing the 2px-offset
+  rows at 0.37-0.72 -- **so the test is shown to have resolution**, which is the
+  form an instrument check should take. **The scale correction item 11 handed to
+  L turned out to be unnecessary**: all 5,018 panels are native crops and the
+  production masks are in the same page coordinates, so radius 4 is the same four
+  pixels on both sides.
+  **The comparison**: production fill 116,782,490 px against the mask's
+  56,341,841 = **area ratio 0.482**; the mask **misses 64.0% of the production
+  fill** and **25.4% of what it does paint is not production fill**. Both
+  negative controls fall (off-by-one **0.0513** against 0.2788, mirror **0.1068**
+  against 0.3206), so it is measuring position and not quantity. Radius
+  sensitivity 0.4027 / 0.3599 / 0.3073 at r=3/4/6. **At the region unit it is
+  region-F1 0.1355** (recall 0.1779, precision 0.1199) -- and the region count is
+  **1.48x** the truth while the area is half, so the mask does not shrink
+  uniformly, **it shatters**.
+  **The headline, and the reason this is not simply a verdict on the mask**:
+  production pixels present as ink in the line raster run **14.21% for
+  `beta`-named layers against 83.71% for `line`-named ones**. **The extraction
+  side's fill-classified layers were discarded when the line raster was
+  composited**, so the mask cannot be charged for them. **Restricted to area that
+  exists as ink at all, the radius-4 opening keeps 72.8%** -- so path loss
+  (primary) and instrument loss (secondary, about 27%) had been folded into one
+  number. **L read this first as "the tone folder is the cause" and corrected it
+  the same day**: it was correlation, name family and folder being confounded
+  (`line`-named layers have 0 of 549 under a tone folder, so the 2x2 degenerates).
+  **And the briefing's worry about the delivery is refuted in pixel terms**:
+  **91.5% of the delivery's 450,998,301 paint pixels pass the shape test**, with
+  8 layers (0.24%) failing -- the "75.7% below 0.01" was a **count of layers**,
+  which is discipline 7-7 landing on the foundation's own sentence. One of the 8
+  is **`パース定規 1`**: the shape test caught a name the exclusion families miss,
+  and it goes to the extraction side.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
@@ -3555,6 +3592,48 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is in Next Actions item 11.
+- **The "against the radius-4 estimated mask" caveat has a number now, and the
+  number is worse than the caveat implied.** Track L, ako6, this configuration:
+  at the region unit the mask recovers **17.8%** of the production fill. Amendment
+  J3 required every fill headline to name that mask; **the qualifier was always
+  about an unknown, and the unknown has been measured once**. It does not move
+  Track J's verdict -- every arm there sat on the same mask and the comparison
+  was internal -- but any **absolute** claim about how much fill is recoverable
+  now has a figure to answer to.
+- **This project's line rasters may be structurally missing the fill the author
+  separated, and that would reach further than the mask.** In ako6, **85.8% of
+  the area in `beta`-named production layers is not ink in the line raster** --
+  because the extraction pipeline identifies those layers and drops them when
+  compositing. If it generalises, then **Track J's "the rough does not mark the
+  fill, 96%" was measured against a raster that is itself missing fill**, and so
+  was every fill figure built on `fill_mask.py`. **It is one work and it is not
+  yet a claim**: `ako7` is in flight and will be the second. **This is the single
+  most load-bearing open question in the fill line**, because it would move the
+  target rather than the instrument -- and it was reachable only once a
+  production standard existed, which is what the inventory bought.
+- **Still no external standard for areas, stated precisely by Track L.** Whole
+  production layers mix line and area (line-named layers are 86.3% area by
+  pixel); cutting them with radius 4 is circular; and the `beta`-named layers
+  selected by name are the ones absent from the raster. **So the three obvious
+  routes each fail for a different reason**, which is a better map than "we have
+  no ground truth".
+- **A combined `git log -- pathA pathB` cannot tell you which commit added which
+  path, and its ordering invites you to think it can.** 2026-10-23: having
+  pushed two manuscript deliveries into the repository by `git add -A`, the
+  foundation ran `git log --diff-filter=A -- <ako6 manifest> <part_layers>` to
+  find out which commit was which, got two commits back, and **read the output
+  order as the mapping**. The output is ordered by date. Checked per path by
+  Track L and then here: **`7d7087d` added the ako6 delivery (884 files, ~75MB)
+  and `51623d3` added the part-layer export (134 files, ~23MB)** -- the exact
+  opposite of what `f38a601`'s commit message states, and of what was reported
+  to the user and to Track L. **The count was right (two commits, ~99MB) and the
+  correspondence was wrong**, which is the day's recurring failure on a new
+  unit: commit against path. **The consequence was material**: `fill-region`
+  descends from `7d7087d` and not `51623d3`, so what Track L's branch carries is
+  the **75MB ako6 delivery, 3.2x the figure the foundation gave it**.
+  `f38a601`'s message is left standing with this entry as its correction, since a
+  commit message is a store. **The check: one path per query, or read the
+  `--name-only` output rather than the commit order.**
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
