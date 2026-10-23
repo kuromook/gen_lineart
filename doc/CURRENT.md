@@ -3554,7 +3554,7 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   satisfy another of its own findings.
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
-  is still to come.
+  is in Next Actions item 11.
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
@@ -5546,8 +5546,12 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **The extraction side then applied it to its own deliverables**, which is
       where it bites hardest: `fill_tone_inventory_works.csv`'s tone-layer and
       ベタ-layer columns are **layer counts**, and the tone column **includes the
-      empty template layers** -- the locally measured case being 444 of 1,114
-      actually in use. So every figure in the inventory is a figure about
+      empty template layers**. **The whole-corpus scan puts the inflation at
+      about five-fold: of 86,308 tone-configured layers, 17,695 are actually
+      used -- 20.5%.** And the local 232-page figure this file had been quoting,
+      **444 of 1,114 (40%)**, was **twice too high**, because those six works
+      were tone-heavy: **a sampling bias of 2x inside a statement about
+      sampling bias**. So every figure in the inventory is a figure about
       practice, and the whole file inherits this sentence rather than just the
       ako9/ako10 reading.
     - **The manuscript tree duplicates works across year folders too.**
@@ -5812,20 +5816,69 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       blind spot in `plane0` that `preview_dark` now covers. **The direction of
       both is the same: the first figures were too high**, so nothing that was
       planned on the strength of them is safe without re-reading.
-    - **The hard/graded split came back as a measurement, and it is bimodal --
-      which is the answer the statistic was asked for.** `mask_mid_per_boundary`
-      -- the share of mask pixels that are neither 0 nor 255, normalised by the
-      shape's boundary length, so a hard edge scores near its own perimeter and
-      a graded one scores far above it -- has **p90 0.929 and p95 7.874**, an
-      order of magnitude between two adjacent deciles, and **54 of 595 layers
-      (9.1%) sit above 1.0**. So the author's two kinds of tone are **two
-      populations, not a continuum**, and the threshold can be set on this side
-      without a judgement call, which is exactly what asking for the statistic
-      and not the verdict was for. **The `gradient` class cannot be used for
-      it**: all 595 layers in use carry `has_gradation_fill = True`, so that
-      flag records a tool setting and not a look. That is the second name this
-      week that turned out to be about production rather than appearance, the
-      first being `black`.
+    - **The hard/graded split is a real split and NOT a clean one -- the
+      "bimodal, so the threshold needs no judgement" reading is RETRACTED, and
+      the extraction side retracted its own word first (2026-10-23 night).**
+      `mask_mid_per_boundary` is the share of mask pixels that are neither 0 nor
+      255, normalised by the shape's boundary length, so a hard edge scores near
+      its own perimeter and a graded one far above it.
+      **On the first group (595 layers)** it ran **p90 0.929 -> p95 7.874** -- an
+      order of magnitude between adjacent deciles -- and **54 layers (9.1%)**
+      above 1.0, which this file wrote up as *two populations, not a continuum*,
+      with the threshold settable by measurement.
+      **On all 17,695 used layers the valley fills in**: p10 0.000 / p25 0.000 /
+      p50 0.329 / p75 0.812 / **p90 1.058 / p95 1.797 / p99 6.136** -- continuous
+      where the sample jumped. The share survives (**1,916 of 17,695 = 10.8%**
+      above 1.0, against the sample's 9.1%) and so does the shape in the weak
+      sense -- **there are two hills, but the ground between them is not
+      empty**. The order-of-magnitude gap was a property of the first group
+      (2024, 2023b, 2020). **So the cut at 1.0 sits around p90 with layers in
+      its neighbourhood, and the count moves with where it is placed**: any
+      "blurred tone = N layers" figure must carry its threshold and a
+      sensitivity, and **the threshold is a choice, not a reading.** This
+      corrects what was said to the user as well as what is written here.
+      **The `gradient` class cannot carry the split either**: all 595 layers in
+      the sample had `has_gradation_fill = True`, so that flag records a tool
+      setting and not a look -- the second name that week about production
+      rather than appearance, after `black`.
+    - **The whole-corpus tone survey, 2026-10-23: this is item 11's population.**
+      7,667 pages: **17,695 used tone layers over 2,047 pages (26.7%) and 79 of
+      243 works**. Files in `inbox/`: `tone_layers_full_layers.csv` (one row per
+      used layer with the edge statistics, 17,695), `..._works.csv` (243),
+      `..._full.json`, and the notice.
+      **The halftone vocabulary is tiny, which bounds what "hard tone" has to
+      be**: five densities -- **11% / 20% / 10% / 30% / 22% cover 96%** -- and
+      **60L alone is 91.5%** of line counts, 99.8% with 55L and 30L. Effectively
+      **5 densities x 3 rulings**, so a hard-tone class can expect a small
+      discrete set rather than a continuum.
+      **By layers the year peak is sharper than by works**: 2016 2,202 / **2017
+      8,413 (48% of all used layers)** / 2018 2,967 / 2019 843, then 162-565 a
+      year. The work-level mountain said "2016-2018 is nearly every work"; the
+      layer-level one says **2017 is nearly half the material**.
+      **And the two works chosen for fill are top for tone as well** -- `ako6`
+      1,129 used layers over 100 of 108 pages, `ako7` 484 over 62 of 72 -- so
+      taking tone up later needs no new work selection. **`ako5` is second for
+      tone at 1,311 layers** while being the work that could supply no fill
+      standard at all: **a work's quality swaps with what is being extracted**,
+      which is the same lesson as a population being quotable only with its
+      measurement. (`2019_ako7` and `2019b_ako7` agree to the layer -- 484 /
+      311 / 173 -- confirming the duplicate a third way.)
+      **Anchored on arrival, and the one divergence was the foundation's own
+      join.** Recomputed here from the delivered CSV: the edge percentiles come
+      back **identical to three decimals** (p50 0.329 / p75 0.812 / p90 1.058 /
+      p95 1.797 / p99 6.136), the density vocabulary **96.6% in five values**
+      (11/20/10/30/22), **60L 91.5%**, 2017 **8,413 layers = 47.5%**, `ako5`
+      1,311, `ako6` 1,129, `ako4` 1,343 -- all matching. **The two figures that
+      did not match were ones this file computed by work *name*:** `ako7` came
+      out 1,140 against their 484, and `ako4` 1,390 against 1,343, because the
+      name pools **2018_ako7 172 + 2019_ako7 484 + 2019b_ako7 484** and
+      `2024b_ako4` 47. **Keyed on (year, work) every figure agrees.** The fifth
+      unit of the day's failure, caught inside the check that was anchoring
+      someone else's numbers -- which is the argument for discipline 2 as such:
+      the known cell did not just confirm their arithmetic, it located the one
+      place this side was still joining wrongly. (Their count has a second
+      denominator worth keeping: **1,916 above 1.0 out of the 17,550 layers that
+      have a value**, not of 17,695 -- 145 carry none.)
     - **How Track J's door closes changes how L reads candidate 2, and J sent
       this ahead of its verdict (2026-10-23).** If C3 fires, *"no learned model
       is needed"* will most likely hold in the form **"both arms are near
