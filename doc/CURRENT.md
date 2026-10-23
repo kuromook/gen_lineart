@@ -1,6 +1,34 @@
 # Current Project State
 
-Updated: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
+Updated: 2026-10-23 JST. **Track H sent its first notice, and it corrects this
+file in three places** -- which is what a notice is for. (i) The three
+pre-registered grouping measurements **were answered on 2026-10-12** and were
+carried here as unanswered for eleven days: a Track F `cluster_set` captures a
+true line-level group **19%** of the time, **68% mixed, 22% fragmented, 7%
+never in a cluster**, so the regrouping mechanism is a **replacement, not a
+repair**. (ii) `origin/face-words` is `43a6e88`, not `ca9d788`. (iii)
+`face_groups.jsonl` is **518 rows / 402 orders, 2026-10-23**, not the 417 that
+three entries here still quoted. All three were checked against the track's own
+disk before being folded in. Track H's current best is group recall **0.351**
+(H17, 260 training faces, read on the original 193, 5-fold by series, mean of 3
+seeds, train split only) against a proposed per-stroke rule bar of 0.80/0.60, so
+**Track G's dependency is not payable yet** and Track H says so itself.
+**Track J's slot finished 2026-10-19 23:43:35** (exit 0, `M1_step40000.pt` on
+disk) **and its verdict has not been read**: no commit in that tree since the
+handoff note, and the GPU has been idle for four days. The registered verdict is
+M1 - M0 on the 956-panel table; the trainer's own 40-panel snapshots in
+`slot_20261019.log` are not it. **Track K's restart input now exists** -- Track H
+kept marking for its own bar -- while K stays dormant by the 2026-10-19 decision,
+and H is explicit that it is not asking for K back. **The request relayed through Track H was
+answered the same day**, from the user's own three proposals rather than a
+survey: Next Actions **item 11** (a line/fill/texture decomposition on GT at
+region unit -- no GPU, no author time), **item 12** (pre-annotated marking under
+Track H, after H18, starting at order 501), and **Working Discipline item 8**
+(conformal prediction, adopted as item 12's mechanism and premature for the
+fills). The order the user set is in the Next Actions preamble. **Track J's
+verdict is the next thing to be taken up** and is deliberately still open.
+
+Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
 and its second axis closed itself the day it opened: K19 landed on the
 registered "the axis dies" branch -- precision 0.3333, CP95 upper **0.4955**
 against a 0.50 bar, and **the bar was not moved** -- so the letter-L
@@ -24,27 +52,21 @@ path this file names *in order to deny it* -- a new tool trap, and the reason
 two ledger entries below now carry their status word in their opening lines,
 where the audit can read it.
 
-Previous: 2026-10-18 JST. **Track K opened** by user approval: the 1px
+Earlier: 2026-10-18 JST. **Track K opened** by user approval: the 1px
 skeleton's connectivity, which is upstream of Tracks F, G and H. The error has
 two directions -- over-merge, which the author can mark, and under-connection,
 which has no mark and is the binding one (18.7% of arms joined). K1 registered
 before Track H's 300-face analysis returned.
 
-Earlier: 2026-10-09 JST (Tracks G and H, two new lessons, a **withdrawn tool
-trap** -- the `cy`/`cx` swap was a misdiagnosis -- and, later the same day,
-Track G's resumed placement question settled: the reference frame carries the
-win and lesson 13 now holds from both the classification and the prediction
-side; see Known Tool Traps for two new entries on checking a box's
-orientation and on writing a negative control. Later still: the distorted
-position bins were measured and the verdict is **"big"** -- every position-bits
-figure in Tracks F and G is replaced, no verdict flips, and 86% of the apparent
-placement structure was the panel's aspect ratio, which is **lesson 14**. Track
-J opened to take the idle GPU. **2026-10-10**: Track J's stage 1 is in -- the
-preprocessor cannot fill, so for fills the baseline is *paint nothing* against
-*paint everything* -- and two GT-only measurements moved its unit to the koma
-panel, one of which says the line art on this corpus **encloses almost
-nothing**, which the words line should know about. Two new tool traps came out
-of it).
+Before that, 2026-10-09 JST: Tracks G and H, two new lessons, the **withdrawn**
+`cy`/`cx` tool trap, Track G's placement question settled on the reference
+frame, **lesson 14** (86% of the apparent placement structure was the panel's
+aspect ratio, and every position-bits figure in F and G is replaced), and
+Track J opening to take the idle GPU; then 2026-10-10, Track J's stage 1 and
+the finding that this corpus's line art **encloses almost nothing**. The prose
+of those two entries was compressed away here on 2026-10-23; the content is in
+the sections below and in `doc/work_log.md`.
+
 The Track Ledger, Lessons, Known Tool Traps and Next Actions are current as of
 the Updated date above. **Active Goal is not**: the goal itself stands, but its
 "where the work is" paragraph names its own date, 2026-10-04, and was written
@@ -412,8 +434,9 @@ work, and the stated expectation is that the pieces make each other easier.
   should be easiest because one artist does not vary them much. Methodology
   worth noting -- **held-out labels are assigned mechanically at labelling
   time**, before any result is seen, split two ways (by panel, and by series to
-  test whether a rule survives a different artist). **Pushed as of 2026-10-09**
-  (`ca9d788` = `origin/face-words`), so it is no longer single-disk.
+  test whether a rule survives a different artist). **Pushed; `origin/face-words` is
+  `43a6e88` (2026-10-18)**, so it is no longer single-disk. The track commits
+  only on the user's word, so its work log runs ahead of its branch by design.
   Where it got to, in order:
   - *2026-10-04, the opening hypothesis is refuted.* The user judged the
     size-stratified montages of w342/w343/w344: across 150 instances there is
@@ -470,6 +493,44 @@ work, and the stated expectation is that the pieces make each other easier.
     track reporting -- it still owes its notice -- so treat the figure as a
     timestamp, not a status. The three pre-registered measurements need more
     than 41.
+  - *2026-10-23, **the track's first notice**, which replaces the readings this
+    file took off its disk.* Verified here before folding in:
+    `labels/face_groups.jsonl` is **518 rows, 402 distinct `order` (0-401),
+    written 2026-10-23 00:45**, and `origin/face-words` is `43a6e88`. Read
+    latest-row-per-key (the trap above): **373 complete -- 261 train, 68 panel
+    holdout, 44 series holdout -- and 29 skipped.** The holdouts have been
+    counted and never opened.
+    - **The three pre-registered measurements were answered on 2026-10-12
+      (H6, 68 faces) and the answer is replacement, not repair.** A Track F
+      `cluster_set` captures a true line-level group **19%** of the time;
+      **68% mixed, 22% fragmented, 7% never enters a cluster at all.**
+      Quoting this beside the 2026-10-09 figures requires the denominator:
+      **41% mixed and 14.6% uncovered are per cluster-mark (1,003 marks)**,
+      68% is **per true group**. Both stand; they are different measurements,
+      and Track H asked that they not be printed without that distinction.
+    - **The mechanism is per-stroke part prediction plus a proximity merge**
+      (tau = 0.04 x face size), scored as group recall (true and predicted
+      group overlapping >= 80% each way), 5-fold by series group, mean of 3
+      seeds, **train split only**. Per-stroke (H7-B) **0.278**, flat in data
+      (H10: +0.007 going from 50% to 100%); a transformer encoder over all
+      strokes of a face (H11-T2) **0.321** and **not** flat (H16: +0.067).
+      **H17, 2026-10-23: 193 -> 260 training faces lifts the original 193 from
+      0.319 to 0.351**, up on all three seeds -- the current best. Per-stroke
+      precision/recall: eye 0.71/0.79, mouth 0.67/0.66, nose 0.58/0.55, brow
+      0.54/0.47, ear 0.52/0.38, all short of the proposed rule bar 0.80/0.60.
+    - **What did not work, every one pre-registered and no bar moved**:
+      learning the merge (H12, **-0.077**, which the track records as its own
+      design error), a learned cut on the proximity merge (H13, -0.012 to
+      -0.024), supplying true face orientation (H10c +0.017, H15 -0.009),
+      eye-relative position (H7-C), orientation from the head box (H9b, failed
+      all three). **The ceiling is set by per-stroke part identity, not by the
+      merge**: true parts through the same merge reach 0.83-0.94.
+    - **Next, registered**: H18 retrains when orders 401-500 are marked, and
+      **+0.025 over H17 on the original 193 buys another 100 faces; short of
+      that, marking stops.** H19 (adding the pixels around each stroke, aimed
+      at brow/hair and ear/hair) was registering as the notice was written.
+    - **Track G's dependency is not payable yet**: at group recall 0.351 the
+      unit is not ready to hand over, and Track H says so itself.
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
@@ -718,8 +779,10 @@ work, and the stated expectation is that the pieces make each other easier.
     killed** (carry both tokenisations downstream rather than deciding -- which
     changes Track F's output format *and* the model's input, so it was never in
     K's hands), and one correction returned to this ledger (the 0.5px
-    retraction). `face_groups.jsonl` has not grown since 2026-10-16, so K is
-    quiet until it does. The
+    retraction). **`face_groups.jsonl` has since grown** -- 518 rows and 402
+    orders at 2026-10-23 against the 417 this was written on -- so the input K
+    was waiting on exists; K is quiet by the user's 2026-10-19 decision, not
+    for want of marks. The
   axis is new -- its own registration, its own entry -- but the five
   instruments, the ink mask, the box structure and the 52-tile paper all live
   in K's tree, and Track I's first probe is the recorded case of what a
@@ -742,9 +805,15 @@ work, and the stated expectation is that the pieces make each other easier.
   seen.
 - `../lineart-stroke-topology` (branch `stroke-topology`, **Track K**) --
   **opened 2026-10-16, dormant since 2026-10-19**: the tree closed at `25e4dec`
-  (pushed, working tree clean) and K is quiet until `face_groups.jsonl` grows
-  past its 2026-10-16 state, which is the author's input it runs on. Its
-  closing record and both axes are in the Track K entries above. Opened by user
+  (pushed, working tree clean). **Its restart condition is met and it stays
+  dormant anyway**: `face_groups.jsonl` has grown past the 2026-10-16 state it
+  was waiting on -- 518 rows / 402 orders at 2026-10-23, and Track H reports 97
+  complete faces at `order` >= 301 all carrying a `broken` field, 62 of them
+  with at least one mark and 116 marks in all (train and holdout together) --
+  which covers K3's frame of 40 new faces and 40 new marks. K is quiet by the
+  user's 2026-10-19 decision, that it does not have to happen now, and Track H's
+  notice explicitly does not ask for it back. Its closing record and both axes
+  are in the Track K entries above. Opened by user
   approval, from the user's own observation after
   finishing 300 faces in Track H: "the 1px thinning and the linking leave many
   parts with wrong connectivity". The defect is **upstream of Tracks F, G and
@@ -2289,6 +2358,32 @@ incident that actually happened here.
    asks for. **What would reopen this**: a UI that someone other than the author
    has to use, or a track's tooling becoming a real maintenance burden. Then it
    is installed project-scoped in that track's own tree, not by the foundation.
+8. **Conformal prediction is adopted as a component in one named place, not as
+   a programme.** Raised by the user 2026-10-23 as a general method; run
+   through the same test as item 7 -- a general method is adopted only where it
+   answers damage this project has actually taken. It passes in exactly one
+   place: **deciding which strokes a pre-annotation pass may fill in for the
+   author** (Next Actions item 12). It turns "group recall 0.351" into a
+   statement about cost under an error budget the author sets, and it comes
+   with a **trivial arm built in** -- emitting all five parts always covers and
+   saves no work -- so the quantity to register is the share of singleton sets
+   at a fixed alpha, against that arm. Three pitfalls, each of a kind this file
+   already records: **(a)** per-part difficulty is very uneven (eye 0.71/0.79
+   against ear 0.52/0.38), so it must be **class-conditional (Mondrian)** or
+   the hard parts are absorbed by the easy ones; **(b)** exchangeability is at
+   the **face**, not the stroke -- a face's strokes arrive as a dependent
+   bundle, and calibrating per stroke **overstates coverage**, which is this
+   file's recurring instrument-measures-itself error; **(c)** the series
+   holdout **deliberately** breaks exchangeability, so the guarantee does not
+   transfer -- and the size of the coverage shortfall there is a free
+   measurement of how artist-specific the rule is. **Premature for the fills**:
+   per-pixel prediction sets are the wrong unit, and the trap above about
+   `preproc@budget` is what a per-pixel score does when the unit is a region;
+   after the region unit exists, risk control on a region-level loss is the
+   right form. **The condition on adopting it**: a coverage figure is quoted
+   with its calibration population and its conditioning, exactly like any other
+   number here -- "90% coverage" is marginal, is not 90% for ears, and is not
+   90% for a new artist. Discipline 1 was written about numbers of this shape.
 
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
@@ -3982,6 +4077,13 @@ each. Item 4 is two open bugs in shared tooling, **item 5 is now an active
 third front -- Track J, the solid fills, opened 2026-10-09 to take the idle
 GPU** -- items 6-9 common-foundation housekeeping, none of them blocking. Every ControlNet track is closed and none leaves work behind, and
 **Track I closed itself on 2026-10-04** -- see the Track Ledger above.
+Items 11 and 12 were added 2026-10-23 from the user's own three proposals, and
+they come with an order the user set: **(1)** item 11's GT-only measurements,
+which need neither the GPU nor the author; **(2)** item 12's cost baseline,
+which needs no instrument at all; **(3)** H18's read-out, before which the
+marking stream is not to be touched; **(4)** then item 12's registration. The
+third proposal, conformal prediction, is ruled on in Working Discipline item 8
+-- adopted as item 12's mechanism, premature for the fills, not a track.
 
 **2026-10-19: M1 is running.** The user instructed it that day, and Track J,
 which had held it under its own rule that a long GPU job runs only on the
@@ -4024,8 +4126,8 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
 `npred/ngt` beside every region-F1).
 
 1. **Face-part words** (`../lineart-face-words`, Track H -- the current front,
-   and a live session is on it as of 2026-10-09). **The push is done**:
-   `ca9d788` equals `origin/face-words`, verified here, so the
+   and a live session is on it as of 2026-10-23). **The push is done**:
+   `origin/face-words` is `43a6e88` (2026-10-18), verified here, so the
    "single-disk" flag raised on 2026-10-04 is cleared. It remains a worktree of
    Track G's separate clone, so neither `git worktree list` here nor
    `tools/audit_track_ledger.py` can attribute it -- the audit prints it as a
@@ -4037,19 +4139,21 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
    in a namespace separate from `wNNN`, at instance level, with a held-out part
    fixed at labelling time -- and **the user allowed those labels as ground
    truth for evaluation, an explicit exception to "names are interpretive
-   only"**. It owes its own notice; the ledger entry above is this file reading
-   its work log, not the track speaking.
+   only"**. **Its first notice arrived 2026-10-23**, so the entry above is now
+   the track speaking rather than this file reading its disk.
    **Where it stands and what the foundation is waiting for.** The opening
    hypothesis is refuted, the words turned out not to carry part identity
    (lesson 13), and the track has moved up a level: the unit itself is wrong, so
-   it is collecting line-level ground truth through the grouping UI, zero
-   production groups so far. Three things to watch from here rather than act on:
-   - **The three measurements that ground truth is for are pre-registered and
-     unanswered**: how many true groups one current cluster spans (mixing), how
-     many clusters one true group splits into (fragmentation), and how much of a
-     part's ink never enters `cluster_set` at all. Those numbers decide whether
-     the regrouping mechanism is a repair or a replacement, and they are the
-     first thing to fold in here when they land.
+   it is collecting line-level ground truth through the grouping UI --
+   **373 faces complete as of 2026-10-23**, and the author is still marking.
+   Three things to watch from here rather than act on:
+   - **The three measurements that ground truth is for were answered on
+     2026-10-12** (H6, 68 faces), and this file carried them as unanswered for
+     eleven days: mixing **68%**, fragmentation **22%**, ink in no cluster
+     **7%**, a cluster capturing a true group **19%** of the time. They settled
+     the question they were for -- the regrouping mechanism is a **replacement,
+     not a repair** -- and the track has built one. The denominators differ
+     from the 2026-10-09 cluster-mark figures; see the entry above.
    - **The held-out discipline is now carried across two label sets.** The face
      queue inherits the instance queue's series groups and the same
      page-sha1 rule, and the track verified zero panels disagree between them,
@@ -4313,14 +4417,19 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
    of error. What is wanted is four lines, the fourth being what this ledger
    has wrong.
    **The dependency was named and then answered the same day: Track K is quiet
-   indefinitely, by user decision 2026-10-19.** `labels/face_groups.jsonl`
-   stands at 417 lines, last written 2026-10-16 21:12 (`43a6e88`), and K's K3
-   frame needs 40 new faces and 40 new marks -- which is **the author's time,
-   and the author is the user**, not something Track H can schedule. The user's
-   reason, recorded because it is not derivable from anything here: **not a
-   shortage of time, but that it does not have to happen now.** So **no further
-   batch of author marks is scheduled**, K's cost of waiting is zero, and
-   nothing reorders on its account. To restart K later the only missing input
+   indefinitely, by user decision 2026-10-19.** The reason, recorded because it
+   is not derivable from anything here: **not a shortage of time, but that it
+   does not have to happen now.** **What has changed since, and it moves the
+   cost rather than the decision (2026-10-23):** `labels/face_groups.jsonl`
+   stood at 417 lines when the above was written and is now **518 lines / 402
+   orders**, because Track H kept marking for its own bar -- 97 complete faces
+   at `order` >= 301 all carry a `broken` field, 62 with at least one mark, 116
+   marks over train and holdout. K3's frame of 40 new faces and 40 new marks is
+   therefore **already covered**, and the author's time it would have cost is
+   being spent anyway on H18. Restarting K is now a question of whether it is
+   worth a session, not of whether the input exists. Nothing reorders on its
+   account, and Track H is explicit that its notice is not a request to
+   restart K. To restart K later the only missing input
    is 40 marks; its instruments, registrations and bands all survive in
    `origin/stroke-topology` at `25e4dec`. **The connectivity line's next
    possible move is therefore not K's**: it is carrying both tokenisations
@@ -4359,3 +4468,74 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
    `diagnose_gate_funnel.py` pass for ako5ver2/hamlabi/fitness/gakuen (only
    housei has an established relaxed value so far); yield may be
    conservative for the others under the shared default. Still open.
+11. **A line / fill / texture decomposition on ground truth, at region unit --
+    a new track, proposed by the user 2026-10-23.** This file already specified
+    it on 2026-10-10 and it was never executed: *"the ground-truth side needs
+    no rough at all"*, and *"a line/fill/texture decomposition is not only
+    Track J's business: part of the words line's unit problem is a fill
+    problem."* **No GPU, no author time**, so it can run alongside Track J's
+    verdict rather than behind it.
+    - **That it repairs line measurement is already demonstrated twice, not
+      hoped for.** (i) `line_width_p50 7.59` read as thick strokes was solid
+      fill, and the fill-excluded width is the instrument that does separate
+      the pools (housei 1.91 against ako5 2.74) and is invariant to the window.
+      (ii) `cluster_set` mixes parts overwhelmingly through hair and shading
+      hatch: **three quarters of labelled brows share a cluster with the bangs
+      above them, and 14.6% of all strokes enter no cluster at all.**
+    - **Why it is not "Track J again", and this is the part that reframes it.**
+      Track J's measurement `tools/evaluation/rough_fill_signal.py` (ako5ver2
+      167 panels, housei 73, koma-aligned pairs) found that **96% of solid-fill
+      area has no dark mark under it in the rough**, 99.7% on the strictest
+      reading, so **any "the rough already has it" arm has a recall ceiling of
+      4.2%** -- with the author's own account of why: fills are decided before
+      the rough is drawn, so the artist does not mark them, and a fill-like
+      mark means indecision. But in all four pairs of
+      `results/region_closure_20261010/pair_check.png` the hair and clothing
+      that are solid black in the line art are drawn in the rough as **an
+      outline with white inside**. So the information is absent as ink and
+      present as **enclosure**, and the open question is **which enclosed
+      region is filled**, not where the fill ink is. That changes the unit from
+      the pixel to the region, makes the label a handful per panel (cheap to
+      ask the author), and is the representation question the Active Goal
+      names.
+    - **Unit constraint, already measured**: 0.5% of `ako5` tiles sit entirely
+      inside a fill and 31.3% are near-blank, so **a region formulation does
+      not fit the 480px tile**; Track J has already moved its own input unit to
+      the koma panel, and this starts there too.
+    - Open before a registration: whether this is a track of its own or Track
+      J's next stage, which depends on J's verdict (item 5).
+12. **Pre-annotated marking: let a model propose the groups and have the author
+    correct them -- under Track H, registered separately, and not before H18
+    reads out.** Proposed by the user 2026-10-23, on the reasoning that
+    correcting a proposal may cost less than marking from blank, and that it
+    may become usable as the label count grows even if it is not usable now.
+    - **Not a new track.** It needs Track H's UI, its labels, its model and its
+      registration practice -- all four. A separate track re-derives them, and
+      Track I's first probe is this project's recorded case of what
+      re-derivation costs. But its success criterion is **author time**, not
+      group recall, so it needs its own registration and its own bar inside H.
+    - **It must not touch the current marking stream.** H18 is live and reads
+      out on orders 401-500 marked from blank, with a +0.025 bar; pre-annotating
+      them mid-stream puts a second variable into the data-scaling slope H16
+      and H17 measured. **Start at order 501.**
+    - **The load-bearing hazard is anchoring, not accuracy.** If the author
+      corrects machine proposals, the labels become partly a function of the
+      model being evaluated -- and these labels are ground truth by the user's
+      explicit exception to "names are interpretive only". Two cheap controls:
+      **flag assisted faces** in `face_groups.jsonl` (it already carries
+      `annotator`, `status`, `usage`) and keep them out of any population used
+      to score the model, or score with and without; and **measure the
+      anchoring directly** by putting a small set of faces to the author twice,
+      blank and pre-filled, interleaved, comparing the groups that come back.
+      Track K's author-judgment UI is the instrument for the second.
+    - **The cost baseline exists already and needs no instrument.**
+      `face_groups.jsonl` carries a `datetime` per row, so **time per face from
+      blank is recoverable from the rows already on disk** (successive
+      differences, breaks capped). Measure it before building anything, or
+      whether it got cheaper can never be said. This is discipline 2's known
+      cell for the cost question.
+    - **Both branches of H18 lead somewhere this matters.** If the slope holds,
+      the next hundred faces get cheaper. If it does not and marking stops,
+      pre-annotation is **the only thing that reopens the data route at all**.
+    - Mechanism: Working Discipline item 8 (conformal prediction, class-
+      conditional, calibrated at face level).
