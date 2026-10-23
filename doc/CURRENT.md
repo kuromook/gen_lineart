@@ -3738,6 +3738,32 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   it did before the sweep. **A check that cannot tell a fix from a symptom will
   report the fix**, and this one was contradicted by the housekeeping done to
   satisfy another of its own findings.
+- **Three requests are in flight to the extraction side that the foundation did
+  not carry, and that is the part worth fixing (2026-10-24).** Track L wrote
+  them into this tree's `outbox/` and delivered them itself, and the user pushed
+  the priority one directly:
+  **`request_composited_page_20261024.md`** (composited finished pages at native
+  resolution -- the standard that has not been through a filter, with four
+  questions to answer first, the load-bearing one being whether the preview is
+  native), **`request_full_layers_addendum_20261024.md`**, and
+  **`request_priority_65pages_20261024.md`** with `priority_pages_20261024.txt`
+  -- **65 pages, ako6 31 / ako7 34, 129 koma, about a third of the 178**, chosen
+  because *the stalled verification runs on exactly that range*. Its order of
+  priority: **the full layer inventory for those 65 pages first, statistics only,
+  no rendering** -- one item that moves the work and costs almost nothing. Two
+  standing conditions in it are worth keeping: **native canvas, same `pid`
+  naming**, and **do not select by page-level cleanliness** -- clean and mixed
+  koma sit side by side on one page, so **cutting by page throws away 94% of the
+  usable data** and the koma-level selection stays on this side.
+  **Going direct is not the problem; the foundation not knowing is.** Fewer hops
+  means less distortion, and the track that holds the measurement writes the
+  better request. **But the foundation's picture of what is in flight was wrong
+  until the user said so.** A mechanical test for "is this recorded" was looked
+  for and does not exist: **89 of 112 correspondence files are not named in this
+  ledger**, because correspondence is normally summarised rather than cited, so
+  "unnamed" cannot mean "unrecorded". **What does work is cheaper**: the
+  start-up procedure listed `inbox` only, and a request the foundation did not
+  carry lands in **`outbox`**. `CLAUDE.md` now lists both.
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is in Next Actions item 11.
