@@ -5279,13 +5279,49 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       once**, part naming *and* colour, so either result would have been
       unreadable. **A control must differ on the one axis under test**; this one
       was picked for the axis it was wanted for and not checked for others.
-      The replacement second work should be **monochrome with no part-name
-      system**: `2024c ako` is the candidate (black 5 / white 0 in scouting, 139
-      koma, layer names `線画` / `レイヤー 2` / `成人修正`, and 30.2% of its
-      sampled layers are tone, which is a monochrome signature), pending the
-      author's confirmation that it is monochrome.
-    - **A candidate signature for colour manuscripts, stated as a hypothesis
-      because the obvious version of it is already dead.** In the sampled layers,
+      The replacement second work is **`2024c ako`** -- monochrome by direct
+      measurement (next bullet), 139 koma, layer names `線画` / `レイヤー 2` /
+      `成人修正` with no part-name system.
+      **But the control framing is dropped entirely, because the extraction side
+      turned the rule back on the replacement and it holds.** `ako6` and
+      `2024c ako` differ in **year (six apart), page count (108 vs 139) and part
+      naming**, so they are not a one-axis contrast either -- the first version
+      of this bullet had merely swapped one confound for others. **They are two
+      trial works chosen for coverage, not a controlled comparison.** Whether
+      part naming is load-bearing for area detection needs a design that can
+      actually test it -- matched pages inside one work, or part names stripped
+      from the input -- and that is a question for item 11 once it has a tree,
+      not something a work choice can answer. **The rule caught its author's
+      second attempt as well as the first**, which is the strongest evidence it
+      is worth keeping.
+    - **The colour question is measured now, not inferred, and the hypothesis
+      below is superseded by it (2026-10-23 evening).** The extraction side read
+      **saturation off `CanvasPreview`** -- the page image CSP itself rendered,
+      1240-1754px, a few hundred KB per page -- so it asks *is there colour on
+      the paper* instead of reasoning from layer names, tone share or colour
+      settings (`scripts/inspect/check_color_pages.py`). **`2024c ako` is
+      monochrome: 0.000% coloured pixels, mean saturation 0.00 on five sampled
+      pages**, against `fringe`'s **8-19%**, so it is confirmed as the second
+      trial work. The check carries its own known cell -- `fringe`, already known
+      to be colour, comes back 4 of 5 pages colour -- and **the fifth page falls
+      on the monochrome side at 1.80%**, which is the useful part: a colour
+      manuscript has pages with little colour in them, so **the judgement is
+      per-work and not per-page**. Its threshold (saturation >= 24 on >= 2% of
+      pixels) is **declared uncalibrated**, justified only by JPEG bleed
+      reaching about 10. **It also supersedes the author-label falsifier**: the
+      same check runs over all 289 works, so the tone-share hypothesis can be
+      tested against a measurement instead of against hand labels, and the 46
+      second-stage candidates take minutes. **Requested.**
+    - **`ako6/color/` is one colour cover, and the reconciliation is exact.**
+      70.92% coloured pixels, mean saturation 47.85, a single `.clip` beside
+      `H1H4.psd` / `layoutH1H4.psd` (H1H4 = front and back cover), while
+      `ako6/`'s own pages read 0.000%. **Excluded from delivery for the same
+      reason as fringe.** And `ako6` has `.clip` files in **10 subfolders, 108
+      pages; minus the cover, 107 -- matching this corpus's 9 slugs exactly**, so
+      nothing is missing on either side (the koma corpus draws panels from 63 of
+      those pages).
+    - **A candidate signature for colour manuscripts, now a hypothesis with a
+      better instrument pointed at it.** In the sampled layers,
       the four works known or named as colour carry **zero tone layers** --
       `2022b_hyoui_color` (adjustment **14.7%**, unknown 47.1%), `2019_fringe`
       (unknown 37.1%), `fringe2` (40.0%), `fringe3` (42.6%) -- while every
