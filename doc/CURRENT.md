@@ -66,15 +66,38 @@ the thing it was a number *of* was wrong.** Three of the day's false positives
 came from `tools/audit_track_ledger.py` itself, which now carries checks 7 and
 the narrowed status reader (`--self-test`, 11 cases).
 
-**Open**: Track L has pushed `fill-region` (`7a4df98`, verified `data/`-free
-from an anonymous clone) and is at a stopping point; the
-extraction session has the gradient mask survey rerunning and one question
-outstanding (why `line`-name ink-presence is 1.0000 in `ako7` and 0.8371 in
-`ako6`); Track H holds H19 at **+0.044 against a 0.05 bar, no bar moved**, and
-has the five-page part-layer export to review with the author. **Two candidate
-tracks are queued behind L**: colour manuscripts (every area carries colour, so
-the area division is complete) and the gradient masks (the mask is an area, and
-inverting one that marks everything-but-the-character yields the character).
+**Open, as of the 2026-10-24 handover.** **One thing is in flight and everything
+else is waiting on it**: the extraction side is producing
+**`page_layers_priority65.csv`** -- every layer of the 65 priority pages
+(ako6 31 / ako7 34), pre-selection, with `visibility` / `opacity` / `has_mask` /
+`rendered` / `drawn_ratio` / `black_among_drawn` / `preview_dark` per layer.
+**About 85 s/page, ~90 minutes, started around 02:00.** It lands in `inbox/` as
+a file with a notice.
+**What to do when it arrives**: look at the distributions, **then** write a file
+naming the `page_id`/`layer_id` the extraction side should export at **native
+resolution with grey levels** -- the line layers that contain fill, which the
+colour test had been dropping. **Do not fix the selection condition before
+seeing the distributions**; that is how the retracted L7 happened. Deliver by
+SCP to `C:/Users/sh1/code/extract_line_and_sketch/inbox/` and **verify with
+`dir`**.
+**Waiting, nothing owed by this session**: Track L is at a stopping point
+(`fill-region` pushed at `7a4df98`); Track H holds H19 at **+0.044 against a
+0.05 bar, bar not moved**, and has the five-page part-layer export to review
+with the author; one question is out to the extraction side (why `line`-name
+ink-presence is 1.0000 in `ako7` and 0.8371 in `ako6`).
+**Awaiting a user decision**: whether to ask the extraction side to look for
+cleanly-separated material in other works -- **better judged after the
+distributions above**, since the criterion may stop being the colour test. And
+**two candidate tracks queued behind L**: colour manuscripts (every area carries
+colour, so the area division is complete) and the gradient masks (the mask is an
+area, and inverting one that marks everything-but-the-character yields the
+character).
+**This file's own maintenance is the first job of the next session.** It grew
+**4,361 -> 6,800 lines on 2026-10-23/24** against a project that has one
+handover document that stopped working at 900. Several places carry a retracted
+statement and its retraction at equal weight, which is correct as a record and
+wrong as something to read. `doc/documentation_maintenance_policy.md` applies.
+**Compress the record, keep the retractions, and do not delete a measurement.**
 
 Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
 and its second axis closed itself the day it opened: K19 landed on the
