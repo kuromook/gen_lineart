@@ -3432,14 +3432,18 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   nearly blank. **A geometric signature identifies a page; it does not identify
   a state.** Reporting the first result would have been this file's own
   failure mode twice over -- a count published from a proxy that was never
-  checked against the content.
+  checked against the content. **The ordering was the error, not the care**: the
+  cheap proxy was used to find candidates and the content was then *sampled*,
+  when hashing all 5,018 panels outright was affordable from the start -- which
+  is what Track J did, and it is how the stronger result below was found.
   **Why it is load-bearing for Next Actions item 11**: comparing the radius-4
   mask against a production ベタ layer on the *unfinished* version of a page
   reads as *"the mask misses every area"* when the truth is *"that version is
   not drawn yet"*, and **`ako6`, the chosen trial work, has 150 of its 227
-  panels (66%) inside a multi-version group**. So the extraction side was asked
-  for page frames (`_koma`) on the same canvas, and **page identity is to be
-  fixed by coordinates, not inferred from shape**.
+  panels (66%) inside a multi-version group**. **It would have been the week's
+  fourth false positive, and reported on the very inventory the retracted 519
+  came from** (Track J's framing). So **page identity is fixed by coordinates,
+  not inferred from shape**.
   **The identifier was there; the relation was not.** The manifest's
   `content_fingerprint` differs between versions (`page0051` and `done/ako6-3`
   carry different fingerprints; 63 pids, one fingerprint each, **none shared
@@ -3455,16 +3459,58 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   leaving the line-side box alone, which is consistent with the sizes matching
   but **has not been checked against the semantics**, so one page's overlay gets
   eyeballed before any mask is cut.
-  **What it does not touch: Track J's verdict.** C1's best arm is 0.0110 against
-  a 0.05 bar, C2's legs are -0.0012 and -0.0017 against +0.03, both models fall
-  to controls drawn from the same population, and the sign is identical in all
-  nine threshold cells -- a 7.1% reweighting closes none of those gaps. What it
-  bounds is the precision of the absolute figures: **GT fill 10.40% of panel
-  area and `all_black` pixel IoU 0.1040 are means over a set that is 7.1%
-  alternative versions of its own pages**, which is the same kind of qualifier
-  as "against the radius-4 estimated mask". Whether it joins J's headline is
-  J's call, under J3's condition that a caveat must not soften a negative it
-  does not touch.
+  **Track J measured it from the content side the same evening and the reading
+  above is both corrected and strengthened** (`98686ae`, its
+  `tools/evaluation/audit_koma_duplicates.py` with the numbers in `--self-test`).
+  Reproducing the geometry grouping gave J *more* groups than this file found
+  (129 / 989), because a shared canvas with a single full-page panel collects
+  unrelated works -- and the first such pair J checked expecting coincidence,
+  `044_2021_nanami` against `045_2021_nurse`, came back **pixel difference
+  0.0000, ink IoU 1.000**: a **byte-identical page across two different
+  `work_id`s and two different families.** So J defined duplication on content
+  instead -- **line and rough both byte-identical** -- and hashed all 5,018
+  panels: **201 duplicate groups, 412 panels (8.2%), 3 of them crossing
+  families, 8 groups / 19 panels closed inside the held set (2.0%, not 7.1%)**,
+  and **0 groups straddling train and held**, confirming the leakage conclusion
+  on a test of content rather than shape. **Both numbers are real and they count
+  different things**: 69 is how many held panels are *another version of a page
+  already in the set*, 19 is how many are *the same image twice*, and only the
+  second bears on leakage.
+  **The verdict was recomputed rather than argued about.** Keeping one panel per
+  duplicate group takes the normal layer from 956 to 946: `blank` 0.0084 ->
+  0.0085, best non-learned 0.0110 -> 0.0111, M0/M1/NC4 unchanged, C1's margin
+  over `blank` +0.0026 either way, C2 legs -0.0012 / -0.0017 -> -0.0012 /
+  -0.0018, C3's gap -0.0093 -> -0.0094. **Nothing moves before the fourth
+  decimal**, and C4 is structurally unaffected since each control sits on the
+  same panels as the arm it excludes. **So it does not join the headline**, and
+  J drew the distinction this file should keep: the radius-4 mask is **an
+  unchecked estimate of unknown direction**, while this is **an effect measured
+  and bounded at the fourth decimal** -- J3's condition cuts the other way here,
+  and a clean negative must not be softened by a caveat that has been measured
+  not to touch it. The 10.40% figure travels with "2.0% of this population is an
+  exact duplicate".
+  **And the two audits whose names cover this did not cover it.**
+  `audit_split_leakage.py` and `audit_pair_dataset_integrity.py` both operate on
+  `dataset/pairs_480` and **have never looked at the koma dataset at all**; J
+  states it had not known about the duplication and that the ledger should say
+  **unchecked**, not *already reported*. **Third instance that day of a name read
+  as a measurement** -- after `NC4` and the extraction side's `black` -- and this
+  one is the dangerous sub-case, because the name belonged to a *check*, so its
+  existence was read as coverage.
+  **Why the split held, stated as a mechanism rather than as reassurance.** Of
+  the 35 duplicate groups spanning different `work_id`s, **11 would have landed
+  on both sides had the split been keyed on `work_id` instead of `family`**
+  (`051_2022b_4th` vs `059_2023b_4th`, `065_2024_ako3B` vs `067_2024b_ako3B`);
+  stripping trailing digits and merging `ako` swallows them. **So it is a
+  consequence of the design and not an accident** -- but the family key was
+  registered for *character identity*, not duplicate pages, and the two hazards
+  only coincide because both take the form "the same work appears under another
+  id". **It is also incomplete**: `nanami` against `nurse` is byte-identical
+  *across* families, invisible to the key, and it landed train/train. **That part
+  was luck.** Hence the direct check: **do not rely on what a key implies, test
+  the property.**
+  **For item 11, J's addition**: the comparison target must be fixed at the start
+  as *"that version of that page"* and never *"that page"*.
 - **Every solid-fill number on record inherits a mask that has never been
   checked against anything.** Stated by Track J 2026-10-23, of its own corpus:
   `fill_mask.py` infers the fill from a *flattened* line-art raster by distance
@@ -5089,6 +5135,39 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       `2017_copy` 74). Asked of the extraction side, for after the tone scan:
       **how many pages carry `線画 HEAD face` and `線画 HEAD hair` together**,
       since a page with only one of them teaches no distinction.
+    - **Part-name co-occurrence, and the part-named *fill* population measured
+      here from the delivered CSV.** The extraction side answered the
+      co-occurrence question: of 2,025 pages, **429 (21%) carry part-named
+      layers**, median 9 such layers on those pages (mean 12.4, max 56), and
+      **`face` and `hair` appear on the same page 223 times -- 52% of
+      part-named pages**, so the "a page with only one teaches no distinction"
+      worry holds for about half of them and not the rest. Four parts together
+      on 68 pages, six (adding `eye`/`mouth`) on **14**, which confirms by count
+      that the granularity is coarser than Track H's five parts. Its part test
+      is a disclosed regex on the layer name
+      (`face|顔` / `hair|髪` / `skin|肌` / `cloth|服|pants|tights|タイツ` /
+      `eye|瞳|眼` / `mouth|teeth|口`) and the names are in the CSV, so **the
+      cut is re-definable on this side** -- the statistic was supplied, not the
+      verdict, again.
+      **Measured here on `inbox/fill_tone_inventory_layers.csv`, because the
+      file is now local**: the part-named *fill* is far smaller than the
+      part-named *line*. Of 299 `beta` layers only **27 (9%)** carry a part word
+      (26 of them `hair black`), while of 192 `beta_in_line_name` layers --
+      fills hiding in line-named layers -- **63 (33%)** do (`線画 HEAD hair` 37,
+      `線画 HEAD face` 6, `線画 hair` 6, `線画 cloth` 5). **So about 90
+      part-named fill layers exist, against 830 part-named hair *line* layers**:
+      the part-name signal is on the lines, which is why it routes to H and not
+      to the fill decomposition.
+      **And the graded class has a non-tone member, which the four-class plan did
+      not anticipate.** `肌グラデ` is **430 layers, every one classified
+      `gradient`**, `black_among_drawn` median **0.000** and `drawn_gray_mean`
+      median **201.8** -- a light, soft-edged area, over 70 works, named by body
+      part. It is **not** a tone layer: no halftone effect, a direct gradient
+      fill. So *graded area* is a production class reachable two ways -- graded
+      tone and gradient fill -- and item 11's fourth class has a named
+      population of 430 before any tone is split. The `gradient` class as a
+      whole (1,999) stays unusable as a separator for the reason already
+      recorded; what is usable is this named subset.
     - **Trial works settled: `ako6` first, `fringe3` second, and the pair is a
       contrast rather than a repetition.** All three fringe volumes scouted
       (2019, 24/26/24 pages): `fringe` 9 black / 1 white, `fringe2` 13/4,
