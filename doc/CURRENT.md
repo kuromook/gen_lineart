@@ -5053,6 +5053,24 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
         2024b), housei (2024) -- has tone structurally. The table measures only
         whether a tone-*looking name* exists, so a later-year decline cannot be
         told from a change of naming.
+        **And neither year table is deduplicated (flagged 2026-10-23 by the
+        extraction side).** The 289 works contain **13 duplicate groups spanning
+        year folders, 19 works' worth, so the real count is 270** -- `bakugi`
+        alone appears in six groups and five works sit in three year folders
+        each. **A work in three year folders is counted three times in every
+        per-year row**, so both this tone table and the part-name table below
+        are inflated by an amount that differs per year, and the direction
+        depends on whether the duplicated work carries the feature. The
+        duplicate list runs 2020b-2024c, so **the late years are the inflated
+        ones**. Deduplicated versions requested; until they arrive **no per-year
+        row here is quotable**. `ako8` is confirmed *not* a duplicate
+        (`2019_ako8` and `2019b_ako8` have different fingerprints and different
+        layer counts), so the pattern is per-work and not a rule about `b`
+        suffixes. **The matching itself is bounded**: page name plus byte size
+        over each work's eight-page sample, which is strong evidence and not a
+        full byte comparison, and it does not separate "the same work filed
+        twice" from "two versions of one work" -- the second being the same shape
+        as `ako6`'s `done` folders.
       - **(B) tone output already exists and is tested on two works**,
         `dataset_tone_4th` (26 of 33 pages, 46 layers) and `dataset_tone_gakuen`
         (16 of 16, 87): per-layer **density maps**, 8-bit grey, white = no tone,
@@ -5288,7 +5306,14 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       point of the second work is ベタ. `2024c ako` stays on the candidate list
       as the late-year example of a clean manuscript, with the correction that
       **its cleanness was zero white-fill contamination and not quantity of
-      ベタ**.
+      ベタ**. **The extraction side located the fault in its own list rather than
+      in the reading of it**: `config/simple_fill_candidates.json`'s "black
+      areas" column is a count over the **three or four pages it opened while
+      screening**, so it says *this work has some* and not *this work has many*.
+      **A screening number ranks nothing.** It is the same error as quoting a
+      number without its construction, with the construction being the sample
+      size, and it is now the fourth thing this week that was true of one
+      population and read of another.
     - **The author's "ako6 through ako10 generation" is right for the first half
       and wrong for the second, and what changes is *which* separation
       survives.** The user's reading, 2026-10-23, was that this era's
@@ -5305,6 +5330,9 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       | 2020b_ako10 | 31.1% | **1** | **3** | 87 |
       | 2022b_ako10 | 31.5% | 4 | **1** | 6 |
 
+      (`2019b_ako7` is omitted: it is the same manuscript as `2019_ako7`, filed
+      under a second year folder.)
+
       **Tone separation holds all the way to ako10 at 26-31%, while part naming
       collapses at ako8 (182 -> 8) and the ベタ layers fall to 1-4 from ako9 on.**
       So the good window for ベタ and part names is **ako6-ako7, 2018-2019**, and
@@ -5312,7 +5340,20 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       sample is eight pages per work, so a ベタ count is per-eight-pages and
       ako9/ako10's 1-2 could be a sample that happened to miss them -- the gap
       from ako6's 2-per-page is large enough that this file reads it as real, and
-      reads it as **unmeasured** until the page count is raised.
+      reads it as **unmeasured** until the page count is raised. **A 20-30 page
+      pass over ako8, ako9 and ako10 is approved and queued** (about 45 minutes).
+      **And the extraction side named the confound that pass still would not
+      settle: a work with few ベタ *layers* is not a work with little ベタ.**
+      `ako5` is the proof already on record -- its fill is dissolved into the
+      line layer. So ako9/ako10's 1-4 layers could mean *the author stopped
+      filling* or *the author stopped separating the fill*, and **a layer count
+      cannot tell those apart**; the paper side can (black area from
+      `CanvasPreview` or the line raster), and it comes out in the same pass.
+      **The general form, which this file needs because its whole "separated
+      period" argument rests on layer counts: a layer count measures production
+      practice, not content.** For finding training data that is the right
+      measure, because what is wanted *is* the separated practice. For any claim
+      about what the author drew it is the wrong one.
     - **The manuscript tree duplicates works across year folders too.**
       `2019_ako7` and `2019b_ako7` are identical down to the layer count (512),
       the ベタ count (14), the tone count (168) and the page file
