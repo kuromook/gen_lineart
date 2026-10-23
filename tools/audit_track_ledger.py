@@ -27,7 +27,13 @@ What it checks:
      where a positive gap means work exists that the foundation has not been told
      about
   6. uncommitted or unpushed work sitting in a track
-  7. a frozen `doc/CURRENT.md` left in a track tree. Every track cut from the
+  7. every commit hash the ledger quotes still resolves. A history rewrite, a
+     dropped branch or a typo leaves a number that looks like provenance and
+     leads nowhere -- found 2026-10-24, when the rewrite that removed the
+     published artwork left four dead references behind, three of them to the
+     very commits it destroyed. Known-dead hashes are declared in
+     `DEAD_HASHES_OK` with the reason
+  8. a frozen `doc/CURRENT.md` left in a track tree. Every track cut from the
      foundation inherits a copy, that copy stops updating at the branch point,
      and its own opening paragraph says "this file is the first document to
      read" -- so a fresh session obeying it is handed a dead world. Track J
@@ -255,6 +261,33 @@ def _stamp(out):
 # The sentence a frozen ledger copy uses to put itself first. The hazard is not
 # that the copy exists -- it is that the copy still makes this claim, which a
 # briefing's warning can only mitigate, since the warning has to be read first.
+# Hashes the ledger quotes that are known not to resolve, with why. Anything else
+# that fails to resolve is a dead reference: a number that looks like provenance
+# and leads nowhere.
+DEAD_HASHES_OK = {
+    "f38a601": "destroyed by the 2026-10-24 history rewrite; named by the entry about it",
+    "51623d3": "same rewrite -- one of the two commits that carried the data",
+    "7d7087d": "same rewrite -- the other one",
+    "53b8406cfbb4f4d1": "a content fingerprint, not a commit",
+}
+
+HASH_IN_PROSE = re.compile(r"`([0-9a-f]{7,40})`")
+
+
+def dead_hashes():
+    """Hashes quoted in the ledger that do not resolve to a commit here."""
+    if not LEDGER.exists():
+        return []
+    text = LEDGER.read_text(encoding="utf-8", errors="replace")
+    out = []
+    for h in sorted(set(HASH_IN_PROSE.findall(text))):
+        if h in DEAD_HASHES_OK:
+            continue
+        if run(["git", "cat-file", "-e", h + "^{commit}"], cwd=FOUNDATION) is None:
+            out.append(h)
+    return out
+
+
 FIRST_DOCUMENT_CLAIM = re.compile(r"first document to read", re.IGNORECASE)
 
 
@@ -436,6 +469,14 @@ def main():
         findings.append(
             f"`{name}` exists on disk but is in no ledger entry -- "
             f"a track the foundation does not know about"
+        )
+
+    # 7: provenance that leads nowhere.
+    for h in dead_hashes():
+        findings.append(
+            f"the ledger quotes commit `{h}` and it does not resolve -- a number "
+            f"that looks like provenance and leads nowhere. Fix the reference, or "
+            f"declare it in `DEAD_HASHES_OK` with the reason"
         )
 
     # 3: worktree registrations pointing at nothing.

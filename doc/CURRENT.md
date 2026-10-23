@@ -620,7 +620,7 @@ work, and the stated expectation is that the pieces make each other easier.
       unit is not ready to hand over, and Track H says so itself.
 - `../lineart-fill-region` (branch `fill-region`, **Track L**) -- **active,
   opened 2026-10-23 by user approval**, worktree of this repo, briefing
-  committed at `30c5104`. Catching the fill as an **area**, in a clean tree, on
+  committed at `7d9f080`. Catching the fill as an **area**, in a clean tree, on
   the user's judgement that Track J went toward muddle and stopped, and that
   only some ideas have been refuted rather than the question. Proposal:
   `doc/track_l_fill_region_proposal_20261023.md` (161 lines, eight closed doors
@@ -713,7 +713,7 @@ work, and the stated expectation is that the pieces make each other easier.
   **ako6's raster is missing 46.4% of the production fill's pixels**
   (66,226,148 of 123,596,784). **The "function of the work's generation" reading
   written here is RETRACTED: the extraction side found the actual mechanism in
-  this project's own code, and it is a width threshold** (`b64893c8`'s question,
+  this project's own code, and it is a width threshold** (the question sent 2026-10-24,
   answered the same night).
   `extract_clip_dataset.merge_line_candidates` drops layers when the composited
   line width exceeds **`LINE_MERGED_MAX_WIDTH = 16.0`**, **removing them in order
@@ -4116,6 +4116,25 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   was written.** A new directory inherited nothing. **A rule expressed as a list
   of instances does not cover the next instance** -- which is why `data/` is now
   ignored as a directory rather than by what sits under it.
+- **A quoted commit hash can stop resolving, and then it is a number that looks
+  like provenance and leads nowhere.** Found 2026-10-24 by running this file's own
+  muddle procedure (discipline 3's "walk each quoted number to its source") over
+  the ledger's hashes: **34 quoted, 4 dead** -- three of them the very commits the
+  history rewrite destroyed, named by the entry *about* that rewrite, and one a
+  Track L briefing hash that the same rewrite renumbered (`30c5104` ->
+  `7d9f080`). **The entries were right and their citations had rotted under
+  them.**
+  **Now checked mechanically** (`audit_track_ledger.py` check 7,
+  `dead_hashes()`): every `` `hash` `` in the ledger must resolve, and the four
+  known-dead ones are declared in `DEAD_HASHES_OK` **with a reason** -- so a
+  deliberate dead reference is a one-line declaration and an accidental one is a
+  finding. **Near-zero false positives, and it caught something the day it was
+  written.**
+  **The general form**: a rewrite, a dropped branch or a typo breaks a reference
+  **without touching the sentence around it**, so the prose keeps asserting
+  traceability that no longer exists. **This is the fifth member of the
+  implication family** -- after a name, a key, a tag and a recorded address --
+  and the same rule closes it: **test the property, do not read the record.**
 - **If an external standard arrives through a filter, what the filter dropped is
   not absent -- it is invisible. Counting invisible as negative turns an
   instrument's correct firing into an error.** Track L's wording, 2026-10-24,
@@ -4158,7 +4177,10 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   descends from `7d7087d` and not `51623d3`, so what Track L's branch carries is
   the **75MB ako6 delivery, 3.2x the figure the foundation gave it**.
   `f38a601`'s message is left standing with this entry as its correction, since a
-  commit message is a store. **The check: one path per query, or read the
+  commit message is a store. **(Those three SHAs -- `f38a601`, `51623d3`,
+  `7d7087d` -- no longer resolve: the history rewrite that removed the data
+  rewrote them, so the messages survive under new hashes and these numbers are
+  dead references kept because the entries name them. Verified 2026-10-24.)** **The check: one path per query, or read the
   `--name-only` output rather than the commit order.**
   **Second instance within the hour, same shape, found by Track L.** The
   foundation made backup tags before the rewrite and then **kept working**, so
