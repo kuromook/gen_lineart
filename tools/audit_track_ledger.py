@@ -27,7 +27,8 @@ What it checks:
      where a positive gap means work exists that the foundation has not been told
      about
   6. uncommitted or unpushed work sitting in a track
-  7. every commit hash the ledger quotes still resolves. A history rewrite, a
+  7. every commit hash the ledger -- or any other file in `HASH_SOURCES` --
+     quotes still resolves. A history rewrite, a
      dropped branch or a typo leaves a number that looks like provenance and
      leads nowhere -- found 2026-10-24, when the rewrite that removed the
      published artwork left four dead references behind, three of them to the
@@ -59,6 +60,12 @@ from pathlib import Path
 FOUNDATION = Path(__file__).resolve().parent.parent
 SIBLINGS = FOUNDATION.parent
 LEDGER = FOUNDATION / "doc" / "CURRENT.md"
+# Files check 7 reads for quoted hashes. The ledger used to be the only one; on
+# 2026-10-24 its tool-trap section -- which carried 13 of the hashes -- moved to
+# `doc/tool_traps.md`, and a check whose reach does not follow the prose it was
+# written for goes quiet without failing. Add a file here when prose with
+# provenance in it moves out of the ledger.
+HASH_SOURCES = (LEDGER, FOUNDATION / "doc" / "tool_traps.md")
 INBOX = FOUNDATION / "inbox"
 
 # A track whose last commit is older than this many days behind its last notice is
@@ -277,12 +284,18 @@ HASH_IN_PROSE = re.compile(r"`([0-9a-f]{7,40})`")
 
 
 def dead_hashes():
-    """Hashes quoted in the ledger that do not resolve to a commit here."""
-    if not LEDGER.exists():
-        return []
-    text = LEDGER.read_text(encoding="utf-8", errors="replace")
+    """Hashes quoted in the ledger's prose that do not resolve to a commit here.
+
+    Reads every file in `HASH_SOURCES`, not just the ledger, so that moving a
+    section out of `doc/CURRENT.md` does not take its hashes out of the check.
+    """
+    quoted = set()
+    for path in HASH_SOURCES:
+        if not path.exists():
+            continue
+        quoted |= set(HASH_IN_PROSE.findall(path.read_text(encoding="utf-8", errors="replace")))
     out = []
-    for h in sorted(set(HASH_IN_PROSE.findall(text))):
+    for h in sorted(quoted):
         if h in DEAD_HASHES_OK:
             continue
         if run(["git", "cat-file", "-e", h + "^{commit}"], cwd=FOUNDATION) is None:
@@ -476,7 +489,7 @@ def main():
     # 7: provenance that leads nowhere.
     for h in dead_hashes():
         findings.append(
-            f"the ledger quotes commit `{h}` and it does not resolve -- a number "
+            f"the project's docs quote commit `{h}` and it does not resolve -- a number "
             f"that looks like provenance and leads nowhere. Fix the reference, or "
             f"declare it in `DEAD_HASHES_OK` with the reason"
         )

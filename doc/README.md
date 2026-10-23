@@ -23,6 +23,9 @@ working on extraction/tiling/panel-matching.
 ## Current — Architecture / Research (doc/*.md)
 
 - `doc/CURRENT.md`: authoritative current status and next actions.
+- `doc/tool_traps.md`: the Known Tool Traps evidence -- each trap's incident,
+  mechanism and numbers. `doc/CURRENT.md § Known Tool Traps` holds the rules as
+  a one-line index and cites entries here as `T<n>`. Split out 2026-10-24.
 - `doc/architecture_decisions.md`: per-architecture reference (purpose,
   math, code, visual review status, montage location) plus the evaluation
   metrics glossary. Kept in sync across `cleanup-refiner` and
