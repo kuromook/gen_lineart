@@ -3446,10 +3446,17 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   nearly blank. **A geometric signature identifies a page; it does not identify
   a state.** Reporting the first result would have been this file's own
   failure mode twice over -- a count published from a proxy that was never
-  checked against the content. **The ordering was the error, not the care**: the
-  cheap proxy was used to find candidates and the content was then *sampled*,
-  when hashing all 5,018 panels outright was affordable from the start -- which
-  is what Track J did, and it is how the stronger result below was found.
+  checked against the content. **The rule is not "do not use a proxy", which is
+  what the first wording here invited.** Narrowing with a cheap signature and
+  then sampling is the right default; what went wrong is that the sample's
+  disagreement was treated as noise. And Track J, which did hash all 5,018
+  panels, states plainly that it did not get there by judgement -- **it went
+  looking for an explanation of why its grouping found 129 groups where this
+  file found 95, picked the first pair it expected to be a false positive, and
+  the false positive was real.** So the count mismatch is what summoned the
+  direct test. J's wording, adopted in place of the foundation's:
+  **when a proxy has been used to narrow, do not close until the side the proxy
+  excluded is explained.**
   **Why it is load-bearing for Next Actions item 11**: comparing the radius-4
   mask against a production ベタ layer on the *unfinished* version of a page
   reads as *"the mask misses every area"* when the truth is *"that version is
@@ -3468,11 +3475,23 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   x1=6491 / y1=6541 inside the stated 7016x6543 canvas, and bbox size equalled
   panel size on 40 sampled rows with no mismatch), so **the page frames asked of
   the extraction side were not needed and the request was withdrawn**. One
-  unverified step remains: `scale` is 1.0 on 153 of 227 ako6 rows and 0.85-1.15
-  on the rest, with `dx`/`dy` offsets -- read here as the *rough*-side alignment
-  leaving the line-side box alone, which is consistent with the sizes matching
-  but **has not been checked against the semantics**, so one page's overlay gets
-  eyeballed before any mask is cut.
+  open step is closed: Track J traced `scale`/`dx`/`dy` to
+  `tools/pair_extraction/match_koma_panels.py:search_panel_alignment()`, a
+  per-panel joint translation-and-scale search added with the koma pipeline in
+  `acc4138` on **2026-07-26** -- so the guess that they came out of that month's
+  alignment investigation was right. **In `materialize_koma_panels.py` the line
+  panel is a plain `crop_page(line_gray, x0, y0, x1, y1)` that never touches the
+  three columns**, while the rough panel is scaled about the panel centre and
+  then offset. So `scale != 1.0` means **the rough page was drawn at a different
+  scale than the line page**, and the correction lands only on the rough -- which
+  is why 153 of 227 rows are 1.0. **Consequence for item 11: matching a
+  production ベタ layer against the line page is unaffected by those columns and
+  needs no overlay check first.** The caveat applies only if the rough is ever
+  the comparison target, and there it compounds: the alignment only maximises
+  per-panel edge agreement, and Track D measured on 2026-10-19 that **the pair is
+  loose in both directions -- about half of the rough's ink has no GT line within
+  8px** -- so "the mask missed the area" read against a rough inherits that
+  looseness on top of the version problem.
   **Track J measured it from the content side the same evening and the reading
   above is both corrected and strengthened** (`98686ae`, its
   `tools/evaluation/audit_koma_duplicates.py` with the numbers in `--self-test`).
@@ -3514,7 +3533,9 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   its counts stop adding up; a check named wrongly never does, because a check
   that reports nothing is a check that passed.** The general rule, from J:
   **a key, a name or a class carries an implication, and an implication is not a
-  check -- test the property directly.** It has lesson 14's reach.
+  check -- test the property directly.** It has lesson 14's reach, and Track J
+  registered both this and the check-naming sentence in its own tree the same
+  evening, which is the store list working as intended for once.
   **Why the split held, stated as a mechanism rather than as reassurance.** Of
   the 35 duplicate groups spanning different `work_id`s, **11 would have landed
   on both sides had the split been keyed on `work_id` instead of `family`**
