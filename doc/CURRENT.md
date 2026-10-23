@@ -5435,6 +5435,57 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       decision waits on it**: item 11 is not a tree yet, and what it needs first
       is whether ベタ plus hard tone give an external standard at all. The option
       is kept, and `乳首グラデ 円` shows the shape is sometimes in the name.
+      **ANSWERED by the author, 2026-10-23 night: two, not one -- and the
+      answer brings a second thing with it that is bigger than the class
+      question.** The user's words: merging them looks hard; **a gradient is
+      basically "a tone that carries a gradation" as a frame**, and its uses are
+      various -- skin and background are the commonest, but also whole-character,
+      clothes and hair. **Only the skin-gradient use matches the purpose of skin
+      tone shading (11% or 10%)**, which the measured vocabulary agrees with:
+      11% is 26.3% of all used tone layers and 10% is 18.9%, the top pair.
+      **And the re-reading that matters: the gradient's MASK is an area.**
+      *"マスク全体は殆どの場合で面を表している可能性が高く、あるいは「そのコマの
+      キャラクター以外」を示している場合は逆算してキャラクター自体を示す面を取れる"* --
+      so where the mask marks everything **except** the character in that panel,
+      **inverting it yields the character's own area**, and the author notes this
+      happens with ordinary tone too but **more often with gradients**. **It is a
+      source of information about large sets of areas.**
+      **This corrects what this file wrote.** The user's original wording -- blur
+      or gradation *"representing an area only in part"* -- was carried here as a
+      property of the whole graded class. It is a property of the **ink**, not of
+      the **mask**: a gradient fill has a **hard mask that is a complete area**
+      and graded paint inside it, while a blurred tone has a **soft mask**. So of
+      the two mechanisms, **the gradient is the better area source, not the
+      weaker one** -- the opposite of how it was filed.
+      **The author's verdict on scope: this is a track's worth of work on its
+      own, and analysis comes first.** Recorded as a candidate track beside the
+      colour manuscripts, not as part of item 11's class scheme.
+      **What can be measured now, and what cannot.** The `gradient` class is
+      **1,999 layers over 70 works**, and its name distribution is **not** what
+      this file implied: **`乳首グラデ` 1,440 including its variants (72%)**,
+      `肌グラデ` 430 (22%), `背景グラデ` 90. So the class is dominated by a small
+      *local* shading use, and the area and inversion uses live in a minority of
+      it. **The mask cannot be tested from anything on hand**: the inventory CSV
+      has **no mask columns at all**, and its `drawn_ratio` is a body measure --
+      **zero for 100% of tone rows, zero for 66% of `beta` rows and 26% of
+      `gradient` rows** -- so a table of gradient `drawn_ratio` would be the
+      "instrument not attached to the property" trap a second time, and was not
+      published. **Requested**: the tone survey's mask columns
+      (`mask_cover`, `mask_boundary_px`, `mask_mid_per_boundary`) for the
+      `gradient` class.
+      **On the tone side the mask columns do exist, and the pattern is real but
+      cannot be sized at page scale.** `mask_cover` over 17,695 used tone layers
+      runs median **0.0088**, p90 **0.0704**, max 0.852, with only **3 layers
+      above 0.5 and none above 0.9**. But coverage here is **of the page**, and
+      the author's pattern is **per panel** -- a mask filling one panel of five
+      reads as about 15% of a page -- so page normalisation **under-measures it
+      by roughly the panel count** and these figures bound nothing. The tail that
+      could hold panel-scale masks: **618 layers (3.5%) above 0.10, 162 (0.9%)
+      above 0.15 over 29 works and 90 pages, 57 above 0.30**. Those are an
+      **upper bound on candidates, not a count of them**, and the test needs the
+      mask intersected with the panel boxes this corpus already has in
+      `manifest.csv`. The densities in that tail are the ordinary ones (10%, 20%,
+      30%, 11%) and the works at the top are `ako6` and `ako7` again.
       **The extraction side declined to say whether the two are one class, and
       that was correct.** Its reasoning: it holds **records of how the thing was
       made, not of how it looks**, and it had just been burned by
