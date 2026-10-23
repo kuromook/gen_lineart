@@ -51,7 +51,7 @@ audit は規律4。**5つの規律のうち唯一、誰の注意力にも依存�
 
 | ファイル | 規模 | 読み方 |
 |---|---|---|
-| `doc/CURRENT.md` | 4,300行超 | **全読みしない。** `grep -n '^## ' doc/CURRENT.md` で目次を出し、必要な節だけ `sed -n` |
+| `doc/CURRENT.md` | 5,600行超 | **全読みしない。** `grep -n '^## ' doc/CURRENT.md` で目次を出し、必要な節だけ `sed -n`。**track の tree にあるこのファイルは branch 時点の凍結コピー**(2026-10-23 時点で13〜82日・3,300〜5,300行遅れ)。読むなら `../lineart/doc/CURRENT.md` |
 | `doc/work_log.md` | 6,400行超 | 時系列。tail か grep のみ。5,000行を超えているので `doc/documentation_maintenance_policy.md` の維持作業対象 |
 | `doc/glossary.md` | 200行弱 | **全読みしてよい。** 確立した事実と既知の罠 |
 | `README.md` | 中 | 入口と索引。track 一覧つき |

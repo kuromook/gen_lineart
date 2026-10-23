@@ -27,6 +27,13 @@ What it checks:
      where a positive gap means work exists that the foundation has not been told
      about
   6. uncommitted or unpushed work sitting in a track
+  7. a frozen `doc/CURRENT.md` left in a track tree. Every track cut from the
+     foundation inherits a copy, that copy stops updating at the branch point,
+     and its own opening paragraph says "this file is the first document to
+     read" -- so a fresh session obeying it is handed a dead world. Track J
+     found its copy 14 days and 3,682 lines behind on 2026-10-23; the oldest on
+     disk was 82 days behind. The name promises currency, and a promise is not
+     a check
 
 Read-only. It never writes, commits, or touches another tree.
 
@@ -179,6 +186,45 @@ def last_commit(path):
         return None
 
 
+# The sentence a frozen ledger copy uses to put itself first. The hazard is not
+# that the copy exists -- it is that the copy still makes this claim, which a
+# briefing's warning can only mitigate, since the warning has to be read first.
+FIRST_DOCUMENT_CLAIM = re.compile(r"first document to read", re.IGNORECASE)
+
+
+def frozen_ledger(path):
+    """(line count, days behind) for a track's own `doc/CURRENT.md`, or None.
+
+    None when the tree has no copy, when the copy is the foundation's own file,
+    or when the copy **no longer claims to be the first document to read** --
+    which is the property that makes a stale copy dangerous and the only thing
+    a fix has to remove. A tree that replaced its copy with a pointer, or
+    merged the foundation's conditional wording, reports nothing. The age is
+    the gap between the two files' last commits touching that path.
+    """
+    local = path / "doc" / "CURRENT.md"
+    if path == FOUNDATION or not local.is_file():
+        return None
+    try:
+        text = local.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if not FIRST_DOCUMENT_CLAIM.search(text):
+        return None
+    lines = text.count("\n") + 1
+    theirs = run(["git", "log", "-1", "--format=%cI", "--", "doc/CURRENT.md"], cwd=path)
+    ours = run(["git", "log", "-1", "--format=%cI", "--", "doc/CURRENT.md"], cwd=FOUNDATION)
+    days = None
+    if theirs and ours:
+        try:
+            days = (
+                datetime.fromisoformat(ours.strip()) - datetime.fromisoformat(theirs.strip())
+            ).days
+        except ValueError:
+            days = None
+    return lines, days
+
+
 def notice_senders(head):
     """Directory names a notice identifies itself with, best source first.
 
@@ -262,7 +308,12 @@ def self_test():
     assert notice_senders(by_branch) == ["lineart-solid-fill"], notice_senders(by_branch)
     by_dir = "発信: `lineart-face-words` / branch `face-words`"
     assert notice_senders(by_dir) == ["lineart-face-words"], notice_senders(by_dir)
-    print("self-test: 6 cases pass")
+    # A frozen ledger is reported for its claim, not for existing.
+    assert FIRST_DOCUMENT_CLAIM.search("This file is the first document to read.")
+    assert not FIRST_DOCUMENT_CLAIM.search(
+        "Moved: the live ledger is ../lineart/doc/CURRENT.md"
+    )
+    print("self-test: 8 cases pass")
     return 0
 
 
@@ -314,6 +365,8 @@ def main():
                 f"-- run `git worktree prune`"
             )
 
+    ledger_lines = sum(1 for _ in LEDGER.open(encoding="utf-8", errors="replace"))
+
     rows = []
     for name in sorted(disk):
         path = SIBLINGS / name
@@ -362,6 +415,21 @@ def main():
             )
         if unpushed:
             findings.append(f"`{name}` has {unpushed} unpushed commit(s)")
+
+        # 7: a frozen ledger copy that still calls itself the first thing to read.
+        frozen = frozen_ledger(path)
+        if frozen:
+            flines, fdays = frozen
+            behind = f"{fdays}d and " if fdays and fdays > 0 else ""
+            if fdays is None or fdays > 0:
+                findings.append(
+                    f"`{name}` carries its own `doc/CURRENT.md` ({flines} lines), "
+                    f"{behind}{max(ledger_lines - flines, 0)} lines behind the "
+                    f"foundation's -- and that copy calls itself the first document "
+                    f"to read. Replace that copy with a pointer to "
+                    f"`../lineart/doc/CURRENT.md`; a warning in the briefing is "
+                    f"weaker, because it has to be read first"
+                )
 
     if not args.quiet:
         print(f"Track ledger audit -- {now.astimezone().strftime('%Y-%m-%d %H:%M %Z')}")

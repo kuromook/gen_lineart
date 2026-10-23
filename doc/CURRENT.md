@@ -125,7 +125,13 @@ Interpretation, Current Extraction Rules, Current Data Pipeline Stage, and the
 dated 2026-07-26/31 entries -- are still from the raw-extraction era and have
 not been re-verified.
 
-This file is the first document to read. It should contain only active state,
+**Check where you are reading this from first.** If this copy is inside a track
+worktree (`../lineart-<topic>/doc/CURRENT.md`), it is **frozen at that branch's
+start point** and is not current -- the live file is `../lineart/doc/CURRENT.md`,
+and on 2026-10-23 the copies on disk ran 13 to 82 days and 3,300 to 5,300 lines
+behind it. A track session reads `doc/initial_notice.md` first, not this file.
+
+Read from `foundation`, this file is the first document to read. It should contain only active state,
 current decisions, and next actions. Chronological details live in
 `doc/work_log.md`; reusable extraction knowledge lives in
 `doc/preprocess/raw_dataset_extraction_knowledge.md`.
@@ -3466,6 +3472,35 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   worth keeping beside the tone trap: **coverage is not colour, and what colour
   an area is cannot be read from a field that only says whether the area was
   touched.**
+- **Every track tree carries a frozen copy of this file, and the copy says it is
+  the first document to read.** Found 2026-10-23 by Track J during its
+  close-out: its own `doc/CURRENT.md` was **1,957 lines, frozen 2026-10-09**,
+  against the live file's 5,639 -- **13 days and 3,682 lines behind** -- and a
+  fresh session obeying its opening paragraph would take *a Track J that has not
+  run its slot*, *a 519 that has not been retracted* and *a verdict word that
+  does not know its two forms* as the present. **Swept across all trees the same
+  day: ten carry one**, from `solid-fill`'s 13 days behind to
+  `cleanup-refiner`, `controlnet-sd15-refine`, `controlnet-sdxl-fidelity` and
+  `stroke-selection` at **82 days and 5,267 lines**. **None of them has
+  `CLAUDE.md`**, which was written today on `foundation`, so its branch-detection
+  section reaches no existing track.
+  **Track J's reading of it, which is the day's rule a fourth time**: the name
+  promises currency, and a promise is an implication, not a check. **It is the
+  worse form of the stale-briefing accident** reported that morning, because a
+  briefing does not claim to be current and this file does.
+  **Fixed where it propagates**: the claim in `foundation`'s copy is now
+  conditional -- it opens by telling the reader to check whether they are inside
+  a worktree -- and `CLAUDE.md`'s reading table says the same, so **every track
+  cut from here on inherits both**. **And the audit now tests the property**
+  rather than the implication (check 7, `frozen_ledger()`): it reports a tree
+  whose local copy **still makes the claim**, which is what a fix has to remove,
+  so a tree that replaces its copy with a pointer goes quiet and a tree that
+  merely warns about it in the briefing does not. **A briefing warning is the
+  weaker fix, because it has to be read first.** J fixed its own tree that way
+  (`70bb589`) and the audit still reports it, correctly.
+  **Not fixed**: the ten existing copies. Each needs a commit on its own branch,
+  which is the foundation's to make only where no session is sitting (CLAUDE.md
+  §5), and it is offered to the user rather than taken.
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
