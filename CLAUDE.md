@@ -104,7 +104,9 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 - `inbox/note_*.md` — track や抽出ツールから基盤へ(受信)
 - `outbox/reply_*.md` — 基盤から track へ(送信)。配送は
   `cp outbox/<file> ../lineart-<topic>/inbox/`
-- 抽出ツール(Windows, `sh1@192.168.1.9`)への通達は **SCP でプッシュ**する(鍵認証済み)
+- 抽出ツール(Windows, `sh1@192.168.1.5`)への通達は **SCP でプッシュ**する(鍵認証済み)
+- **原稿由来の納品物は `data/` 配下。`.gitignore` 済みで、絶対にコミットしない**
+  (2026-10-23 に 99MB を public repo に上げた。force-push では消えない)
 - 意味のある結果が出たら `doc/work_log.md` に要約を戻し、
   プロジェクト全体の状態や方向が変わるなら `doc/CURRENT.md` も更新する
 

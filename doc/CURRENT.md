@@ -1,71 +1,74 @@
 # Current Project State
 
-Updated: 2026-10-23 JST. **Track H sent its first notice, and it corrects this
-file in three places** -- which is what a notice is for. (i) The three
-pre-registered grouping measurements **were answered on 2026-10-12** and were
-carried here as unanswered for eleven days: a Track F `cluster_set` captures a
-true line-level group **19%** of the time, **68% mixed, 22% fragmented, 7%
-never in a cluster**, so the regrouping mechanism is a **replacement, not a
-repair**. (ii) `origin/face-words` is `43a6e88`, not `ca9d788`. (iii)
-`face_groups.jsonl` is **518 rows / 402 orders, 2026-10-23**, not the 417 that
-three entries here still quoted. All three were checked against the track's own
-disk before being folded in. Track H's current best is group recall **0.351**
-(H17, 260 training faces, read on the original 193, 5-fold by series, mean of 3
-seeds, train split only) against a proposed per-stroke rule bar of 0.80/0.60, so
-**Track G's dependency is not payable yet** and Track H says so itself.
-**Track J's four-day slot has been read, and it is a clean negative.** The
-969-panel table finished 14:06 (11,620 rows); **both anchors passed before any
-verdict was read** -- A1 agreed with this file's table panel by panel 969/969,
-A2 reproduced the trainer to 1e-9. **C4 removes both models from every verdict**
-(M0 falls to the mirror control; **M1 falls to the off-by-one control as well**
--- its score against its own panel's ground truth does not beat its score
-against the neighbouring panel's). **C1 FAIL** (best arm `rough_dark@budget`
-0.0110, bar 0.05), **C2 FAIL on both legs** (-0.0012 and -0.0017), **C3 fires**.
-The sign is identical in all nine threshold cells, so none of it is an artefact
-of where the bars sit. What the models were doing: ground-truth fill is **10.40%**
-of panel area, M0 paints **0.71%** and M1 **0.34%**, at roughly half the region
-count -- **each region 14-30x too small**, red dust along the strokes rather than
-areas -- and **`all_black` recovers 5-8x more fill pixels than either trained
-model** (pixel IoU 0.1040 against 0.0204 / 0.0124). Amendment **J3**
-(disclosure only, registered before the table was read) has the headline naming
-the radius-4 estimated mask, with the clause that this bounds absolute claims
-and **not** C1-C5, which are comparisons on one shared mask. **The verdict word
-had to be split in two** and the split is now Working Discipline item 1's
-sibling rule, project-wide: *"the simple thing suffices"* means something
-different when the simple arm is winning than when every arm including the
-trivial one sits in one band, and today was the second -- so the headline is
-**"no arm predicts fill in this formulation"**, not "no learned model is
-needed". **Track K's restart input now exists** -- Track H
-kept marking for its own bar -- while K stays dormant by the 2026-10-19 decision,
-and H is explicit that it is not asking for K back. **The request relayed through Track H was
-answered the same day**, from the user's own three proposals rather than a
-survey: Next Actions **item 11** (a line/fill/texture decomposition on GT at
-region unit -- no GPU, no author time), **item 12** (pre-annotated marking under
-Track H, after H18, starting at order 501), and **Working Discipline item 8**
-(conformal prediction, adopted as item 12's mechanism and premature for the
-fills). The order the user set is in the Next Actions preamble. **Track J's
-verdict closed in form B**, which leaves the semantic route open and settles
-Track L's eighth door; **item 11 stays an independent track**, by both the
-user's decision and Track J's own request. **The manuscript-layer scan's first
-group is in** (1,724 pages / 9 works; 212 pages carry tone, 595 layers), with
-two corrections that both run high-to-low -- **ベタ works 84 -> 55, ベタ layers
-1,246 -> 299** -- and the hard/graded tone split measuring **bimodal**, which
-is the answer that statistic was asked for. **The trial work is `ako6`** (its
-own pick of `ako5`/`housei` retracted: `ako5`'s fill is not a separate layer at
-all), `fringe3` second as a part-name-free control, and the production fill
-turns out to be **hair** -- which sent the 2016-2018 **part-named line layers**
-(**117 of 270** works once the year-folder duplicates are folded; `face` and
-`hair` together on 223 pages) to **Track H**,
-whose author-marked labels they may partly replace at a coarser granularity.
-**Four defects surfaced in one day's cross-checking, each found by the other
-side**, and the standing rule they produced is J's: **a key, a name or a class
-carries an implication, and an implication is not a check.** The two audits
-whose names cover the koma dataset had never read it; this file's own
-recommendation travelled a *population* without its measurement; and a
-geometry-first duplicate search was corrected by hashing all 5,018 panels, which
-found **byte-identical pages across two works** and settled that the split
-leaks nothing (**0 groups straddle train and held**) while moving no verdict
-figure before the fourth decimal.
+Updated: 2026-10-23 JST (late). **The day Track J's slot closed, Track L opened
+and produced a result, and the foundation put the author's artwork on a public
+repository.** In order of what a reset session needs:
+
+**1. The fill line has a new target, and it is not the instrument.** Track L's
+first job, run the day its tree opened, compared the radius-4 mask to `ako6`'s
+**production** fill layers -- the first external standard this project has ever
+had. The error direction is **deficit** (area ratio 0.482, 64.0% of the
+production fill missed, region-F1 **0.1355** with 1.48x the region count, so it
+**shatters** rather than shrinks). **But the mask is not the main cause**: the
+line raster omits **46.4% of the production fill's pixels in `ako6` and 40.4% in
+`ako7`**, two works at the same level with `ako6`'s values reproduced as the
+known cell. **So Track J's "the rough does not mark the fill, 96%" and every
+figure built on `fill_mask.py` were measured against a raster that is itself
+missing fill.** This moves the target rather than the instrument and is the
+heaviest open item in the fill line.
+
+**2. Track J's four-day slot closed cleanly and left five rules.** C3 fired,
+C4 removed both models (M1 falls to the off-by-one control), C1 and C2 failed
+on every leg, the sign was identical in all nine threshold cells, and
+`all_black` recovers 5-8x more fill pixels than either trained model. **The
+headline is "no arm predicts fill in this formulation", not "no learned model
+is needed"** -- a distinction Track J proposed against its own verdict. No
+number from the slot survives; the rules do (Working Discipline 1's
+verdict-word sibling, the name-counted inventory, the check that must name what
+it reads, "an implication is not a check", and "do not close until the side the
+proxy excluded is explained").
+
+**3. The production standard exists now, and `black` is a generation.** Two
+works delivered: `ako6` **781** fill layers over 107 pages and `ako7` **399**
+over 71, in `data/incoming_manuscript/`, with the selection rule recorded in
+each manifest. **70-75% of the production fill lives in layers named
+`線画 ...`**, so a name-based design would have dropped it. The author's process
+knowledge: `black` was *meant* as the fill, the digital line pass tends to fuse
+it, fill-only `black` layers also appear, and going back to analogue separates
+them again -- **so whether `black` is fill is a property of the generation, and
+2018-2019 is a generation mid-move** (`beta`-named area share 30.8% -> 53.1%
+from `ako6` to `ako7`). The whole-corpus tone scan also finished: **17,695 used
+tone layers of 86,308 configured, five densities and three rulings covering
+99.8%**.
+
+**4. The foundation published the author's artwork and then removed it.**
+`git add -A` carried **1,018 files, ~99MB** into a public repository -- 884
+binary fill masks and **five full-resolution line-art pages**. **A force-push
+does not remove data**: GitHub serves unreachable objects to `fetch <sha>`, and
+this file's own commit message had published the SHAs. Fixed by making the
+repository private, rewriting both affected branches in one pass, **deleting and
+recreating the repository** (possible only because forks were 0), and pushing an
+explicit refspec -- a mirror push would have re-uploaded it through the rollback
+tags. Verified gone from a fresh anonymous clone. **`data/` is now ignored as a
+directory**, and the lesson is in the traps: **a rule written as a list of
+instances does not cover the next instance.**
+
+**5. Five units of one failure, in one day.** Name against signature, layer
+against content, screening against ranking, population against measurement,
+work against page -- and later commit against path, snapshot against moving ref,
+and one work's mechanism against a rule. **Each time the number was right and
+the thing it was a number *of* was wrong.** Three of the day's false positives
+came from `tools/audit_track_ledger.py` itself, which now carries checks 7 and
+the narrowed status reader (`--self-test`, 11 cases).
+
+**Open**: Track L is live on `fill-region` and pushes its own branch; the
+extraction session has the gradient mask survey rerunning and one question
+outstanding (why `line`-name ink-presence is 1.0000 in `ako7` and 0.8371 in
+`ako6`); Track H holds H19 at **+0.044 against a 0.05 bar, no bar moved**, and
+has the five-page part-layer export to review with the author. **Two candidate
+tracks are queued behind L**: colour manuscripts (every area carries colour, so
+the area division is complete) and the gradient masks (the mask is an area, and
+inverting one that marks everything-but-the-character yields the character).
 
 Previous: 2026-10-19 JST. **Track K closed its tree** (`25e4dec`, pushed, clean)
 and its second axis closed itself the day it opened: K19 landed on the
