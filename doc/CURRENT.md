@@ -3817,6 +3817,15 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   does the same. **This also repairs the gap found an hour earlier from the
   other end**: the start-up procedure now lists `outbox` as well as `inbox`, so a
   file left by anyone is seen even when the message carrying it was lost.
+  **And the first file the foundation sent under the new rule could not be
+  delivered, for the same class of reason.** `CLAUDE.md` said *"push notices to
+  the extraction tool by SCP"* and **recorded no destination path**; the guess
+  `/Users/sh1/inbox/` failed on a Windows host. The real one, found by listing
+  the remote home, is **`sh1@192.168.1.5:C:/Users/sh1/inbox_from_lineart/`**, now
+  written down, and delivery was verified by listing it afterwards. **The
+  procedure was recorded and its parameter was not** -- the same shape as the
+  address that had moved from `.9` to `.5`. **A procedure without its parameters
+  is an instruction to guess.**
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is in Next Actions item 11.
