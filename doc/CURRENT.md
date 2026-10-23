@@ -5586,6 +5586,41 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       throughout for gradient layers -- ako5's 17 all did -- **but not verified
       across the 85 works**, so a `raster` row is a differently-built layer and
       is to be read separately.
+      **The first run is VOID, and the `source` column is what voided it
+      (2026-10-23 night).** Of 1,754 layers it read **`raster` 1,196 and `mask`
+      558**, so **68% of the rows have none of the mask columns that were asked
+      for**. And checking 60 of the `raster`-classified layers, **all 60 do have
+      masks** -- the tool simply never looked, because the body raster was not
+      empty. Being rerun to emit **both** sets (`raster_*` and `mask_*`).
+      **The lesson cuts at this file.** Two messages earlier the foundation read
+      the design -- *"measures the body raster first and falls back to the
+      mask"* -- in plain prose, **quoted it approvingly, and wrote the `source`
+      column up as the countermeasure**. The extraction side had described the
+      defect and neither side heard it. **So recording the attachment point is
+      necessary and not sufficient**: a column saying what was measured helps
+      only when someone reads **the distribution of that column** before reading
+      any value. The provision that follows: **when an instrument can attach to
+      either of two things, check how often it chose each, before quoting
+      anything it produced.** The extraction side's own framing is that this is
+      its turn at the trap the foundation stopped at an hour before, with the
+      aggravation that **it had written the design out itself**.
+      **What survives run 1 is the author's answer, confirmed at scale.** Split
+      by `source` the two populations **separate completely**:
+      `mid_per_boundary` p50 **0.721** on the 558 mask rows (96 above 1.0)
+      against **131.1** on the 1,196 raster rows (878 of 888 above 1.0). **So a
+      gradient layer's paint is almost always soft -- airbrush -- and its mask is
+      hard**, which is exactly the author's *"hard mask, a complete area, with
+      graded paint inside"*, and ako5's 17-layer reading now holds at 558.
+      **And the pooled number was a trap of the first order**: mixed, it reads
+      p50 77.3 with 67% blurred, so **publishing it would have concluded "67% of
+      gradients are blurred areas" -- the exact opposite of the author's
+      answer.** Two different surfaces averaged into one figure.
+      **Not quotable from run 1**: the `mask_cover` distribution (p50 0.0019 /
+      p90 0.0669 / max 0.9725), because it covers only the 30% that were
+      measured. The author's *"the mask is almost always an area"* is testable
+      on `mask_cover` and **has not been tested yet**.
+      Name distribution confirmed at this scale: `乳首グラデ` 1,301 + 28 + 18,
+      `肌グラデ` **321**, `背景グラデ` 69, `マンガ用グラデーション` 13.
       **On the tone side the mask columns do exist, and the pattern is real but
       cannot be sized at page scale.** `mask_cover` over 17,695 used tone layers
       runs median **0.0088**, p90 **0.0704**, max 0.852, with only **3 layers
@@ -5925,6 +5960,23 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       **unverified**. **The ako8 row above is `2019b_ako8`.** So the year-folder
       pair needed two separate checks -- are they the same file, and are they
       the same kind of material -- and only the first had been run.
+    - **`ako7` delivered 2026-10-23, so the production fill now covers two
+      works.** `data/incoming_manuscript/ako7/fill/`, **465 PNGs +
+      `beta_manifest.json`, 44MB**: **71 pages, 66 with fill, 399 fill layers,
+      0 errors**, one canvas throughout (7016x6543), composite coverage mean
+      **6.9%** / median 6.8% / max 23.0%, thick black on the paper median 4.0%.
+      Checked on arrival here, and **the delivery is ignored by git** -- the
+      `data/` rule added after the incident holds, so nothing was staged.
+      **The name split repeats ako6's almost exactly**: `line` **299**, `beta`
+      74, `unknown` 26 -- **75% line-named against ako6's 70%**, which is the
+      second instance of production fill living in layers called `線画 ...`.
+      **Together: 178 pages, 1,180 fill layers**, against an estimate of ~430
+      for ako7 and ~1,200 in total.
+      **This is the second case for the question that matters most** -- whether
+      this project's line rasters structurally lack the separated fill. Track L
+      has pre-registered the readout: **`black`'s median `keep4` and the
+      `beta`-named ink-presence rate, with ako6's 0.994 and 0.1421 in the same
+      run as the known cell.**
     - **Relayed for Track H, 2026-10-23**: five pages exported layer by layer at
       full canvas, with a JSON of layer id, name and parent folder, so H and the
       author can check **whether the part names match their own pixels** against
