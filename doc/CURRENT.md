@@ -2293,6 +2293,12 @@ incident that actually happened here.
    0.2513 before believing its snapshots; the void probe's conditioning-map cell
    matched Track C's 0.3164, which is how we know its plumbing was innocent and
    only its design was wrong.
+   **The sibling at registration time, added 2026-10-23**: every quantity in a
+   pass criterion names either a value already on record or the file that will
+   produce it. **A name that names another name is where this fails** -- see the
+   `NC4` trap below. Discipline 2 binds the instrument before a result is read;
+   this binds the quantity before the work starts, and it is checkable the
+   moment a criterion is written down.
 3. **A retraction is a pass, not an entry.** When a number is withdrawn, correct
    every store that repeated it in the same sitting, and say what replaced it.
    `0.2582` stayed in memory as "best ever" for weeks after it was retracted.
@@ -3275,10 +3281,15 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   "fix" it. Fixed by reading the negation out of the sentence the name sits in
   (`claimed_dirs` / `NON_CLAIM`, with `--self-test`). The general form:
   **a check that scans prose for identifiers will count a name written in order
-  to deny it.** This is the expensive direction of a false positive for
-  discipline 4 specifically, because that check is the one piece of discipline
-  that does not depend on anyone's attention -- so its output is read as
-  authoritative, and it has no author standing by to say "that one is fine".
+  to deny it.** **A second instance arrived 2026-10-23 from an unrelated
+  direction**: the sweep written to find unimplemented controls counted `IC-j13`,
+  whose only occurrence in Track J's log is the sentence *"what I am **not** doing
+  is registering IC-j13"*. Two instances in four days in two unrelated checks, so
+  this is a property of **any** prose-scanning check and not of the audit tool.
+  It is the expensive direction of a false positive, because such a check has no
+  author standing by to say "that one is fine" and its output is read as
+  authoritative -- discipline 4's most of all, being the one check that depends on
+  nobody's attention.
 - **A multi-day run's completion procedure must not be addressed to the session
   that launched it.** Track J's handoff note of 2026-10-19 opens its checklist
   with "read `slot_20261019.log` and both jsonls **in the session it finishes
@@ -3307,15 +3318,23 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   so the registered verdict of a four-day run was unreadable from the moment it
   was registered. Each file is individually coherent -- the comment names the
   right owner, and both authors believed the instrument was somebody's -- which
-  is why no review of either file finds it. **The check: for every control a
-  pass criterion names, grep for its implementation, not for its name.** A name
-  appearing twice is the failure mode, not the evidence. Track J has the same
-  precedent in smaller form (`IC-j10`, 2026-10-18: "the registration's second
-  expected value cites a measurement that does not exist"), which makes this the
-  second instance and the reason it is written as a trap rather than an incident.
-  A pass criterion is a promise that something is measurable; nothing in this
-  project currently checks that promise at registration time, and a cheap place
-  to start is the moment a criterion is written down.
+  is why no review of either file finds it. **And why grepping did not catch it:
+  the name was already taken.** In stage 1 `NC4` *was* the 50px shift and *was*
+  implemented (`nc4_shift50`, `score_fill_baselines.py`); stage 2 renumbered that
+  control to `NC5` and reassigned `NC4` to the context shuffle. Asking "is NC4
+  covered" returned working code -- for the old meaning. **The renumbering is the
+  first layer and the mutual delegation only the second**, so the mechanical check
+  is **a control name whose meaning changed between stages**, not a name missing
+  from code. **Swept 2026-10-23 over Tracks J, K and G, 33 registered names: this
+  is the only instance** (of the other six flags, three were names labelling the
+  block beneath them, one a registration explicitly declined, one a control Track
+  K ran and read out whose label lives in its log rather than its code, and one a
+  delegation whose target does implement it). So the convention is sound and this
+  is one incident with a mechanism. Why this one: the thirty `IC-*` checks are run
+  immediately, so a missing one surfaces in hours, while **a pass criterion is read
+  once, at the end** -- so look there. Track H is safe for the matching reason, its
+  C1/C2 being anchored to figures it has already produced and re-reads every cycle.
+  The registration-time rule is now discipline 2's second paragraph.
 
 
 ## Approaches Never Taken Up
