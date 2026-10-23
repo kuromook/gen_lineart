@@ -5813,8 +5813,8 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       "an area represented only in part" by the author's description but are
       built differently and need **different instruments**: a blurred tone shows
       up in `mask_mid_per_boundary` (its mask is soft, max 209), a gradient fill
-      does not (hard mask, soft paint) and shows up instead in the **density
-      range** its gradient uses.
+      does not (hard mask in 82.5% of cases, soft paint) and shows up instead in
+      the **density range** its gradient uses.
       **The density figures, explicitly provisional.** From `GradationFillInfo`:
       `肌グラデ` **176-255, 3 steps, peak 31%**; `背景グラデ` 192-255, 2 steps,
       25%; `乳首グラデ 円` 120-255, 5 steps, 53%. Two things make them worth
@@ -5919,10 +5919,44 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       p50 77.3 with 67% blurred, so **publishing it would have concluded "67% of
       gradients are blurred areas" -- the exact opposite of the author's
       answer.** Two different surfaces averaged into one figure.
-      **Not quotable from run 1**: the `mask_cover` distribution (p50 0.0019 /
-      p90 0.0669 / max 0.9725), because it covers only the 30% that were
-      measured. The author's *"the mask is almost always an area"* is testable
-      on `mask_cover` and **has not been tested yet**.
+      **Run 2 landed 2026-10-24** (`inbox/soft_fill_layers.csv` / `.json`, 1,754
+      layers over 85 works) **and the author's "the uses are various" is now a
+      measurement.**
+      **First, the masks are there**: `both` **1,185** / `mask` 558 /
+      `raster` **11**, so **1,743 of 1,754 (99.4%) carry a mask with content** --
+      run 1's 1,196 "raster" rows were `both` all along, unread because the tool
+      stopped at the first non-empty surface.
+      **Second, within one layer the two surfaces are opposite**: mask p50
+      **0.744** (p90 1.266, 17.5% above 1.0) against raster p50 **131.1** (98.9%
+      above 1.0). **The author's "hard mask, a complete area, with graded paint
+      inside" holds at 1,727 layers**, where ako5's 17 had only suggested it.
+      **Third -- the thing that was asked for -- `mask_cover` separates the uses,
+      and the name predicts them:**
+
+      | name | n | `mask_cover` p50 | edge p50 | soft edges |
+      |---|---:|---:|---:|---|
+      | `乳首グラデ` | 1,347 | **0.0012** | 0.792 | 281/1,331 (**21%**) |
+      | `肌グラデ` | 321 | **0.0086** | 0.581 | 19/316 (6%) |
+      | `背景グラデ` | 69 | **0.0252** | 0.701 | **0/67 (0%)** |
+
+      **Coverage medians run 1 : 7 : 21.** `背景グラデ` is **entirely hard-edged
+      and the smallest family (3.9%)** -- the most area-like use is the rarest,
+      as the name distribution had suggested.
+      **And "a gradient fill's mask is hard" is too strong**: 21% of
+      `乳首グラデ` masks are soft, because a local shade is sometimes feathered
+      in the mask itself. **The majority (82.5%) are hard**, which is what the
+      author's account supports and all this file should say.
+      **The "mask as a whole is an area / marks everything but the character"
+      pattern lives in the tail**: of 1,754 layers, **59 (3.4%) cover >= 0.10 of
+      the page**, 28 >= 0.20, 10 >= 0.30, 4 >= 0.50 (overall p50 0.0022, p99
+      0.2452, max 0.9725). **These are a lower bound, being page-normalised** --
+      a mask filling one panel of five reads as about 15% of a page -- and the
+      intersection with the panel boxes remains this side's work.
+      **Anchored on arrival**: recomputed here from the delivered CSV, `source`
+      comes back **both 1,185 / mask 558 / raster 11**, `mask_cover` p50
+      **0.0022** p90 0.0425 max 0.9725, `mask_mid_per_boundary` p50 **0.7440**
+      p90 1.2660, `raster_mid_per_boundary` p50 **131.0670** -- every headline
+      figure identical.
       Name distribution confirmed at this scale: `乳首グラデ` 1,301 + 28 + 18,
       `肌グラデ` **321**, `背景グラデ` 69, `マンガ用グラデーション` 13.
       **On the tone side the mask columns do exist, and the pattern is real but
