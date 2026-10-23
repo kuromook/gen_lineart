@@ -3523,12 +3523,35 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   hits the conflict will read it, so that resolving it the other way cannot
   restore the frozen copy. J's own judgement on deletion: all 1,957 lines are
   superseded in the live file, so no fragment was worth keeping.
-  **Still open**: eight copies, and **Track J's reading that the missing
-  `CLAUDE.md` is the heavier half**. A session that reads a frozen ledger **also
-  has no branch-detection rule**, so the two compound -- it takes an old ledger
-  as the present *and* does not establish which tree it is in. **Both are commits
-  on eight branches nobody asked for, so they are one decision and go to the
-  user together.**
+  **Swept 2026-10-23 by user approval: all ten trees, in one pass.** Each tree's
+  `doc/CURRENT.md` is now a **19-line pointer** on J's template, and
+  **`CLAUDE.md` is added in the same commit** -- which was the heavier half, by
+  Track J's reading: a session that reads a frozen ledger **also has no
+  branch-detection rule**, so the two compound, and it takes an old ledger as
+  the present *and* fails to establish which tree it is in. **It was ten and
+  not eight** (this file's own count was wrong): `solid-fill` was already fixed,
+  but `stroke-selection` and the newly cut `fill-region` both carried one, the
+  latter current on the day and stale the next. Freeze dates ran **2026-08-02 to
+  2026-10-23**, lags **67 to 5,454 lines**. **Eight finished trees were pushed**
+  (all had upstreams, so no new remote branch was created); `stroke-selection`
+  was pushed after the finding below; `fill-region` is commit-only, because its
+  own session pushes its branch (CLAUDE.md §5). Every tree was clean and nobody
+  was sitting on any of them. **Not swept**: `lineart-face-words` and
+  `lineart-panel-generation`, separate clones sharing one git directory, with a
+  live session on the first -- **the branch belongs to whoever is sitting on
+  it**, so Track H is told instead.
+  **And the sweep immediately made the audit report its own commits as a
+  track's unreported work.** `stroke-selection` jumped to *"committed 19d past
+  its last notice -- unreported results are likely"*, on the strength of the
+  housekeeping commit the foundation had just made in it. **The reporting gap
+  asks whether a *track* has done work it has not reported**, so the fix is a
+  property test rather than a marker: the gap is now computed from the last
+  commit that touches **something other than `doc/CURRENT.md` and `CLAUDE.md`**,
+  the two files the foundation maintains in every tree
+  (`last_commit(own_work_only=True)`). After it, the gap column reads exactly as
+  it did before the sweep. **A check that cannot tell a fix from a symptom will
+  report the fix**, and this one was contradicted by the housekeeping done to
+  satisfy another of its own findings.
 - **The whole-corpus tone scan finished 2026-10-23: 7,667 pages over four
   groups, three failures** (`CHNKSQLi not found`, corrupt files). The aggregate
   is still to come.

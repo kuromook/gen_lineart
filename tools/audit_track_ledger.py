@@ -205,12 +205,49 @@ def attachment(path, worktrees):
     return "unknown"
 
 
-def last_commit(path):
-    out = run(["git", "log", "-1", "--format=%cI"], cwd=path)
+# Files the foundation maintains inside every track tree. A commit touching only
+# these is housekeeping done *from* the foundation, not work done *by* the track.
+FOUNDATION_FILES = ("doc/CURRENT.md", "CLAUDE.md")
+
+
+def last_commit(path, own_work_only=False):
+    """When this tree last committed.
+
+    `own_work_only` skips commits that touch nothing but the files the
+    foundation maintains in every tree (`FOUNDATION_FILES`). The reporting gap
+    asks "has this track done work it has not told the foundation about", and a
+    sweep the foundation itself ran is not that. Without this, the 2026-10-23
+    frozen-ledger sweep made the audit report *its own commits* as a track's
+    unreported results -- a check contradicted by the housekeeping done to fix
+    another of its findings.
+    """
+    if not own_work_only:
+        out = run(["git", "log", "-1", "--format=%cI"], cwd=path)
+        return _stamp(out)
+    log = run(
+        ["git", "log", "--format=%cI%x00%H", "-n", "40"], cwd=path
+    )
+    if not log:
+        return None
+    for line in log.splitlines():
+        stamp, _, sha = line.partition("\x00")
+        if not sha:
+            continue
+        files = run(
+            ["git", "show", "--pretty=", "--name-only", sha], cwd=path
+        )
+        touched = [f for f in (files or "").splitlines() if f.strip()]
+        if touched and all(f in FOUNDATION_FILES for f in touched):
+            continue  # foundation housekeeping; keep looking
+        return _stamp(stamp)
+    return None
+
+
+def _stamp(out):
     if not out:
         return None
     try:
-        return datetime.fromisoformat(out)
+        return datetime.fromisoformat(out.strip())
     except ValueError:
         return None
 
@@ -416,14 +453,17 @@ def main():
         path = SIBLINGS / name
         how = attachment(path, worktrees)
         commit = last_commit(path)
+        own = last_commit(path, own_work_only=True)
         notice = notices.get(name)
         uncommitted, unpushed = dirty(path)
 
+        # The gap is about the track's own work, so foundation housekeeping in
+        # the tree does not open one.
         gap = None
-        if commit and notice:
-            gap = (commit - notice[0]).days
-        elif commit and not notice:
-            gap = (now - commit).days
+        if own and notice:
+            gap = (own - notice[0]).days
+        elif own and not notice:
+            gap = (now - own).days
 
         rows.append((name, how, commit, notice, gap, uncommitted, unpushed))
 
