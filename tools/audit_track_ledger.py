@@ -41,6 +41,15 @@ What it checks:
      found its copy 14 days and 3,682 lines behind on 2026-10-23; the oldest on
      disk was 82 days behind. The name promises currency, and a promise is not
      a check
+  9. every track tree that is a repository ignores `data/`. The manuscript
+     deliveries land there, 99MB of the author's artwork reached a public
+     repository on 2026-10-23, and the fix (`f7372e6`) went into the
+     foundation's `.gitignore` only -- so every branch cut before it, and every
+     branch that has not merged since, is one `git add -A` away from the same
+     incident. Found 2026-10-24: 10 of 14 trees, including the one about to
+     receive 0.25GB of native-resolution layers. The rule is in CLAUDE.md and
+     in every briefing, which is what makes it the right thing to check
+     mechanically instead
 
 Read-only. It never writes, commits, or touches another tree.
 
@@ -347,6 +356,28 @@ def frozen_ledger(path):
     return lines, days
 
 
+def ignores_data(path):
+    """True if this tree ignores `data/`, False if not, None if it is not a repo.
+
+    Asked of git rather than of the file, so a rule written in any form --
+    `data/`, `/data`, `.git/info/exclude`, a global ignore -- counts. The path
+    probed does not have to exist.
+    """
+    if run(["git", "rev-parse", "--git-dir"], cwd=path) is None:
+        return None
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(path), "check-ignore", "-q", "data/a.png"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return done.returncode == 0
+
+
 def notice_senders(head):
     """Directory names a notice identifies itself with, best source first.
 
@@ -450,7 +481,10 @@ def self_test():
     assert not FIRST_DOCUMENT_CLAIM.search(
         "Moved: the live ledger is ../lineart/doc/CURRENT.md"
     )
-    print("self-test: 11 cases pass")
+    # The data/ rule is asked of git, so the foundation itself is the fixture.
+    assert ignores_data(FOUNDATION) is True
+    assert ignores_data(FOUNDATION / "doc") is True  # inside the same repo
+    print("self-test: 13 cases pass")
     return 0
 
 
@@ -578,6 +612,15 @@ def main():
                     f"`../lineart/doc/CURRENT.md`; a warning in the briefing is "
                     f"weaker, because it has to be read first"
                 )
+
+        # 9: the manuscript deliveries are one `git add -A` from a public repo.
+        if ignores_data(path) is False:
+            findings.append(
+                f"`{name}` does not ignore `data/` -- the manuscript deliveries "
+                f"land there and this tree would stage them. Fix on that branch "
+                f"with `git checkout foundation -- .gitignore` (the rule came in "
+                f"with `f7372e6`, the 2026-10-23 incident's own fix)"
+            )
 
     if not args.quiet:
         print(f"Track ledger audit -- {now.astimezone().strftime('%Y-%m-%d %H:%M %Z')}")

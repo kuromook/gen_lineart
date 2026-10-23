@@ -224,12 +224,38 @@ distributions**; that is how the retracted L7 happened. Deliver by SCP to
   **The one destination from now on is
   `C:/Users/sh1/code/extract_line_and_sketch/inbox/`.**
 
-**Owed**: Track L has done the distribution read (L8, `b9a2831`) and owes the
+**A hole the audit now closes, found 2026-10-24 from one line of Track L's**:
+**10 of the 14 trees do not ignore `data/`.** The rule went into the
+foundation's `.gitignore` with `f7372e6` -- the 2026-10-23 incident's own fix,
+after 99MB of the author's artwork reached a public repository -- so every
+branch cut before it, and every branch that has not merged since, is one
+`git add -A` from the same incident. `fill-region` is one of them and is about
+to receive **0.25GB of native-resolution layers**; it is working around the hole
+by keeping the pixels in the foundation's tree and reading them by absolute
+path, which is sound and is not the fix. **The fix is one line on each branch**
+(`git checkout foundation -- .gitignore`), and it belongs to whoever sits there.
+Nothing is tracked under `data/` in any tree today -- checked -- so the exposure
+is prospective. **`tools/audit_track_ledger.py` now checks it as check 9**
+(asked of git, so a rule in any form counts; a plain directory that is not a
+repo is not flagged), self-test 13 cases. The rule was already in CLAUDE.md and
+in every briefing, which is exactly what made it worth checking mechanically:
+**T84**.
+
+**Two more deliveries were verified complete by Track L the same morning**, and
+these are counts, not readings: tone **1,302 / 1,302** PNGs over 65 pages
+(max 31 layers on a page, one page with none) and gradient **155 / 155** over
+the same pages (max 14, 19 pages with none), **nothing missing, nothing extra,
+no errors** against what each manifest points at. No covering notice has arrived
+for either, so whether the extraction side considers them finished is a query
+out. Their pixels are unread on purpose: the 2,963 unselected layers come first.
+
+**Owed**: Track L has done the distribution read (L8, `b9a2831`, **pushed**) and owes the
 condition, which waits on the 2,963 native layers it asked for at 07:42; **this
 session owes the band check on that condition and it is not payable yet**, for
 the reason L gave -- line or area is not decidable from the statistics. The
-extraction side owes those pixels and an answer on the three layers the written
-rule does not explain. Track H holds H19 at **+0.044 against a
+extraction side owes those pixels, an answer on the three layers the written
+rule does not explain, a confirmation that the 0.25GB estimate holds, and
+covering notices for the tone and gradient deliveries. Track H holds H19 at **+0.044 against a
 0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
 and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
@@ -1203,7 +1229,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and fourteen lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and fifteen lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -1533,6 +1559,29 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     not the finding. This is the same move as the lesson under Track C
     (measure the computable axis before asking a person to judge), one level
     down: measure the computable axis before believing a model.
+15. **A mechanism offered with a number is not part of the measurement, and a
+    plausible mechanism is the easiest thing in the world to agree with.** Added
+    2026-10-24, from the same mistake made twice in one morning by two sessions
+    that did not know of each other's version. The extraction side reported 128
+    layers that fail its ベタ colour signature while being dark on the page,
+    with `black_among_drawn` median **0.823**, and offered the reason: just
+    under the 0.95 cut, where **an anti-aliased line layer carrying ベタ** would
+    fall. This file copied the count and the reason together at 07:40. Track L,
+    independently, had **pre-registered the same mechanism as P3** -- that bam
+    would concentrate in 0.5-0.95 for exactly that population. Both were wrong
+    the same way: measured, the author's delivered ベタ sits at bam median
+    **0.9986** with 100% at or above 0.95, the dark layers the **area floor**
+    cut are blacker still (1,414 layers, median **1.0000**, 87% at or above),
+    and **this author's line layers carry no anti-aliasing at all** (`線画 skin`
+    and `線画 hair` both 1.0). P3 came back 1,239 of 1,551 above the cut.
+    **The count survived and the explanation did not**: the 128 are real, and
+    what removes areas from the standard is the area floor (1,207 of 1,551
+    unseen dark layers) and not the colour test (63). The two stand together
+    here at Track L's own suggestion, because one of them looks like a slip and
+    the pair shows what it is: a mechanism arrives already feeling measured,
+    and the only defence is to register it as a prediction -- which is what made
+    L's version visible as a miss instead of invisible as an assumption.
+
 ## Every f1 On Record, And What Can Still Be Read
 
 **This section replaced an earlier one, and the earlier one was wrong.** On
@@ -1934,6 +1983,7 @@ withdrawal.
 - **T76** `git add -A` put the author's artwork into a public repository, and a force-push does not take it back out.
 - **T77** A quoted commit hash can stop resolving, and then it is a number that looks like provenance and leads nowhere.
 - **T82** A multi-day run's completion procedure must not be addressed to the session that launched it.
+- **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9).
 
 ### 素材の性質と外部標準(塗り)
 

@@ -88,7 +88,10 @@ koma corpus 側の既測: **427パネル / 6候補作品、最大は `2022b_hyou
 
 ## 6. 借りるもの / 借りないもの
 
-- 借りる(read-only): region-F1 の計算器、`koma_split`、`work_color_mode_pages.csv`
+- 借りる(read-only): region-F1 の計算器、`koma_split`、`work_color_mode_pages.csv`、
+  **Track L の `tools/evaluation/l8_inventory_reconcile.py` の形**(納品側の選別規則を
+  層の全数一覧に当て直して既知セルにする手順。L が read-only で貸すと明言、2026-10-24)。
+  **M が層の全数一覧を取る段に来てから**使うもので、先に借りる理由はない
 - **借りない**: ベタの枠組み、L の面積の床 `dr < 0.002`(モノクロ合成の都合から来た値)、
   トーン0署名(扉4)
 

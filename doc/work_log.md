@@ -6567,3 +6567,45 @@ Lesson: **a mechanism offered with a number is not part of the measurement.**
 The 128 count was real and arrived with an explanation of where 0.823 comes
 from; the count survived and the explanation did not. It had been in this
 ledger for one hour.
+
+## 2026-10-24 (morning, third pass) -- 10 of 14 trees do not ignore data/, and the audit now says so
+
+Found from one line of Track L's reply: *"この木の `.gitignore` には `data/` が
+無いので"*. Checked across the shelf -- **10 of 14 trees do not ignore `data/`**
+(`aesthetic-judge`, `cleanup-refiner`, `face-words`, `fill-region`,
+`image-prompt`, `pair-signal`, `panel-generation`, `solid-fill`,
+`stroke-grammar`, `stroke-topology`; `controlnet-realpairs` is not a repo).
+The rule entered the foundation's `.gitignore` with **`f7372e6`**, the
+2026-10-23 incident's own fix -- 99MB of the author's artwork in a public
+repository -- so **every branch cut before it still has the hole**, and
+`fill-region` is one `git add -A` away from it while waiting on 0.25GB of
+native-resolution layers. Nothing is tracked under `data/` in any tree today
+(checked), so the exposure is prospective, and the fix is one line per branch:
+`git checkout foundation -- .gitignore`, by whoever sits there.
+
+**`tools/audit_track_ledger.py` gained check 9.** It asks git
+(`check-ignore -q data/a.png`) rather than reading `.gitignore`, so a rule in
+any form counts -- `/data`, `.git/info/exclude`, a global ignore -- and a plain
+directory that is not a repository reports nothing instead of a false alarm.
+Self-test 13 cases. Recorded as **T84**: a `.gitignore` rule written after a
+branch was cut does not exist on that branch. The rule was in CLAUDE.md and in
+every briefing already, which is the argument for checking it mechanically --
+the same argument as the audit itself (規律4).
+
+Also recorded: Track L pushed `b9a2831`, so the unpushed finding cleared. It
+verified two more deliveries complete -- tone **1,302/1,302** over 65 pages,
+gradient **155/155** -- nothing missing, extra or erroring against the
+manifests, with no covering notice for either, so a query is out. Their pixels
+stay unread until the 2,963 unselected layers arrive.
+
+**Lesson 15 went in, and Track L asked for it to be written as a pair.** Its
+pre-registered P3 was the *same mechanism* this file copied from the extraction
+side an hour earlier -- an anti-aliased line layer carrying ベタ landing just
+under the 0.95 cut -- reached independently and wrong the same way. A mechanism
+offered with a number is not part of the measurement; registering it as a
+prediction is what made L's version visible as a miss rather than invisible as
+an assumption. Track M's overlap with L was reviewed from L's side too and the
+split holds: the one place it could meet is if colour manuscripts also separate
+line layers from fill layers, which is a question for after M reads the layer
+structure, not a reason to identify the two now. L offers
+`l8_inventory_reconcile.py` read-only for that stage.
