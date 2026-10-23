@@ -3498,9 +3498,21 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   merely warns about it in the briefing does not. **A briefing warning is the
   weaker fix, because it has to be read first.** J fixed its own tree that way
   (`70bb589`) and the audit still reports it, correctly.
-  **Not fixed**: the ten existing copies. Each needs a commit on its own branch,
-  which is the foundation's to make only where no session is sitting (CLAUDE.md
-  §5), and it is offered to the user rather than taken.
+  **Track J then removed its copy rather than warning about it** (`168b886`,
+  verified against `frozen_ledger()`, which now returns `None` for that tree --
+  the audit went from eleven findings to ten). Its replacement is a **19-line
+  pointer** offered as a template for the other eight, and the fourth of its
+  four points is the one worth copying: **`git merge foundation` conflicts here,
+  and the resolution is to take the foundation side** -- written where whoever
+  hits the conflict will read it, so that resolving it the other way cannot
+  restore the frozen copy. J's own judgement on deletion: all 1,957 lines are
+  superseded in the live file, so no fragment was worth keeping.
+  **Still open**: eight copies, and **Track J's reading that the missing
+  `CLAUDE.md` is the heavier half**. A session that reads a frozen ledger **also
+  has no branch-detection rule**, so the two compound -- it takes an old ledger
+  as the present *and* does not establish which tree it is in. **Both are commits
+  on eight branches nobody asked for, so they are one decision and go to the
+  user together.**
 - **The koma corpus holds the same page more than once, at different drawing
   stages, and a naive check reads that as duplication.** Found 2026-10-23 while
   answering the extraction side's question about crop geometry.
@@ -3676,10 +3688,15 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   **Third instance, 2026-10-23 evening, and it lands on stage (2).** On the
   extraction machine, **memory pressure killed the completion watcher twice
   while all three real jobs survived** (`ako6`'s fill extraction, the saturation
-  pass, the final tone group) -- three concurrent runs on one box, with the
-  watcher the cheapest thing to reap. **So the harness-tracked watcher is itself
-  a single point of failure, and under memory pressure it is the *first* thing
-  to go** -- the opposite of the assumption that the watcher outlives the run.
+  pass, the final tone group) -- three concurrent runs on one box. **So the
+  harness-tracked watcher is itself a single point of failure, and under memory
+  pressure it is the *first* thing to go** -- the opposite of the assumption
+  that the watcher outlives the run. **Why it went first is not measured**: the
+  extraction side corrected this file's first wording, which said the watcher
+  was the cheapest thing to reap. The harness notice says only that the session
+  was **idle** when memory got tight and says nothing about cost, so "cheap
+  therefore reaped" is an inference and "idle therefore reaped" is the other
+  candidate. The provision is the same under both; the mechanism is open.
   **Stage (3), the independent second route, is what covered it, and it was
   exercised rather than theorised**: the foundation asked for status over the
   session channel and got the page counts back. That is the first time this
