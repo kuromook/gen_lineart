@@ -3410,6 +3410,46 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   worth keeping beside the tone trap: **coverage is not colour, and what colour
   an area is cannot be read from a field that only says whether the area was
   touched.**
+- **The koma corpus holds the same page more than once, at different drawing
+  stages, and a naive check reads that as duplication.** Found 2026-10-23 while
+  answering the extraction side's question about crop geometry.
+  `dataset/regions_clip_pairs_v3_koma_panels_20260826` holds **5,018 panels over
+  1,241 page records but only 1,132 distinct page geometries**: **95 geometries
+  exist in more than one version, covering 667 panels (13.3%)**, paired across
+  source folders (`ako6/page0051` <-> `done/ako6-3`, `pink/page0010` <->
+  `pink/page0028` <-> `done1/pink10`). **No group straddles train and held, so
+  there is no split leakage**; inside Track J's 969-panel held set, **9 groups /
+  69 panels (7.1%) are alternative versions, all in `2017_pink`**.
+  **The methodological half matters more than the counts.** The first pass
+  matched pages by panel-geometry signature and reported *339 duplicate panels,
+  46 of them in the held set*. A pixel check refuted it: **only 1 of 31 sampled
+  groups was pixel-identical.** Same crop dimensions on every panel, different
+  content -- the same drawing at different stages. The pink pairs differ in a
+  median of **0.39% of pixels** (ink IoU median **0.886**), which is what proves
+  they are one drawing rather than two pages, but the tail is wide: ink IoU p10
+  **0.387**, min **0.031**, and `ako6/page0051_p1` carries ink **0.1907** where
+  `done/ako6-3_p1` carries **0.0067** -- one version has the fill, the other is
+  nearly blank. **A geometric signature identifies a page; it does not identify
+  a state.** Reporting the first result would have been this file's own
+  failure mode twice over -- a count published from a proxy that was never
+  checked against the content.
+  **Why it is load-bearing for Next Actions item 11**: comparing the radius-4
+  mask against a production ベタ layer on the *unfinished* version of a page
+  reads as *"the mask misses every area"* when the truth is *"that version is
+  not drawn yet"*, and **`ako6`, the chosen trial work, has 150 of its 227
+  panels (66%) inside a multi-version group**. So the extraction side was asked
+  for page frames (`_koma`) on the same canvas, and **page identity is to be
+  fixed by coordinates, not inferred from shape**.
+  **What it does not touch: Track J's verdict.** C1's best arm is 0.0110 against
+  a 0.05 bar, C2's legs are -0.0012 and -0.0017 against +0.03, both models fall
+  to controls drawn from the same population, and the sign is identical in all
+  nine threshold cells -- a 7.1% reweighting closes none of those gaps. What it
+  bounds is the precision of the absolute figures: **GT fill 10.40% of panel
+  area and `all_black` pixel IoU 0.1040 are means over a set that is 7.1%
+  alternative versions of its own pages**, which is the same kind of qualifier
+  as "against the radius-4 estimated mask". Whether it joins J's headline is
+  J's call, under J3's condition that a caveat must not soften a negative it
+  does not touch.
 - **Every solid-fill number on record inherits a mask that has never been
   checked against anything.** Stated by Track J 2026-10-23, of its own corpus:
   `fill_mask.py` infers the fill from a *flattened* line-art raster by distance
@@ -4964,6 +5004,48 @@ figure carries the don't-paint and preprocessor baselines in the same sentence;
       same thing across the corpus. That has to be settled before any agreement
       or disagreement is read as a fact about the mask (`sens_fill_radius.py`
       already carries radius 3 and 6).
+    - **`ako6` confirmed and running (108 pages), and the visual check says the
+      production fill is hair.** The extraction side composited the two ベタ
+      layers of `ako6/page0086`: **two characters' hair, as outlined masses of
+      paint**, matching the author's account that fill concentrates in hair,
+      tops and tights. The layer names are `black` x2 and `線画 cloth`; in 2016
+      (`phantom`, `poolsideIdle`) the name is **`線画 HEAD hair`** -- **this
+      period's manuscripts separate the fill layer by body part**, which is what
+      "a simple area layer" turns out to mean here.
+      **This changes what the surviving motive is a motive for.** The form that
+      survived Track J's refutation is *"a person can look at the outline and
+      tell which area is filled; cheap closing cannot extract it; what can is
+      unmeasured"*. The production names say the thing the person is reading is
+      **not shape but meaning** -- it is hair, so it is filled. If so, deciding
+      an area is a **part-identification** problem, which is the same shape as
+      Track H's problem (assign a stroke to a facial part), and **the layer name
+      is itself the label**. Asked of the extraction side: what share of
+      candidate works name their fill layers by body part. **Not yet a claim**:
+      the author's knowledge is the author's to state, and this is one work's
+      two layers plus a naming pattern in two more.
+    - **The fill-area floor was lowered 1% -> 0.2% and this is not a bar being
+      moved.** Recorded with the reason, because this project treats widening a
+      population as the same act as moving a bar. The 1% belonged to a
+      *different question* -- detecting whether fill had contaminated a line
+      composite -- and was inherited rather than loosened after seeing a result;
+      the measurement given is `ako6 page0086`'s hair fill at **0.57%** and its
+      clothing fill at **0.63%**, both of which 1% was discarding, and a
+      one-page trial that returned only 2 layers. **The decisive part: the
+      manifest carries `drawn_ratio`**, so the continuous value survives and any
+      floor can be re-cut downstream. The general form, adopted: **a collection
+      threshold that keeps the continuous value is reversible and is not a
+      pre-registration matter; one that discards is neither.**
+    - **Delivery path renamed by content, not by the first thing that arrived.**
+      `data/incoming_tone/` was created to receive tone and would have received
+      ベタ first; **a directory named for one class, holding another, is this
+      week's own trap in furniture form.** Replaced with
+      `data/incoming_manuscript/<work>/fill/` and `.../tone/`. Masks arrive at
+      **native canvas with no downscaling** (`ako6` is **7016x6543**, a spread,
+      against 4961x7016 elsewhere) and dimension-matched to the existing
+      `{prefix}_{page}_line.jpg` / `_koma.jpg`. **The radius scaling and the crop
+      are this side's work** -- accepted deliberately, because a correction made
+      here can be checked here, while one made on their side would make the
+      mismatch invisible.
     - **Delivered 2026-10-23 to `inbox/`**: `fill_tone_inventory_layers.csv`
       (45,533 rows), `..._works.csv` (289), `..._inventory.json`,
       `tone_layers_local.csv` (1,114 structurally-confirmed tone layers with
