@@ -17,7 +17,14 @@ seeds, train split only) against a proposed per-stroke rule bar of 0.80/0.60, so
 disk) **and its verdict has not been read**: no commit in that tree since the
 handoff note, and the GPU has been idle for four days. The registered verdict is
 M1 - M0 on the 956-panel table; the trainer's own 40-panel snapshots in
-`slot_20261019.log` are not it. **Track K's restart input now exists** -- Track H
+`slot_20261019.log` are not it. **The 956-panel table was running on 2026-10-23
+and is expected to finish about 14:15 JST** (350 of 969 at 12:05; 13.2 s/panel
+on average, with runs of 78 s on the largest koma). **If no notice from Track J
+has arrived by then, wake that session** -- its own watcher is harness-tracked
+but is a single point of failure with nothing watching it. Amendment **J3**
+(2026-10-23, disclosure only, registered before the table was read) has the
+headline naming the radius-4 estimated mask, with the clause that this bounds
+absolute claims and **not** C1-C5, which are comparisons on one shared mask. **Track K's restart input now exists** -- Track H
 kept marking for its own bar -- while K stays dormant by the 2026-10-19 decision,
 and H is explicit that it is not asking for K back. **The request relayed through Track H was
 answered the same day**, from the user's own three proposals rather than a
@@ -3332,6 +3339,34 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   `"w"`-mode jsonl trap from the same note: a multi-day run's recoverability has
   to survive the session that started it, and that covers its instructions as
   well as its weights and its log.
+  **Second instance 2026-10-23, which settles the form.** **Detaching achieves
+  "independent of the session" and "unable to tell the session" at the same
+  time.** `PPID=1` is the right choice for a multi-day slot, so this is not an
+  objection to it but a demand for the matching provision, in three stages --
+  Track J's wording, and J had the first two in place at 10:46, before the
+  foundation raised the question:
+  **(1)** detach the run. **(2)** In the same sitting, stand up a *separate*
+  harness-tracked watcher -- not the run itself, which would throw away the
+  point of detaching. J's is a `run_in_background` until-loop over the log
+  (pid 842759 under its session, verified here), and it greps **the failure
+  signatures as well as the success one**, because a watcher that waits only for
+  success cannot tell a crash from work in progress. **(3)** The watcher is
+  itself a single point of failure and has no watcher of its own, so **a verdict
+  from a multi-day slot gets a second, independent path** -- another session.
+  The costs are asymmetric: one message against a verdict left for another two
+  days. **Stage 3 was the foundation's addition and J considered two stages
+  sufficient**, which is recorded because the provenance is the evidence that
+  neither side had the whole form.
+  **What stage 3 needs in order to work**: this project's start-up procedure
+  (`ls -t inbox | head`) catches a notice that **arrived**, not one that failed
+  to, and the audit's notice-gap cannot fire for a track that committed and
+  reported the same day. So the second path needs the **expected completion time
+  written down** where a later session reads it -- which is why the header above
+  carries one.
+  **The foundation's own error here belongs in the entry.** It asserted that
+  nothing would wake Track J, from the launch form of the scoring process alone,
+  **without checking whether a second process existed** -- the same shape as the
+  trap two entries up: reading one of two adjacent records.
 - **Two files can each delegate an instrument to the other, and nothing notices
   until a verdict needs it.** Found by the foundation 2026-10-23 while reading
   Track J's tree to see what reading the slot would take. `NC4` (the context
