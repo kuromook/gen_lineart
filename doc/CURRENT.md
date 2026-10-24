@@ -1555,6 +1555,33 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    an inability to lay solid fills on the other). Score them separately;
    `dataset/pairs_480/holdout_lineart_family.txt` and
    `holdout_housei_100.txt` are already split that way.
+   **A third axis, added 2026-10-24 from the user, and it is the one this
+   project kept crossing without noticing: the generation of the workflow is a
+   pool.** The author's production process shifted over the years, so the layer
+   structure shifts with it, and **every assumption that broke on 2026-10-23/24
+   was an assumption about how the author worked** -- not about what a drawing
+   depicts. The list, as Track L assembled it: *a black layer is fill* (it is a
+   function of the generation, the user's own correction); *a `beta` name gives
+   a clean standard* (it collapses in `ako7`, 2 layers over 1.1%); *line layers
+   are anti-aliased* (this author's are pure black, bam 1.0); *a base area fails
+   the colour test for not being black* (it passes; `preview_dark` is what
+   excludes it); *the area floor is why areas fall out of the standard*
+   (family-dependent, lesson 15). **So `ako6` and `ako7` do not go on one row**,
+   for the same reason `lineart` and `housei` do not, and **no new rule is needed
+   -- what was missing was recognising the generation as a pool.** The **16
+   revision pairs** found in the 65-page pool the same day are the same thing one
+   level down: two states of one page are two pools on one row, and the per-page
+   rate reads about a quarter heavy because of it.
+   **And the goal is not fewer surprises, it is cheaper ones** -- Track L's
+   formulation, adopted. The workflow really does shift and this project only
+   sees it from outside, so aiming at an instrument that cannot be surprised
+   bankrupts; a universal instrument is not the objective and would not pay for
+   itself. The price was paid twice on record and the two prices differ by one
+   thing: **L7's 71.3% false-positive rate** landed in the ledger first and had
+   comparisons built on it, so the retraction became a pass over every store;
+   **L8's P3** was pre-registered, so the mechanism died, the count lived, and
+   the correction was one line. **The difference is only whether the mechanism
+   was registered as a prediction.**
 7. **Never use training loss as a proxy for quality -- not the logged loss,
    and not a clean one either.** Added 2026-09-15 from
    `../lineart-pair-signal`, which measured both. The *logged* loss is one
@@ -1986,6 +2013,15 @@ incident that actually happened here.
    `NC4` trap below. Discipline 2 binds the instrument before a result is read;
    this binds the quantity before the work starts, and it is checkable the
    moment a criterion is written down.
+   **The generation sibling, added 2026-10-24 on Track L's proposal: a run that
+   crosses generations carries a known cell from each generation it crosses.**
+   One known cell satisfies the rule as written and **cannot detect a generation
+   shift if it comes from the same generation as the rest of the run** -- which
+   is precisely the shift that broke five assumptions in two days (lesson 6).
+   **It has already worked once and was never written down**: L5 kept an `ako6`
+   cell in the run while turning to `ako7`, and that is how `ako7`'s difference
+   became visible instead of becoming a result. The rule is the practice, not a
+   new demand.
    **The second sibling, from the 2026-10-23/24 exchange: publish in a form that
    can be measured back.** Eight corrections passed between the foundation, the
    extraction session and Track L in one day, and **almost none was caught before
@@ -2006,6 +2042,23 @@ incident that actually happened here.
    byte-equal to the trainer's own context channel, and the derangement
    asserted to be a permutation with zero fixed points. The foundation's notice
    asked for the two anchors and had no rule for this; J supplied it.
+   **The instrument/interpretation split, added 2026-10-24 on Track L's
+   proposal, and it is where the damage actually was.** Self-checks exist for
+   instruments and **nothing checks the interpretation**, yet every collapse of
+   2026-10-23/24 was on the interpretation side: `ic_form` (a disc at r=20 scores
+   1.0000, a 3px line 0.0000), `ic_geom` (IoU 1.000 at zero offset, 0.37-0.72 at
+   +2px) and `anchor_blank` (0.0084 reproduced) have **never** failed, and the
+   radius-4 opening got nothing wrong -- what was wrong was the sentence *"what
+   the opening leaves is ベタ"*. **So a tool keeps measurement and verdict in
+   separate functions, and the verdict is registered as a prediction** (lesson 15
+   says register the mechanism; this says where it lives in the code, which is
+   the half that was never registered).
+   **What this does not reach, stated plainly because pre-registration cannot
+   cover it**: *what the standard never saw.* No prediction can be written about
+   something invisible, and L7 was exactly that case. **The only defence there is
+   not to take someone else's selection as the standard**, and on 2026-10-24 that
+   defence cost 733MB of native layers. Cheap this time by luck -- but a problem
+   whose price is a known quantity of disk is a tractable one.
 3. **A retraction is a pass, not an entry.** When a number is withdrawn, correct
    every store that repeated it in the same sitting, and say what replaced it.
    `0.2582` stayed in memory as "best ever" for weeks after it was retracted.
