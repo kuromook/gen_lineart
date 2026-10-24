@@ -68,6 +68,11 @@ A0(追補5 §E6 + 追補6 §F3): `CanvasPreview` を**一様量子化 `floor(v*8
         4つの床) = 25 セルを m9 の印字と突き合わせる(下の `M9_PAGE0019`)。
         **一致しなければ以降の行を読まない。**
   IC-M6 既知セル(棒3): 標準を予測として入れて region-F1 = 1.0 を**全8ページで**。
+  IC-M7 **ブロック拡大の経路そのものの既知セル**: IC-M6 は s=1 なので R1 の
+        拡大を通らない。A0 のラベル地図を原寸に拡大したものを標準として
+        A0 自身を採点すると region-F1 = 1.0 でなければならない。これが
+        通らないかぎり「A0 の点が低い」は腕の性質として読めない(位置ずれ
+        でも同じ低い点が出る)。**全8ページで印字する。**
 
 `measure_*` / `judge_*` の分離(追補2 の三点拡張): このファイルの `score_page`
 は器具で、勝敗の読みは `judge_*` にしか書かない。
@@ -122,8 +127,14 @@ def equal_value_components(vals):
 
 
 def filtered_labels(lab, min_px):
-    """面積 >= min_px のラベルだけを 1.. に振り直したラベル地図と面積表。"""
+    """面積 >= min_px のラベルだけを 1.. に振り直したラベル地図と面積表。
+
+    **ラベル 0 は背景なので必ず落とす**(`m2.areas` と同じ扱い)。落とさないと
+    余白が1つの巨大な面として標準に入り、N2(ページ全体を1つの面)がそれと
+    照合してしまう。最初の走行はこれを踏んで N2 に 0.6667 と 1.0000 を与えた。
+    等値成分(A0 側)は 1 から始まるのでこの行は効かない。"""
     cnt = np.bincount(lab.ravel())
+    cnt[0] = 0
     keep = np.nonzero(cnt >= min_px)[0]
     lut = np.zeros(cnt.size, np.int32)
     lut[keep] = np.arange(1, keep.size + 1, dtype=np.int32)
@@ -165,7 +176,8 @@ def measure_standard(page, grid, floor_px):
     lab, garea = filtered_labels(lab, floor_px)
     return lab, garea, {'silhouettes': len(bases), 'components_indep': indep,
                         'components_kept': len(garea), 'lost_to_overlap': len(lost),
-                        'contested_px': contested, 'info': info}
+                        'contested_px': contested,
+                        'contested_pages': contested / (gh * gw), 'info': info}
 
 
 def pair_counts_upsampled(pred_small, s, gt, block=48):
@@ -227,6 +239,17 @@ def score_from_small(pred_small, s, gt, garea, min_px, iou=IOU, pc=None):
 
 # ------------------------------------------------------------ 器具確認
 
+def ic_m7(pred_small, s, grid, min_px):
+    """ブロック拡大の経路の既知セル。拡大した自分自身を標準にすると 1.0。"""
+    up = np.repeat(np.repeat(pred_small, s, axis=0), s, axis=1)[:grid[0], :grid[1]]
+    cnt = np.bincount(up.ravel())
+    cnt[0] = 0
+    garea = {int(i): int(cnt[i]) for i in np.nonzero(cnt)[0] if cnt[i] >= min_px}
+    r, _ = score_from_small(pred_small, s, up, garea, min_px)
+    del up
+    return r
+
+
 def ic_m5(pages):
     """skimage の等値成分が m9 の floodFill 歩行と一致すること。"""
     p = next(q for q in pages if q['page'].endswith('sunshine2_page0019'))
@@ -287,6 +310,7 @@ def main():
         n2 = np.ones((ph, pw), np.int32)
         n3, gr, gc = grid_null((ph, pw), len(garea))
 
+        self_up = ic_m7(a0, s, grid, floor_px)
         r_a0, pc_a0 = score_from_small(a0, s, gt, garea, floor_px)
         r_n1, _ = score_from_small(n1, s, gt, garea, floor_px)
         r_n2, _ = score_from_small(n2, s, gt, garea, floor_px)
@@ -298,8 +322,13 @@ def main():
                'gt_indep': st['components_indep'], 'gt_areas': len(garea),
                'gt_lost_overlap': st['lost_to_overlap'],
                'contested_px': st['contested_px'],
+               'contested_pages': round(st['contested_pages'], 3),
                'known_cell_f1': round(known['region_f1'], 6),
+               'ic_m7_f1': round(self_up['region_f1'], 6),
+               'ic_m7_n': self_up['n_pred'],
                'a0_n': r_a0['n_pred'], 'a0_matched': r_a0['matched'],
+               'a0_prec': round(r_a0['precision'], 4),
+               'a0_rec': round(r_a0['recall'], 4),
                'a0_f1': round(r_a0['region_f1'], 4),
                'n1_f1': round(r_n1['region_f1'], 4),
                'n2_f1': round(r_n2['region_f1'], 4),
@@ -307,7 +336,7 @@ def main():
                'n3_shape': f'{gr}x{gc}={gr*gc}'}
         rows.append(row)
         print(f'{p["page"]:44s} s=1/{s} gt {len(garea):>4} '
-              f'known {known["region_f1"]:.4f} '
+              f'known {known["region_f1"]:.4f} up {self_up["region_f1"]:.4f} '
               f'A0 {r_a0["region_f1"]:.4f}(n={r_a0["n_pred"]}) '
               f'N1 {r_n1["region_f1"]:.4f} N2 {r_n2["region_f1"]:.4f} '
               f'N3 {r_n3["region_f1"]:.4f}  {time.time()-t0:6.1f}s', flush=True)
@@ -344,13 +373,26 @@ def main():
             print(f'  FAIL {r["page"]} {r["known_cell_f1"]}')
         print('既知セルが再現しない。他の行は読まない。'); return 1
 
+    print('\n== IC-M7 ブロック拡大の経路(拡大した自分自身を標準にすると 1.0) ==')
+    bad7 = [r for r in rows if abs(r['ic_m7_f1'] - 1.0) > 1e-9]
+    print(f'  {len(rows)-len(bad7)}/{len(rows)} ページで 1.0 -> '
+          f'{"PASS" if not bad7 else "FAIL"}')
+    if bad7:
+        for r in bad7:
+            print(f'  FAIL {r["page"]} {r["ic_m7_f1"]} (n={r["ic_m7_n"]})')
+        print('拡大の経路が通らない。A0 の低い点は腕の性質として読めない。')
+        return 1
+
     print('\n== ページごと(プールしない。登録集合なので主張は出さない) ==')
-    print(f'{"page":44s} {"s":>3} {"gt面":>5} {"A0面":>6} {"A0":>7} {"N1":>7} '
-          f'{"N2":>7} {"N3":>7} {"N3格子":>10}')
+    print(f'{"page":44s} {"s":>3} {"gt面":>5} {"A0面":>6} {"照合":>5} '
+          f'{"A0prec":>7} {"A0rec":>7} {"A0":>7} {"N1":>7} {"N2":>7} {"N3":>7}')
     for r in rows:
         print(f'{r["page"]:44s} 1/{r["scale"]:<2} {r["gt_areas"]:>5} '
-              f'{r["a0_n"]:>6} {r["a0_f1"]:>7.4f} {r["n1_f1"]:>7.4f} '
-              f'{r["n2_f1"]:>7.4f} {r["n3_f1"]:>7.4f} {r["n3_shape"]:>10}')
+              f'{r["a0_n"]:>6} {r["a0_matched"]:>5} {r["a0_prec"]:>7.4f} '
+              f'{r["a0_rec"]:>7.4f} {r["a0_f1"]:>7.4f} {r["n1_f1"]:>7.4f} '
+              f'{r["n2_f1"]:>7.4f} {r["n3_f1"]:>7.4f}')
+    print('  precision / recall は借りた規則(IoU>=0.5 の貪欲1対1)の列であって、'
+          '新しい棒ではない。棒は region-F1 の符号検定のまま。')
 
     print('\n== judge: ページごとの符号検定(両側。n=8 では 8/8 以外は通らない) ==')
     for k, nm in (('n1_f1', 'N1 blank'), ('n2_f1', 'N2 whole_page'),
@@ -367,6 +409,23 @@ def main():
           f'成分(層ごとに独立) {sum(r["gt_indep"] for r in rows)}  '
           f'重なり解決後に残った面 {sum(r["gt_areas"] for r in rows)}  '
           f'重なりで床を割った成分 {sum(r["gt_lost_overlap"] for r in rows)}')
+    cont = ' '.join('%.2f' % r['contested_pages'] for r in rows)
+    print(f'  争った画素(重なりの総量。ページ面積の何倍か): {cont}')
+    degen = [r for r in rows if r['gt_areas'] == 0]
+    if degen:
+        print(f'\n  うち標準が1つも面を持たないページ {len(degen)}/{len(rows)}: '
+              f'{[r["page"] for r in degen]}')
+        print('  そのページでは「何も出さない」N1 が定義上 1.0 を取る。'
+              '登録した比較は全行で行うので除外しない(追補5 §E8)。')
+        print('  除外した場合の数を隣に併記する(置き換えない):')
+        sub = [r for r in rows if r['gt_areas'] > 0]
+        for k, nm in (('n1_f1', 'N1 blank'), ('n2_f1', 'N2 whole_page'),
+                      ('n3_f1', 'N3 grid')):
+            win = sum(1 for r in sub if r['a0_f1'] > r[k])
+            loss = sum(1 for r in sub if r['a0_f1'] < r[k])
+            print(f'    (併記) A0 対 {nm:14s} 勝 {win} 負 {loss} 引 '
+                  f'{len(sub)-win-loss}  p={judge_sign_test(win, loss):.4f}')
+
     print('\n限界(追補6 §F4): 8連結成分は作者の面の下限である。隣り合う面は')
     print('1つの成分になるので、region-F1 は少なく大きい面を出す腕に有利に出る。')
     print('この8ページは登録集合である。主張は検定集合(872-8ページ)まで出ない。')
