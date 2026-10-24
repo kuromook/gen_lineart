@@ -341,9 +341,16 @@ it had already read the body** (`60849ac`): a number chosen now would be moving
 the bar, not repairing the registration, and the `<15%` bar L first reported came
 from the analyser written *after* the run. **So P7 is recorded as neither PASS
 nor FAIL but "no test", with its 43.87% kept as a measurement and reserved as
-material for the next registration's bar** -- which will be **L6's measured
-middle band at the panel level**, a known cell serving as the bar. L withdrew its
-own earlier "P7 FAIL" wording in the same pass. **The offer was correct as a band
+material for the next registration's bar**. L withdrew its own earlier
+"P7 FAIL" wording in the same pass.
+**The foundation proposed L6's measured middle band at the panel level as that
+bar, twice, and withdraws it the same day**: Track L's cleansing inventory (C2
+below) finds that L6's panel set is a product of the dataset raster, so its
+middle band is raster-contaminated and cannot serve as a known value. **What
+replaces it is not another number but a condition**: a bar for a layer-level
+quantity has to come from a layer-level population, and L6's does not. The
+retraction is recorded here rather than silently dropped, because the
+recommendation went out in two band checks. **The offer was correct as a band
 rule and wrong about L's state, and L's reading is the one that stands**: the
 repair is available only to a party that has not looked.
 **The foundation's reading of L's KC2 failure, which L called its own
@@ -1061,6 +1068,44 @@ work, and the stated expectation is that the pieces make each other easier.
   side. The sample is **28 of 65 pages**, so how many exist in the whole corpus
   is a separate count -- a name scan on the extraction side, **not yet asked
   for**.
+  **Track L's cleansing inventory, 2026-10-24, six items, and the reason
+  discipline 9 exists.** L's own framing: *cleansing is not hygiene around the
+  research, it is the research*. The numbers are in that tree's `doc/work_log.md`;
+  the index is here.
+  **C1 -- the dataset's panel line-art raster is a different page from the
+  author's** (T86): 63.0% of the layers' ink arrives, **54.0% of the area layers
+  are missing outright** against 5.1% of line layers, per-panel median 0.795,
+  **140 of 248 panels below 0.90**. It is the *prediction-side input* of L7, L12
+  and L13, so those arms were scored against something other than the ground
+  truth.
+  **C2 -- so L6/L7's "35 clean panels" are a product of the raster** (T74
+  corrected): all 35 have area layers the raster dropped, `in_raster` median
+  **0.1395** against **1.0000** for the LEAKY set. Not "panels where the fill is
+  absent" but "panels where the raster lost the fill layers".
+  **C3 -- `preview_dark >= 0.5` was borrowed into the barrier**: 789 white or
+  pale layers (balloons, white-painted foreground objects) plus 68 `/text` layers
+  fell out of it, and the barrier is what stops a flood. **The constant was
+  right for its own role and wrong for this one** -- the case discipline 9-2 is
+  written from. Its effect on L14/L15's leak and the `O` rate (0.18/0.24) was
+  still being measured when L stopped.
+  **C4 -- `fill_mask`'s opening answers "area or stroke", not "ベタ or effect"**:
+  **354 of 1,325 regions (26.7%)** come from `effect` and `描き文字`, and they
+  stay in L14's primary figures because lesson 8 forbids cutting by name.
+  **C5 -- a fattened line becomes an area**: `rendering_lineart_front0001`, a 3D
+  renderer's output, makes **32 "regions" in one panel** out of jagged thick
+  strokes. This is what made L13 FAIL.
+  **C6 -- `has_mask` is True on all 2,963 layers** (T87), so it cannot split
+  anything, and L14's attempt to split on it came back empty.
+  **What this costs and who pays.** The cheap half L can do itself: an inventory
+  of every selection condition in use, as *condition / role / how many it dropped
+  / what calibrated it*, and a `raster_frac` check over the existing panel sets
+  using C1's own instrument. **The expensive half is a question for the
+  extraction side and not a request from L** -- Track L measures from layers and
+  does not need the raster at all -- namely **what rule the current panel raster
+  drops layers by, since it cannot be derived from the delivered census**: by
+  name and by parent folder both the kept and the dropped appear, the commonest
+  immediate parent among the dropped being `トーン` at 108. Rebuilding the panel
+  raster is the costly option behind that answer.
   **Second result, same night: whether `black` is a fill layer is a property of
   the GENERATION, and the author answered by telling L to measure.** The author's
   process knowledge, which nothing here could derive: when the tone-layer method
@@ -2072,6 +2117,13 @@ incident that actually happened here.
    `NC4` trap below. Discipline 2 binds the instrument before a result is read;
    this binds the quantity before the work starts, and it is checkable the
    moment a criterion is written down.
+   **The path sibling, added 2026-10-24 from Track M: a known cell belongs to a
+   *path*, not to a measurement.** M's cell that feeds the standard back in as a
+   prediction **only ever runs at native scale (s=1)**, so the enlargement path
+   carried no cell at all, and without one **"the arm scores low" cannot be told
+   apart from "the arm is misregistered"**. It added IC-M7 (take its own enlarged
+   output as the standard, expect 1.0). One cell per measurement satisfies the
+   rule as written and still leaves a limb unchecked.
    **The generation sibling, added 2026-10-24 on Track L's proposal: a run that
    crosses generations carries a known cell from each generation it crosses.**
    One known cell satisfies the rule as written and **cannot detect a generation
@@ -2233,6 +2285,62 @@ incident that actually happened here.
    number here -- "90% coverage" is marginal, is not 90% for ears, and is not
    90% for a new artist. Discipline 1 was written about numbers of this shape.
 
+9. **A selection is a measurement, and what it silently drops is part of the
+   result.** Added 2026-10-24 from the user's observation that *the instrument
+   work goes fine and the data keeps betraying it*, and from **Track L and Track
+   M arriving at the same failure independently, neither knowing the other's
+   version**: a borrowed brightness or saturation constant is not merely
+   uncalibrated, it **deletes a whole kind of material in silence**, and what is
+   deleted appears in no output, so no result can reveal it. **M**: the `24` in
+   "saturation 24 over 2% of pixels" was hiding **82 pale pages** whose
+   `color_ratio` is exactly 0 while they carry pixels at saturation 8-23 (one
+   page is 0.999091 above saturation 8 at `color_ratio` 0.0), **across 32 works,
+   13 of which the old bar called all-monochrome**; the population went 790 ->
+   **872**. **L**: `preview_dark >= 0.5` dropped **789 white or pale layers**
+   (speech balloons, white-painted foreground objects) plus 68 `/text` layers
+   **out of the barrier** -- and the constant itself was never wrong, it is
+   **correct for choosing what enters the author's ベタ** and was **borrowed for
+   building the barrier**, where *what stops a flood is not necessarily dark*.
+   **Track L's reading, adopted: cleansing is not hygiene around the research, it
+   is the research** -- the whole of its C1-C6 inventory is in the ledger above.
+   Three rules, each mechanical rather than a caution, in the shape of discipline
+   4:
+   **9-1. A selection prints what it dropped, counted by reason -- including the
+   `continue` inside the instrument.** L12 already did this at the outer level
+   ("1,981 layers passed, the rejects printed by reason") and **that print is the
+   only reason C3 was found**. M's `clip_bases` **skipped 24 chains whose base
+   was `None` without printing anything**, and that silence became the ground for
+   an instrument rule. **The paired form, M's wording: when two inventories of
+   the same thing are held, itemise the row-count difference before using
+   either** -- M had computed 1,005 - 706 = 299 = 173 folders + 126 with nothing
+   drawn **and had not read what the 173 were**, which cost it 167 -> **183**
+   bases and 504 -> **823** components. Counting a difference is not reading it.
+   **9-2. A constant carries the role it was calibrated for, and is never
+   borrowed across roles.** The same `preview_dark >= 0.5` was right for "enters
+   the ground truth" and wrong for "enters the barrier". **When the role changes
+   the constant is re-derived, and the role travels with the number** exactly as
+   discipline 1 makes a configuration travel with a figure -- a constant inside
+   an instrument is a quoted number too. **And when a constant chosen for the
+   instrument's stability conflicts with the standard's completeness, the
+   standard wins**: M's area floor at 1e-4 had the smallest swing in component
+   count (1.49x) and **silently removed 25% of the silhouette layers the author
+   drew**, so it was re-taken at 1e-5 with the cost (2.00x / 4.37x) written down.
+   **9-3. The null comes before the bar, and a high null indicts the standard
+   first.** L15 set F's bar at 0.50 **without asking for the null, which was
+   0.72-0.74** -- a bar below chance, met by default; CLAUDE.md already assigns
+   the null and the band to the foundation and L drew its own. **M's converse,
+   adopted**: when a null scores *high*, suspect the standard before the arm --
+   its area floor left label 0 in, the margin entered the standard as one huge
+   region, and **N2 (the whole page) matched it at 0.6667/1.0000**. **A null is a
+   check on the standard, not only a floor for the arm.**
+   **What none of the three reaches**, and it is the same limit discipline 2's
+   instrument/interpretation sibling names: a rule can be correct and still be
+   **correct only while its material is complete**. M's z-order rule (the
+   component on top wins) is right in CSP and broken under T-M3, because
+   *what the composite shows does not exist in the export* -- 823 components
+   became 355 regions and `skima12H` went from 148 to **1**. One trap surfaced in
+   two places in the same instrument, which is why 9-1 counts rather than warns.
+
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
 understanding), reconcile the index against the filesystem, then walk the numbers
@@ -2330,6 +2438,10 @@ withdrawal.
 - **T82** A multi-day run's completion procedure must not be addressed to the session that launched it.
 - **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9).
 - **T85** A `.gitignore` rule with a trailing slash does not match a symlink, so importing the integration tree's ignore file into a tree that symlinks `venv` silently un-ignores it. The fix for one hole opened another, in the same command.
+- **T86** The dataset's panel line-art raster is **a different page from the author's manuscript**: only **63.0%** of the layers' ink reaches it and **54.0% of the area layers are missing outright** (line layers 5.1%), per-panel median 0.795 with **140 of 248 panels below 0.90**. Any arm whose input is that raster is predicting against something other than the ground truth. The rule the raster drops by **cannot be derived from `page_layers_priority65.csv`** -- by name and by parent folder, both the kept and the dropped appear (the commonest immediate parent among the dropped is `トーン`, 108) -- so it is a question for the extraction side, not a filter anyone here can reconstruct.
+- **T87** `has_mask` is **True on all 2,963 layers**: a column with a check's name that performs no check, and an attempt to split on it comes back empty. The same family as "names are not checks" -- silence reads as normal operation.
+- **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
+- **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
 
 ### 素材の性質と外部標準(塗り)
 
@@ -2343,7 +2455,7 @@ withdrawal.
 - **T71** The separation is progressing, not static, and one step of the author's "back and forth" now has a direction.
 - **T72** An external standard for areas is now within reach, on a distinction Track L made after finding a hole in this file's own map (2026-10-23 night).
 - **T73** The user redirected the fill line on 2026-10-24, and the reason is not derivable from anything here.
-- **T74** How much cleanly separated material exists: 35 koma, and the distribution is what matters (Track L's L6, pre-registered at mixed-layer contribution < 0.10 and leak < 0.10).
+- **T74** How much cleanly separated material exists: 35 koma, and the distribution is what matters (Track L's L6, pre-registered at mixed-layer contribution < 0.10 and leak < 0.10). **CORRECTED 2026-10-24: the 35 are a product of the dataset raster, not of the manuscripts.** All 35 are panels whose area layers the raster dropped -- their area layers' `in_raster` median is **0.1395** against 1.0000 for the LEAKY set -- so "panels where the fill is not present" was "panels where the raster lost the fill layers". The count stands as a count of raster behaviour and not of clean material.
 - **T75** Track L's L7, registered 2026-10-24: validate Track J's assets on the clean data, with the false-positive rate and a stratum that can move the blame off the mask. **The entry still says "running"; L7 was measured and then RETRACTED the same day** on a hole the user found -- the retraction is inside T72, and its numbers are kept there because the retraction is the content.
 - **T80** The koma corpus holds the same page more than once, at different drawing stages, and a naive check reads that as duplication.
 - **T81** Every solid-fill number on record inherits a mask that has never been checked against anything.
