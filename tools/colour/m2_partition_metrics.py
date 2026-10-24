@@ -42,27 +42,30 @@ def areas(lab, min_px=MIN_REGION_PX):
             if i != 0 and c >= min_px]
 
 
-def match_partition(pred, gt, min_px=MIN_REGION_PX, iou_thr=MATCH_IOU):
-    """ラベル地図どうしの貪欲1対1照合。借りた二値版と同じ規則。"""
-    pa, ga = areas(pred, min_px), areas(gt, min_px)
-    parea, garea = dict(pa), dict(ga)
-    np_, ng = len(pa), len(ga)
+def match_from_counts(pair_counts, parea, garea, iou_thr=MATCH_IOU):
+    """貪欲1対1照合の**本体**。借りた規則はここ1か所にしかない。
+
+    `pair_counts`: {(pred ラベル, gt ラベル): 交差画素数}。床で落とした
+    ラベルを含んでいてもよい(`parea`/`garea` に無い対は捨てる)。
+    `parea` / `garea`: {ラベル: 面積}。**床で濾した後のもの**。
+
+    ラベル地図を2枚メモリに置けない大きさ(原寸 46〜64M画素)でも同じ規則で
+    採点できるように切り出した。`match_partition` はこれを呼ぶだけなので、
+    IC-M1〜IC-M4 はこの関数を点検している。
+    """
+    np_, ng = len(parea), len(garea)
     if np_ == 0 and ng == 0:
         return {"n_pred": 0, "n_gt": 0, "matched": 0, "precision": 1.0,
                 "recall": 1.0, "region_f1": 1.0}
     cand = []
-    both = (pred > 0) & (gt > 0)
-    if np_ and ng and both.any():
-        pairs, inters = np.unique(np.stack([pred[both], gt[both]]), axis=1,
-                                  return_counts=True)
-        for (pi, gi), inter in zip(pairs.T, inters):
-            pi, gi, inter = int(pi), int(gi), int(inter)
-            if pi not in parea or gi not in garea:
-                continue
-            union = parea[pi] + garea[gi] - inter
-            iou = inter / union if union else 0.0
-            if iou >= iou_thr:
-                cand.append((iou, pi, gi))
+    for (pi, gi), inter in pair_counts.items():
+        pi, gi, inter = int(pi), int(gi), int(inter)
+        if pi not in parea or gi not in garea:
+            continue
+        union = parea[pi] + garea[gi] - inter
+        iou = inter / union if union else 0.0
+        if iou >= iou_thr:
+            cand.append((iou, pi, gi))
     cand.sort(reverse=True)
     up, ug, matched = set(), set(), 0
     for _, pi, gi in cand:
@@ -76,6 +79,25 @@ def match_partition(pred, gt, min_px=MIN_REGION_PX, iou_thr=MATCH_IOU):
     f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
     return {"n_pred": np_, "n_gt": ng, "matched": matched,
             "precision": prec, "recall": rec, "region_f1": f1}
+
+
+def pair_counts(pred, gt):
+    """ラベル地図2枚から {(pred, gt): 交差画素数} を作る。"""
+    out = {}
+    both = (pred > 0) & (gt > 0)
+    if both.any():
+        pairs, inters = np.unique(np.stack([pred[both], gt[both]]), axis=1,
+                                  return_counts=True)
+        for (pi, gi), inter in zip(pairs.T, inters):
+            out[(int(pi), int(gi))] = int(inter)
+    return out
+
+
+def match_partition(pred, gt, min_px=MIN_REGION_PX, iou_thr=MATCH_IOU):
+    """ラベル地図どうしの貪欲1対1照合。借りた二値版と同じ規則。"""
+    parea, garea = dict(areas(pred, min_px)), dict(areas(gt, min_px))
+    pc = pair_counts(pred, gt) if (parea and garea) else {}
+    return match_from_counts(pc, parea, garea, iou_thr)
 
 
 def score(pred, gt, min_px=MIN_REGION_PX, iou_thr=MATCH_IOU):
