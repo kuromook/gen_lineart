@@ -150,8 +150,11 @@ Measured as Jaccard overlap of each page's multiset of
 pairing a `<work>/pageNNNN` against a `<work>/doneN/<work>-NN` -- the background
 and effect layers byte-identical by `drawn_ratio`, the character line and fill
 layers different. `ako6/page0117` vs `ako6/done6/ako6-57` is one: 110 of 127
-layers identical, the `線画 *` and `black` layers all different. **So about 32
-of the 65 pages are one of a pair and the pool holds roughly 49 distinct pages**,
+layers identical, the `線画 *` and `black` layers all different. **17 pairs cross
+the 0.5 threshold in all and the 17th crosses works, so 34 of the 65 pages are a
+member of some pair while only the 16 same-work pairs are grounds for collapsing
+one: the pool holds 49 distinct pages on that reading** (this file first said
+"about 32 pages" and the count is 34),
 which every per-page figure on this page is computed over -- it is not wrong,
 it is a pool with a known multiplicity, and any **per-page** rate reads about a
 quarter heavier than a distinct-page rate would. **Which member is the finished
@@ -315,10 +318,31 @@ explain were answered earlier (an **invalid** tone effect, a condition that was
 not in the rule), the size question was superseded by the extraction side's own
 revised 0.52-1.07GB estimate before delivery and landed inside it at 733MB, and
 the tone and gradient covering notices arrived.
-**Owed**: Track L has the pixels and owes the condition; **this session owes the
-band check on that condition and it is now payable as soon as L registers it**
--- the reason it was not payable (line or area is not decidable from the
-statistics) is exactly what the pixels answer. Track H holds H19 at **+0.044 against a
+**Owed**: nothing, in the sense that both sides have paid. **L registered L10
+before running it (`1004fba`, 10:40) and the foundation's band check is
+delivered** (`outbox/band_check_l10_20261024.md`): three of four predictions
+pass the band, the registration is genuinely prior, and the pooling clause is
+right. **What does not pass is P7** -- "keep4 is bimodal and the middle is thin"
+carries no number, so no value can falsify it, and it has to be quantified
+*before* the body is read (not bar-moving, because nothing has been read yet).
+**The foundation's reading of L's KC2 failure, which L called its own
+registration mistake**: two thresholds were made into one. KC2 is an identity
+against a **published column** and must therefore use `gray<230`, because that
+is what `drawn_ratio` is; **keep4's own mask threshold is a separate free
+parameter** and does not have to equal it. **Which threshold is "the area the
+author painted" is settled by the author's process, not by the number that makes
+KC2 pass** (規律6) -- choosing the passing number is the instrument fitting
+itself. Three further remarks, each a consequence of a rule adopted the same
+day: the 746 mismatching layers are a **cross-generation total** and belong in
+an `ako6` row and an `ako7` row (lesson 6); **"version duplication does not
+affect layer counts" is true in general and false for this family**, since the
+background base layers are identical across versions, so the 125 rows are
+**96 distinct compositions** and 13 of the 28 family pages are one of a pair;
+and **P8 and P10 share 7 layers**, so passing both is not two independent
+confirmations. **L10's own framing of P10 is the strongest thing in the
+registration**: the 125 were chosen by the author's words, so keep4 agreeing
+with them is keep4 agreeing with the author rather than with its own shape
+criterion. Track H holds H19 at **+0.044 against a
 0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
 and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
