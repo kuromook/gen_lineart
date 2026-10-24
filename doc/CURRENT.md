@@ -133,7 +133,8 @@ matching the notice. Four things a re-cut has to know, all in the reply:
   unless it is opened `utf-8-sig`
 - **`layer_type` holds raw CLIP values beyond the documented 1/2/3** (`0` 1,796,
   `256` / `1584` / `800` 65 each, `4098` 1) and **disagrees with the `folder`
-  column in 141 rows**, so filtering by `layer_type==1` is not filtering by
+  column in **206 rows** (this file first said 141 and the count is corrected
+  below), so filtering by `layer_type==1` is not filtering by
   `folder==False`, and which one was used belongs in the registration
 - **`用紙` comes back `drawn_ratio 1.0` / `black_among_drawn 1.0` on all 65
   pages** -- white on the page, entirely pure black as measured -- so **any
@@ -141,7 +142,27 @@ matching the notice. Four things a re-cut has to know, all in the reply:
 - **31 layers have content but no `preview_dark`** (`マンガ用グラデーション` 15,
   `rendering_shadow_*` 9, `背景グラデ` 3), which a `preview_dark >= 0.5`
   condition **drops silently**
-**Track L read the distributions the same morning (L8, `b9a2831`, unpushed) and
+**A fact about the 65-page pool itself, found by the foundation on 2026-10-24
+while checking a different claim, and not previously recorded anywhere**:
+**the pool holds 16 pairs of pages that are two revisions of the same page.**
+Measured as Jaccard overlap of each page's multiset of
+`(name, ancestors, drawn_ratio)` triples: 16 pairs at **0.598 to 0.900**, each
+pairing a `<work>/pageNNNN` against a `<work>/doneN/<work>-NN` -- the background
+and effect layers byte-identical by `drawn_ratio`, the character line and fill
+layers different. `ako6/page0117` vs `ako6/done6/ako6-57` is one: 110 of 127
+layers identical, the `線画 *` and `black` layers all different. **So about 32
+of the 65 pages are one of a pair and the pool holds roughly 49 distinct pages**,
+which every per-page figure on this page is computed over -- it is not wrong,
+it is a pool with a known multiplicity, and any **per-page** rate reads about a
+quarter heavier than a distinct-page rate would. **Which member is the finished
+one is not decidable here**: the folder names suggest it and 規律6 says the
+author decides. `inbox/work_duplicates.json` does **not** cover this -- it
+matches whole works across year folders and names as its own limit that it does
+not separate 同じ作品の別版. **One pair does not fit the pattern**:
+`ako6/done4/ako6-18` against `ako7/page0073` at 0.693, across works, 97 of 140
+layers identical. Unexplained, deliberately not theorised, and a question for
+the extraction side.
+**Track L read the distributions the same morning (L8, `b9a2831`, pushed) and
 the colour signature is not what removes areas from the standard.** Against the
 author's own ベタ as delivered (496 layers, `ako6`+`ako7` priority pages,
 `beta_manifest.json`'s 判定 mapped onto the inventory): bam median **0.9986**,
@@ -271,13 +292,33 @@ no errors** against what each manifest points at. No covering notice has arrived
 for either, so whether the extraction side considers them finished is a query
 out. Their pixels are unread on purpose: the 2,963 unselected layers come first.
 
-**Owed**: Track L has done the distribution read (L8, `b9a2831`, **pushed**) and owes the
-condition, which waits on the 2,963 native layers it asked for at 07:42; **this
-session owes the band check on that condition and it is not payable yet**, for
-the reason L gave -- line or area is not decidable from the statistics. The
-extraction side owes those pixels, an answer on the three layers the written
-rule does not explain, a confirmation that the 0.25GB estimate holds, and
-covering notices for the tone and gradient deliveries. Track H holds H19 at **+0.044 against a
+**The 2,963 native layers arrived the same day, and the extraction side's list
+of what it owes Track L is now empty.** `note_all_layers_priority65_20261024.md`
+with 1,591 + 1,372 PNGs under `data/incoming_manuscript/ako{6,7}/all_layers/`,
+**733MB**, native resolution, 8-bit grey, not binarised, named `{pid}_L{layer_id}.png`.
+**The value is coverage and not colour** -- `255 - 被覆`, so an area painted
+white comes out black, the same reason `用紙` does; page darkness still has to
+come from `preview_dark`. **The foundation's receipt check passes exactly**:
+2,963 files on disk, and the census's own
+`folder=False & rendered=True & drawn_ratio>0` selection is **2,963 with 0 on
+either side** -- every delivered file maps to a census row and every selected
+row has a file. 2,581 layers were not exported and the manifest's `skipped`
+gives the reason for all of them as nothing drawn; 0 failed to render.
+`tone_state` is `none` 2,758 / **`disabled` 197** / `enabled` 8, and the 197 are
+the layers that appeared in neither earlier delivery. **The extraction side
+retracted one of its own sentences in the covering note**: "an enabled tone layer
+cannot appear here because `LayerRenderMipmap` is empty" is wrong for 8 layers on
+`ako7_page0068`, where the raster covers the whole page and **the shape is in the
+mask, not in the PNG** -- 3 of those 8 are in the tone delivery and 5 are not,
+which it says it has not confirmed. The three layers the written 判定 did not
+explain were answered earlier (an **invalid** tone effect, a condition that was
+not in the rule), the size question was superseded by the extraction side's own
+revised 0.52-1.07GB estimate before delivery and landed inside it at 733MB, and
+the tone and gradient covering notices arrived.
+**Owed**: Track L has the pixels and owes the condition; **this session owes the
+band check on that condition and it is now payable as soon as L registers it**
+-- the reason it was not payable (line or area is not decidable from the
+statistics) is exactly what the pixels answer. Track H holds H19 at **+0.044 against a
 0.05 bar, bar not moved**, owes the foundation a notice (Next Actions item 9),
 and has the five-page part-layer export to review with the author; one question
 is out to the extraction side (why `line`-name ink-presence is 1.0000 in `ako7`
@@ -913,12 +954,43 @@ work, and the stated expectation is that the pieces make each other easier.
   reproduced the selection from the delivered census**: the same 125 / 28 /
   104 / 21 under "rendered and `drawn_ratio` > 0" (166 rows before the content
   filter, コマ in `ancestors` on all 166), and the known cell page0028 `bg base`
-  at **dr 0.129759**, matching the manifest's `excluded` row exactly. **One
-  number is not reconciled**: L reports the largest group as 76 layers at gray
-  median 0.6, the foundation's `base`-in-name subset is **62** at gray median
-  0.55 (bam >= 0.95 on 62 of 62, `preview_dark` < 0.5 on 55 of 62). The grouping
-  rule differs, not the finding -- **the same shape as the 141-vs-206
-  disagreement, and it is L's number until L names the rule**.
+  at **dr 0.129759**, matching the manifest's `excluded` row exactly. **The 76-vs-62
+  disagreement was reconciled the same day, and the body number is 62.** The two
+  rules differ and the finding does not: L's 76 is *family AND undelivered AND
+  excluded by `pd<0.5` alone*, the foundation's 62 is *family AND `base` in the
+  name*. They share 55; the 21 only in 76 are `rendering_render_*` layers that
+  join the family through `rendering` and carry no `base` in the name; the 7 only
+  in 62 are layers that pass every rule and **are actually delivered**. Both
+  carry the finding: gray median 0.55 either way, bam >= 0.95 on 76/76 and 62/62,
+  `pd<0.5` on 76/76 and on 55/62. **62 is kept in the body because it is
+  definable in one word and does not depend on L's `why()` implementation**, and
+  L agreed; 76 is the inner reading *taken by the excluding axis alone*
+  (55 of them plus the 21 `rendering_render_*`). The same shape as 141-vs-206,
+  and L's own reading is that its definition was the more complicated one.
+  **The 166-of-166 statement is the one to use**: L confirmed it, and コマ in
+  `ancestors` on all 166 rows before the content filter is stronger than 125 of
+  125.
+  **What the reconciliation turned up is a fault in the standard itself, and it
+  runs the other way from yesterday's retraction.** Those 7 layers -- `bg base`
+  x6 and `base` x1, `category=beta` in the delivery manifest -- mean **7 of the
+  author's 496 delivered ベタ layers on these pages are the background base
+  areas the author said are 基本的に対象ではない**. The colour test cannot
+  separate ink from a base area because both are pure black, so a base area
+  whose page is dark above it (`preview_dark` 0.5072 to 0.9249 on these 7) walks
+  straight through. **Verified here against the delivery manifest independently
+  of L**: 496 beta rows on the 65 pages, 7 in the family, all 7 with
+  `category=beta`, and their `drawn_ratio` median **0.02873 against 0.00433 for
+  all 496 -- 6.63x**. So the standard is dirty **in both directions**:
+  yesterday's retraction was *areas the standard never saw counted as absent*,
+  and this is *the standard holding as an area something the author does not call
+  one*. **The count is all that goes here.** What those 7 do to a コマ-level
+  score needs the overlaps, so it waits for the pixels rather than being turned
+  into a share now -- L's call, and the right one, since a share would walk off
+  with its mechanism attached.
+  **One of the 7 is a second revision of another**: `ako6/page0117` and
+  `ako6/done6/ako6-57` carry the same `bg base` at `drawn_ratio` 0.003839, so
+  the 7 rows are **6 distinct background compositions** (see the pool note
+  above).
   **L's P5 half-missed and the bar was not moved**: it predicted the base areas
   would fail the colour test for not being black; they pass it, and what excludes
   them is `preview_dark`, because line art and tone sit on top of them so the
@@ -1073,6 +1145,25 @@ work, and the stated expectation is that the pieces make each other easier.
   turns the result into a known cell, which is the same move M needs once its
   own full layer inventory arrives. **It is a shape, not a number** -- nothing of
   L's pool transfers. The foundation calls L when M reaches that stage.
+  **M is working and has already run its own correspondence** (notified to the
+  foundation rather than left hidden, `note_m_request_sent_20261024.md`): four
+  requests to the extraction side at 08:17, pushed by SCP, **landing confirmed by
+  matching SHA256 on both sides**, explicitly queued behind Track L's export, and
+  its registration is `doc/track_m_registration_20261024.md` in its own tree.
+  The extraction side has accepted them and returned **two things that change M's
+  instrument check before any measurement**: (1) **layer colour is readable** --
+  a colour layer's block is 5 bytes per pixel, the leading 256x256 alpha and then
+  interleaved B,G,R,x, and alpha x colour rebuilds CSP's own preview; confirmed on
+  **one layer of one page** (`2018 skima10 page0073`) and to be tested across the
+  8-page pilot. **Monochrome layers share the 5-byte form and only the alpha plane
+  was ever used, so no existing delivery's numbers change.** (2) **there is no
+  native composited colour page in the file** -- `.clip` carries only
+  `CanvasPreview`, and **its reduction differs by work** (1/4 for ako6/ako7/gakuen,
+  **1/2** for `skima10 page0073`). Building a native composite means compositing
+  every layer with opacity, blend mode, clipping and folders -- the work Track L
+  withdrew as #2 for being heavy and producing plausible wrong pictures. The pilot
+  will carry the preview at its own size with the reduction in the manifest and
+  **not offered as a substitute for native**.
 
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
