@@ -6688,3 +6688,23 @@ match a symlink, and the fix for one hole opened another in the same command.
 
 A session sat down in `../lineart-colour-manuscripts` at 09:0x; Track M is
 being worked now.
+
+### 2026-10-24 (foundation) — `foundation` を push、L が作者への問いを1つ立てた
+
+`foundation` の14コミット（`5f4d285..d8f66f2`）を push。`data/` `inbox/` `outbox/`
+配下のパスは1つも含まれないことを push 前に確認（`git diff --name-only` で grep、
+0件）。変更は13ファイル、`doc/` の圧縮と移送、`tools/audit_track_ledger.py` の
+check 9、Track M の起案。audit は4件（`face-words` と `panel-generation` のみ、
+どちらも通達済み）。
+
+Track L から2点。(1) `l8_inventory_reconcile.py` の形は M の器具確認3つのうち
+**ベース層の同定**に効く——納品側の選別規則を全数一覧に当て直して既知セルにする
+形。数値ではなく形の貸出で、L のプールからは何も移らない。M が全数一覧の段に
+来たら基盤から声をかける。(2) **作者の「ベース+濃淡」の答えはモノクロ原稿にも
+当たるか**を作者に上げたい、という問い。当たるなら L の 1,207 層は「どの層が
+ベースか」の同定で片づき、keep4（半径4の開き）ではなくなる。L は M の文脈から
+自分の文脈へ答えを延長しないと決め、自分からは聞かないと決めた。**基盤も代理で
+答えない**（回送による延長は延長である）。どちらにしても 2,963 層の依頼は生きる
+——どの層がベースかは画素なしに同定できない。L は納品済み496層だけで keep4 を
+回すこともしないと決めた（面積の床で選ばれた層の上の再現率にしかならず、昨日
+撤回したのと同じ「標準の選別が答えに入る」形になるため）。

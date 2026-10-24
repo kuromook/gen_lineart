@@ -295,6 +295,19 @@ on top of it, single illustrations go in, open the tree. **One candidate is
 still queued and undecided: the gradient masks**, which the survey above has
 just made measurable (the mask is an area, and inverting one that marks
 everything-but-the-character yields the character).
+**And one question raised by Track L, which only the author can answer** (規律6):
+the author's answer on approval was that a manuscript is **a base layer
+indicating the area with 濃淡 layers on top**, given in the context of **colour**.
+**Does it hold for monochrome manuscripts too?** It decides how L reads its own
+open item: if it holds, the 1,207 layers the area floor cut are to be settled by
+**identifying which layer is the base**, not by recovering areas from pixel
+morphology (L's keep4, a radius-4 opening). L declined to extend the answer from
+M's context to its own and declined to ask in its own words, which is the right
+call -- and **the foundation does not answer it either**, since routing the
+extension is the same extension. **Either way the 2,963-layer request stands**:
+which layer is the base cannot be identified without the pixels. When the author
+answers, the answer is recorded in their own words and **marked as either
+M-only or both tracks**; M-only leaves L's keep4 line authoritative.
 
 **The lineage, compressed 2026-10-24.** Each of these is now a ledger entry or a
 record file rather than a paragraph here.
@@ -1007,6 +1020,12 @@ work, and the stated expectation is that the pieces make each other easier.
   Its null is **taken fresh in this pool** -- Track J/L's region-F1 floor
   (`blank` 0.0084) is not carried in. The layer inventory it needs from the
   extraction side **queues behind Track L's 2,963 layers**. No GPU at this stage.
+  **Track L has offered the shape of its reconcile for the third of those three
+  checks** (identifying the base layer): `tools/evaluation/l8_inventory_reconcile.py`
+  takes the delivery side's selection rule, lays it back over the full census and
+  turns the result into a known cell, which is the same move M needs once its
+  own full layer inventory arrives. **It is a shape, not a number** -- nothing of
+  L's pool transfers. The foundation calls L when M reaches that stage.
 
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
