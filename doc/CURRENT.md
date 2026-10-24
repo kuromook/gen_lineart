@@ -295,19 +295,25 @@ on top of it, single illustrations go in, open the tree. **One candidate is
 still queued and undecided: the gradient masks**, which the survey above has
 just made measurable (the mask is an area, and inverting one that marks
 everything-but-the-character yields the character).
-**And one question raised by Track L, which only the author can answer** (規律6):
-the author's answer on approval was that a manuscript is **a base layer
-indicating the area with 濃淡 layers on top**, given in the context of **colour**.
-**Does it hold for monochrome manuscripts too?** It decides how L reads its own
-open item: if it holds, the 1,207 layers the area floor cut are to be settled by
-**identifying which layer is the base**, not by recovering areas from pixel
-morphology (L's keep4, a radius-4 opening). L declined to extend the answer from
-M's context to its own and declined to ask in its own words, which is the right
-call -- and **the foundation does not answer it either**, since routing the
-extension is the same extension. **Either way the 2,963-layer request stands**:
-which layer is the base cannot be identified without the pixels. When the author
-answers, the answer is recorded in their own words and **marked as either
-M-only or both tracks**; M-only leaves L's keep4 line authoritative.
+**The question Track L raised and did not ask has been answered, and it was not
+M-only** (規律6; L declined to extend M's answer into its own context, and
+the foundation declined to route the extension, so it went to the author as a
+question). Author's words, kept whole because the asymmetry in them is the
+result:
+
+> キャラクターの仕上げに対してこのように作業したモノクロ原稿は存在はする ただほんの僅か
+> また、3Dレンダリングから作成した背景についてはベース領域の上に線画クリッピングという構成になってるものが多くある(キャラクター線画ではないので基本的に対象ではないが、**コマの排他的な部分を表すことが多いのでこのベース面は使いようはあるかもしれない**)
+> 同様に背景(背面処理トーン)の配置にもこの手法がつかわれている
+
+**So "base layer plus 濃淡" is the main line in colour and background-only in
+monochrome.** For Track L's open item the answer is **no change**: character
+finishing done that way is ほんの僅か, so the 1,207 layers stay a question about
+pixel morphology and **keep4 remains the authoritative line**; the 2,963-layer
+request is unchanged. **What the answer opened is a different door** -- the
+background base areas, measured as L9 and entered in Track L's standing homework
+above. For Track M it fixes an asymmetry that its candidate 2 has to carry:
+the same structure holds in monochrome **for backgrounds only**, never for
+characters.
 
 **The lineage, compressed 2026-10-24.** Each of these is now a ledger entry or a
 record file rather than a paragraph here.
@@ -894,6 +900,39 @@ work, and the stated expectation is that the pieces make each other easier.
   answer either**: how to build an external standard for areas at all, given
   that whole layers mix line and area, radius-4 cutting is circular, and the
   `beta`-named layers are the ones largely absent from the raster.
+  **L9 (2026-10-24, `61f761b`, pushed) put a candidate into that homework, and
+  it came from the author and not from the statistics.** Pulling the census by
+  the author's own words (`rendering` / `base` / `背景` / `背面` / `bg`) gives
+  **125 content-bearing layers over 28 pages, both works** (ako6 104, ako7 21),
+  and **every one of them has コマ in `ancestors`, without exception**. In 41
+  folders over 22 pages a `base` and a line layer sit in the same folder in a
+  `back`/`middle`/`front` depth stack, each step a pair of **base (large, nearly
+  pure black) and line art (small, grey)** -- e.g. page0056 `/p/コマ 2/"N"/middle`
+  holds `rendering_base_middle0001` at gray 0.6, dr 0.0339 beside
+  `rendering_lineart_middle0001` at gray 39.9, dr 0.0030. **The foundation
+  reproduced the selection from the delivered census**: the same 125 / 28 /
+  104 / 21 under "rendered and `drawn_ratio` > 0" (166 rows before the content
+  filter, コマ in `ancestors` on all 166), and the known cell page0028 `bg base`
+  at **dr 0.129759**, matching the manifest's `excluded` row exactly. **One
+  number is not reconciled**: L reports the largest group as 76 layers at gray
+  median 0.6, the foundation's `base`-in-name subset is **62** at gray median
+  0.55 (bam >= 0.95 on 62 of 62, `preview_dark` < 0.5 on 55 of 62). The grouping
+  rule differs, not the finding -- **the same shape as the 141-vs-206
+  disagreement, and it is L's number until L names the rule**.
+  **L's P5 half-missed and the bar was not moved**: it predicted the base areas
+  would fail the colour test for not being black; they pass it, and what excludes
+  them is `preview_dark`, because line art and tone sit on top of them so the
+  finished page is not dark there. **This is why L8's area floor must not be
+  generalised into "the reason areas fall out of the standard"** -- see lesson 15.
+  **These 125 are not ベタ** and are not counted as ベタ, because the author says
+  キャラクター線画ではないので基本的に対象ではない; they are a candidate
+  **external standard for areas**, on the author's own hint that they often mark
+  コマの排他的な部分. **What cannot be said yet: exclusivity.** Whether the base
+  areas tile a コマ without overlapping needs the pixels, and **all 125 are
+  inside the 2,963 already requested**, so nothing new is owed by the extraction
+  side. The sample is **28 of 65 pages**, so how many exist in the whole corpus
+  is a separate count -- a name scan on the extraction side, **not yet asked
+  for**.
   **Second result, same night: whether `black` is a fill layer is a property of
   the GENERATION, and the author answered by telling L to measure.** The author's
   process knowledge, which nothing here could derive: when the tone-layer method
@@ -1020,6 +1059,14 @@ work, and the stated expectation is that the pieces make each other easier.
   Its null is **taken fresh in this pool** -- Track J/L's region-F1 floor
   (`blank` 0.0084) is not carried in. The layer inventory it needs from the
   extraction side **queues behind Track L's 2,963 layers**. No GPU at this stage.
+  **The monochrome side of the author's answer is asymmetric, and candidate 2
+  has to carry that** (confirmed 2026-10-24 by L9, after L put the question to
+  the author): the base-plus-濃淡 construction is the main line in colour, but in
+  monochrome it holds **for backgrounds only** -- 3D-rendered backgrounds with
+  line art clipped over a base area, and 背面処理トーン placement -- and
+  character finishing done that way is ほんの僅か. So "colour and monochrome pose
+  the same structural question" is true of backgrounds and false of characters,
+  and M's registration says which it is testing.
   **Track L has offered the shape of its reconcile for the third of those three
   checks** (identifying the base layer): `tools/evaluation/l8_inventory_reconcile.py`
   takes the delivery side's selection rule, lays it back over the full census and
@@ -1665,8 +1712,13 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     and **this author's line layers carry no anti-aliasing at all** (`線画 skin`
     and `線画 hair` both 1.0). P3 came back 1,239 of 1,551 above the cut.
     **The count survived and the explanation did not**: the 128 are real, and
-    what removes areas from the standard is the area floor (1,207 of 1,551
-    unseen dark layers) and not the colour test (63). The two stand together
+    what removes areas from the standard **in this family** is the area floor
+    (1,207 of 1,551 unseen dark layers) and not the colour test (63).
+    **That last clause was generalised too far for one day and L9 corrected it:
+    there is no single reason an area falls out of the standard.** The background
+    base layers are nearly pure black, pass the colour test and are large, and
+    what removes them is **`preview_dark`** -- a property of the finished page
+    and not of the layer. Different family, different axis. The two stand together
     here at Track L's own suggestion, because one of them looks like a slip and
     the pair shows what it is: a mechanism arrives already feeling measured,
     and the only defence is to register it as a prediction -- which is what made
