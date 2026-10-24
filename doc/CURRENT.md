@@ -150,11 +150,23 @@ Measured as Jaccard overlap of each page's multiset of
 pairing a `<work>/pageNNNN` against a `<work>/doneN/<work>-NN` -- the background
 and effect layers byte-identical by `drawn_ratio`, the character line and fill
 layers different. `ako6/page0117` vs `ako6/done6/ako6-57` is one: 110 of 127
-layers identical, the `線画 *` and `black` layers all different. **17 pairs cross
-the 0.5 threshold in all and the 17th crosses works, so 34 of the 65 pages are a
-member of some pair while only the 16 same-work pairs are grounds for collapsing
-one: the pool holds 49 distinct pages on that reading** (this file first said
-"about 32 pages" and the count is 34),
+layers identical, the `線画 *` and `black` layers all different.
+**The pair list is not quotable without the rule that made it, which Track L
+established by re-deriving it and getting a third value.** The rule used here:
+**all 7,362 rows**, triples of `(name, ancestors, drawn_ratio)`, Jaccard
+**>= 0.5** -- which gives **17 pairs over 34 pages**, 16 of them within one work
+(0.598 to 0.900) and the 17th across works at 0.693. Excluding the layers with
+nothing drawn gives **16 pairs over 32 pages** instead, because empty layers
+match each other and lift the overlap. **What is stable and what is not**:
+**15 same-work pairs survive every rule tried**, and under this rule there is a
+**gap** -- no same-work pair falls between 0.4 and 0.598 -- so the threshold is
+not the fragile part, the **population** is. The one rule-dependent same-work
+pair is `ako7/page0175` against `ako7/done2/ako7-40` (0.598 with empty layers,
+**0.370** without); the cross-work pair sits in every version (0.693 / 0.664 /
+0.537) and the shift is not even monotone, since
+`ako6/page0118`-`ako6/done6/ako6-56` *rises* from 0.691 to 0.710. **So the pool
+holds 49 or 50 distinct pages**, and that reading is what does not move. This
+file said "about 32 pages" first and the count under its own rule is 34.
 which every per-page figure on this page is computed over -- it is not wrong,
 it is a pool with a known multiplicity, and any **per-page** rate reads about a
 quarter heavier than a distinct-page rate would. **Which member is the finished
@@ -323,8 +335,17 @@ before running it (`1004fba`, 10:40) and the foundation's band check is
 delivered** (`outbox/band_check_l10_20261024.md`): three of four predictions
 pass the band, the registration is genuinely prior, and the pooling clause is
 right. **What does not pass is P7** -- "keep4 is bimodal and the middle is thin"
-carries no number, so no value can falsify it, and it has to be quantified
-*before* the body is read (not bar-moving, because nothing has been read yet).
+carries no number, so no value can falsify it. **The foundation offered to let it
+be quantified before the body was read, and Track L declined on the grounds that
+it had already read the body** (`60849ac`): a number chosen now would be moving
+the bar, not repairing the registration, and the `<15%` bar L first reported came
+from the analyser written *after* the run. **So P7 is recorded as neither PASS
+nor FAIL but "no test", with its 43.87% kept as a measurement and reserved as
+material for the next registration's bar** -- which will be **L6's measured
+middle band at the panel level**, a known cell serving as the bar. L withdrew its
+own earlier "P7 FAIL" wording in the same pass. **The offer was correct as a band
+rule and wrong about L's state, and L's reading is the one that stands**: the
+repair is available only to a party that has not looked.
 **The foundation's reading of L's KC2 failure, which L called its own
 registration mistake**: two thresholds were made into one. KC2 is an identity
 against a **published column** and must therefore use `gray<230`, because that
@@ -333,13 +354,24 @@ parameter** and does not have to equal it. **Which threshold is "the area the
 author painted" is settled by the author's process, not by the number that makes
 KC2 pass** (規律6) -- choosing the passing number is the instrument fitting
 itself. Three further remarks, each a consequence of a rule adopted the same
-day: the 746 mismatching layers are a **cross-generation total** and belong in
-an `ako6` row and an `ako7` row (lesson 6); **"version duplication does not
-affect layer counts" is true in general and false for this family**, since the
-background base layers are identical across versions, so the 125 rows are
-**96 distinct compositions** and 13 of the 28 family pages are one of a pair;
-and **P8 and P10 share 7 layers**, so passing both is not two independent
-confirmations. **L10's own framing of P10 is the strongest thing in the
+day, and **L measured all three**: the 746 mismatching layers were a
+**cross-generation total**, and split, they are **not** skewed by generation
+(`ako6` 406/1,591 = 0.2552, `ako7` 340/1,372 = 0.2478) -- **what they are skewed
+by is the name**, with `線画` 117, `black` 98, `レイヤー 1` 59 at the top of the
+mismatches and `線画` 431, `線画 skin` 308, `線画 hair` 204 at the top of the
+matches. **`線画` heads both lists, so some `線画` layers carry grey content and
+others do not, and the name does not determine the family *within a single
+page*** -- which belongs beside "a black layer is fill is a function of the
+generation" in lesson 6, and widens it: the name fails to determine the family
+not only across generations but inside one page. Second, **"version duplication
+does not affect layer counts" is true in general and false for this family**,
+since the background base layers are identical across versions, so the 125 rows
+are **96 distinct compositions** (`base` 62 -> 48, `lineart`/`線画` 20 -> 14) and
+13 of the 28 family pages are one of a pair -- **and P10's separation survives
+the de-duplication**: `base` at keep4 >= 0.8 is 62/62 and **48/48**, the
+`lineart`/`線画` members are 0/20 and **0/14**, so the split is not an artefact
+of the multiplicity. Third, **P8 and P10 share 7 layers**, which L's report now
+states, so passing both is not two independent confirmations. **L10's own framing of P10 is the strongest thing in the
 registration**: the 125 were chosen by the author's words, so keep4 agreeing
 with them is keep4 agreeing with the author rather than with its own shape
 criterion. Track H holds H19 at **+0.044 against a
@@ -1587,7 +1619,10 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
    depicts. The list, as Track L assembled it: *a black layer is fill* (it is a
    function of the generation, the user's own correction); *a `beta` name gives
    a clean standard* (it collapses in `ako7`, 2 layers over 1.1%); *line layers
-   are anti-aliased* (this author's are pure black, bam 1.0); *a base area fails
+   are anti-aliased* (this author's are pure black, bam 1.0); *a name identifies
+   a family* (`線画` heads both the matching and the mismatching list of L10's
+   KC2, so the name does not determine the family **inside one page**, let alone
+   across generations); *a base area fails
    the colour test for not being black* (it passes; `preview_dark` is what
    excludes it); *the area floor is why areas fall out of the standard*
    (family-dependent, lesson 15). **So `ako6` and `ako7` do not go on one row**,
