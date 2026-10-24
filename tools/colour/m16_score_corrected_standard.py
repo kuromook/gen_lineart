@@ -6,6 +6,15 @@
   - **フォルダーがベースのときの面は、そのフォルダーの子孫の描画層のアルファの和**
   - **重なりは z 順で上の成分が勝つ**(木の深さ優先・`order_in_parent` 昇順 = 下から。
     合成が見せているものに合わせる)。**面積の小さい成分が勝つ版も印字して差を示す**
+
+**2026-10-24 19:30 の訂正(走らせた結果、z 順が標準を壊した)**: z 順で塗ると
+823成分が **355面**に落ち、`skima12H` では **148成分 → 1面**、`page0002` は 9 → 1 に
+なった。原因は **罠 T-M3** —— **export されたアルファはクリップ後の姿ではない**ので、
+**全面を申告するクリップベースが上にあると、可視は数画素でもページ全部を取る**。
+「合成が見せているもの」は **export には存在しない**。
+→ **主値は「面積の小さい成分が勝つ」(追補7 R3)に戻し、z 順の数は印字して
+T-M3 の効きを示す。** これは**腕の点数ではなく標準自身の形**(148成分 → 1面)で
+決めた判断である。棒・A0 の構成・床・帰無値・符号検定は動いていない。
   - 棒・A0 の構成(8段)・床(1e-5)・帰無値・符号検定は**追補7 のまま**。
     **動いたのは標準の同定だけである**
 
@@ -183,37 +192,40 @@ def main():
         (gt, garea), (gt_a, garea_a), st = measure_standard(p, pr, grid, floor_px)
         tot.update(st)
 
-        known, _ = m12.score_from_small(gt, 1, gt, garea, floor_px)
+        known, _ = m12.score_from_small(gt_a, 1, gt_a, garea_a, floor_px)
         a0_lab = m12.equal_value_components(m12.quantise(im, m12.LEVELS))
         a0, _ = m12.filtered_labels(a0_lab, max(1, round(m12.FLOOR * pw * ph)))
         self_up = m12.ic_m7(a0, s, grid, floor_px)
+        _ = gt  # z 順の標準は印字のためだけに保持する
         n1 = np.zeros((ph, pw), np.int32)
         n2 = np.ones((ph, pw), np.int32)
-        n3, gr, gc = m12.grid_null((ph, pw), len(garea))
-        r_a0, _ = m12.score_from_small(a0, s, gt, garea, floor_px)
-        r_n1, _ = m12.score_from_small(n1, s, gt, garea, floor_px)
-        r_n2, _ = m12.score_from_small(n2, s, gt, garea, floor_px)
-        r_n3, _ = m12.score_from_small(n3, s, gt, garea, floor_px)
-        # 印字のみ: 面積優先の標準に対する A0
-        r_a0_alt, _ = m12.score_from_small(a0, s, gt_a, garea_a, floor_px)
+        n3, gr, gc = m12.grid_null((ph, pw), len(garea_a))
+        # 主値 = 面積の小さい成分が勝つ標準(追補7 R3。上の訂正を参照)
+        r_a0, _ = m12.score_from_small(a0, s, gt_a, garea_a, floor_px)
+        r_n1, _ = m12.score_from_small(n1, s, gt_a, garea_a, floor_px)
+        r_n2, _ = m12.score_from_small(n2, s, gt_a, garea_a, floor_px)
+        r_n3, _ = m12.score_from_small(n3, s, gt_a, garea_a, floor_px)
+        # 印字のみ: z 順の標準(T-M3 で壊れることを示すため)
+        r_a0_alt, _ = m12.score_from_small(a0, s, gt, garea, floor_px)
 
         rows.append({'page': p['page'], 'scale': s, 'bases': st['bases'],
                      'folder_bases': st['folder'], 'components': st['components'],
-                     'gt_areas': len(garea), 'gt_areas_smallwin': len(garea_a),
+                     'gt_areas': len(garea_a), 'gt_areas_zorder': len(garea),
                      'known_cell_f1': round(known['region_f1'], 6),
                      'ic_m7_f1': round(self_up['region_f1'], 6),
                      'a0_n': r_a0['n_pred'], 'a0_matched': r_a0['matched'],
                      'a0_prec': round(r_a0['precision'], 4),
                      'a0_rec': round(r_a0['recall'], 4),
                      'a0_f1': round(r_a0['region_f1'], 4),
-                     'a0_f1_smallwin': round(r_a0_alt['region_f1'], 4),
+                     'a0_f1_zorder': round(r_a0_alt['region_f1'], 4),
                      'n1_f1': round(r_n1['region_f1'], 4),
                      'n2_f1': round(r_n2['region_f1'], 4),
                      'n3_f1': round(r_n3['region_f1'], 4),
                      'n3_shape': f'{gr}x{gc}'})
         print(f'{p["page"]:44s} base {st["bases"]:>3}(fold {st["folder"]:>2}) '
-              f'gt {len(garea):>4} known {known["region_f1"]:.4f} '
-              f'up {self_up["region_f1"]:.4f} rec {r_a0["rec" if False else "recall"]:.4f} '
+              f'gt {len(garea_a):>4}(z {len(garea):>4}) '
+              f'known {known["region_f1"]:.4f} '
+              f'up {self_up["region_f1"]:.4f} rec {r_a0["recall"]:.4f} '
               f'A0 {r_a0["region_f1"]:.4f} N1 {r_n1["region_f1"]:.4f} '
               f'N2 {r_n2["region_f1"]:.4f} N3 {r_n3["region_f1"]:.4f} '
               f'{time.time()-t0:6.1f}s', flush=True)
@@ -241,12 +253,12 @@ def main():
     print('\n== ページごと(プールしない。登録集合。追補7 §G5 と並べて読む) ==')
     print(f'{"page":30s} {"base":>4} {"fold":>4} {"成分":>5} {"gt":>4} '
           f'{"A0n":>5} {"照合":>4} {"prec":>6} {"rec":>6} {"A0":>7} '
-          f'{"A0(小)":>7} {"N1":>6} {"N2":>6} {"N3":>6}')
+          f'{"A0(z)":>7} {"N1":>6} {"N2":>6} {"N3":>6}')
     for r in rows:
         print(f'{r["page"][-28:]:30s} {r["bases"]:>4} {r["folder_bases"]:>4} '
               f'{r["components"]:>5} {r["gt_areas"]:>4} {r["a0_n"]:>5} '
               f'{r["a0_matched"]:>4} {r["a0_prec"]:>6.3f} {r["a0_rec"]:>6.3f} '
-              f'{r["a0_f1"]:>7.4f} {r["a0_f1_smallwin"]:>7.4f} '
+              f'{r["a0_f1"]:>7.4f} {r["a0_f1_zorder"]:>7.4f} '
               f'{r["n1_f1"]:>6.3f} {r["n2_f1"]:>6.3f} {r["n3_f1"]:>6.3f}')
 
     print('\n== judge: ページごとの符号検定(両側。n=8 では 8/8 以外は通らない) ==')
@@ -263,9 +275,10 @@ def main():
     print(f'  ベース {tot["bases"]}(フォルダー {tot["folder"]} / '
           f'描画0 {tot["zero_drawn"]} / ラスタ無し {tot["no_raster"]}) '
           f'成分 {tot["components"]} '
-          f'z順の面 {sum(r["gt_areas"] for r in rows)} '
-          f'小面積優先の面 {sum(r["gt_areas_smallwin"] for r in rows)}')
-    print('  A0(小) は追補7 R3 の重なり規則に対する A0。印字のみで判定に使わない。')
+          f'主値(小面積優先)の面 {sum(r["gt_areas"] for r in rows)} '
+          f'z順の面 {sum(r["gt_areas_zorder"] for r in rows)}')
+    print('  A0(z) は z 順の標準に対する A0。印字のみで判定に使わない。')
+    print('  z 順は T-M3 で壊れる(全面を申告するクリップベースが下を消す)。')
     print('登録集合なので主張は出ない。')
     return 0
 
