@@ -1,0 +1,182 @@
+# -*- coding: utf-8 -*-
+"""L14 既知セル。PASS しなければ本体は起動しない(登録 §5)。
+
+KC8  器具: 線だけ閉じたリング -> 腕1 が照合 / 10px の切れ目 -> 腕1 は漏れる /
+           切れ目に 10px の印を置く -> 腕2 が照合。工程1->2 の因果を3行で通す
+KC9  データ経路: FILL_SOLID ⊆ truth4 (L12 の正解は上位集合)
+KC11 器具: 自前 matcher と region_metrics.match が8連結で一致
+"""
+import csv, os, sys
+import numpy as np, cv2
+
+sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
+from fill_mask import fill_mask
+from region_metrics import match as rm_match
+
+MINREG, IOU = 500, 0.5
+A = cv2.CC_STAT_AREA
+PAD = 32
+TRUTH = os.environ.get('L12_TRUTH', '')
+INV   = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
+KEEP4 = '/home/sh1/deepl/lineart-fill-region/results/l10_keep4_all_layers/keep4.csv'
+BASE  = '/home/sh1/deepl/lineart/data/incoming_manuscript'
+KEEP4_FILL = 0.95
+DARK_MIN, COV_MAX = 0.5, 0.95
+DROP_TOP = ('text', 'sketch set')
+
+
+def comps(mask, conn, min_px=MINREG):
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), conn)
+    ids = [i for i in range(1, n) if stats[i, A] >= min_px]
+    return lab, ids, stats
+
+
+def match_lab(plab, pids, pstat, glab, gids, gstat, iou_thr=IOU):
+    """IoU>=thr の貪欲1対1。{gt_id: (pred_id, iou)} を返す。規則は region_metrics と同じ。"""
+    cand = []
+    both = (plab > 0) & (glab > 0)
+    if both.any():
+        pairs, counts = np.unique(np.stack([plab[both], glab[both]]), axis=1,
+                                  return_counts=True)
+        ps, gs = set(pids), set(gids)
+        for (pi, gi), inter in zip(pairs.T, counts):
+            pi, gi = int(pi), int(gi)
+            if pi not in ps or gi not in gs:
+                continue
+            union = int(pstat[pi, A]) + int(gstat[gi, A]) - int(inter)
+            iou = int(inter) / union if union else 0.0
+            if iou >= iou_thr:
+                cand.append((iou, pi, gi))
+    cand.sort(reverse=True)
+    up, ug, out = set(), set(), {}
+    for iou, pi, gi in cand:
+        if pi in up or gi in ug:
+            continue
+        up.add(pi); ug.add(gi); out[gi] = (pi, iou)
+    return out
+
+
+def arm(barrier, glab, gids, gstat):
+    """塗りつぶしツール: 障壁の補集合の4連結成分 >=500px を候補面にして照合する。"""
+    plab, pids, pstat = comps(~barrier, 4)
+    return plab, pids, pstat, match_lab(plab, pids, pstat, glab, gids, gstat)
+
+
+def kc8():
+    H = 400
+    yy, xx = np.ogrid[:H, :H]
+    r2 = (yy - 200) ** 2 + (xx - 200) ** 2
+    disk = r2 <= 100 ** 2
+    ring = (r2 <= 103 ** 2) & (r2 > 100 ** 2)
+    glab, gids, gstat = comps(disk, 8)
+    _, _, _, m = arm(ring, glab, gids, gstat)
+    a = len(m) == 1 and list(m.values())[0][1] >= 0.95
+    print(f'KC8a 閉じたリング: 腕1 照合 {len(m)}/1 IoU '
+          f'{list(m.values())[0][1] if m else 0:.4f} (>=0.95)  {"PASS" if a else "FAIL"}')
+    gap = ring.copy(); gap[195:205, 290:310] = False
+    _, _, _, m2 = arm(gap, glab, gids, gstat)
+    b = len(m2) == 0
+    print(f'KC8b 10px の切れ目: 腕1 照合 {len(m2)}/1 (==0 漏れる)  {"PASS" if b else "FAIL"}')
+    mark = np.zeros((H, H), bool); mark[195:205, 290:310] = True   # ベタ側に置いた印
+    _, _, _, m3 = arm(gap | mark, glab, gids, gstat)
+    c = len(m3) == 1 and list(m3.values())[0][1] >= 0.95
+    print(f'KC8c 印を置く: 腕2 照合 {len(m3)}/1 IoU '
+          f'{list(m3.values())[0][1] if m3 else 0:.4f} (>=0.95)  {"PASS" if c else "FAIL"}')
+    return a and b and c
+
+
+def kc11():
+    H = 300
+    yy, xx = np.ogrid[:H, :H]
+    gt = np.zeros((H, H), bool); pr = np.zeros((H, H), bool)
+    for (cy, cx, r) in ((60, 60, 30), (60, 200, 25), (200, 60, 40), (210, 210, 20)):
+        gt |= ((yy - cy) ** 2 + (xx - cx) ** 2) <= r ** 2
+    for (cy, cx, r) in ((62, 62, 30), (60, 200, 12), (200, 60, 39), (120, 150, 35)):
+        pr |= ((yy - cy) ** 2 + (xx - cx) ** 2) <= r ** 2
+    ref = rm_match(pr, gt)
+    plab, pids, pstat = comps(pr, 8)
+    glab, gids, gstat = comps(gt, 8)
+    mine = match_lab(plab, pids, pstat, glab, gids, gstat)
+    good = (len(mine) == ref['matched'] and len(pids) == ref['n_pred']
+            and len(gids) == ref['n_gt'])
+    print(f'KC11 matcher: 自前 matched {len(mine)} n_pred {len(pids)} n_gt {len(gids)} / '
+          f'region_metrics {ref["matched"]} {ref["n_pred"]} {ref["n_gt"]}  '
+          f'{"PASS" if good else "FAIL"}')
+    return good
+
+
+def topf(anc):
+    p = [x for x in anc.split('/') if x]
+    return p[0] if p else ''
+
+
+def gated_layers():
+    """L12 が通した 1,981 層を FILL/LINE に割る。選別は形の試験だけ(登録 §2)。"""
+    k4 = {(r['page_id'], r['layer_id']): r for r in csv.DictReader(open(KEEP4))}
+    fill, line = {}, {}
+    for r in csv.DictReader(open(INV, encoding='utf-8-sig')):
+        if r['folder'] != 'False' or r['rendered'] != 'True':
+            continue
+        try:
+            if float(r['drawn_ratio']) <= 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        pd = r['preview_dark'].strip()
+        if pd == '' or float(pd) < DARK_MIN:
+            continue
+        kk = k4.get((r['page_id'], r['layer_id']))
+        if kk is None or float(kk['cov']) >= COV_MAX:
+            continue
+        if topf(r['ancestors']) in DROP_TOP:
+            continue
+        pid = r['page_id']
+        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        p = f'{BASE}/{w}/all_layers/{pid}_L{r["layer_id"]}.png'
+        d = fill if float(kk['keep4']) >= KEEP4_FILL else line
+        d.setdefault((pid, w), []).append((int(r['layer_id']), p))
+    return fill, line
+
+
+def page_fill_solid(layers):
+    acc = None
+    for lid, path in layers:
+        im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if im is None:
+            return None
+        ink = im < 128
+        if acc is None:
+            acc = np.zeros(ink.shape, bool)
+        if not ink.any():
+            continue
+        ys, xs = np.nonzero(ink)
+        y0, y1 = max(0, ys.min() - PAD), min(ink.shape[0], ys.max() + 1 + PAD)
+        x0, x1 = max(0, xs.min() - PAD), min(ink.shape[1], xs.max() + 1 + PAD)
+        acc[y0:y1, x0:x1] |= fill_mask(ink[y0:y1, x0:x1], radius=4)
+    return acc
+
+
+def kc9(npages=6):
+    if not TRUTH or not os.path.isdir(TRUTH):
+        print('KC9 FAIL: L12_TRUTH が無い'); return False
+    fill, _ = gated_layers()
+    keys = sorted(fill)
+    pick = [k for k in keys if k[1] == 'ako6'][:npages // 2] + \
+           [k for k in keys if k[1] == 'ako7'][:npages // 2]
+    ok = True
+    for pid, w in pick:
+        fs = page_fill_solid(fill[(pid, w)])
+        t4 = cv2.imread(os.path.join(TRUTH, f'{w}_{pid}_t4.png'), cv2.IMREAD_GRAYSCALE)
+        if fs is None or t4 is None:
+            print(f'KC9 FAIL 読めない {pid}'); return False
+        out = int((fs & ~(t4 > 127)).sum())
+        ok &= out == 0
+        print(f'KC9 {pid}: FILL_SOLID {int(fs.sum()):,} / truth4 の外 {out} (==0)  '
+              f'{"PASS" if out == 0 else "FAIL"}')
+    return ok
+
+
+if __name__ == '__main__':
+    a, b, c = kc8(), kc11(), kc9()
+    print('\n既知セル', 'PASS' if (a and b and c) else 'FAIL')
+    sys.exit(0 if (a and b and c) else 1)
