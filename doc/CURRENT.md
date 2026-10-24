@@ -2286,7 +2286,14 @@ incident that actually happened here.
    90% for a new artist. Discipline 1 was written about numbers of this shape.
 
 9. **A selection is a measurement, and what it silently drops is part of the
-   result.** Added 2026-10-24 from the user's observation that *the instrument
+   result.** **Recorded here as adopted; how it is distributed to the tracks is
+   the user's open decision as of 2026-10-24 night, pending Track L's measurement
+   of the author's occlusion hypothesis** -- that measurement *is* a step of the
+   cleansing workstream, and its outcome can reshape 9-2's L-side example (the
+   789 pale layers). The rule itself rests on two independent witnesses, so the
+   pending result bears on the example and not on the rule. The notice sits in
+   the four trees' inboxes marked provisional.
+   Added 2026-10-24 from the user's observation that *the instrument
    work goes fine and the data keeps betraying it*, and from **Track L and Track
    M arriving at the same failure independently, neither knowing the other's
    version**: a borrowed brightness or saturation constant is not merely
