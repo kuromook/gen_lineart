@@ -12,7 +12,7 @@
 絶対の定数(棒A 0.30 / 棒C 0.50)だけ。
   --arms control   対照(帰無値)だけ      --arms real  本来の腕   --arms both
 """
-import argparse, csv, os, statistics as st, sys
+import argparse, re, csv, os, statistics as st, sys
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -184,29 +184,60 @@ def med(v):
 FULL_LOG = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate/run_full.log'
 
 
-def print_full_population():
-    """`--exclude-gapfill` の許可の条件: **全面の版と並べて印字する**
-    (結果を見た後の母集団変更にあたるため。基盤 2026-10-26)。
+def parse_full_abc():
+    """`run_full.log` から全面の版の 腕・対照・r0・床 を読む。
 
-    全面の版は**同じ器具・同じ seed で既に走っており**、その A/B/C を
-    `run_full.log` から読んで並べる。**この走行で計算し直した数ではない**ので、
-    「前の走行の記録」と印字する(規律2 の「より早い走行が記録した値」の形)。
-    **読めなければ走らない** —— 片方だけが出回るのを防ぐのが条件の趣旨である。
+    行の形: `B 床 = 対照 0.0876 + 3r0 0.0765 = **0.1641**  本来 0.0953 ...`
+    (印字は `3r0` なので **3で割って r0 に戻す**)。
     """
-    if not os.path.exists(FULL_LOG):
-        sys.exit(f'止める: 全面の版の記録 {FULL_LOG} が無い。'
-                 ' 外した版だけを出すことは許可されていない')
     txt = open(FULL_LOG, encoding='utf-8').read()
-    key = 'A / B / C ('
-    if key not in txt:
-        sys.exit(f'止める: {FULL_LOG} に A/B/C の節が無い(走り切っていない)')
-    blk = txt[txt.index(key):]
+    out, work = {}, None
+    for ln in txt[txt.index('A / B / C ('):].splitlines():
+        t = ln.strip()
+        for w in ('ako6', 'ako7'):
+            if t.startswith(w + ':'):
+                work = w
+        m = re.search(r'B 床 = 対照 ([\d.]+) \+ 3r0 ([\d.]+) = \*\*([\d.]+)\*\*'
+                      r'\s+本来 ([\d.]+)', t)
+        if m and work:
+            ch0, three_r0, floor, ch1 = (float(x) for x in m.groups())
+            out[work] = dict(arm=ch1, ctl=ch0, r0=three_r0 / 3.0, floor=floor)
+    return out
+
+
+def print_both_populations(res):
+    """**2つの版を、それぞれ自分の対照と自分の床と一緒に並べる**(基盤 2026-10-26)。
+
+    **除外版は第1の走行の部分集合解析ではなく、小さい母集団の上の第2の測定である。**
+    面を外すと語が1つ消え、どの成分が語を受けるかと純度が**上流で**変わる。
+    だから**対照も床も版ごとに違う** —— 床はその走行の中の対照の関数だからで(T97)、
+    全面版の床1つに腕2つを当てて読むと、今夜3回出た形をもう一度踏む。
+    """
+    full = parse_full_abc()
     print('\n' + '=' * 92)
-    print('**全面の版(前の走行の記録。この走行で計算し直したものではない)**')
-    print('  同じ器具(crc32 の種)・同じ seed・KC30 PASS。'
-          '外した版だけを読まないために並べる')
-    for ln in blk.splitlines():
-        print('  | ' + ln)
+    print('**2つの版。母集団が違うので、対照も床も別である**')
+    print('  **除外版は全面版の部分集合解析ではない** —— 面を外すと語が1つ消え、'
+          'どの成分が語を受けるかと純度が上流で変わる。')
+    print('  **小さい母集団の上の、第2の測定である。**')
+    print('  全面版の数は **前の走行の記録**(同じ器具 crc32・同じ seed・KC30 PASS)。'
+          'この走行で計算し直したものではない')
+    print()
+    print(f'  {"版":<28}{"プール":<7}{"腕":>9}{"対照":>9}{"r0":>9}'
+          f'{"床=対照+3r0":>13}  判定')
+    for w in ('ako6', 'ako7'):
+        f = full.get(w)
+        if f:
+            print(f'  {"全面 (前の走行の記録)":<24}{w:<7}{f["arm"]:>9.4f}{f["ctl"]:>9.4f}'
+                  f'{f["r0"]:>9.4f}{f["floor"]:>13.4f}  '
+                  f'{"床の上" if f["arm"] >= f["floor"] else "床の下"}')
+        a1 = res.get(('real', w, 'ch')); a0 = res.get(('shuffled', w, 'ch'))
+        if a1 and a0:
+            a1, a0 = a1[0], a0[0]
+            fl = a0['ch'] + 3 * a0['r0']
+            print(f'  {"隙間埋けを外した版 (この走行)":<21}{w:<7}{a1["ch"]:>9.4f}'
+                  f'{a0["ch"]:>9.4f}{a0["r0"]:>9.4f}{fl:>13.4f}  '
+                  f'{"床の上" if a1["ch"] >= fl else "床の下"}')
+        print()
 
 
 def main():
@@ -440,7 +471,7 @@ def main():
                       f'{fl:>14.4f}{a1["rate"]:>9.4f}  {verdict}'
                       + ('  **このセルは通った**' if (vA and vB and vC) else ''))
     if EXCLUDE:
-        print_full_population()
+        print_both_populations(res)
 
 
 if __name__ == '__main__':
