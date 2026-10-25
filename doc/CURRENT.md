@@ -3254,6 +3254,11 @@ the floor is a function of the control inside that run (T97) and the exclusion m
 control too -- two arms against one floor is the next misreading waiting to happen. **A
 reporting condition belongs in the startup gate**, which is T102 from the useful side: the
 check that cannot run is the one that fails silently, so make it fail loudly and early.
+**And one line from L worth keeping as a rule (`f4d31ac`)**: it had verified that the excluded
+version cannot be made by filtering, but had not put that in the headline -- *what you verified
+and what the reader receives are two different things*. A verified fact outside the headline
+travels as the claim the headline makes. The table is now four columns per version
+(arm, control, `r0`, floor) so two arms cannot be read against one floor.
 
 **Three fronts and a queue.** Item 1 is Track H on the **author's time**, which
 is this project's scarce resource; item 2 is Track G on the machine's, slot open
