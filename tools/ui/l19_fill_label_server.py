@@ -9,6 +9,8 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0 --final  本番 (labels/fill_words.jsonl)
   python ... --final --reask results/l19_ui/reask.json              出し直し (語彙が増える前に答えた分)
   python ... --final --from 0                                       先頭から見直す (異常の報告用)
+  python ... --queue results/l25_layer_ui/queue.json --save labels/layer_kind.jsonl --extra ''
+                                                                    **層ごとの正解** (L25)
   -> http://<host>:8475
 
 **異常の報告** (2026-10-25 作者の指示): 語の答とは別の流れ。`X` または「異常」ボタンで
@@ -17,7 +19,7 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
 
 **自動で決まる面も 1割が同じ見た目で混ざっている**(`why` はクライアントに送らない)。
 """
-import argparse, json, time
+import argparse, json, os, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Lock
@@ -34,15 +36,23 @@ lock = Lock()
 S = {}
 
 
-def load_state(save_path, reask=None):
+def load_state(save_path, reask=None, queue=None, extra=None):
     S['save'] = save_path
     S['flagfile'] = LAB / 'fill_anomaly.jsonl'
     S['flag'] = {}
-    d = json.load(open(UI / 'queue.json'))
+    d = json.load(open(queue or (UI / 'queue.json')))
     S['q'] = d['queue']
+    S['dir'] = Path(queue).parent if queue else UI
     S['meta'] = {k: d[k] for k in ('n', 'n_ask', 'n_check', 'n_auto', 'n_all',
                                    'words')}
-    for w in EXTRA_WORDS:                 # 作り直さずに語を足せるようにしておく
+    # 「その他」の行は行列が決める(層の正解では隙間埋けの選択肢が要らない)
+    S['meta']['others'] = d.get('others') or [
+        ['gapfill_line', '隙間埋め(線画の抜けを足した)', 'G'],
+        ['gapfill_fill', '隙間埋め(別レイヤのベタ用)', 'H'],
+        ['free', 'その他(語を入力)', 'T'], ['mixed', '混在(1語にできない)', 'M'],
+        ['skip', '分からない', 'S'],
+        ['anomaly', '⚑ 異常を報告(別のコマ・別の画像が混じっている)', 'X']]
+    for w in (EXTRA_WORDS if extra is None else extra):
         if w not in S['meta']['words']:
             S['meta']['words'].append(w)
     S['done'] = {}
@@ -72,6 +82,7 @@ def payload(o):
     r.pop('why', None)                      # **出自は出さない**
     r['cols'] = COLS[:len(r['cands'])]
     r['words'] = S['meta']['words']
+    r['others'] = S['meta']['others']
     r['saved'] = S['done'].get(o)
     r['flagged'] = S['flag'].get(o)
     r['n_flag'] = len(S['flag'])
@@ -187,7 +198,7 @@ button.hit{border-color:#888;background:#8882;font-weight:600}
 <div class="meta">黒い塊が聞いている面。色は縁 4px に接している線のレイヤ(ヒント。答ではない)。
 工程の産物(隙間埋め)なら G / H。</div>
 <script>
-let cur=0, it=null, t0=0, ctx=false, keymap={};
+let cur=0, it=null, t0=0, ctx=false, keymap={}, okeys={};
 async function go(o){
   if(o<0) o=0;
   const r=await fetch('/api/item?o='+o); if(!r.ok) return;
@@ -219,15 +230,12 @@ async function go(o){
     b.onclick=()=>pick('word',word,null); w.appendChild(b);
     if(i<9) keymap[String(i+1)]=word;
   });
-  const o2=document.getElementById('other'); o2.innerHTML='';
-  [['gapfill_line','隙間埋め(線画の抜けを足した)','G'],
-   ['gapfill_fill','隙間埋め(別レイヤのベタ用)','H'],
-   ['free','その他(語を入力)','T'],['mixed','混在(1語にできない)','M'],
-   ['skip','分からない','S'],
-   ['anomaly','⚑ 異常を報告(別のコマ・別の画像が混じっている)','X']].forEach(([k,t,key])=>{
+  const o2=document.getElementById('other'); o2.innerHTML=''; okeys={};
+  (it.others||[]).forEach(([k,t,key])=>{
     const b=document.createElement('button');
     b.innerHTML=t+' <span class="k">'+key+'</span>';
     b.onclick=()=>act(k); o2.appendChild(b);
+    okeys[key.toLowerCase()]=k;
   });
   info();
 }
@@ -274,13 +282,8 @@ addEventListener('keydown',e=>{
   if(!it||e.metaKey||e.ctrlKey) return;
   const k=e.key.toLowerCase();
   if(keymap[k]) pick('word',keymap[k],null);
-  else if(k==='g') act('gapfill_line');
-  else if(k==='h') act('gapfill_fill');
-  else if(k==='t') act('free');
-  else if(k==='m') act('mixed');
-  else if(k==='s') act('skip');
-  else if(k==='x') act('anomaly');
   else if(k==='c'){ctx=!ctx;showImg();}
+  else if(okeys[k]) act(okeys[k]);
   else if(k==='b') prv();
   else if(k==='n') nxt();
 });
@@ -319,7 +322,7 @@ class H(BaseHTTPRequestHandler):
                                   'application/json')
             if u.path in ('/crop', '/ctx'):
                 key = 'crop' if u.path == '/crop' else 'ctx'
-                p = UI / 'crops' / S['q'][o][key]
+                p = S['dir'] / 'crops' / S['q'][o][key]
                 return self._send(p.read_bytes(), 'image/png')
             self._send(b'not found', 'text/plain', 404)
         except Exception as e:                                      # noqa: BLE001
@@ -346,9 +349,16 @@ def main():
     ap.add_argument('--reask', help='出し直す order の JSON 配列')
     ap.add_argument('--from', dest='start', type=int, default=None,
                     help='この order から始める(先頭から見直すときは 0)')
+    ap.add_argument('--queue', help='別の行列 (既定は results/l19_ui/queue.json)')
+    ap.add_argument('--save', help='別の保存先 (labels/ からの相対でも絶対でも)')
+    ap.add_argument('--extra', default=None,
+                    help="語を足す。空文字で足さない (層の正解では '')")
     a = ap.parse_args()
-    load_state(LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl'),
-               a.reask)
+    sv = (Path(a.save) if a.save and os.path.isabs(a.save) else
+          (ROOT / a.save if a.save else
+           LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl')))
+    load_state(sv, a.reask, a.queue,
+               None if a.extra is None else [w for w in a.extra.split(',') if w])
     m = S['meta']
     if S['only'] is None:
         print(f"行列 {m['n']} (要判断 {m['n_ask']} + 自動の確認 {m['n_check']})  "
