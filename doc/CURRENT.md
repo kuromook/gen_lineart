@@ -333,8 +333,9 @@ the tone and gradient covering notices arrived.
 
 **A structure DB over the whole corpus exists as of 2026-10-25, and no notice
 announced it.** `db/manuscripts.duckdb`, **99,364,864 bytes**, built 10:16 from
-`db/clip_structure.jsonl` (353MB, a scan of all 7,634 pages, ~2h idle),
-documented in the extraction side's `doc/structure_db.md`: one row per page, per
+`db/clip_structure.jsonl` (353MB, a scan of all 7,634 pages and **306,009
+layers**, ~2h idle), documented in the extraction side's `doc/structure_db.md`
+(its commit `4941c60`): one row per page, per
 layer (folders included), per page x SQLite table, plus the colour and koma-frame
 CSVs already delivered. Joins are **by `page_path` and `layer_id`, never by work
 or page name** (same-named alternate versions exist). It reads the SQLite tables
@@ -359,7 +360,11 @@ being generated -- `config/line_selection_ledger_priority65.csv` with **`reason`
 and `failed`** columns alongside the statistics, **[41/65] at 11:31**, each page
 cross-checking `ledger_line_id == delivered_line_id` with JPEG diff 0 -- which is
 request (3) of **T86** and the thing that turns A/B/C from an estimate into a
-count.
+count (**[47/65] at 11:42**, all 47 matching the delivery). **The notice exists
+from 11:42**, after the foundation asked for one: `inbox/note_structure_db_20261025.md`,
+386 bytes -- the DB, its size, its layer count, where the documentation is, and
+that the body was not sent. That is the whole of what a notice has to be, and it
+is what the record was missing for an hour and a half.
 **Owed**: nothing, in the sense that both sides have paid. **L registered L10
 before running it (`1004fba`, 10:40) and the foundation's band check is
 delivered** (`outbox/band_check_l10_20261024.md`): three of four predictions
