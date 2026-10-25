@@ -7,6 +7,7 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
 
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0          試し (labels/fill_words_trial.jsonl)
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0 --final  本番 (labels/fill_words.jsonl)
+  python ... --final --reask results/l19_ui/reask.json              出し直し (語彙が増える前に答えた分)
   -> http://<host>:8475
 
 **自動で決まる面も 1割が同じ見た目で混ざっている**(`why` はクライアントに送らない)。
@@ -28,7 +29,7 @@ lock = Lock()
 S = {}
 
 
-def load_state(save_path):
+def load_state(save_path, reask=None):
     S['save'] = save_path
     d = json.load(open(UI / 'queue.json'))
     S['q'] = d['queue']
@@ -38,6 +39,11 @@ def load_state(save_path):
         if w not in S['meta']['words']:
             S['meta']['words'].append(w)
     S['done'] = {}
+    S['only'] = None                      # 出し直しのときだけ、行列を部分集合に絞る
+    S['re'] = set()                       # この走りで答え直した問
+    if reask:
+        got = {int(o) for o in json.loads(Path(reask).read_text())}
+        S['only'] = sorted(o for o in got if 0 <= o < len(S['q']))
     LAB.mkdir(exist_ok=True)
     if save_path.exists():
         for ln in open(save_path):
@@ -52,12 +58,25 @@ def payload(o):
     r['cols'] = COLS[:len(r['cands'])]
     r['words'] = S['meta']['words']
     r['saved'] = S['done'].get(o)
-    r['n'] = len(S['q'])
-    r['n_done'] = len(S['done'])
+    only = S['only']
+    if only is None:
+        r['n'], r['pos'] = len(S['q']), o + 1
+        r['n_done'] = len(S['done'])
+        r['nav_prev'], r['nav_next'] = max(0, o - 1), min(len(S['q']) - 1, o + 1)
+    else:
+        i = only.index(o) if o in only else 0
+        r['n'], r['pos'] = len(only), i + 1
+        r['n_done'] = len(S['re'])
+        r['nav_prev'], r['nav_next'] = only[max(0, i - 1)], only[min(len(only) - 1, i + 1)]
     return r
 
 
 def first_todo():
+    if S['only'] is not None:               # 出し直しでは「この走りで答え直したか」を見る
+        for o in S['only']:
+            if o not in S['re']:
+                return o
+        return S['only'][-1]
     for i in range(len(S['q'])):
         if i not in S['done']:
             return i
@@ -79,6 +98,7 @@ def save(d, annotator):
                        and bool(rec['top_word']))
     with lock:
         S['done'][o] = rec
+        S['re'].add(o)
         with open(S['save'], 'a') as fh:
             fh.write(json.dumps(rec, ensure_ascii=False) + '\n')
     return rec
@@ -114,8 +134,8 @@ button.hit{border-color:#888;background:#8882;font-weight:600}
   <b>この黒いベタは何?</b>
   <span id="pos" class="meta"></span><span id="done"></span>
   <span style="flex:1"></span>
-  <button onclick="go(cur-1)">← <span class="k">B</span></button>
-  <button onclick="go(cur+1)">→ <span class="k">N</span></button>
+  <button onclick="prv()">← <span class="k">B</span></button>
+  <button onclick="nxt()">→ <span class="k">N</span></button>
   <button onclick="ctx=!ctx;showImg()">コマ全体 <span class="k">C</span></button>
 </header>
 <div id="words"></div>
@@ -132,7 +152,7 @@ async function go(o){
   if(o<0) o=0;
   const r=await fetch('/api/item?o='+o); if(!r.ok) return;
   it=await r.json(); cur=o; t0=performance.now(); ctx=false; showImg();
-  document.getElementById('pos').textContent=(o+1)+' / '+it.n;
+  document.getElementById('pos').textContent=it.pos+' / '+it.n;
   document.getElementById('done').textContent=it.n_done+' 済み';
   // 縁に接している層(色のヒント)
   const h=document.getElementById('hint'); h.innerHTML='';
@@ -169,6 +189,8 @@ async function go(o){
   });
   info();
 }
+function nxt(){ if(it) go(it.nav_next); }
+function prv(){ if(it) go(it.nav_prev); }
 function act(k){
   if(k==='free'){const v=prompt('この黒は何ですか(語を入力)'); if(v) pick('free',null,v);}
   else pick(k,null,null);
@@ -190,7 +212,7 @@ async function pick(choice,word,free){
   await fetch('/api/save',{method:'POST',body:JSON.stringify({
     order:cur,choice:choice,word:word,free:free,
     ms:Math.round(performance.now()-t0)})});
-  go(cur+1);
+  nxt();
 }
 addEventListener('keydown',e=>{
   if(!it||e.metaKey||e.ctrlKey) return;
@@ -202,8 +224,8 @@ addEventListener('keydown',e=>{
   else if(k==='m') act('mixed');
   else if(k==='s') act('skip');
   else if(k==='c'){ctx=!ctx;showImg();}
-  else if(k==='b') go(cur-1);
-  else if(k==='n') go(cur+1);
+  else if(k==='b') prv();
+  else if(k==='n') nxt();
 });
 fetch('/api/todo').then(r=>r.json()).then(d=>go(d.o));
 </script>
@@ -261,12 +283,19 @@ def main():
     ap.add_argument('--port', type=int, default=PORT)
     ap.add_argument('--annotator', default='user')
     ap.add_argument('--final', action='store_true')
+    ap.add_argument('--reask', help='出し直す order の JSON 配列')
     a = ap.parse_args()
-    load_state(LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl'))
+    load_state(LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl'),
+               a.reask)
     m = S['meta']
-    print(f"行列 {m['n']} (要判断 {m['n_ask']} + 自動の確認 {m['n_check']})  "
-          f"保存済み {len(S['done'])}  保存先 {S['save'].name}  "
-          f"-> http://{a.host}:{a.port}", flush=True)
+    if S['only'] is None:
+        print(f"行列 {m['n']} (要判断 {m['n_ask']} + 自動の確認 {m['n_check']})  "
+              f"保存済み {len(S['done'])}  保存先 {S['save'].name}  "
+              f"-> http://{a.host}:{a.port}", flush=True)
+    else:
+        print(f"出し直し {len(S['only'])} 問 (全 {m['n']} 問のうち)  "
+              f"保存先 {S['save'].name} に追記  "
+              f"-> http://{a.host}:{a.port}", flush=True)
     H.annotator = a.annotator
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
 
