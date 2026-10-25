@@ -22,7 +22,8 @@
 DB に戻す列(この器具が出す):
   `dup_cluster_id`  塊の番号(重複なしは空)
   `cluster_kind`    A / B / C / D
-  `version_role`    final / superseded / sibling / single
+  `version_role`    final / superseded / sibling / **undecided** / single
+                    (**undecided は落とさない。安全側は「残す」**)
   `decided_by`      year / mtime_needed / author_needed / none
   `superseded_by`   その頁を置き換える頁の `page_path`(final / sibling は空)
 
@@ -158,12 +159,13 @@ def main():
         else:
             best, dec = None, 'mtime_needed'
         for p in group:
+            # best が決まらない塊(年が同じ)は **undecided**。落とさない。
             out[p] = dict(
                 dup_cluster_id=ci, cluster_kind=k,
                 version_role=('final' if p == best else 'superseded')
-                if best else 'superseded',
+                if best else 'undecided',
                 decided_by=dec,
-                superseded_by='' if p == best else (best or ''))
+                superseded_by='' if (best is None or p == best) else best)
         if best is None:
             need_mtime.append((ci, group))
     for p in pages:
@@ -182,14 +184,23 @@ def main():
           f'関わるページ {sum(len(g) for _, g in need_author)}')
     role = collections.Counter(v['version_role'] for v in out.values())
     print(f'  役割: {dict(role)}')
-    print(f'  → **腕の主値に使う代表 = single + final + sibling = '
-          f'{role["single"] + role["final"] + role["sibling"]} ページ**'
-          f'(superseded {role["superseded"]} を落とす)')
+    keep = role['single'] + role['final'] + role['sibling'] + role['undecided']
+    print(f'  → **腕の主値 = single + final + sibling + undecided = {keep} ページ**'
+          f'(**年で置き換えが確定した superseded {role["superseded"]} だけ落とす**)')
+    print(f'    undecided {role["undecided"]} ページは更新時刻が届いたら減る'
+          f'(**その時点で母集団が変わることを先に書いておく**)')
 
     print('\n== P22 / P23: 年を跨ぐ組で、新しい年のほうが大きいか ==')
     if pairs_ad:
         ge_l = sum(1 for n, o in pairs_ad if per[n]['layers'] >= per[o]['layers'])
         ge_d = sum(1 for n, o in pairs_ad if per[n]['dr'] >= per[o]['dr'])
+        gt_l = sum(1 for n, o in pairs_ad if per[n]['layers'] > per[o]['layers'])
+        eq = sum(1 for n, o in pairs_ad
+                 if per[n]['layers'] == per[o]['layers']
+                 and abs(per[n]['dr'] - per[o]['dr']) < 1e-9)
+        print(f'  **うち新旧が完全に同じ大きさの組 {eq} / {len(pairs_ad)}、'
+              f'新のほうが厳密に大きい組 {gt_l}** '
+              f'(棒は >= なので同じでも通る = 歯が立っていない)')
         print(f'  組 {len(pairs_ad)}  層数 新>=旧 **{ge_l} ({ge_l/len(pairs_ad):.3f})** '
               f'棒 0.80 -> {"PASS" if ge_l/len(pairs_ad) >= 0.8 else "**FAIL**"}')
         print(f'              描画の和 新>=旧 **{ge_d} ({ge_d/len(pairs_ad):.3f})** '
@@ -210,6 +221,14 @@ def main():
               f'-> {"PASS" if per[n]["f5"] > per[o]["f5"] else "**FAIL**"}')
     if not mar:
         print('  年を跨ぐ marisa の組は R-1 の対象に無い(同じ年か種類C)')
+
+    print('\n== P24-b marisa_color(作者の「追加依頼で彩色」はこちらではないか) ==')
+    for p in pages:
+        if 'marisa' in info[p]['work'].lower():
+            print(f'  {info[p]["year_txt"]:>6}/{info[p]["work"]:<14} '
+                  f'{Path(p.replace(chr(92),"/")).name:<26} '
+                  f'層{per[p]["layers"]:>4} 形式5 {per[p]["f5"]:>4} '
+                  f'描画の和 {per[p]["dr"]:7.2f}')
 
     print('\n== P25 名前の接尾辞(選別には使わない。falsifier) ==')
     fin = [p for p, v in out.items() if v['version_role'] == 'final']
