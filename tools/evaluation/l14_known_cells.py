@@ -4,7 +4,8 @@
 KC8  器具: 線だけ閉じたリング -> 腕1 が照合 / 10px の切れ目 -> 腕1 は漏れる /
            切れ目に 10px の印を置く -> 腕2 が照合。工程1->2 の因果を3行で通す
 KC9  データ経路: FILL_SOLID ⊆ truth4 (L12 の正解は上位集合)
-KC11 器具: 自前 matcher と region_metrics.match が8連結で一致
+KC11 器具: 自前 matcher の**組**が記録した定数と一致 (件数は region_metrics とも一致。
+     件数の一致は組の一致ではない -- 罠 T101)
 KC33 データ経路: 門の drawn_ratio と台帳の ink_px が層単位で一致 (逆向きは31層ずれ)
 """
 import csv, os, sys
@@ -98,10 +99,21 @@ def kc11():
     plab, pids, pstat = comps(pr, 8)
     glab, gids, gstat = comps(gt, 8)
     mine = match_lab(plab, pids, pstat, glab, gids, gstat)
-    good = (len(mine) == ref['matched'] and len(pids) == ref['n_pred']
-            and len(gids) == ref['n_gt'])
-    print(f'KC11 matcher: 自前 matched {len(mine)} n_pred {len(pids)} n_gt {len(gids)} / '
-          f'region_metrics {ref["matched"]} {ref["n_pred"]} {ref["n_gt"]}  '
+    # **件数の一致は組の一致ではない**(2026-10-25、罠 T101 と同じ形)。
+    # region_metrics.match は組を返さないので、**組は手で読んで書いた定数**と照合する。
+    # gt1(60,60,r30) ↔ pred1(62,62,r30) / gt3(200,60,r40) ↔ pred4(200,60,r39)。
+    # gt2 は pred の r12 が IoU 144/625=0.23 で届かず、かつ min_px=500 で消える。
+    # gt4 と pred3(120,150) はどれとも重ならない。
+    WANT = {1: (1, 0.8863), 3: (4, 0.9506)}
+    pair = {g: (pi, round(iou, 4)) for g, (pi, iou) in mine.items()}
+    same_pair = pair == WANT
+    same_count = (len(mine) == ref['matched'] and len(pids) == ref['n_pred']
+                  and len(gids) == ref['n_gt'])
+    good = same_pair and same_count
+    print(f'KC11 matcher: 件数 自前 matched {len(mine)} n_pred {len(pids)} n_gt {len(gids)} / '
+          f'region_metrics {ref["matched"]} {ref["n_pred"]} {ref["n_gt"]} '
+          f'{"一致" if same_count else "不一致"} / '
+          f'**組** {pair} 対 記録 {WANT} {"一致" if same_pair else "不一致"}  '
           f'{"PASS" if good else "FAIL"}')
     return good
 
