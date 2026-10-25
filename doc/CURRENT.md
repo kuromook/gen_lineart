@@ -3483,3 +3483,40 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       the swap, instrument difference and material difference are no longer
       separable. H's old-to-new stroke correspondence is H's instrument, built
       once the material is in sight.
+    - **First evidence in, 2026-10-25 the same day, and the foundation's band
+      check on it.** Track H put the author back through all **482 panels** of
+      order 0-502 in a report-only UI: **12 panels reported (2.49%)**, native
+      1:1 copies of all twelve, listed by `slug` + `content_fingerprint`
+      (`/home/sh1/deepl/lineart-face-words/results/panel_anomaly_20261025/`).
+      The author's reading: **layers from another page look composited in --
+      a different kind from a layer mask failing to remove what it should.**
+      Band check: the arithmetic adds up both ways; six slugs and ten
+      fingerprints, with succor's seven spread over **five distinct pages**, so
+      **not one corrupt export**. **The concentration is real**: 7/26 against
+      5/456 elsewhere is **24.6x**, one-sided Fisher **p = 3.8e-7** (expected
+      0.65 panels in succor at the overall rate). **The order trend is not**:
+      4,3,3,2,0 looks like later marking being cleaner, but twelve panels
+      scattered uniformly put seven or more in the first 197 with probability
+      **0.17**, so it is indistinguishable from flat and no one may read
+      improvement off it. **What the 2.49% cannot carry**: the 482 are panels
+      that a face detector found a face in *and* the author reached within
+      order 0-502 -- two selections (規律9) -- and **the selection is biased in
+      opposite directions by anomaly type**: a panel with another page's layers
+      composited in gains figures and so gains detected faces, while a panel
+      emptied by the same class loses them (`copy` p29, a nearly empty panel,
+      got in anyway, so the under-represented side is not zero). It is a rate
+      per face-bearing panel and must not be multiplied over the corpus.
+      **This one is on the defect side, not the selection side**: a cutting
+      rule does not composite the wrong page, so it is a different kind from
+      the raster's 63.0%. H also warns the twelve may not be one phenomenon
+      (overlapping line art, a black square mass, blurred tone surfaces, a
+      nearly empty panel) and declines to judge which -- the author's and
+      L/M's call (規律6). **The foundation asked H for one more number: the
+      panel counts of the 53 works with zero reports**, because the present
+      table holds only the denominators of the six works that reported, so
+      *work* and *production year* cannot be separated -- 2019's `fringe` is
+      1/5 as well, and a generation is a pool. **And the five marked faces
+      among the twelve stay in the training population for now**: removing them
+      would move the population with no registered question attached, so they
+      are recorded by `order` as known dirt and the swap is where that choice
+      gets registered.
