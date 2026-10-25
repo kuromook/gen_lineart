@@ -2466,6 +2466,25 @@ incident that actually happened here.
    cell in the run while turning to `ako7`, and that is how `ako7`'s difference
    became visible instead of becoming a result. The rule is the practice, not a
    new demand.
+   **The naming sibling, added 2026-10-25 night after three known cells failed
+   in one evening, each at a different level: a known cell's name states what is
+   compared, in which direction, and at what granularity.** T97 was the run
+   level (a cell computed inside one run cannot see per-run drift), T100 the rule
+   level (a cluster decided by the name cannot test a rule about the name), T101
+   the direction and granularity level -- the foundation's "two instruments agree
+   layer for layer" was a containment, and Track L's own `KC11`, named *our
+   matcher agrees with `region_metrics.match`*, compared **only the three counts**
+   `matched`/`n_pred`/`n_gt` and never which prediction paired with which truth.
+   A matcher that gets the counts right and the pairs wrong passes it. **L's own
+   `KC9` was honest because its name carries the `⊆`.** So the direction and
+   the granularity belong in the name, where they are checkable before the cell
+   runs. **And L's repair carries a second rule: when the instrument does not
+   expose the intermediate** -- `region_metrics.match` returns counts, not pairs
+   -- **re-implementing it in order to compare is comparing with your own copy.**
+   L anchored on four pairings derived by hand from the circles' radii
+   (`gt1↔pred1` IoU 0.8863, `gt3↔pred4` 0.9506, `gt2` unreachable at 0.23 and
+   below `min_px`, `gt4` overlapping nothing), which is an anchor because it
+   exists without the instrument. Both legs now pass (`1116143`).
    **The second sibling, from the 2026-10-23/24 exchange: publish in a form that
    can be measured back.** Eight corrections passed between the foundation, the
    extraction session and Track L in one day, and **almost none was caught before
@@ -2793,7 +2812,7 @@ withdrawal.
 - **T57** An arm can beat its off-by-one control and still carry no location information at all -- what it is scoring is the *amount* of ink.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
 - **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
-- **T101** A containment is not an agreement -- measure both directions before calling two instruments consistent (2026-10-25: the foundation read L's 2,581 ink-zero layers and the ledger's 2,598 `empty` as agreeing layer for layer; L made it a known cell and found `drawn_ratio<=0 -> ink_px==0` exact at 0/4,399 exceptions but the reverse carrying 31, up to 0.194 of a page drawn with no ink). The one-sided check passes on exactly the half that holds.
+- **T101** A containment is not an agreement -- measure both directions before calling two instruments consistent (2026-10-25: the foundation read L's 2,581 ink-zero layers and the ledger's 2,598 `empty` as agreeing layer for layer; L made it a known cell and found `drawn_ratio<=0 -> ink_px==0` exact at 0/4,399 exceptions but the reverse carrying 31, up to 0.194 of a page drawn with no ink). The one-sided check passes on exactly the half that holds. **The same shape at the summary level, found by L the same night in its own `KC11`**: a cell named *our matcher agrees with `region_metrics.match`* compared only the counts `matched`/`n_pred`/`n_gt`, which a matcher with the right counts and the wrong pairs passes; and since that function returns no pairs, re-implementing it to compare would compare with one's own copy, so the repair anchors on four pairings computed by hand from the circles' radii (`1116143`).
 - **T100** A known cell has to be independent of the rule it tests -- a cluster decided by the name cannot test a rule about the name, and the agreement it prints measures identity, not correctness (the foundation's own specification, 2026-10-25: 0/42 at p=2.3e-13 under a coin, which reads as a refutation and is a tautology). The run-level form of this is T97; this is the rule-level form.
 - **T98** A bar written as "higher than the null" with no resolution is not a bar -- its ordering flips with the choice of statistic (the foundation's own bar on the succor sharing query, 2026-10-25: arm 0.30 against null 0.15 on the pair mean, but p=0.335 by permutation, and the reverse ordering on the per-page maximum 0.6 against 0.63). A bar on a comparison needs the null's distribution, not its point value.
 
