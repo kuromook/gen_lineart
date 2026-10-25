@@ -2496,10 +2496,20 @@ incident that actually happened here.
    reshaping it**: with the real z-order, the gains the substitute barrier had
    produced (**+0.468 / +0.551**) do not reproduce **at all** (+0.000 to +0.008),
    so the gain *was* the borrowed constant's circularity. **The trigger the user
-   set is met, and the distribution decision is theirs to make** (recorded by the
-   foundation 2026-10-25). The same morning the discipline gained its first case
-   against a *control* -- **T90**, a control arm measured on a smaller population
-   than its arm -- which is 9-1 applied to the null.
+   set is met, and on 2026-10-25 the user ordered the distribution**, so the
+   notice went out as final to the five live trees (`colour-manuscripts`,
+   `face-words`, `fill-region`, `panel-generation`, `stroke-selection`) with its
+   provisional header replaced by the confirming numbers; **CLAUDE.md section 3's
+   three-line discipline 7 is the authority and the notice is its provenance and
+   case list.** The same day the discipline reached four more places, all of them
+   the same shape: **T90**, a control arm measured on a smaller population than
+   its arm (9-1 applied to the null); the two-layer filter in L17, where dropping
+   the filter raises the null to 0.5646 / 0.6276 and ako7's control alone clears
+   the bar, so **a selection left uncounted is how a test becomes a tautology**;
+   **T91**, a channel the rules had no slot for, leaving a delivery whose request
+   exists on neither side; **T92**, a replicated `CLAUDE.md` still naming a
+   corrected address in 10 of 11 trees; and **T93**, a check whose predicate is a
+   quoted string flagging its own remedy.
    Added 2026-10-24 from the user's observation that *the instrument
    work goes fine and the data keeps betraying it*, and from **Track L and Track
    M arriving at the same failure independently, neither knowing the other's
