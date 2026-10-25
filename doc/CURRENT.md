@@ -1350,6 +1350,40 @@ work, and the stated expectation is that the pieces make each other easier.
   got the same `q1 / k1` because the counted quantities never used the names --
   and records the instance that matters: **the wrong name table made it suspect
   the population, which was clean** (`線画*` is 1,585 of 1,681 LINE layers, 94%).
+  **L18 is registered (`1fb1128`) and the foundation wrote its band form the same
+  day, before any of L18's numbers existed.** The question comes from the user's
+  route out of L17: if the maths cannot close it, a UI can -- but **the UI's
+  ceiling is P36's 9.2%**, so L18 asks whether a word attached to the ink
+  touching a fill **propagates along the 8-connected component** and how far the
+  coverage then reaches. The foundation's ruling, issued against the registration
+  and not against a result: **the two registered bars (coverage, honesty) trade
+  off against each other -- a huge component raises one and sinks the other -- so
+  the primary is a single quantity**, `cov_honest` = propagated ink lying in
+  components with `comp_pur >= 0.90`, over P36's own denominator (`ako6
+  43,279,719` / `ako7 45,598,813` px, which KC24 matched exactly, and that match
+  is what lets "9.2% grew to X" be stated as a ratio at all). A component that
+  receives two different words enters `cov1` and **never** `cov_honest`, decided
+  now, because a row whose outcome a convention settles is the thing the
+  foundation ruled against in Track M's `0/0` case the same morning. **The bar
+  and the floor are written separately this time**, which is the L17 lesson
+  applied: the bar is **`cov_honest >= 0.30`**, taken from the registration's own
+  section 6 ("9.2% -> three or four tenths and the UI's single click moves a
+  bundle") because **a bar belongs where a decision changes and the foundation
+  invented no number**; the superiority of the arm over chance placement is a
+  *floor* (`>= 3 r0`), and the reading for "A holds, B does not" is fixed in
+  advance as **"propagation carries enough ink for the UI, but what carries it is
+  the ink's connectivity, not where the fills are"** -- which is not a loss.
+  A third bar, `honest_rate = cov_honest / cov1 >= 0.50`, keeps a wide reach from
+  being a pile of undo work. **The primary weighting is pixels, the opposite of
+  L17's per-region median, for the same reason**: the unit is the unit of what is
+  delivered, and here the delivery is moving ink. **And the degeneracy gate is
+  ruled into pixels**: L proposed closing if the median component spans three or
+  more layers, but counted over components **one giant component cannot appear in
+  the median**, so the gate is the pixel-weighted median, with the per-panel
+  largest-component ink share printed and the panels split at 0.5 as a reading
+  stratum. The geodesic grid may not supply a passing cell; a finite `g` that
+  satisfies honesty where `g=infinity` does not is a **disclosure**, and the
+  cutoff is a design value belonging to the author (discipline 6).
 - `../lineart-colour-manuscripts` (branch `colour-manuscripts`, **Track M**) --
   **active, opened 2026-10-24 by user approval**, worktree of this repo cut at
   `e9d680b`, briefing committed at `94c19cb`. **Nobody has worked in it yet.**
