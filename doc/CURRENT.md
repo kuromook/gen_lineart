@@ -3839,7 +3839,18 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       members sit in different works is not a version chain** -- identical
       content, two real pages, which is T94 and T95 arriving together -- so
       **both stay in the population and the duplication goes in its own
-      column**. The population moves up to 3 pages (786 -> 789) and
+      column**. **[Withdrawn for two of the three, 2026-10-26.** The reason
+      above -- *two real pages, each of its own work* -- is an inference from the
+      folder's parent, and the author refuted it twice: `ako6\done4\ako6-18` is
+      **a pre-merge scattered page of `ako7`**, and `aljanne2\page0029` is **a
+      reference copy of a `PhantomThief` page** (`aljanne2` is its sequel), so
+      each keeps **one representative**, not both, and for the second the
+      representative is the original rather than the folder's side -- otherwise a
+      PhantomThief page is counted as an aljanne2 page. **`road\page0076` with
+      `skima11\skima12` the author does not know**, so it stays `undecided`.
+      **Two separate mechanisms make a folder not a work** -- the pre-merge stash
+      and the reference copy into a sequel -- so a per-work page count taken from
+      folders is wrong in two directions.] The population moves up to 3 pages (786 -> 789) and
       `skima11`, `phantom` and `ako6` were each silently missing one of their
       own pages: **not a whole work, so it would have stayed missing**.
       (iii) The folder pair `2016\gal` is resolved **both ways** across three
