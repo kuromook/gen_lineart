@@ -37,7 +37,7 @@ BAR_K = 2
 TSTEP = [round(x, 2) for x in np.arange(0.0, 1.001, 0.1)]
 
 
-def measure(R, lab, P, bnd, rec):
+def measure(R, lab, P, bnd, rec, keys):
     got = adj_sets(R, lab, P, ds=DS, bnd=bnd)
     for d in DS:
         vals, cnt = got[d]
@@ -48,7 +48,9 @@ def measure(R, lab, P, bnd, rec):
             continue
         rec[f'pur{d}'] = round(purity(cnt), 4)
         rec[f'nl{d}'] = n_lay90(cnt)
-        rec[f'top{d}'] = int(vals[int(np.argmax(cnt))])
+        # **`vals` はラベル番号(z で並べた通し番号)なので、層 id に直してから入れる。**
+        # ここを `int(vals[...])` のまま CSV に書いて名前を引くと別の層の名前が出る(2026-10-25 の修正)
+        rec[f'top{d}'] = keys[int(vals[int(np.argmax(cnt))]) - 1]
     return got
 
 
@@ -82,7 +84,7 @@ def one_page(job):
             # (基盤 §4-3 の開示。対照が無いので棒は立たない)
             if ARMS in ('both', 'real'):
                 rec = dict(base, arm='real', seed=0)
-                got = measure(R, lab, P, b, rec)
+                got = measure(R, lab, P, b, rec, keys)
                 dt = cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2,
                                            cv2.DIST_MASK_PRECISE)
                 for d in DS:
@@ -96,7 +98,7 @@ def one_page(job):
                     bs = boundary(Rs)
                     rec = dict(base, arm='shuffled', seed=sd,
                                bnd=max(int(bs.sum()), 1))
-                    measure(Rs, lab, P, bs, rec)
+                    measure(Rs, lab, P, bs, rec, keys)
                     rows.append(rec)
         if ARMS in ('both', 'real'):
             rec = dict(pid=pid, work=work, comp=ci, n_lay_panel=big,
