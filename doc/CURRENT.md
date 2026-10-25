@@ -3792,11 +3792,22 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       `2018\skima10\skima10\page0064.clip` has 39 layers in the layer list and
       no row in the page list because `version_roles` marks it `superseded` --
       **the page list is the population, the superseded file's 39 layers stay as
-      known-cell material only**, and both records are correct. **The anchor the foundation asked for came back within the hour and it
+      known-cell material only**, and both records are correct. **[Withdrawn
+      2026-10-26: the author answered that `2018\skima10` and
+      `2018\skima10\skima10` are separate branches with no newer one, so
+      `page0064.clip` is a current page of its own and those 39 layers are
+      population material. No new order was needed -- they were already in
+      hand.]** **The anchor the foundation asked for came back within the hour and it
       failed, and the failure found four things worth more (2026-10-25 night).**
       The extraction side could not tell which 8 clusters were meant, so it
       counted **all 65 clusters that hold both a `final` and a `superseded`**,
-      split by `decided_by`. Name order puts `final` later in
+      split by `decided_by`. **[Marked 2026-10-26: 65 counts clusters, not
+      duplicates.** The clusters are the Jaccard >= 0.5 of per-layer *statistical*
+      signatures (T106), and the author has now called one of them -- G,
+      `2019b\hitoduma\CD.clip` against `CDrev2.clip` -- **"completely different
+      things"**, the first measured false positive of the clustering. The anchor
+      test's verdict does not change, since it failed anyway, but every figure
+      that reads 65 as a number of duplicates is reading an upper bound.] Name order puts `final` later in
       **0 of 42** `identical_metadata` clusters, 11/16 `+year`, 3/6 `superset`,
       0/1 `mtime_needed`; the foundation reproduced every count from the 65-row
       file. **So no anchor**: the only rows independent of the name are the 6
