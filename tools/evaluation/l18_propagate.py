@@ -23,6 +23,7 @@ from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full
                              seed_of)
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate'
+EXCLUDE = None       # 事前登録の母集団定義 (--exclude-gapfill)
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 ARMS = 'both'
 
@@ -36,8 +37,29 @@ def n_lay90_of(C, lab):
     return int(np.searchsorted(np.cumsum(s), 0.9 * s.sum()) + 1), int(len(vals))
 
 
+def gapfill_crops():
+    """作者が「隙間埋め」と答えた面の L19 切り出し名。**事前登録の母集団定義**。
+
+    名前は「判定のある 551 面の中で見つかった隙間埋けだけを除いた母集団」。
+    **残り 635 面の隙間埋けは未知**(基盤 `ruling_l18_authorised...` §2-2)。
+    """
+    import json as _j
+    q = _j.load(open('/home/sh1/deepl/lineart-fill-region/results/l19_ui/queue.json'))
+    crop_of = {r['order']: r['crop'] for r in q['queue']}
+    out, lab = set(), {}
+    for ln in open('/home/sh1/deepl/lineart-fill-region/labels/fill_words.jsonl'):
+        r = _j.loads(ln)
+        lab[crop_of[r['order']]] = r
+    for c, r in lab.items():
+        if str(r['choice']).startswith('gapfill'):
+            out.add(c)
+    return out
+
+
 def one_page(job):
     comps, regs, pans = [], [], []
+    k = 0                 # **L19 と同じ頁内の通し番号**。面の鍵は一意でないので名前で照合
+    names_all = []
     for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job):
         if not sub:
             continue
@@ -46,6 +68,21 @@ def one_page(job):
         tot = int(ink.sum())
         if tot == 0:
             continue
+        # ---- 面の名前を、**腕に依らず本来の面の形から**振る (L19 と同じ条件・同じ順)
+        cname, drop_gf = {}, 0
+        for gi in gids:
+            _s, _L, _adj = seed_of(glab == gi, lab, P)
+            if _adj == 0:
+                continue
+            k += 1
+            nm = f'{work}_{pid}_c{ci}_r{gi}_{k:03d}.png'
+            names_all.append(nm)
+            if EXCLUDE and nm in EXCLUDE:
+                drop_gf += 1
+                continue          # **両腕から同じ面を落とす**(L17 §5 と同じ規律)
+            cname[gi] = nm
+        if drop_gf:
+            pans[-1]['drop_gapfill'] = drop_gf
         # ---- 縮退 (成分の単位。登録 §3)
         areas = sorted((int(st_[i, A]) for i in range(1, n)), reverse=True)
         pans.append(dict(pid=pid, work=work, comp=ci, ink=tot, n_comp=n - 1,
@@ -68,6 +105,8 @@ def one_page(job):
                 seedlab = np.zeros(P.shape, np.uint16)
                 owner = {}
                 for gi in gids:
+                    if EXCLUDE is not None and gi not in cname:
+                        continue
                     if arm == 'real':
                         R = glab == gi
                         if place(glab, gi, gstat, P, SEEDS[0], pid, ci) is None:
@@ -121,17 +160,17 @@ def one_page(job):
                         h = 0
                         for cid, L in lab_of.items():
                             Cg = (cl == cid) & reach
-                            k = int(Cg.sum())
-                            if k == 0 or len({t[1] for t in owner[cid]}) > 1:
+                            kg = int(Cg.sum())   # **k は頁の通し番号。潰さない**
+                            if kg == 0 or len({t[1] for t in owner[cid]}) > 1:
                                 continue
-                            if int((Cg & (lab == L)).sum()) / k >= 0.90:
-                                h += k
+                            if int((Cg & (lab == L)).sum()) / kg >= 0.90:
+                                h += kg
                         rec[f'honest{g}'] = h
                 else:
                     for g in GS:
                         rec[f'cov{g}'] = 0; rec[f'honest{g}'] = 0
                 pans.append(rec)
-    return comps, regs, pans
+    return comps, regs, pans, names_all
 
 
 def med(v):
@@ -139,12 +178,21 @@ def med(v):
 
 
 def main():
-    global ARMS
+    global ARMS, EXCLUDE
     ap = argparse.ArgumentParser()
     ap.add_argument('--arms', default='both',
                     choices=('both', 'real', 'control', 'degen'))
     ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--exclude-gapfill', action='store_true',
+                    help='**事前登録**: 判定のある551面の中で見つかった隙間埋けだけを外す'
+                         ' (残り635面は未知)')
     a = ap.parse_args()
+    if a.exclude_gapfill:
+        EXCLUDE = gapfill_crops()
+        print(f'母集団: **判定のある551面の中で見つかった隙間埋け {len(EXCLUDE)} 面だけを'
+              f'除いた版**。**残り 635 面の隙間埋けは未知**', flush=True)
+    else:
+        print('母集団: **全面の版**(登録された一次)', flush=True)
     ARMS = a.arms
     os.makedirs(OUT, exist_ok=True)
     zz = zmap(); fill, line = gated_layers()
@@ -152,12 +200,27 @@ def main():
     if a.limit:
         js = js[:a.limit]
     print(f'腕 {ARMS}  頁 {len(js)}  (既知セル KC21-24 は別プロセスで PASS 済みであること)')
-    comps, regs, pans = [], [], []
+    comps, regs, pans, names = [], [], [], []
     with Pool(4) as pool:
-        for i, (c, r, p) in enumerate(pool.imap_unordered(one_page, js), 1):
-            comps += c; regs += r; pans += p
+        for i, (c, r, p, nm) in enumerate(pool.imap_unordered(one_page, js), 1):
+            comps += c; regs += r; pans += p; names += nm
             if i % 10 == 0:
                 print(f'  {i}/{len(js)} 頁  成分 {len(comps)}', flush=True)
+    # ---- KC30 データ経路: 面の通し番号が L19 と同じか (**除外の鍵が正しいことの点検**)
+    if not a.limit:
+        import json as _j
+        q = _j.load(open('/home/sh1/deepl/lineart-fill-region/results/l19_ui/queue.json'))
+        want = {r['crop'] for r in q['queue']}
+        got = set(names)
+        ok = want <= got
+        print(f'KC30 データ経路: L19 の 551 面の名前が今回の名前に全部あるか: '
+              f'{"ok" if ok else "FAIL"}  (面 {len(got)} / 欠け {len(want - got)})')
+        if not ok:
+            print('**除外の鍵が合っていない。止める**')
+            return 1
+        if EXCLUDE:
+            print(f'  選別(規律9-1): 隙間埋けとして外した面 {len(EXCLUDE & got)} / '
+                  f'指定 {len(EXCLUDE)}')
     for nm, rows in (('comps', comps), ('regions', regs), ('panels', pans)):
         if not rows:
             continue
@@ -243,17 +306,30 @@ def main():
                 print(f'    seed間: cov_honest 中央 {res[(arm,w,"ch")][0]:.4f}  '
                       f'**r0 = 最大−最小 {res[(arm,w,"ch")][1]:.4f}**  '
                       f'honest_rate 中央 {res[(arm,w,"rate")][0]:.4f}')
-            # コマの2階級 (基盤 §4)
+            # コマの2階級 (基盤 §4。**判定はプール×階級の4セル**)
             for lab2, lo, hi in (('最大成分<0.5', 0, 0.5), ('最大成分>=0.5', 0.5, 1.01)):
                 t = [r for r in s0 if lo <= r['top_share'] < hi]
                 if not t:
                     continue
+                # **階級別 r0** = その階級の中での seed 最大−最小 (対照から出る)
+                per2 = []
+                for sd in sorted({r['seed'] for r in t}):
+                    u = [r for r in t if r['seed'] == sd]
+                    ik = sum(r['ink'] for r in u)
+                    per2.append((sum(r['cov'] for r in u) / ik,
+                                 sum(r['honest'] for r in u) / ik))
+                chs = [q[1] for q in per2]
+                r0c = (max(chs) - min(chs)) if len(chs) > 1 else 0.0
                 ink = sum(r['ink'] for r in t)
                 c1 = sum(r['cov'] for r in t) / ink
                 ch = sum(r['honest'] for r in t) / ink
-                print(f'    [{lab2:12}] コマ行 {len(t):5d}  墨 {ink/sum(r["ink"] for r in s0):.3f}  '
-                      f'cov1 {c1:.4f}  cov_honest {ch:.4f}  '
-                      f'honest_rate {ch/c1 if c1 else float("nan"):.4f}')
+                rt = ch / c1 if c1 else float('nan')
+                res[(arm, w, lab2)] = dict(cov1=c1, ch=ch, rate=rt, r0=r0c,
+                                           ink_share=ink / sum(r['ink'] for r in s0))
+                print(f'    [{lab2:12}] コマ行 {len(t):5d}  '
+                      f'墨 {res[(arm,w,lab2)]["ink_share"]:.3f}  '
+                      f'cov1 {c1:.4f}  cov_honest {ch:.4f}  honest_rate {rt:.4f}'
+                      + (f'  **階級別 r0 {r0c:.4f}**' if len(chs) > 1 else ''))
             # 測地距離の格子 (開示。判定に使わない)
             ink = sum(r['ink'] for r in s0)
             print('    感度 g (判定に使わない。g=∞ が一次)')
@@ -291,13 +367,33 @@ def main():
             ch1 = res[('real', w, 'ch')][0]; ch0 = res[('shuffled', w, 'ch')][0]
             r0 = res[('shuffled', w, 'ch')][1]
             rate = res[('real', w, 'rate')][0]
+            floor = ch0 + 3 * r0        # **対照 + 3r0**。裸の 3r0 は対照自身が通る
             print(f'  {w}: A cov_honest {ch1:.4f} >= 0.30 -> '
                   f'{"PASS" if ch1 >= 0.30 else "FAIL"}')
-            print(f'      B 本来−対照 {ch1-ch0:+.4f} 対 3r0 {3*r0:.4f} -> '
-                  f'{"床の上" if ch1-ch0 >= 3*r0 else "床の下"}   '
+            print(f'      B 床 = 対照 {ch0:.4f} + 3r0 {3*r0:.4f} = **{floor:.4f}**  '
+                  f'本来 {ch1:.4f} -> {"床の上" if ch1 >= floor else "床の下"}   '
                   f'比 {ch1/ch0 if ch0 else float("nan"):.2f}x')
             print(f'      C honest_rate {rate:.4f} >= 0.50 -> '
                   f'{"PASS" if rate >= 0.50 else "FAIL"}')
+        # ---- **プール×階級の4セル** (基盤の裁定で必須)
+        print('\n  プール x 階級の4セル (**判定はセル単位**。片方だけ通ったら'
+              '「その階級では通った」で、プール全体の PASS ではない)')
+        print(f'    {"プール":<6}{"階級":<14}{"墨":>7}{"A cov_honest":>14}{"床=対照+3r0":>14}'
+              f'{"C rate":>9}  判定')
+        for w in ('ako6', 'ako7'):
+            for lab2 in ('最大成分<0.5', '最大成分>=0.5'):
+                a1 = res.get(('real', w, lab2)); a0 = res.get(('shuffled', w, lab2))
+                if not a1 or not a0:
+                    continue
+                fl = a0['ch'] + 3 * a0['r0']
+                vA = a1['ch'] >= 0.30
+                vB = a1['ch'] >= fl
+                vC = a1['rate'] >= 0.50
+                verdict = ('A' + ('o' if vA else 'x') + ' B' + ('o' if vB else 'x')
+                           + ' C' + ('o' if vC else 'x'))
+                print(f'    {w:<6}{lab2:<14}{a1["ink_share"]:>7.3f}{a1["ch"]:>14.4f}'
+                      f'{fl:>14.4f}{a1["rate"]:>9.4f}  {verdict}'
+                      + ('  **このセルは通った**' if (vA and vB and vC) else ''))
 
 
 if __name__ == '__main__':

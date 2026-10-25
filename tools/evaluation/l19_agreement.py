@@ -26,6 +26,7 @@ SEG = [('S1 服/フキダシ以前', '2026-10-25T13:16:23', '2026-10-25T13:24:31
        ('S3 語彙そろう', '2026-10-25T13:41:28', '2026-10-25T15:35:58'),
        ('S4 出し直し', '2026-10-25T15:40:00', '2026-10-25T23:59:59')]
 REASK = Path(__file__).resolve().parents[2] / 'results/l19_ui/reask.json'
+DUP = Path(__file__).resolve().parents[2] / 'results/l21_dirtiness/duplicate_pages.json'
 WORD_CHOICES = ('word', 'free')
 
 
@@ -48,6 +49,18 @@ def seg_of(ts):
         if a <= ts <= b:
             return name
     return '?'
+
+
+def dup_pages():
+    """同じ頁の二状態に関わる頁 (層の md5 で検出。`l21_duplicate_pages.py`)。
+
+    **この階級を黙ってはいけない**: 器具の一致が 0.5189 / 0.2747 と 2 倍違い、
+    551 面のうち 318 面が重複側から来ているので、まとめた数は重複側に引かれる
+    (基盤 `ruling_l18_authorised_and_l19_queries_20261025.md` §6)。
+    """
+    if not DUP.exists():
+        return set()
+    return set(json.loads(DUP.read_text())['pages'])
 
 
 def pct(a, b):
@@ -77,7 +90,10 @@ def main():
               + ' '.join(f'{c[k]:>5} {pct(c[k], len(sub)):>6}' for k in kinds))
 
     # --- 2. 一致率 -----------------------------------------------------------
+    dups = dup_pages()
     print('\n[2] 一致率 (器具 = 縁に接する線画層の argmax を語に写したもの)')
+    print('    **重複頁の階級を必ず並べる** —— 同じ頁の二状態が 36/65 頁あり、')
+    print('    その階級と残りで一致が 2 倍違うので、まとめた数は重複側に引かれる')
     print('    分母A = 回答した問すべて (語でない回答は不一致として数える)')
     print('    分母B = 作者が語を1つ選んだ問だけ')
     print(f'  {"プール":<8}{"why":<7}{"A の分母":>9}{"一致/A":>9}{"B の分母":>9}{"一致/B":>9}')
@@ -92,6 +108,25 @@ def main():
             ag = sum(r['agree'] for r in sub)
             print(f'  {pool:<8}{why:<7}{len(sub):>9}{pct(ag, len(sub)):>9}'
                   f'{len(b):>9}{pct(ag, len(b)):>9}')
+
+    _d = json.loads(DUP.read_text()) if DUP.exists() else {'thr': None, 'pairs': []}
+    print(f'\n  重複/非重複の階級 (分母A。基盤の裁定 §6 で必須)。'
+          f'**階級の作り方 = 層の md5 の Jaccard >= {_d["thr"]}** '
+          f'({len(_d["pairs"])} 組 / 関わる頁 {len(dups)})')
+    print(f'  {"プール":<8}{"階級":<12}{"問":>5}{"一致/A":>9}{"いつも髪/A":>11}')
+    for pool in ('ako6', 'ako7', '両方'):
+        for nm, want in (('重複頁', True), ('それ以外', False)):
+            sub = [r for r in answered
+                   if (pool == '両方' or r['work'] == pool)
+                   and ((r['pid'] in dups) == want)]
+            if not sub:
+                continue
+            ag = sum(r['agree'] for r in sub)
+            hair = sum(1 for r in sub if r['choice'] == 'word' and r['word'] == '髪')
+            print(f'  {pool:<8}{nm:<12}{len(sub):>5}{pct(ag, len(sub)):>9}'
+                  f'{pct(hair, len(sub)):>11}')
+    print('  **ako6 と ako7 は互いに素なプールではない** —— 551 面のうち 24 面が、')
+    print('  2018 と 2019 で絵を共有する 1 組 (`ako6-18.clip` / `ako7/page0073.clip`) から来る')
 
     # --- 3. 自明なベースライン: いつも「髪」 ---------------------------------
     print('\n[3] 自明なベースライン (器具を使わず、いつも同じ語を答える)')
