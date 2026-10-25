@@ -16,6 +16,10 @@
   B1 **塊が作品を跨ぐなら版の連鎖として解決しない**(`ruling_m_name_order_no_anchor` §4)
      → 構成員全員を `duplicate_content` にし、**両方を母集団に残す**。
        `superseded` と書くと「内容の同一性」が「頁の置き換え」に化ける(T94)
+     **基盤が名指しした塊24・29・58 にだけ当てる。** 「作品」をフォルダー名から
+     機械で決めてはいけない —— 初版はそれをやって 23塊を拾い、`comics4\\underworld`
+     (束ねフォルダー)や `china`↔`china_v2`(同じ作品の改訂)まで作品跨ぎに数えた。
+     **広い走査は印字して問いに回す。器具で決めない**(10-26 の通達)
   B2 **`superset`(層の包含)は作者に 1/3。根拠として引用しない**
      → A1/A2/B1 で決まらなかった `superset` の塊は **`undecided`** に戻す
 
@@ -41,13 +45,33 @@ from pathlib import Path
 SRC = Path('results/m19_versions/version_roles.csv')
 OUT = Path('results/m25_author_versions'); OUT.mkdir(parents=True, exist_ok=True)
 PAGELIST = Path('results/m21_request4/request4_page_list.csv')
-EXPECT = {'a1': 25, 'a2': 3, 'flips': 27, 'undecided': 9, 'crosswork': 3}
+# **数えるのは「規則が当たる塊」ではなく「札が変わる塊」。** 初版は前者を数えて
+# A1 27 / A2 4 を出し、既知セルを落とした —— 基盤の 25・2 は**決着済みの塊のうち
+# 反転するもの**の数だった。**棒ではなく数え方を直した**(m24 と同じ形)。
+EXPECT = {'a1_flip': 25, 'a2_flip': 2, 'flips': 27, 'undecided': 9,
+          'crosswork': 3}
+CROSSWORK = {'24', '29', '58'}            # 基盤が名指しした3塊(§4)
 YEARB = re.compile(r'^(\d{4})([a-z])$')
 
 
-def seg(p):
-    q = p.replace('\\', '/').split('/')
-    return q[2] if len(q) > 2 else '', q[3] if len(q) > 3 else '', q[2:]
+def parts(p):
+    return p.replace('\\', '/').split('/')
+
+
+def b_side(p1, p2):
+    """p2 が p1 の **b 付きの年**の同じ頁なら True(他は全部同じ道)。"""
+    a, b = parts(p1), parts(p2)
+    if len(a) != len(b) or a[3:] != b[3:]:
+        return False
+    m = YEARB.match(b[2])
+    return bool(m) and m.group(1) == a[2]
+
+
+def gal_deep(p1, p2):
+    """`2016\\gal\\gal\\pageN` (p2) と `2016\\gal\\pageN` (p1) の対なら True。"""
+    a, b = parts(p1), parts(p2)
+    return (len(a) > 4 and len(b) > 5 and a[2] == b[2] == '2016'
+            and a[3] == b[3] == 'gal' and b[4:] == ['gal'] + a[4:])
 
 
 def main():
@@ -58,106 +82,127 @@ def main():
             byc[r['dup_cluster_id']].append(r)
     print(f'塊 {len(byc)} / 行 {len(rows)}')
 
-    a1, a2, crosswork, b2 = [], [], [], []
-    for ci, g in byc.items():
-        years = {seg(r['page_path'])[0] for r in g}
-        works = {seg(r['page_path'])[1] for r in g}
-        base = {YEARB.match(y).group(1) if YEARB.match(y) else y for y in years}
-        if len(works) > 1:
-            crosswork.append(ci)
-            continue
-        if len(years) > 1 and len(base) == 1 and any(YEARB.match(y) for y in years):
-            a1.append(ci)
-            continue
-        if all(seg(r['page_path'])[0] == '2016'
-               and seg(r['page_path'])[1] == 'gal' for r in g):
-            a2.append(ci)
-            continue
-        if any(r['decided_by'] == 'superset' for r in g):
-            b2.append(ci)
-
-    print(f'\n== 規則が当たる塊 ==')
-    print(f'  A1 b 付きの年 : {len(a1)} 塊(期待 {EXPECT["a1"]})  {sorted(a1, key=int)}')
-    print(f'  A2 2016\\gal   : {len(a2)} 塊(期待 {EXPECT["a2"]})  {sorted(a2, key=int)}')
-    print(f'  B1 作品を跨ぐ : {len(crosswork)} 塊(期待 {EXPECT["crosswork"]})  '
-          f'{sorted(crosswork, key=int)}')
-    print(f'  B2 superset 残: {len(b2)} 塊  {sorted(b2, key=int)}')
-
     new = {r['page_path']: dict(r) for r in rows}
-    flips, resolved = [], []
+    flips, a1c, a2c, pairs, big = [], set(), set(), [], []
 
     def setrole(r, role, why, sup=''):
         n = new[r['page_path']]
         if n['version_role'] != role:
             flips.append((r['dup_cluster_id'], r['page_path'],
                           n['version_role'], role))
-        n['version_role'] = role
-        n['decided_by'] = why
-        n['superseded_by'] = sup
+        n['version_role'], n['decided_by'], n['superseded_by'] = role, why, sup
 
-    for ci in a1:
-        g = byc[ci]
-        win = [r for r in g if YEARB.match(seg(r['page_path'])[0])]
-        if len(win) != 1:
-            print(f'  !! 塊{ci} の b 側が {len(win)} 件。止める')
-            return 1
-        w = win[0]
-        for r in g:
-            setrole(r, 'final' if r is w else 'superseded',
-                    '作者の回答(b 付きが新しい　どちらも)',
-                    '' if r is w else w['page_path'])
-        resolved.append(ci)
-    for ci in a2:
-        g = byc[ci]
-        win = [r for r in g if len(seg(r['page_path'])[2]) == 3]
-        if len(win) != 1:
-            print(f'  !! 塊{ci} の直下側が {len(win)} 件。止める')
-            return 1
-        w = win[0]
-        for r in g:
-            setrole(r, 'final' if r is w else 'superseded',
-                    '作者の回答(2016\\gal 直下が正)',
-                    '' if r is w else w['page_path'])
-        resolved.append(ci)
-    for ci in crosswork:
+    for ci, g in byc.items():
+        if ci in CROSSWORK:
+            continue
+        if len(g) != 2:
+            # **構成員が3つ以上の塊には当てない。** 作者は「b 付きが新しい」と
+            # **1つの頁の2つの年**について述べている。3つ以上の塊(例: 塊1 は
+            # `ako7\\page0071` と `ako6\\done4\\ako6-27` と その b 側)では、
+            # 対ごとに当てると塊の中に `final` が2つ出る。**保留して問いに回す。**
+            if any(b_side(a['page_path'], b['page_path'])
+                   or b_side(b['page_path'], a['page_path'])
+                   or gal_deep(a['page_path'], b['page_path'])
+                   or gal_deep(b['page_path'], a['page_path'])
+                   for a in g for b in g if a is not b):
+                big.append(ci)
+            continue
+        for i, r1 in enumerate(g):
+            for r2 in g[i + 1:]:
+                p1, p2 = r1['page_path'], r2['page_path']
+                A1 = '作者の回答(b 付きが新しい　どちらも)'
+                A2 = '作者の回答(2016\\gal 直下が正)'
+                if b_side(p1, p2):
+                    lo, hi, why, tag = r1, r2, A1, 'a1'
+                elif b_side(p2, p1):
+                    lo, hi, why, tag = r2, r1, A1, 'a1'
+                elif gal_deep(p1, p2):
+                    lo, hi, why, tag = r2, r1, A2, 'a2'
+                elif gal_deep(p2, p1):
+                    lo, hi, why, tag = r1, r2, A2, 'a2'
+                else:
+                    continue
+                # lo = 落ちる側(古い) / hi = 現行
+                setrole(hi, 'final', why)
+                setrole(lo, 'superseded', why, hi['page_path'])
+                (a1c if tag == 'a1' else a2c).add(ci)
+                pairs.append((ci, tag, hi['page_path'], lo['page_path']))
+    for ci in CROSSWORK:
         for r in byc[ci]:
             setrole(r, 'duplicate_content',
                     '塊が作品を跨ぐ。版の連鎖として解決しない(T94/T95)')
+    b2 = [ci for ci, g in byc.items()
+          if ci not in a1c | a2c | CROSSWORK
+          and any(r['decided_by'] == 'superset' for r in g)]
     for ci in b2:
         for r in byc[ci]:
-            setrole(r, 'undecided',
-                    'superset は作者に 1/3。根拠として引用しない')
+            setrole(r, 'undecided', 'superset は作者に 1/3。根拠として引用しない')
 
+    print(f'\n== 規則が当たった対 {len(pairs)}(塊 A1 {len(a1c)} / A2 {len(a2c)}) ==')
+    print(f'  **保留**: 作者の規則が内側に当たるが構成員が3つ以上の塊 '
+          f'{len(big)} {sorted(big, key=int)}  ← 問いに回す')
+    print(f'  B1 作品を跨ぐ(基盤の名指し): {sorted(CROSSWORK, key=int)}')
+    print(f'  B2 superset を根拠にしていた残り: {sorted(b2, key=int)}')
+
+    dec = {ci for ci, g in byc.items()
+           if {r['version_role'] for r in g} & {'final', 'superseded'}}
+    und0 = {ci for ci, g in byc.items()
+            if any(r['version_role'] == 'undecided' for r in g)}
     und = {ci for ci, g in byc.items()
-           if any(new[r['page_path']]['version_role'] == 'undecided' for r in g)}
-    print(f'\n== 既知セル ==')
+           if any(new[r['page_path']]['version_role'] == 'undecided'
+                  for r in g)}
+    und_left = {ci for ci in und0
+                if any(new[r['page_path']]['version_role'] == 'undecided'
+                       for r in byc[ci])}
+    fl = {f[0] for f in flips}
+    print(f'\n== 既知セル(数えるのは「札が変わった決着済みの塊」) ==')
     ok = True
-    for k, got, want in (('KC-V1 A1 の塊', len(a1), EXPECT['a1']),
-                         ('KC-V2 A2 の塊', len(a2), EXPECT['a2']),
-                         ('KC-V3 反転した頁を持つ塊', len({f[0] for f in flips
-                                                   if f[0] in set(a1) | set(a2)}),
-                          EXPECT['flips']),
-                         ('KC-V4 undecided の塊', len(und), EXPECT['undecided']),
-                         ('KC-V5 作品を跨ぐ塊', len(crosswork), EXPECT['crosswork'])):
+    for k, got, want in (('KC-V1 A1 で反転(決着済み)', len(fl & a1c & dec),
+                          EXPECT['a1_flip']),
+                         ('KC-V2 A2 で反転(決着済み)', len(fl & a2c & dec),
+                          EXPECT['a2_flip']),
+                         ('KC-V3 反転の合計(決着済み)',
+                          len(fl & (a1c | a2c) & dec), EXPECT['flips']),
+                         ('KC-V4 原11塊のうち残る undecided',
+                          len(und_left), EXPECT['undecided']),
+                         ('KC-V5 作品を跨ぐ塊', len(CROSSWORK),
+                          EXPECT['crosswork'])):
         good = got == want
         ok &= good
         print(f'  {k:28s} {got:>4} / 期待 {want:>4}  '
               f'{"PASS" if good else "**FAIL**"}')
+    print(f'  (参考)A1/A2 で札が変わった塊のうち、m19 が決着させていなかったもの: '
+          f'{sorted((fl & (a1c | a2c)) - dec, key=int)}')
+    print(f'  (参考)undecided の塊は全部で {len(und)}'
+          f'(原11塊の残り {len(und_left)} + superset を外した {sorted(und - und0, key=int)})')
     if not ok:
         print('\n**既知セルが合わない。表を書かない。**')
-        print('  反転した塊:', sorted({f[0] for f in flips}, key=int))
         return 1
 
     role = collections.Counter(v['version_role'] for v in new.values())
     print(f'\n== 新しい役割の分布 ==')
     for k, c in role.most_common():
         print(f'  {k:20s} {c:>4}')
-    keep = [p for p, v in new.values().__class__ and new.items()
-            if v['version_role'] not in ('superseded',)]
-    scoring = [p for p, v in new.items()
-               if v['version_role'] not in ('superseded', 'duplicate_content')]
-    print(f'\n  母集団(superseded だけ落とす)  : **{len(keep)}** ページ')
-    print(f'  採点の母集団(内容の重複も1つに): **{len(scoring)}** ページ'
+    keep = [p for p, v in new.items() if v['version_role'] != 'superseded']
+    # **採点の母集団は塊ごとに代表1つ**(T95: プールの単位は重複の塊)。
+    # 初版は `duplicate_content` を全部落としていて、**構成員が全員
+    # `duplicate_content` の塊(作品を跨ぐ3塊)が0頁になっていた** ——
+    # 「両方を母集団に残す」(裁定§4)の逆。代表を1つ残す形に直した。
+    hasfinal = {v['dup_cluster_id'] for v in new.values()
+                if v['version_role'] == 'final' and v['dup_cluster_id']}
+    scoring, seen = [], set()
+    for q, v in new.items():
+        role, ci = v['version_role'], v['dup_cluster_id']
+        if role == 'superseded':
+            continue
+        if role == 'duplicate_content':
+            if ci in hasfinal or ci in seen:
+                continue
+            seen.add(ci)
+        scoring.append(q)
+    print(f'\n  頁の母集団(superseded だけ落とす)  : **{len(keep)}** ページ'
+          f'  ← 作者の持つ頁。重複も両方残す(裁定§4)')
+    print(f'  採点の母集団(重複の塊は代表1つ)    : **{len(scoring)}** ページ'
           f'  ← T95(プールの単位は塊)')
 
     print(f'\n== 札が変わった頁 {len(flips)} ==')
@@ -166,25 +211,24 @@ def main():
 
     inrun = set()
     if PAGELIST.exists():
-        pl = list(csv.DictReader(open(PAGELIST, encoding='utf-8')))
-        inrun = {r['page_path'] for r in pl}
+        inrun = {r['page_path'] for r in
+                 csv.DictReader(open(PAGELIST, encoding='utf-8'))}
         changed_in = [f for f in flips if f[1] in inrun]
-        added = [p for p, v in new.items()
-                 if p not in inrun and v['version_role'] not in
-                 ('superseded', 'duplicate_content')]
+        added = [p for p in scoring if p not in inrun]
         dropped = [p for p in inrun
                    if new.get(p, {}).get('version_role') == 'superseded']
-        print(f'\n== 本走(779頁)への影響 ==')
-        print(f'  一覧 {len(inrun)} 頁のうち札が変わった頁 **{len(changed_in)}**')
-        print(f'  一覧に無いが現行になった頁(**追加が要る**) **{len(added)}**')
-        print(f'  一覧に有るが現行でなくなった頁(**描き直し不要・札だけ**) **{len(dropped)}**')
+        print(f'\n== 本走(一覧 {len(inrun)} 頁)への影響 ==')
+        print(f'  一覧にあって札が変わった頁 **{len(changed_in)}**')
+        print(f'  一覧に無いが採点の母集団に入る頁(**追加が要る**) **{len(added)}**')
+        print(f'  一覧にあって現行でなくなった頁(**描き直しの候補**) **{len(dropped)}**')
         for p in sorted(added):
             print(f'    追加 {p[14:]}')
+        for p in sorted(dropped)[:30]:
+            print(f'    落ち {p[14:]}')
 
-    cols = list(rows[0].keys())
     with open(OUT / 'version_roles_author.csv', 'w', newline='',
               encoding='utf-8') as fh:
-        w = csv.DictWriter(fh, fieldnames=cols)
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         for r in rows:
             w.writerow(new[r['page_path']])
