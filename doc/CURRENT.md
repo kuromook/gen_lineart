@@ -1313,6 +1313,43 @@ work, and the stated expectation is that the pieces make each other easier.
   still cannot carry the bar; the unfiltered figure; the 17 / 19 excluded large
   regions measured in the real arm only; the strata and the d grid), and L
   weakened the registration's PASS wording before running, as asked.
+  **2026-10-25, L17 ran and the route is closed: `q1` = 0.2565 / 0.2933 against
+  a bar of 0.5672 / 0.5779.** Regions 269 / 358 at d=4px on the two-layer
+  stratum, **1.91x / 1.88x the null**, median purity 0.7951 / 0.7730 against
+  0.6498 / 0.6672, `k1` 2.0 / 2.0. **ako6 FAILs readably and ako7 is unreadable**
+  (`q1 - q0` = 0.1375 against `3 r0` = 0.1629, the pre-registered "neither PASS
+  nor FAIL" branch), **so P34' does not hold.** Two notes on the foundation's own
+  rules, held open rather than used to re-read the cells: the floor was written
+  as a verdict gate when its content is a condition on the *superiority* claim --
+  the arm is deterministic, so only the bar jitters (0.5 r0 = 0.009 / 0.027) and
+  ako7 misses the bar by 0.2846, about ten times that -- **and the next band
+  writes the bar and the superiority floor separately**; and **P35' PASSes as
+  registered but cannot be quoted**, because `k0` is also 2.0 / 2.0, a bar the
+  control satisfies (T7's family). **The mechanism of the FAIL is that the fills
+  sit on the part boundaries**: the single-layer share is **lower in the arm**
+  (0.3858 / 0.4986) than in the control (0.4970 / 0.5589), so the author's fills
+  touch *more* layers than chance placement -- hair against face, clothes against
+  skin -- and the ink along their rings mixes exactly the layers one wanted to
+  separate. **The reason is not "too few lines".** The `|adj|` strata run against
+  the arm (`>=1000` 0.2952 against `<200` 0.0000) so the FAIL is not a denominator
+  artefact, and the unfiltered figures are the predicted tautology (arm 0.5434 /
+  0.6457 against control 0.5646 / 0.6276, **the arm below the control in ako6**).
+  **And the ceiling is smaller than the bar, independently**: only **9.19% /
+  9.32%** of the line ink lies within 4px of a fill ring (6.1% at d=2, 15.2% at
+  d=16), and the word it gives is **hair** -- in the band's population of 627
+  regions, hair 46.1% against face 4.8%, over **21 distinct names**. **Even a
+  PASS would have delivered a tenth of the vocabulary, and that tenth is hair.**
+  The heavy end of the author's fills is **not in the band's population** (the
+  15 / 19 regions no seed can place, median area 748,881 / 783,136 px): median
+  purity 0.8579 / 0.8407, `share >= 0.90` **0.0000 / 0.3158**, `|adj|` median
+  60,276 / 41,173 px, and no control, so no bar. P37's granularity (1.50 / 2.17
+  regions per layer) is the author's to judge (discipline 6). **The honest
+  sentence is not "fill areas give no words" but "the words they give are hair,
+  and they are a tenth of the vocabulary".** Track L also caught and fixed a bug
+  in the *name* column mid-report (label index read as a layer id), re-ran, and
+  got the same `q1 / k1` because the counted quantities never used the names --
+  and records the instance that matters: **the wrong name table made it suspect
+  the population, which was clean** (`線画*` is 1,585 of 1,681 LINE layers, 94%).
 - `../lineart-colour-manuscripts` (branch `colour-manuscripts`, **Track M**) --
   **active, opened 2026-10-24 by user approval**, worktree of this repo cut at
   `e9d680b`, briefing committed at `94c19cb`. **Nobody has worked in it yet.**
@@ -2589,6 +2626,8 @@ withdrawal.
 - **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
 - **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
 - **T91** An order handed over outside the written channel leaves no record on **either** side. The 2026-10-24 z-order request produced a 7,362-row delivery in ten minutes, and on 2026-10-25 the foundation found that **neither that request nor the panel-geometry one exists anywhere in the extraction side's tree** (its `inbox/` ends at 10-24 17:26; a whole-tree search finds only the delivered CSV, the delivery note and the generating script) while the foundation's own `outbox/` held no copy. The delivery cites a request its recipient does not hold. **The rules had no slot for it** -- `reply_*` was defined as track-bound -- so the gap was in CLAUDE.md, not in anyone's attention; `outbox/push_<topic>_<date>.md` with a one-line delivery record is now the slot (Track L's diagnosis and proposal, adopted). Retroactive copies exist for both orders, marked **route unknown**.
+- **T92** A replicated file is a copy, not a record. `CLAUDE.md` is copied into every tree at branch time, so a constant corrected on the foundation keeps answering with the old value: on 2026-10-25 **10 of 11 track copies still named `192.168.1.9`** after the extraction host had been corrected to `.5`, and Track L, following its own copy, concluded the machine was unreachable. Now audit check 10, scoped to live trees. (And `ping` is not a liveness test there -- Windows drops ICMP, so `.5` is silent while `ssh` works.)
+- **T93** The remedy quoted the sentence it removed, so the check flagged its own fix. The pointer files that replaced the frozen ledgers explain that the old copy said *"this file is the first document to read"* -- which is exactly what check 8 searched for; a date clause hid it until a ledger commit on 2026-10-25 lit up ten repaired trees at once. A check whose predicate is a quoted string matches the text about the problem as readily as the problem.
 
 ### 素材の性質と外部標準(塗り)
 

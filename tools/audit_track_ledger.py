@@ -50,6 +50,13 @@ What it checks:
      receive 0.25GB of native-resolution layers. The rule is in CLAUDE.md and
      in every briefing, which is what makes it the right thing to check
      mechanically instead
+ 10. a constant corrected on the foundation but still live in a track's frozen
+     `CLAUDE.md`. The file is replicated into every tree at branch time, so the
+     copy keeps answering with the old value: on 2026-10-25 the extraction
+     tool's address had been corrected to `192.168.1.5` on the foundation while
+     **10 of 11** track copies still said `192.168.1.9`, and Track L, following
+     its own copy, concluded the machine was unreachable. Only addresses the
+     foundation has dropped are reported, so an unchanged copy stays silent
 
 Read-only. It never writes, commits, or touches another tree.
 
@@ -321,6 +328,7 @@ def dead_hashes():
 
 
 FIRST_DOCUMENT_CLAIM = re.compile(r"first document to read", re.IGNORECASE)
+POINTER_TO_LIVE = re.compile(r"\.\./lineart/doc/CURRENT\.md")
 
 
 def frozen_ledger(path):
@@ -341,6 +349,13 @@ def frozen_ledger(path):
     except OSError:
         return None
     if not FIRST_DOCUMENT_CLAIM.search(text):
+        return None
+    # The remedy quotes the sentence it removed ("this copy used to say *this file
+    # is the first document to read*"), so the claim alone flagged the fix itself --
+    # found 2026-10-25, when a ledger commit made the date clause stop hiding it on
+    # ten trees at once. A file that points at the live ledger is a pointer, not a
+    # frozen ledger, whatever it quotes.
+    if POINTER_TO_LIVE.search(text):
         return None
     lines = text.count("\n") + 1
     theirs = run(["git", "log", "-1", "--format=%cI", "--", "doc/CURRENT.md"], cwd=path)
@@ -376,6 +391,25 @@ def ignores_data(path):
     except (OSError, subprocess.TimeoutExpired):
         return None
     return done.returncode == 0
+
+
+ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+
+
+def stale_addresses(path, live):
+    """Addresses this tree's `CLAUDE.md` still names that the foundation's no longer does.
+
+    `CLAUDE.md` is replicated into every tree at branch time, so a constant
+    corrected on the foundation survives in every older copy, and a track
+    following its own copy reaches a machine that is not there. Only tokens the
+    foundation has *dropped* are reported, so an unchanged copy is silent.
+    """
+    f = Path(path) / "CLAUDE.md"
+    try:
+        text = f.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    return sorted({a for a in ADDRESS.findall(text) if a not in live})
 
 
 def notice_senders(head):
@@ -484,7 +518,25 @@ def self_test():
     # The data/ rule is asked of git, so the foundation itself is the fixture.
     assert ignores_data(FOUNDATION) is True
     assert ignores_data(FOUNDATION / "doc") is True  # inside the same repo
-    print("self-test: 13 cases pass")
+    # A copy identical to the foundation's is silent; a dropped address is not.
+    own = set(
+        ADDRESS.findall(
+            (FOUNDATION / "CLAUDE.md").read_text(encoding="utf-8", errors="replace")
+        )
+    )
+    assert own, "the foundation's CLAUDE.md names no address -- check 10 is vacuous"
+    assert stale_addresses(FOUNDATION, own) == []
+    assert stale_addresses(FOUNDATION, set()) == sorted(own)
+    # The remedy quotes the claim, so the claim alone is not the check.
+    pointer = (
+        "# この木の台帳は凍結コピーだった"
+        " -- 生きた版は `../lineart/doc/CURRENT.md`\n"
+        "凍結コピーは冒頭で This file is the first document to read"
+        " と書いていた。\n"
+    )
+    assert FIRST_DOCUMENT_CLAIM.search(pointer)
+    assert POINTER_TO_LIVE.search(pointer)
+    print("self-test: 18 cases pass")
     return 0
 
 
@@ -545,6 +597,11 @@ def main():
             )
 
     ledger_lines = sum(1 for _ in LEDGER.open(encoding="utf-8", errors="replace"))
+    live_addresses = set(
+        ADDRESS.findall(
+            (FOUNDATION / "CLAUDE.md").read_text(encoding="utf-8", errors="replace")
+        )
+    )
 
     rows = []
     for name in sorted(disk):
@@ -612,6 +669,16 @@ def main():
                     f"`../lineart/doc/CURRENT.md`; a warning in the briefing is "
                     f"weaker, because it has to be read first"
                 )
+
+        # 10: a constant corrected on the foundation, still live in a frozen copy.
+        # Only where someone still reads it: a finished tree's copy misleads no one.
+        for addr in ([] if finished else stale_addresses(path, live_addresses)):
+            findings.append(
+                f"`{name}`'s `CLAUDE.md` still names `{addr}`, which the "
+                f"foundation's copy no longer does -- a replicated file is a copy, "
+                f"not a record. Fix on that branch with "
+                f"`git checkout foundation -- CLAUDE.md`"
+            )
 
         # 9: the manuscript deliveries are one `git add -A` from a public repo.
         if ignores_data(path) is False:
