@@ -1,5 +1,34 @@
-# results/ is on-disk only (Track F convention): montages/checkpoints are
-# referenced by path from doc/work_log.md but not version-controlled.
-results/**
 __pycache__/
-*.pyc
+.ipynb_checkpoints/
+venv/
+.claude/
+
+checkpoints/*
+!checkpoints/README.md
+
+dataset/*
+!dataset/README.md
+img/
+
+debug_output/
+/MEMORY.md
+
+*.log
+*.pid
+*.zip
+logs/
+
+# Generated experiment outputs. Existing tracked result snapshots remain
+# tracked; add new representative artifacts explicitly with `git add -f`.
+results/**
+!results/
+!results/README.md
+!results/lessons/
+!results/lessons/**
+
+# Local notification secrets / endpoints.
+config/autoloop_notify.env
+
+# Local file-exchange with the extraction-tool session (Windows machine).
+inbox/
+outbox/

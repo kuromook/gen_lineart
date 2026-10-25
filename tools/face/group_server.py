@@ -6,6 +6,8 @@ labels/face_queue_v1.csv の順に顔を 1 つずつ出し、線を選んで「1
 
 Run:  python tools/face/group_server.py --host 0.0.0.0          (試し。labels/face_groups_trial.jsonl)
       python tools/face/group_server.py --host 0.0.0.0 --final  (本番。labels/face_groups.jsonl)
+      python tools/face/group_server.py --host 0.0.0.0 --report (コマの異常の報告だけ。labels/panel_anomaly_reports.jsonl。
+                                                                 前へ・次へ・異常報告のほかは受け付けず、目印は保存しない)
       → http://<host>:8473
 """
 import argparse, csv, json, time
@@ -99,6 +101,36 @@ def face_png(order):
     out = cv2.warpAffine(img, A, (IMG_PX, IMG_PX), flags=cv2.INTER_AREA if f < 1 else cv2.INTER_LINEAR,
                          borderMode=cv2.BORDER_CONSTANT, borderValue=(236, 236, 236))
     return cv2.imencode(".png", out)[1].tobytes()
+
+
+def panel_png(order):
+    """報告モード: コマ全体を、長い辺 IMG_PX に縮めて返す。顔の枠は描かない(枠は画面側で描く)"""
+    q = S["queue"][order]
+    img = panel_img(int(q["panel"]))
+    f = min(1.0, IMG_PX / max(img.shape[:2]))
+    out = cv2.resize(img, None, fx=f, fy=f, interpolation=cv2.INTER_AREA) if f < 1 else img
+    return cv2.imencode(".png", out)[1].tobytes()
+
+
+def report_payload(order):
+    q = S["queue"][order]; pid = int(q["panel"])
+    h, w = panel_img(pid).shape[:2]
+    rep = S["reports"].get(pid)
+    return dict(order=order, panel=pid, name=S["panels"][pid]["name"], work=q["work"], box=[float(q[k]) for k in ("x0", "y0", "x1", "y1")],
+                size=[w, h], reported=bool(rep and rep["reported"]), n_queue=len(S["queue"]), last=S["last_order"],
+                n_reported=sum(1 for r in S["reports"].values() if r["reported"]))
+
+
+def save_report(d, annotator):
+    """異常の報告はコマ単位(同じコマの顔は共有)。追記式で、コマごとに最新の行が有効"""
+    order = int(d["order"]); q = S["queue"][order]; pid = int(q["panel"])
+    assert 0 <= order <= S["last_order"], "印つけの範囲の外"
+    rec = dict(panel=pid, name=S["panels"][pid]["name"], work=q["work"], order=order, reported=bool(d["reported"]),
+               annotator=annotator, datetime=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+    with lock:
+        S["reports"][pid] = rec
+        with open(S["report_save"], "a") as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
 def stats():
@@ -362,6 +394,48 @@ setTool("lasso"); setMode("new"); fetch("/api/stats").then(r=>r.json()).then(s=>
 </script></body></html>"""
 
 
+REPORT_PAGE = r"""<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>コマの異常の報告</title>
+<style>
+:root{--bg:#f4f4f2;--fg:#1c1c1c;--mut:#6b6b6b;--line:#cfcfcb;--acc:#b3261e}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,"Noto Sans JP",sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.app{display:flex;flex-direction:column;height:100%;padding:10px;gap:8px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+.wrap{position:relative;max-width:100%;max-height:100%}
+img{display:block;max-width:100%;max-height:calc(100vh - 120px);background:#fff;border:1px solid var(--line)}
+.box{position:absolute;border:2px dashed #3c8dde;pointer-events:none}
+.wrap.rep img{outline:6px solid var(--acc)}
+button{font:inherit;padding:10px 16px;border:1px solid var(--line);background:#fafaf8;border-radius:6px;cursor:pointer}
+button.rep{background:var(--acc);color:#fff;border-color:var(--acc)}
+kbd{display:inline-block;min-width:1.3em;text-align:center;padding:0 4px;border:1px solid currentColor;border-radius:4px;font:11px ui-monospace,monospace;opacity:.75;margin-right:4px}
+.mut{color:var(--mut);font-size:12px}#st{font-weight:600;color:var(--acc)}
+</style></head><body><div class="app">
+<div class="bar"><b id="pos"></b><span id="info" class="mut"></span><span id="st"></span></div>
+<div class="bar"><button onclick="nav(-1)"><kbd>←</kbd>前へ</button><button onclick="nav(1)"><kbd>→</kbd>次へ</button>
+ <button id="rb" onclick="toggle()"><kbd>E</kbd>異常を報告</button>
+ <span class="mut">コマの切り取りがおかしい・線画が壊れているなど。もう一度押すと取り消し。同じコマの顔では共有されます。青い点線 = 印を付けた顔</span></div>
+<div class="stage"><div class="wrap" id="wrap"><img id="im" alt=""><div class="box" id="box"></div></div></div>
+</div><script>
+const $=id=>document.getElementById(id); let F=null, cur=0, busy=false;
+function place(){ if(!F)return; const im=$("im"), k=im.clientWidth/F.size[0], b=F.box, bx=$("box");
+  bx.style.left=b[0]*k+"px"; bx.style.top=b[1]*k+"px"; bx.style.width=(b[2]-b[0])*k+"px"; bx.style.height=(b[3]-b[1])*k+"px"; }
+function ui(){ $("wrap").className="wrap"+(F.reported?" rep":""); $("rb").className=F.reported?"rep":""; $("rb").innerHTML=F.reported?"<kbd>E</kbd>報告済み(取り消す)":"<kbd>E</kbd>異常を報告";
+  $("st").textContent=`報告したコマ ${F.n_reported}`; }
+async function go(k){ if(busy||k<0||(F&&k>F.last))return; busy=true;
+  const r=await fetch(`/api/rface?o=${k}`); busy=false; if(!r.ok)return; F=await r.json(); cur=F.order;
+  $("pos").textContent=`${cur+1} / ${F.last+1} 番目の顔`; $("info").textContent=`${F.work} / コマ p${F.panel}`;
+  $("im").onload=place; $("im").src=`/pimg?o=${cur}`; ui(); try{localStorage.setItem("rep_cur",cur);}catch(_){} }
+function nav(d){ go(cur+d); }
+async function toggle(){ if(!F||busy)return; busy=true;
+  const r=await fetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order:cur,reported:!F.reported})}); busy=false;
+  if(!r.ok){ alert("保存に失敗: "+await r.text()); return; } const n=await (await fetch(`/api/rface?o=${cur}`)).json(); F=n; ui(); }
+document.addEventListener("keydown",e=>{ const k=e.key.toLowerCase(); if(k=="arrowleft")nav(-1); else if(k=="arrowright")nav(1); else if(k=="e")toggle(); e.preventDefault(); });
+window.addEventListener("resize",place);
+let s0=0; try{s0=parseInt(localStorage.getItem("rep_cur")||"0")||0;}catch(_){} go(s0);
+</script></body></html>"""
+
+
 class H(BaseHTTPRequestHandler):
     annotator = "user"
 
@@ -380,12 +454,23 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
             if u.path == "/":
-                return self._send(PAGE.encode(), "text/html; charset=utf-8")
+                return self._send((REPORT_PAGE if S["report"] else PAGE).encode(), "text/html; charset=utf-8")
             if u.path == "/api/stats":
                 return self._send(json.dumps(stats()).encode(), "application/json")
             o = int(q["o"][0])
             if not 0 <= o < len(S["queue"]):
                 return self._send(b"out of range", "text/plain", 404)
+            if S["report"]:
+                if o > S["last_order"]:
+                    return self._send(b"out of range", "text/plain", 404)
+                if u.path == "/api/rface":
+                    with lock:
+                        return self._send(json.dumps(report_payload(o)).encode(), "application/json")
+                if u.path == "/pimg":
+                    with lock:
+                        png = panel_png(o)
+                    return self._send(png, "image/png")
+                return self._send(b"not found", "text/plain", 404)
             if u.path == "/api/face":
                 return self._send(json.dumps(face_payload(o)).encode(), "application/json")
             if u.path == "/img":
@@ -399,6 +484,13 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             d = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            if S["report"]:
+                if urlparse(self.path).path != "/api/report":
+                    return self._send(b"report mode: only /api/report", "text/plain", 403)
+                save_report(d, self.annotator)
+                return self._send(b"ok", "text/plain")
+            if urlparse(self.path).path != "/api/save":
+                return self._send(b"not found", "text/plain", 404)
             save(d, self.annotator)
             self._send(b"ok", "text/plain")
         except Exception as e:                                     # noqa: BLE001
@@ -411,8 +503,18 @@ def main():
     ap.add_argument("--port", type=int, default=PORT)
     ap.add_argument("--annotator", default="user")
     ap.add_argument("--final", action="store_true", help="本番(labels/face_groups.jsonl)。なければ試し")
+    ap.add_argument("--report", action="store_true", help="コマの異常の報告だけ(labels/panel_anomaly_reports.jsonl)。目印は保存しない")
     a = ap.parse_args()
-    load_state(LAB / ("face_groups.jsonl" if a.final else "face_groups_trial.jsonl"))
+    load_state(LAB / ("face_groups.jsonl" if (a.final or a.report) else "face_groups_trial.jsonl"))
+    S["report"] = a.report; S["reports"] = {}
+    S["last_order"] = max(S["faces"]) if S["faces"] else -1                # 報告で回るのは、印つけで見た顔(order 0〜最後)
+    if a.report:
+        S["report_save"] = LAB / "panel_anomaly_reports.jsonl"
+        if S["report_save"].exists():
+            for ln in open(S["report_save"]):
+                if ln.strip():
+                    d = json.loads(ln); S["reports"][int(d["panel"])] = d
+        print(f"報告モード: 顔 order 0〜{S['last_order']}  報告済みのコマ {sum(r['reported'] for r in S['reports'].values())}  保存先 {S['report_save'].name}", flush=True)
     H.annotator = a.annotator
     print(f"顔 {len(S['queue'])}  保存済み {len(S['faces'])}  保存先 {S['save'].name}  → http://{a.host}:{a.port}", flush=True)
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
