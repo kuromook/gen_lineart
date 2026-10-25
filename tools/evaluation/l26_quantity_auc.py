@@ -21,9 +21,13 @@ from l25_calibrate import load, LINEISH, FILLISH
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui'
 NBOOT, SEED = 10000, 20261025
-QUANTS = [('black_among_drawn', '抽出側 `bad_max` が使っている量'),
-          ('keep4', 'L の形の試験(**高いのは当たり前。物差しの物差し**)'),
-          ('preview_dark', 'L の `preview_dark`')]
+QUANTS = [
+    ('black_among_drawn', '抽出側 `bad_max` が使っている量'),
+    # **この行は証拠ではない**(基盤 `band_l_auc_sign_20261025.md`)。
+    # `keep4` はベタの形を通すように作られているので、**定義がラベルを作っている**。
+    # それなのに表の中では最も強い証拠に見えるので、印字に注記を焼き込む。
+    ('keep4', '**証拠ではない** —— 定義がラベルを作っている(物差しの物差し)'),
+    ('preview_dark', 'L の `preview_dark`')]
 
 
 def auc(pos, neg):
@@ -93,6 +97,8 @@ def main():
         if col in res:
             print(f'    {col:<22}線>ベタ {res[col][0]:.4f}   ベタ>線 {1-res[col][0]:.4f}')
 
+    print('\n  **`keep4` の行を証拠として引用しないこと** —— ベタの形を通すように')
+    print('  作られた量なので、作者のラベルと一致するのは定義の結果であり測定ではない')
     print('\n**先に書いた限界(登録 §限界)**')
     print('  - 標本は3つの境界すべてで濃縮されている。とくに C は')
     print('    `black_among_drawn ∈ [0.95,1.00]` を濃くしてあるので、')
