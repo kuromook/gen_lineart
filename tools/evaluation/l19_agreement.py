@@ -21,9 +21,11 @@ QUEUE = ROOT / 'results' / 'l19_ui' / 'queue.json'
 OUT = ROOT / 'results' / 'l19_ui' / 'agreement.csv'
 
 # UI の語彙が増えた時刻(ts の空白から。§再出題の節で使う)
-SEG = [('S1', '2026-10-25T13:16:23', '2026-10-25T13:24:31'),
-       ('S2', '2026-10-25T13:27:43', '2026-10-25T13:38:11'),
-       ('S3', '2026-10-25T13:41:28', '2026-10-25T15:35:58')]
+SEG = [('S1 服/フキダシ以前', '2026-10-25T13:16:23', '2026-10-25T13:24:31'),
+       ('S2 黒消し以前', '2026-10-25T13:27:43', '2026-10-25T13:38:11'),
+       ('S3 語彙そろう', '2026-10-25T13:41:28', '2026-10-25T15:35:58'),
+       ('S4 出し直し', '2026-10-25T15:40:00', '2026-10-25T23:59:59')]
+REASK = Path(__file__).resolve().parents[2] / 'results/l19_ui/reask.json'
 WORD_CHOICES = ('word', 'free')
 
 
@@ -38,7 +40,7 @@ def load():
     for r in rows:
         last[r['order']] = r
         n_rec[r['order']] += 1
-    return q, last, n_rec, len(rows)
+    return q, last, n_rec, rows
 
 
 def seg_of(ts):
@@ -53,7 +55,8 @@ def pct(a, b):
 
 
 def main():
-    q, last, n_rec, n_all_rec = load()
+    q, last, n_rec, all_rows = load()
+    n_all_rec = len(all_rows)
     queue = q['queue']
     print(f"行列 {q['n']} (要判断 {q['n_ask']} + 自動の確認 {q['n_check']}"
           f" / 自動 {q['n_auto']}、全面 {q['n_all']})")
@@ -163,20 +166,31 @@ def main():
     print(f'\n[8] 1問の所要 中央 {statistics.median(ms) / 1000:.1f}s'
           f'  四分 {ms[len(ms) // 4] / 1000:.1f}/{ms[3 * len(ms) // 4] / 1000:.1f}s'
           f'  合計 {sum(ms) / 60000:.0f}分')
-    print('\n[9] UI の語彙が増える前に答えた問 (再出題の候補)')
+    print('\n[9] UI の語彙が増えた区間と、出し直しの効果')
     segc = Counter(seg_of(r['ts']) for r in answered)
-    print('  区間ごとの問数:', dict(segc),
-          ' (S1 は「服」「フキダシ」が画面に無く、S1+S2 は「黒消し」が無い)')
-    s1 = [r['order'] for r in answered if seg_of(r['ts']) == 'S1']
-    s12 = [r['order'] for r in answered if seg_of(r['ts']) in ('S1', 'S2')
-           and r['choice'] in ('skip', 'mixed', 'free')]
-    print(f'  再出題 必須 (S1 の全問): {len(s1)} 問')
-    print(f'  再出題 要 (S1+S2 で 判断保留/混在/自由入力だった問): {len(s12)} 問'
-          f'  (S1 と重なる {len(set(s1) & set(s12))} 問を含む)')
-    (ROOT / 'results' / 'l19_ui' / 'reask.json').write_text(
-        json.dumps(sorted(set(s1) | set(s12)), ensure_ascii=False))
-    print(f'  -> {ROOT / "results" / "l19_ui" / "reask.json"}'
-          f'  計 {len(set(s1) | set(s12))} 問')
+    for name, _, _ in SEG:
+        print(f'  {name:<16}{segc[name]:>5} 問 (最後の回答がこの区間にある問)')
+    if segc['?']:
+        print(f'  {"区間外":<16}{segc["?"]:>5} 問')
+    if REASK.exists():
+        got = sorted(set(json.loads(REASK.read_text())))
+        before, after = {}, {}
+        for r in all_rows:
+            if r['order'] in set(got):
+                (after if seg_of(r['ts']) == 'S4 出し直し' else before)[r['order']] = r
+        done = [o for o in got if o in after]
+        print(f'  出し直し {len(got)} 問 → 済み {len(done)}')
+        if done:
+            def key(r):
+                return (r['choice'], r['word'])
+            ch = [o for o in done if key(before[o]) != key(after[o])]
+            ab = sum(before[o]['agree'] for o in done)
+            aa = sum(after[o]['agree'] for o in done)
+            print(f'    答が変わった問 {len(ch)}/{len(done)}: '
+                  + '  '.join(f'{o}:{before[o]["word"] or before[o]["choice"]}'
+                              f'->{after[o]["word"] or after[o]["choice"]}' for o in ch))
+            print(f'    この {len(done)} 問の一致/A  前 {ab}/{len(done)} = {ab / len(done):.4f}'
+                  f'   後 {aa}/{len(done)} = {aa / len(done):.4f}')
 
     # --- 11. 開示 (棒ではない。UI が何を既定で選ぶかは設計値、規律6) ---------
     print('\n[11] 開示: 候補から「肌」を外すと器具はどう変わるか')
