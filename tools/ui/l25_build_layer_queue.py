@@ -142,6 +142,10 @@ def main():
     cnt = collections.Counter(r['why'] for r in q)
     json.dump(dict(n=len(q), n_ask=len(q), n_check=0, n_auto=0, n_all=len(q),
                    words=WORDS,
+                   ask='このレイヤは何?',
+                   help='1枚のレイヤの墨だけを原寸 1:1 で出している。'
+                        'C で頁のどこにあるか(赤枠が今見ている範囲)。'
+                        '迷ったら M で保留して後に回せる。',
                    others=[['mixed', '保留(後で見直す)', 'M']],
                    queue=q),
               open(f'{OUT}/queue.json', 'w'), ensure_ascii=False)

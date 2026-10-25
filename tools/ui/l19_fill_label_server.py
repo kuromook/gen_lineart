@@ -45,6 +45,8 @@ def load_state(save_path, reask=None, queue=None, extra=None):
     S['dir'] = Path(queue).parent if queue else UI
     S['meta'] = {k: d[k] for k in ('n', 'n_ask', 'n_check', 'n_auto', 'n_all',
                                    'words')}
+    S['meta']['ask'] = d.get('ask')
+    S['meta']['help'] = d.get('help')
     # 「その他」の行は行列が決める(層の正解では隙間埋けの選択肢が要らない)
     S['meta']['others'] = d.get('others') or [
         ['gapfill_line', '隙間埋め(線画の抜けを足した)', 'G'],
@@ -83,6 +85,8 @@ def payload(o):
     r['cols'] = COLS[:len(r['cands'])]
     r['words'] = S['meta']['words']
     r['others'] = S['meta']['others']
+    r['ask'] = S['meta'].get('ask')
+    r['help'] = S['meta'].get('help')
     r['saved'] = S['done'].get(o)
     r['flagged'] = S['flag'].get(o)
     r['n_flag'] = len(S['flag'])
@@ -166,6 +170,30 @@ def self_check():
     return True
 
 
+def js_check():
+    """**起動の門その2**: 出す JS を構文検査する。
+
+    2026-10-25: `PAGE` の中に `\\n` を `\n` と書いてしまい、Python が本物の改行にした。
+    **JS の文字列が閉じず、スクリプト全体が死んだ** —— 画面には静的な HTML だけが残り、
+    ボタンは見えるのに何も動かない、という**最も気付きにくい壊れ方**をした。
+    """
+    import re as _re, shutil, subprocess, tempfile
+    m = _re.search(r'<script>(.*?)</script>', PAGE, _re.S)
+    if not m:
+        return True
+    node = shutil.which('node') or shutil.which('nodejs')
+    if not node:
+        print('  (node が無いので JS の構文検査は飛ばす)', flush=True)
+        return True
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as fh:
+        fh.write(m.group(1)); path = fh.name
+    r = subprocess.run([node, '--check', path], capture_output=True, text=True)
+    os.unlink(path)
+    if r.returncode != 0:
+        raise SystemExit('**JS が構文エラー。起動しない**\n' + r.stderr[:800])
+    return True
+
+
 def save(d, annotator):
     o = int(d['order'])
     rec = make_rec(o, d, annotator)
@@ -179,7 +207,7 @@ def save(d, annotator):
 
 PAGE = """<!doctype html><html lang="ja"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>このベタは何</title>
+<title>何を聞いているか</title>
 <style>
 :root{color-scheme:light dark}
 body{margin:0;font:15px/1.5 system-ui,sans-serif;background:#fff;color:#111}
@@ -204,7 +232,7 @@ button.hit{border-color:#888;background:#8882;font-weight:600}
 </style>
 <div id="top">
 <header>
-  <b>この黒いベタは何?</b>
+  <b id="ask">この黒いベタは何?</b>
   <span id="pos" class="meta"></span><span id="done"></span>
   <span style="flex:1"></span>
   <button onclick="prv()">← <span class="k">B</span></button>
@@ -217,7 +245,7 @@ button.hit{border-color:#888;background:#8882;font-weight:600}
 <img id="img" alt="">
 <div class="meta" id="info"></div>
 <div id="hint"></div>
-<div class="meta">黒い塊が聞いている面。色は縁 4px に接している線のレイヤ(ヒント。答ではない)。
+<div class="meta" id="help">黒い塊が聞いている面。色は縁 4px に接している線のレイヤ(ヒント。答ではない)。
 工程の産物(隙間埋め)なら G / H。</div>
 <script>
 let cur=0, it=null, t0=0, ctx=false, keymap={}, okeys={};
@@ -225,6 +253,8 @@ async function go(o){
   if(o<0) o=0;
   const r=await fetch('/api/item?o='+o); if(!r.ok) return;
   it=await r.json(); cur=o; t0=performance.now(); ctx=false; showImg();
+  if(it.ask) document.getElementById('ask').textContent=it.ask;
+  if(it.help) document.getElementById('help').textContent=it.help;
   document.getElementById('pos').textContent=it.pos+' / '+it.n;
   document.getElementById('done').textContent=
     it.n_done+' 済み'+(it.n_flag?'   ⚑ 異常 '+it.n_flag+' 件':'');
@@ -302,10 +332,10 @@ async function pick(choice,word,free){
     r=await fetch('/api/save',{method:'POST',body:JSON.stringify({
       order:cur,choice:choice,word:word,free:free,
       ms:Math.round(performance.now()-t0)})});
-  }catch(e){ alert('保存できませんでした(接続): '+e+'\nこの問は記録されていません'); return; }
+  }catch(e){ alert('保存できませんでした(接続): '+e+'\\nこの問は記録されていません'); return; }
   if(!r.ok){
     const t=await r.text();
-    alert('保存できませんでした: '+t+'\n**この問は記録されていません。**進みません');
+    alert('保存できませんでした: '+t+'\\n**この問は記録されていません。**進みません');
     return;
   }
   nxt();
@@ -406,7 +436,9 @@ def main():
     print(f'  異常の報告: X または「⚑ 異常を報告」ボタン -> {S["flagfile"]}'
           f'  既報 {len(S["flag"])} 件', flush=True)
     self_check()
-    print(f'  起動の門: 行列 {len(S["q"])} 行すべてで記録を組み立てられた', flush=True)
+    js_check()
+    print(f'  起動の門: 行列 {len(S["q"])} 行すべてで記録を組み立てられた / '
+          f'JS は構文検査を通った', flush=True)
     H.annotator = a.annotator
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
 
