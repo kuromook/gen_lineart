@@ -189,7 +189,7 @@ def report(rows, arm, pool):
     zero = len(allr) - len(s)
     one = [r for r in s if r[f'lay{D1}'] <= 1]
     s2 = [r for r in s if r[f'lay{D1}'] >= 2]
-    print(f'  {pool} {arm}: 行 {len(allr)}  うち adj が空(線墨に触らない) {zero} '
+    print(f'  {pool} {arm}: 行 {len(allr)}  うち adj が空(その墨に触らない) {zero} '
           f'({zero/len(allr):.4f})  -> 測った面 {len(s)}')
     print(f'    adj に層が1枚 {len(one)} ({len(one)/len(s):.4f})  '
           f'-> 2枚以上 {len(s2)} (帯の母集団)')
@@ -339,7 +339,7 @@ def main():
               f'(両プールで成立すること) / P35\' '
               f'{"PASS" if v35 and all(v35) else "FAIL"}**')
     if pages:
-        print('\nP36 開示 (棒なし): 語彙の被覆 —— 線墨のうちベタ面に隣接する割合')
+        print('\nP36 開示 (棒なし): 語彙の被覆 —— **門が通した層の墨**のうちベタ面に隣接する割合')
         for w in ('ako6', 'ako7'):
             s = [r for r in pages if r['work'] == w]
             if not s:
@@ -347,7 +347,7 @@ def main():
             tot = sum(r['ink'] for r in s)
             for d in DS:
                 print(f'  {w} d={d:2d}: {sum(r[f"cov{d}"] for r in s)/max(tot,1):.4f}  '
-                      f'(線墨 {tot} px, コマ {len(s)})')
+                      f'(門が通した層の墨 {tot} px, コマ {len(s)})')
         print('\nP37 開示 (棒なし): 逆向きの粒度 —— 1つの線層が何個の面に割れるか')
         print('  **粒度の正否は作者の判断なので棒を立てない (規律6)**')
         for w in ('ako6', 'ako7'):

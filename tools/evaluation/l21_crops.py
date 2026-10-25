@@ -101,7 +101,7 @@ def main():
                     c = (cx0 + cx1) // 2
                     cx0, cx1 = c - MAXSIDE // 2, c + MAXSIDE // 2
                 img = np.full((cy1 - cy0, cx1 - cx0, 3), 255, np.uint8)
-                img[inkP[cy0:cy1, cx0:cx1]] = (40, 40, 40)      # 線墨 = 濃い灰
+                img[inkP[cy0:cy1, cx0:cx1]] = (40, 40, 40)      # 門が通した層の墨 = 濃い灰
                 img[R[cy0:cy1, cx0:cx1]] = (0, 0, 0)            # 聞いている面 = 黒
                 img[~P[cy0:cy1, cx0:cx1]] = (245, 245, 245)     # コマの外
                 tag = ('異常_' + ans.get(name, '?')) if name in note else ans.get(name, '?')

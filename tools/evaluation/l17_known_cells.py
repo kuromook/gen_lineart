@@ -4,7 +4,7 @@
 器具(本体 `l17_fill_adjacency.py` はここから import する):
 
   assign_top  各墨画素を、それを塗る線層のうち z_global が最大のもの(最も手前)に割り当てる
-  adj_sets    ∂R から距離 d 以内(真円のユークリッド距離)・コマの中の線墨を層ごとに数える
+  adj_sets    ∂R から距離 d 以内(真円のユークリッド距離)・コマの中の**門が通した線の形の層**の墨を層ごとに数える
   purity      max_L share      n_lay90  adj の9割を覆うのに要る層数
 
 **帰無値も棒もここには無い。** ここは器具が壊れていないかだけを見る。
@@ -247,7 +247,7 @@ def kc17():
 
 
 def kc18(limit=6):
-    """データ経路: adj の総和が、別経路で数えた「∂R から d 以内の線墨」と一致する。"""
+    """データ経路: adj の総和が、別経路で数えた「∂R から d 以内の**門が通した層**の墨」と一致する。"""
     zz = zmap(); fill, line = gated_layers()
     js = jobs(zz, fill, line)[:limit]
     print(f'KC18 データ経路: adj の総和を別経路と突き合わせる (頁 {len(js)})')

@@ -8,7 +8,7 @@
   ridge_width(ink)   線の太さ。距離変換の尾根 (dt が 3x3 の最大と等しい画素) で 2*dt。
                      **尾根に限るのは、墨画素全部で取ると縁の薄い所に引っ張られるから**
   bbox_fill(ink)     墨の外接矩形の占有率。貼り込んだ画像は 1.0 に寄る
-  cut_ink(P, ink)    コマの縁 1px に乗っている線墨 / コマの縁の長さ
+  cut_ink(P, ink)    コマの縁 1px に乗っている**門が通した線の形の層**の墨 / コマの縁の長さ
 
 **帰無値も棒もここには無い。** KC25〜KC27 が PASS しなければ本体は回さない。
 
@@ -75,7 +75,7 @@ def bbox_fill(ink):
 
 
 def cut_ink(P, ink):
-    """コマの縁 1px に乗っている線墨 / コマの縁の長さ。断ち切りの指標。"""
+    """コマの縁 1px に乗っている**門が通した線の形の層**の墨 / コマの縁の長さ。断ち切りの指標。"""
     u = P.astype(np.uint8)
     er = cv2.erode(u, np.ones((3, 3), np.uint8))
     edge = P & (er == 0)
@@ -221,8 +221,8 @@ def kc26():
 
 
 def kc27():
-    """データ経路: 線墨の総和が L17 の P36 / L18 の KC24 の分母と一致するか。"""
-    print('KC27 データ経路: 線墨の総和が L17/L18 と一致するか')
+    """データ経路: **門が通した層の墨**の総和が L17 の P36 / L18 の KC24 の分母と一致するか。"""
+    print('KC27 データ経路: **門が通した層の墨**の総和が L17/L18 と一致するか')
     want = {'ako6': 43279719, 'ako7': 45598813}
     zz = zmap(); fill, line = gated_layers()
     got = Counter()
@@ -393,7 +393,7 @@ def report(res):
     os.makedirs(OUT, exist_ok=True)
     pools = ('ako6', 'ako7')
     print('\n' + '=' * 72)
-    print('[1] 線の太さ (母集団 = コマの中の線墨。KC25 の偏り表を必ず添えて読む)')
+    print('[1] 線の太さ (母集団 = コマの中の**門が通した線の形の層**の墨。KC25 の偏り表を必ず添えて読む)')
     print('    単位が2つある —— **長さ** (尾根画素ごとに1) と **墨** (尾根画素を太さで重み)。')
     print('    「細い線が何本あるか」と「絵のどれだけが細いか」は別の問いで、答も違う。')
     wh_pool, wt_pool = {}, {}
@@ -407,7 +407,7 @@ def report(res):
         if ridge == 0:
             continue
         wh_pool[w] = (H, ink, ridge); wt_pool[w] = T
-        print(f'\n  {w}  線墨 {ink:,}px  尾根 {ridge:,}px')
+        print(f'\n  {w}  門が通した層の墨 {ink:,}px  尾根 {ridge:,}px')
         for key, nm in (('len', '長さ'), ('ink', '墨')):
             q = quant(H, key)
             cc = cum(H, key, WCUT)
@@ -431,11 +431,11 @@ def report(res):
             print(f'    {nm}で重み  中央 {q[1]:.2f}px'
                   + '   ' + '  '.join(f'<{t}px {v:.4f}' for t, v in zip(TCUT, cc)))
 
-    print('\n[3] コマの縁に乗っている線墨 (断ち切りの指標)')
+    print('\n[3] コマの縁に乗っている**門が通した層**の墨 (断ち切りの指標)')
     for w in pools:
         hit = sum(r['cut'][0] for r in res if r['work'] == w)
         n = sum(r['cut'][1] for r in res if r['work'] == w)
-        print(f'  {w:<7}縁の画素 {n:>10,}  うち線墨 {hit:>9,}  {hit / max(n, 1):.4f}')
+        print(f'  {w:<7}縁の画素 {n:>10,}  うちその墨 {hit:>9,}  {hit / max(n, 1):.4f}')
 
     print('\n[4] FILL 層の矩形占有 (貼り込んだ画像は 1.0 に寄る)')
     rect = [x for r in res for x in r['lay_rect'] if x['ink'] >= 10000]
@@ -538,7 +538,7 @@ def main():
     for r in res:
         got[r['work']] += r['inkpx']
     want = {'ako6': 43279719, 'ako7': 45598813}
-    print('KC27 データ経路: 線墨の総和が L17/L18 の分母と一致するか')
+    print('KC27 データ経路: **門が通した層の墨**の総和が L17/L18 の分母と一致するか')
     o = True
     for w in ('ako6', 'ako7'):
         g = got[w] == want[w] if not a.limit else None

@@ -2,7 +2,7 @@
 """L18 の器具と既知セル KC21〜KC24。PASS しなければ本体は起動しない(登録 §5)。
 
 器具:
-  seed_of     ∂R から d 以内の線墨 (L17 の adj) と、その argmax 層
+  seed_of     ∂R から d 以内の**門が通した層**の墨 (L17 の adj) と、その argmax 層
   prop_full   seed に触れる8連結成分の和 (g=∞。登録の一次)
   geo_spread  測地距離で打ち切った伝播 (感度。uint16 のラベル画像を max フィルタで広げる)
   comp_pur    |C ∧ L| / |C|
@@ -185,7 +185,7 @@ def kc23(limit=4):
 
 
 def kc24():
-    """データ経路: コマの線墨の総和が L17 の P36 の分母と一致する。"""
+    """データ経路: コマの**門が通した層の墨**の総和が L17 の P36 の分母と一致する。"""
     zz = zmap(); fill, line = gated_layers()
     tot = {}
     for job in jobs(zz, fill, line):
@@ -194,7 +194,7 @@ def kc24():
                 continue
             lab, _ = assign_top(sub, P.shape)
             tot[work] = tot.get(work, 0) + int(((lab > 0) & P).sum())
-    print('KC24 データ経路: 線墨の総和が L17 の P36 の分母と一致するか')
+    print('KC24 データ経路: **門が通した層の墨**の総和が L17 の P36 の分母と一致するか')
     ok = True
     for w in sorted(INK_TOTAL):
         bad = tot.get(w, 0) != INK_TOTAL[w]
