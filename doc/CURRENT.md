@@ -3578,7 +3578,38 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       the counts fixed in advance, and a few of L19's unambiguous regions mixed
       in to measure the human answer's own reproducibility (6 of 37 answers
       changed on re-ask). **Asking only near one constant's boundary would let
-      that constant select the sample that corrects it.** L asks what a layer
+      that constant select the sample that corrects it** -- a warning about
+      *calibration* only, and the foundation narrowed it the same night:
+      **a boundary-drawn sample is the right sample for refuting a boundary**,
+      because the claim is about where the boundary sits.
+      **The truth came back in five minutes of the author's time (92 layers,
+      median 2.1s) and it convicts `bad_max`**: in the 0.95-1.00 band, 2
+      layers pass and **19 are dropped, and all 19 are finished line art**,
+      with the mechanism falling out of the definition -- `black_among_drawn`
+      is the pure-black share of drawn pixels, so **crisply drawn line art
+      approaches 1.0 and `<= 0.98` drops hard line art while meaning to drop
+      fills**. So the question to the extraction side rises from *what value*
+      to **can this quantity separate line from fill at all** -- 9-2's deeper
+      form, a borrowed *quantity* rather than a borrowed constant, and the
+      registered next number is the overlap (or AUC, null 0.5) of
+      `black_among_drawn` between layers answered "line" and "fill", which
+      scores the quantity without choosing a threshold.
+      **The heavier finding is not `bad_max`**: 7 of the 18 layers `keep4`
+      passes at its boundary are **not pictures at all**, and `keep4` claims
+      nothing about role, so **the instrument has a test of shape and no test
+      of role** -- the hole that 5 rough-sketch, 4 sound-effect and 1 effect
+      layer fall into. The next design writes a role quantity rather than
+      fixing a threshold. **`preview_dark` is neither cleared nor retracted**:
+      875 layers dropped stands as a count, what they were is unmeasured, and
+      0 of the 4 dropped in the random stratum were finished line art.
+      **A 60-layer random stratum yields an upper bound, not a rate**: zero
+      errors in 60 bounds it at 4.9% one-sided, while a true 2% rate shows
+      zero 30% of the time, so 1% and 4% are not separable and the frame the
+      sample is drawn from has to be registered before drawing it.
+      **And the author repaired the instrument's axes, not its values**: the
+      five choices mixed shape (`keep4`'s axis) with role (`bad_max`'s), which
+      the author caught before the run -- the same separation this whole day
+      turned on, and it saved all 92 answers. L asks what a layer
       is, M's known-cell 8 pages ask where a region is, so they do not overlap;
       the order between them is the user's.
     - **M's primary population is 777 / 779 and the foundation's 856/860 is
