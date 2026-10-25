@@ -31,6 +31,14 @@ Track L の起案 版2 と**同じ枠**で出す: **作者の制作工程 / 抽�
            Q3 top_colour_share・colours_q16・sat_mean の範囲 /
            Q4 形式2 の sat_mean / Q5 列ごとの空率 / Q6 完全重複行
 
+**走らせて最初に分かったこと(こちらの定義の誤り。KC3 が落ちて見つかった)**:
+**描画画素0の層は `drawn_ratio` が空ではなく `"0.0"`** で、`sat_mean` と
+`top_colour_share` が**空**、`colours_q16` は `"0"`、`rendered` は `True` である。
+こちらは「空欄 = 描画0」と数えていて KC3 の 126 を 0 と出した。
+**既知セルが落ちたのはデータではなく器具である。** 定義を直した:
+描画画素のある層 = 非フォルダー かつ `drawn_ratio > 0`、
+描画画素0の層 = 非フォルダー かつ `drawn_ratio == 0`。
+
 **Q2 の根拠**: パイロットでは `sat_hist` の32箱の和が、用紙で
 7016×6543 = 45,905,688 にちょうど一致し、別の層でも
 `drawn_ratio × キャンバス面積` と丸めの範囲で合っていた。
@@ -128,7 +136,8 @@ def main():
     kc3 = {'folders': sum(1 for v in sub8.values() for r in v
                           if r['folder'] == 'True'),
            'zero_drawn': sum(1 for v in sub8.values() for r in v
-                             if r['folder'] != 'True' and r['drawn_ratio'] == ''),
+                             if r['folder'] != 'True'
+                             and num(r['drawn_ratio'], -1) == 0),
            'paper': sum(1 for v in sub8.values() for r in v
                         if r['layer_type'] == PAPER)}
     b = [clip_bases(v) for v in sub8.values()]
@@ -145,11 +154,14 @@ def main():
         return 1
 
     n, npg = len(rows), len(bypage)
-    drawn = [r for r in rows if r['folder'] != 'True' and r['drawn_ratio'] != '']
+    drawn = [r for r in rows if r['folder'] != 'True'
+             and (num(r['drawn_ratio'], 0) or 0) > 0]
+    zerod = [r for r in rows if r['folder'] != 'True'
+             and num(r['drawn_ratio'], -1) == 0]
     print(f'\n== 母集団 ==\n  行 {n}  ページ {npg}  '
           f'フォルダー行 {sum(1 for r in rows if r["folder"] == "True")}  '
           f'描画層 {len(drawn)}  '
-          f'描画画素0の層 {sum(1 for r in rows if r["folder"] != "True" and r["drawn_ratio"] == "")}')
+          f'描画画素0の層 {len(zerod)}')
 
     print('\n== S 層の状態 ==')
     sizes = sorted(len(v) for v in bypage.values())
