@@ -21,6 +21,11 @@
 > **割れる直前に残っていた「橋」の位置を窓の中心にする。**
 > r は 4・8・16・32・64・128 px(原寸)で試す。**割れなければ「くびれ無し」と印字して
 > (b) を作らない** —— 作れなかったことも結果である。
+>
+> **`LAYER < 0` のとき(作品フォルダーの頁から選ぶとき)は、面積の大きい順に成分を見て、
+> 最初にくびれが出た成分を採る。** いくつ飛ばしたかを印字する ——
+> **`page0064` の最大成分(5,552,176px)は 128px まで割れなかった**ので、
+> 「最大の成分」だけでは (b) が作れない。**この選び方は走らせる前に書いた。**
 
 **既知セル**: このページの標準が **ベース7 / 成分46 / 面46**(`m27` の走行と同じ)。
 """
@@ -38,12 +43,38 @@ import m12_score_a0_nulls as m12                         # noqa: E402
 import m16_score_corrected_standard as m16               # noqa: E402
 import m27_author_crops as m27                           # noqa: E402
 
-PAGE = '000_2018_illust201710_page0003'
-LAYER = 50
+PAGE = sys.argv[1] if len(sys.argv) > 1 else '000_2018_illust201710_page0003'
+LAYER = int(sys.argv[2]) if len(sys.argv) > 2 else 50   # -1 で面積最大の成分
 OUT = Path('results/m27_author_crops')
-EXPECT = {'bases': 7, 'components': 46, 'areas': 46}
+EXPECT = {'000_2018_illust201710_page0003': (7, 46, 46),
+          '000_2018_skima10_skima10_page0064': (39, 92, 86)}[PAGE]
+EXPECT = dict(zip(('bases', 'components', 'areas'), EXPECT))
 RADII = (4, 8, 16, 32, 64, 128)
 WIN = 1400
+
+
+def find_waist(c, m):
+    """**収縮して2%以上の塊が2つに割れる最小の r** と、その「橋」の位置。"""
+    y, x, h, w = c['box']
+    for r in RADII:
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+        er = cv2.erode(m, k)
+        n, lab, stats, _ = cv2.connectedComponentsWithStats(er, connectivity=8)
+        big = [i for i in range(1, n)
+               if stats[i, cv2.CC_STAT_AREA] >= 0.02 * c['area']]
+        print(f'  収縮 r={r:>4}px → 2%以上の塊 {len(big)}', flush=True)
+        if len(big) >= 2:
+            a1 = (lab == big[0]).astype(np.uint8)
+            a2 = (lab == big[1]).astype(np.uint8)
+            kk = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                           (2 * r + 3, 2 * r + 3))
+            br = (cv2.dilate(a1, kk) > 0) & (cv2.dilate(a2, kk) > 0) & (m > 0)
+            if br.sum() == 0:
+                br = (cv2.dilate(a1, kk) > 0) & (cv2.dilate(a2, kk) > 0)
+            yy, xx = np.nonzero(br)
+            if yy.size:
+                return (y + int(yy.mean()), x + int(xx.mean()), r)
+    return None
 
 
 def main():
@@ -74,40 +105,32 @@ def main():
         print('**既知セルが合わない。切り出しを書かない。**')
         return 1
 
-    c = max((x for x in comps if x['layer_id'] == LAYER),
-            key=lambda x: x['area'])
-    y, x, h, w = c['box']
+    cands = (sorted(comps, key=lambda x: -x['area']) if LAYER < 0 else
+             [max((x for x in comps if x['layer_id'] == LAYER),
+                  key=lambda x: x['area'])])
     H, W = grid
     files = {l['layer_id']: l['file'] for l in p['layers']}
     zmap = {q['layer_id']: q['z'] for q in comps}
     page_ids = [i for i, _ in sorted(
         ((l['layer_id'], zmap.get(l['layer_id'], 0)) for l in p['layers']),
         key=lambda t: t[1])]
-    print(f'\n成分 L{LAYER} 面積 {c["area"]} / 箱 y{y} x{x} {w}×{h}'
-          f'(窓 {WIN}×{WIN} に収まらない)')
-
     # --- くびれ: 割れる最小の r ---
-    m = c['mask'].astype(np.uint8)
-    waist = None
-    for r in RADII:
-        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
-        er = cv2.erode(m, k)
-        n, lab, stats, _ = cv2.connectedComponentsWithStats(er, connectivity=8)
-        big = [i for i in range(1, n)
-               if stats[i, cv2.CC_STAT_AREA] >= 0.02 * c['area']]
-        print(f'  収縮 r={r:>4}px → 2%以上の塊 {len(big)}')
-        if len(big) >= 2:
-            a1 = (lab == big[0]).astype(np.uint8)
-            a2 = (lab == big[1]).astype(np.uint8)
-            kk = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                           (2 * r + 3, 2 * r + 3))
-            br = (cv2.dilate(a1, kk) > 0) & (cv2.dilate(a2, kk) > 0) & (m > 0)
-            if br.sum() == 0:
-                br = (cv2.dilate(a1, kk) > 0) & (cv2.dilate(a2, kk) > 0)
-            yy, xx = np.nonzero(br)
-            if yy.size:
-                waist = (y + int(yy.mean()), x + int(xx.mean()), r)
-                break
+    skipped = 0
+    c = cands[0]
+    for c in cands:
+        y, x, h, w = c['box']
+        if c['area'] < 0.002 * H * W:
+            continue
+        m = c['mask'].astype(np.uint8)
+        waist = find_waist(c, m)
+        if waist is not None or LAYER >= 0:
+            break
+        skipped += 1
+    if skipped:
+        print(f'  (くびれが無くて飛ばした成分 {skipped})')
+    y, x, h, w = c['box']
+    print(f'  採った成分 L{c["layer_id"]} 面積 {c["area"]} / '
+          f'箱 y{y} x{x} {w}×{h}(窓 {WIN}×{WIN} に収まらない)')
     if waist is None:
         print('  → **くびれ無し。(b) は作らない**(作れなかったことも結果)')
     else:
@@ -124,7 +147,7 @@ def main():
     cs, _ = cv2.findContours(small[:sh, :sw], cv2.RETR_CCOMP,
                              cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(shape, cs, -1, (255, 0, 255), 2)
-    base = f'case1b_{PAGE}_L{LAYER}'
+    base = f'case{3 if LAYER < 0 else 1}b_{PAGE}_L{c["layer_id"]}'
     if waist is not None:
         cv2.circle(shape, (waist[1] // s, waist[0] // s), 26, (0, 180, 255), 3)
     cv2.imwrite(str(OUT / f'{base}_shape_1of{s}.png'), shape)
