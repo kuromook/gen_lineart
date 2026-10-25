@@ -6,6 +6,10 @@
 **棒の定数は基盤が決める。** この走りが出すのは縮退・帰無値・引数だけ。
 
   --arms degen     縮退の点検だけ (成分の単位。棒の前に出す)
+
+**棒は腕と同じ走行の中で計算する**(2026-10-25 の新しい規律)。帰無値の関数である床は
+走行をまたいで凍結しない —— **凍結した引きの運が棒に入る**。凍結してよいのは
+絶対の定数(棒A 0.30 / 棒C 0.50)だけ。
   --arms control   対照(帰無値)だけ      --arms real  本来の腕   --arms both
 """
 import argparse, csv, os, statistics as st, sys
@@ -301,11 +305,15 @@ def main():
                 print(line_)
             for k in ('cov1', 'ch', 'rate'):
                 v = [q[k] for q in per]
-                res[(arm, w, k)] = (med(v), max(v) - min(v))
+                sd_ = st.stdev(v) if len(v) > 1 else 0.0
+                res[(arm, w, k)] = (med(v), max(v) - min(v), sd_)
             if len(per) > 1:
                 print(f'    seed間: cov_honest 中央 {res[(arm,w,"ch")][0]:.4f}  '
                       f'**r0 = 最大−最小 {res[(arm,w,"ch")][1]:.4f}**  '
+                      f'SD {res[(arm,w,"ch")][2]:.4f}  '
                       f'honest_rate 中央 {res[(arm,w,"rate")][0]:.4f}')
+                print('      (**最大−最小は seed 本数に単調**なので、本数の違う走行の'
+                      ' r0 は別の量。SD は併記、主値は登録どおり r0)')
             # コマの2階級 (基盤 §4。**判定はプール×階級の4セル**)
             for lab2, lo, hi in (('最大成分<0.5', 0, 0.5), ('最大成分>=0.5', 0.5, 1.01)):
                 t = [r for r in s0 if lo <= r['top_share'] < hi]
@@ -367,12 +375,16 @@ def main():
             ch1 = res[('real', w, 'ch')][0]; ch0 = res[('shuffled', w, 'ch')][0]
             r0 = res[('shuffled', w, 'ch')][1]
             rate = res[('real', w, 'rate')][0]
+            sd0 = res[('shuffled', w, 'ch')][2]
             floor = ch0 + 3 * r0        # **対照 + 3r0**。裸の 3r0 は対照自身が通る
+            floor_sd = ch0 + 3 * sd0    # 参考(基盤の指示で併記。主値ではない)
             print(f'  {w}: A cov_honest {ch1:.4f} >= 0.30 -> '
                   f'{"PASS" if ch1 >= 0.30 else "FAIL"}')
             print(f'      B 床 = 対照 {ch0:.4f} + 3r0 {3*r0:.4f} = **{floor:.4f}**  '
                   f'本来 {ch1:.4f} -> {"床の上" if ch1 >= floor else "床の下"}   '
                   f'比 {ch1/ch0 if ch0 else float("nan"):.2f}x')
+            print(f'        (参考) 対照 + 3SD = {floor_sd:.4f} -> '
+                  f'{"床の上" if ch1 >= floor_sd else "床の下"}  **主値ではない**')
             print(f'      C honest_rate {rate:.4f} >= 0.50 -> '
                   f'{"PASS" if rate >= 0.50 else "FAIL"}')
         # ---- **プール×階級の4セル** (基盤の裁定で必須)

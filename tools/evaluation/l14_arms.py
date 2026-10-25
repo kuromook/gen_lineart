@@ -11,6 +11,7 @@
   腕3 = 腕2 の照合面を1px膨張 / 対照 = 同じ頁の別の位置から障壁を取る
 """
 import csv, os, subprocess, sys, collections, statistics as st
+import zlib
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -113,7 +114,9 @@ def one_page(job):
                                  px_in_panel=n,
                                  in_raster=round(int((sub & ras[nm]).sum()) / n, 4)))
     F = Fc | Fl; G = Gc | Gl
-    rng = np.random.default_rng(SEED + abs(hash(pid)) % 100000)
+    rng = np.random.default_rng(SEED + zlib.crc32(pid.encode()) % 100000)
+    # **`hash(str)` は過程ごとに変わる**ので種に使えない(2026-10-25、罠 T97)。
+    # crc32 は過程に依らない。直す前の走行の帰無値は再現しない
     H, W = shape
     prows, rrows = [], []
     for nm, x0, y0, x1, y1 in panels:

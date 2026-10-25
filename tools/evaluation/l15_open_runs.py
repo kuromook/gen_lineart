@@ -2,6 +2,7 @@
 """L15 本体: 開いた区間は「線の切れ目」か「線が最初から無い」のか。
 登録は doc/work_log.md「L15 事前登録」(commit 8602482)。門が PASS しなければ起動しない。"""
 import csv, collections, os, subprocess, sys, statistics as st
+import zlib
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -40,7 +41,9 @@ def one_page(job):
         acc_add(F, None, ink, 'solid'); acc_add(G, None, ink, 'thin')
     for lid, path in ll:
         acc_add(B, None, cv2.imread(path, cv2.IMREAD_GRAYSCALE) < 128, 'cover')
-    rng = np.random.default_rng(SEED + abs(hash(pid)) % 100000)
+    rng = np.random.default_rng(SEED + zlib.crc32(pid.encode()) % 100000)
+    # **`hash(str)` は過程ごとに変わる**ので種に使えない(2026-10-25、罠 T97)。
+    # crc32 は過程に依らない。直す前の走行の帰無値は再現しない
     rows = []
     for nm, x0, y0, x1, y1 in panels:
         f, g, b = F[y0:y1, x0:x1], G[y0:y1, x0:x1], B[y0:y1, x0:x1]

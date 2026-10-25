@@ -15,6 +15,7 @@
   W6 = W2 + OCC_front       W7 = W3 + OCC_front       対照は W7 で取る
 """
 import csv, collections, json, os, sys, statistics as st
+import zlib
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -74,7 +75,9 @@ def one_page(job):
         front[z] = cum.copy()
     kl = cv2.imread(f'{DEL}/{work}/koma/{pid}_koma_lines.png', cv2.IMREAD_GRAYSCALE)
     KL = (kl > 127) if (kl is not None and kl.shape == (H, W)) else np.zeros((H, W), bool)
-    rng = np.random.default_rng(SEED + abs(hash(pid)) % 100000)
+    rng = np.random.default_rng(SEED + zlib.crc32(pid.encode()) % 100000)
+    # **`hash(str)` は過程ごとに変わる**ので種に使えない(2026-10-25、罠 T97)。
+    # crc32 は過程に依らない。直す前の走行の帰無値は再現しない
     rows = []
     for fr in frames:
         m = cv2.imread(f'{DEL}/{work}/koma/{fr["file"]}', cv2.IMREAD_GRAYSCALE)

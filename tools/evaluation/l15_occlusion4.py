@@ -10,6 +10,7 @@
 遮蔽物を 32px 膨らませれば無関係な輪郭でも当たるので、帰無値なしにこの表は読めない。
 """
 import csv, collections, os, sys, statistics as st
+import zlib
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -72,7 +73,9 @@ def one_page(job):
             F = np.zeros(im.shape, bool); B = np.zeros(im.shape, bool)
             O = np.zeros(im.shape, bool)
         acc_add(O, None, im < 128, 'cover')
-    rng = np.random.default_rng(SEED + abs(hash(pid)) % 100000)
+    rng = np.random.default_rng(SEED + zlib.crc32(pid.encode()) % 100000)
+    # **`hash(str)` は過程ごとに変わる**ので種に使えない(2026-10-25、罠 T97)。
+    # crc32 は過程に依らない。直す前の走行の帰無値は再現しない
     rows = []
     for nm, x0, y0, x1, y1 in panels:
         f, b, o = F[y0:y1, x0:x1], B[y0:y1, x0:x1], O[y0:y1, x0:x1]

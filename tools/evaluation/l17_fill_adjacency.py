@@ -32,8 +32,24 @@ INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l17_fill_adjacency'
 ARMS = 'both'
 # 基盤 `inbox/band_confirm_l17_20261025.md` §1 で確定した棒。式は §6 のまま
-BAR_Q = {'ako6': 0.5672, 'ako7': 0.5779}
+# **撤回**(2026-10-25): 0.5672 / 0.5779 は**前の走行の対照**から固定した値で、
+# `place()` の種が過程依存だったため**再現しない引き**の上に乗っていた(罠 T97)。
+# **式は基盤 `band_check_l17_20261025.md` §6 のまま。値は同じ走行の対照から計算する。**
+WITHDRAWN_BAR_Q = {'ako6': 0.5672, 'ako7': 0.5779}
 BAR_K = 2
+
+
+CTL = {}       # 同じ走行の対照。棒はここから計算する
+
+
+def bar_q(q0):
+    """P34'(b) の棒。**帰無値の関数**(基盤 §6)。
+
+    `q1 >= 0.50` かつ `q1 >= q0 + 0.5 * (1 - q0)` の厳しい方。
+    **腕と同じ走行の対照から計算する** —— 走行をまたいで凍結すると、
+    **凍結した引きの運が棒に入る**(2026-10-25 の新しい規律)。
+    """
+    return max(0.50, q0 + 0.5 * (1.0 - q0))
 TSTEP = [round(x, 2) for x in np.arange(0.0, 1.001, 0.1)]
 
 
@@ -313,7 +329,7 @@ def main():
         print('対照 = 帰無値 (面をコマ内のランダムな位置へ平行移動、本物の線層で測る)')
         print('**基盤 §6 の引数。q0 / r0 / m0 / k0 はここから読む**')
         for w in ('ako6', 'ako7'):
-            report(rows, 'shuffled', w)
+            CTL[w] = report(rows, 'shuffled', w)
     if ARMS in ('both', 'real'):
         print('\n本来の腕')
         got = {}
@@ -323,16 +339,26 @@ def main():
         for w in ('ako6', 'ako7'):
             report_unplaced(rows, w)
         print('\n' + '=' * 92)
-        print('P34\' / P35\' (基盤 band_confirm_l17_20261025.md §1 で確定した棒)')
-        print(f'  P34\' q1 >= {BAR_Q}   P35\' k1 <= {BAR_K}')
+        print('P34\' / P35\' (式は基盤 band_check_l17 §6。'
+              '**値は同じ走行の対照から計算する**)')
+        print(f'  **撤回済みの棒(前の走行の引きの上): {WITHDRAWN_BAR_Q}**')
         v34, v35 = [], []
+        ctl = CTL
         for w in ('ako6', 'ako7'):
             if not got.get(w):
                 continue
             q1 = got[w]['q90']; k1 = got[w]['mnl']
-            a = q1 >= BAR_Q[w]; b = k1 <= BAR_K
+            q0 = ctl[w]['q90'] if ctl.get(w) else float('nan')
+            r0 = ctl[w].get('q90_rng', float('nan')) if ctl.get(w) else float('nan')
+            bq = bar_q(q0)
+            print(f'  {w}: 対照 q0 {q0:.4f}  ->  **棒 = max(0.50, q0+0.5(1-q0)) '
+                  f'= {bq:.4f}**  (r0 {r0:.4f})')
+            if q1 - q0 < 3 * r0:
+                print(f'       **(a) 床: q1-q0 {q1-q0:+.4f} < 3r0 {3*r0:.4f} '
+                      f'-> PASS でも FAIL でもなく「読めない」**')
+            a = q1 >= bq; b = k1 <= BAR_K
             v34.append(a); v35.append(b)
-            print(f'  {w}: q1 {q1:.4f} 対 棒 {BAR_Q[w]:.4f} -> '
+            print(f'  {w}: q1 {q1:.4f} 対 棒 {bq:.4f} -> '
                   f'{"PASS" if a else "FAIL"}   k1 {k1:.1f} 対 {BAR_K} -> '
                   f'{"PASS" if b else "FAIL"}')
         print(f'  **P34\' {"PASS" if v34 and all(v34) else "FAIL"}'
