@@ -8,7 +8,12 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0          試し (labels/fill_words_trial.jsonl)
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0 --final  本番 (labels/fill_words.jsonl)
   python ... --final --reask results/l19_ui/reask.json              出し直し (語彙が増える前に答えた分)
+  python ... --final --from 0                                       先頭から見直す (異常の報告用)
   -> http://<host>:8475
+
+**異常の報告** (2026-10-25 作者の指示): 語の答とは別の流れ。`X` または「異常」ボタンで
+`labels/fill_anomaly.jsonl` に追記する。**語の答を上書きしない / 次の問に進まない** ——
+見直しながら印を付ける道具なので、進むのは B / N で作者が決める。
 
 **自動で決まる面も 1割が同じ見た目で混ざっている**(`why` はクライアントに送らない)。
 """
@@ -31,6 +36,8 @@ S = {}
 
 def load_state(save_path, reask=None):
     S['save'] = save_path
+    S['flagfile'] = LAB / 'fill_anomaly.jsonl'
+    S['flag'] = {}
     d = json.load(open(UI / 'queue.json'))
     S['q'] = d['queue']
     S['meta'] = {k: d[k] for k in ('n', 'n_ask', 'n_check', 'n_auto', 'n_all',
@@ -50,6 +57,14 @@ def load_state(save_path, reask=None):
             if ln.strip():
                 r = json.loads(ln)
                 S['done'][int(r['order'])] = r
+    if S['flagfile'].exists():
+        for ln in open(S['flagfile']):
+            if ln.strip():
+                r = json.loads(ln)
+                if r.get('note') == '__undo__':
+                    S['flag'].pop(int(r['order']), None)
+                else:
+                    S['flag'][int(r['order'])] = r
 
 
 def payload(o):
@@ -58,6 +73,8 @@ def payload(o):
     r['cols'] = COLS[:len(r['cands'])]
     r['words'] = S['meta']['words']
     r['saved'] = S['done'].get(o)
+    r['flagged'] = S['flag'].get(o)
+    r['n_flag'] = len(S['flag'])
     only = S['only']
     if only is None:
         r['n'], r['pos'] = len(S['q']), o + 1
@@ -71,7 +88,30 @@ def payload(o):
     return r
 
 
+def flag(d, annotator):
+    """異常の報告。**語の答とは別のファイル**に追記する(上書きしない)。"""
+    o = int(d['order'])
+    q = S['q'][o]
+    note = (d.get('note') or '').strip()
+    rec = dict(order=o, work=q['work'], pid=q['pid'], comp=q['comp'],
+               region=q['region'], crop=q['crop'], area=q.get('area'),
+               note=note or '(記述なし)', annotator=annotator,
+               ts=time.strftime('%Y-%m-%dT%H:%M:%S'))
+    if d.get('undo'):
+        rec['note'] = '__undo__'
+    with lock:
+        if d.get('undo'):
+            S['flag'].pop(o, None)
+        else:
+            S['flag'][o] = rec
+        with open(S['flagfile'], 'a') as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + '\n')
+    return rec
+
+
 def first_todo():
+    if S.get('start') is not None:
+        return max(0, min(len(S['q']) - 1, S['start']))
     if S['only'] is not None:               # 出し直しでは「この走りで答え直したか」を見る
         for o in S['only']:
             if o not in S['re']:
@@ -153,7 +193,8 @@ async function go(o){
   const r=await fetch('/api/item?o='+o); if(!r.ok) return;
   it=await r.json(); cur=o; t0=performance.now(); ctx=false; showImg();
   document.getElementById('pos').textContent=it.pos+' / '+it.n;
-  document.getElementById('done').textContent=it.n_done+' 済み';
+  document.getElementById('done').textContent=
+    it.n_done+' 済み'+(it.n_flag?'   ⚑ 異常 '+it.n_flag+' 件':'');
   // 縁に接している層(色のヒント)
   const h=document.getElementById('hint'); h.innerHTML='';
   it.cands.forEach((x,i)=>{
@@ -182,7 +223,8 @@ async function go(o){
   [['gapfill_line','隙間埋め(線画の抜けを足した)','G'],
    ['gapfill_fill','隙間埋め(別レイヤのベタ用)','H'],
    ['free','その他(語を入力)','T'],['mixed','混在(1語にできない)','M'],
-   ['skip','分からない','S']].forEach(([k,t,key])=>{
+   ['skip','分からない','S'],
+   ['anomaly','⚑ 異常を報告(別のコマ・別の画像が混じっている)','X']].forEach(([k,t,key])=>{
     const b=document.createElement('button');
     b.innerHTML=t+' <span class="k">'+key+'</span>';
     b.onclick=()=>act(k); o2.appendChild(b);
@@ -193,7 +235,20 @@ function nxt(){ if(it) go(it.nav_next); }
 function prv(){ if(it) go(it.nav_prev); }
 function act(k){
   if(k==='free'){const v=prompt('この黒は何ですか(語を入力)'); if(v) pick('free',null,v);}
+  else if(k==='anomaly'){ flagIt(); }
   else pick(k,null,null);
+}
+// **異常の報告は語の答を上書きしない。次にも進まない**(見直しながら印を付けるため)
+async function flagIt(){
+  if(it.flagged){
+    if(!confirm('この問の異常の印を取り消しますか')) return;
+    await fetch('/api/flag',{method:'POST',body:JSON.stringify({order:cur,undo:1})});
+    go(cur); return;
+  }
+  const v=prompt('何が混じっていますか(空でもよい。例: 別のコマの絵 / 貼り込んだ画像 / 3D)');
+  if(v===null) return;
+  await fetch('/api/flag',{method:'POST',body:JSON.stringify({order:cur,note:v})});
+  go(cur);
 }
 function showImg(){
   document.getElementById('img').src='/'+(ctx?'ctx':'crop')+'?o='+cur+'&t='+Date.now();
@@ -206,7 +261,8 @@ function info(){
     (ctx?'[コマ全体] ':'[面の周り] ')+it.work+' '+it.pid+' コマ'+it.comp+' 面'+it.region+
     '  面積 '+it.area.toLocaleString()+'px'+
     (sc<1?'  (表示は '+(sc*100).toFixed(0)+'%)':'  (原寸)')+
-    (it.saved?'  ← 記録済み: '+(it.saved.word||it.saved.free||it.saved.choice):'');
+    (it.saved?'  ← 記録済み: '+(it.saved.word||it.saved.free||it.saved.choice):'')+
+    (it.flagged?'   ⚑ 異常として報告済み: '+it.flagged.note:'');
 }
 async function pick(choice,word,free){
   await fetch('/api/save',{method:'POST',body:JSON.stringify({
@@ -223,6 +279,7 @@ addEventListener('keydown',e=>{
   else if(k==='t') act('free');
   else if(k==='m') act('mixed');
   else if(k==='s') act('skip');
+  else if(k==='x') act('anomaly');
   else if(k==='c'){ctx=!ctx;showImg();}
   else if(k==='b') prv();
   else if(k==='n') nxt();
@@ -271,7 +328,10 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             d = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-            save(d, self.annotator)
+            if urlparse(self.path).path == '/api/flag':
+                flag(d, self.annotator)
+            else:
+                save(d, self.annotator)
             self._send(b'ok', 'text/plain')
         except Exception as e:                                      # noqa: BLE001
             self._send(str(e).encode(), 'text/plain', 400)
@@ -284,6 +344,8 @@ def main():
     ap.add_argument('--annotator', default='user')
     ap.add_argument('--final', action='store_true')
     ap.add_argument('--reask', help='出し直す order の JSON 配列')
+    ap.add_argument('--from', dest='start', type=int, default=None,
+                    help='この order から始める(先頭から見直すときは 0)')
     a = ap.parse_args()
     load_state(LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl'),
                a.reask)
@@ -296,6 +358,11 @@ def main():
         print(f"出し直し {len(S['only'])} 問 (全 {m['n']} 問のうち)  "
               f"保存先 {S['save'].name} に追記  "
               f"-> http://{a.host}:{a.port}", flush=True)
+    if a.start is not None:
+        S['start'] = a.start
+        print(f'  開始位置 {a.start}  (全問を B / N で見直せます)', flush=True)
+    print(f'  異常の報告: X または「⚑ 異常を報告」ボタン -> {S["flagfile"]}'
+          f'  既報 {len(S["flag"])} 件', flush=True)
     H.annotator = a.annotator
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
 
