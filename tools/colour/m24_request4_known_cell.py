@@ -18,13 +18,23 @@
 
 使い方: `python m24_request4_known_cell.py <納品のディレクトリ>`
 (既定は `../lineart/data/incoming_manuscript/colour_request4`)。
-ファイル名はパイロットと同じ `<page>_L<id>.png` を想定し、無ければ glob で探す。
+
+**結合は `source`(= `page_path`)と `layer_id`。ファイル名で結ばない。**
+2026-10-25 23:30 の初回走行は、**パイロットのマニフェストの `page` 文字列から
+納品のファイル名を組み立てて** 303層のうち 255層を「欠け」と出した。
+納品側は 303/303 バイト一致を報告していたので、**疑うべきは配達ではなく比較器**
+だった(`formats` を走査子とリストで比べた 2026-10-25 の誤りと同じ形)。
+パイロットと納品では `page` 文字列が8ページ中6ページで違う
+(`illust201710_illust201710` / `022_` / `skima11_skima11`)。
+**いまは納品のマニフェスト(`colour_layers_pages.jsonl`)の `file` を使う。**
+**棒(KC-R4a/b/c の内容)は動かしていない。直したのは器具だけ。**
 
 **この器具は腕を採点しない。**
 """
 import collections
 import csv
 import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -49,13 +59,18 @@ def md5(p):
     return h.hexdigest()
 
 
-def find(d, page, lid):
-    cand = d / f'{page}_L{lid}.png'
-    if cand.exists():
-        return cand
-    hits = sorted(d.glob(f'*{page}*_L{lid}.png')) or \
-        sorted(d.glob(f'*{page}*L{lid}.*'))
-    return hits[0] if hits else None
+def delivered(d):
+    """納品のマニフェストを `source` で引けるようにする。**名前で結ばない。**"""
+    f = d / 'colour_layers_pages.jsonl'
+    if not f.exists():
+        return None
+    pages = {}
+    for line in open(f, encoding='utf-8'):
+        line = line.strip()
+        if line:
+            p = json.loads(line)
+            pages[p['source']] = p
+    return pages
 
 
 def main(argv):
@@ -67,24 +82,31 @@ def main(argv):
     want = [r for r in csv.DictReader(open(LIST, encoding='utf-8'))
             if r['既知セル'] == 'yes']
     pages = list(dict.fromkeys(r['page_path'] for r in want))
-    man = {p['source']: p for p in __import__('json').load(
+    man = {p['source']: p for p in json.load(
         open(m12.MANIFEST, encoding='utf-8'))['pages']}
+    dm = delivered(d)
+    if dm is None:
+        print(f'納品のマニフェストが無い: {d/"colour_layers_pages.jsonl"}')
+        return 2
+    dlay = {(src, str(l['layer_id'])): l
+            for src, p in dm.items() for l in p['layers']}
     print(f'== KC-R4a 既知セルの層が揃っているか ==')
     print(f'  一覧の既知セル層 {len(want)}(期待 {EXPECT["layers"]})  '
-          f'ページ {len(pages)}')
+          f'ページ {len(pages)}  納品のマニフェストのページ {len(dm)}')
     pilot_files = {}
     for src, p in man.items():
         for l in p['layers']:
-            pilot_files[(p['page'], str(l['layer_id']))] = PILOT / l['file']
+            pilot_files[(src, str(l['layer_id']))] = PILOT / l['file']
 
     missing, byte_same, px_same, px_diff, no_pilot = [], 0, 0, [], 0
     for r in want:
-        page = man[r['page_path']]['page']
-        f = find(d, page, r['layer_id'])
-        if f is None:
-            missing.append((page, r['layer_id']))
+        src = r['page_path']
+        l = dlay.get((src, r['layer_id']))
+        f = d / l['file'] if l is not None and l.get('file') else None
+        if f is None or not f.exists():
+            missing.append((src, r['layer_id']))
             continue
-        pf = pilot_files.get((page, r['layer_id']))
+        pf = pilot_files.get((src, r['layer_id']))
         if pf is None or not pf.exists():
             no_pilot += 1
             continue
@@ -95,14 +117,14 @@ def main(argv):
         a = cv2.imread(str(f), cv2.IMREAD_UNCHANGED)
         b = cv2.imread(str(pf), cv2.IMREAD_UNCHANGED)
         if a is None or b is None or a.shape[:2] != b.shape[:2]:
-            px_diff.append((page, r['layer_id'], 'shape'))
+            px_diff.append((src, r['layer_id'], 'shape'))
             continue
         aa = a[..., 3] if a.ndim == 3 and a.shape[2] == 4 else a
         bb = b[..., 3] if b.ndim == 3 and b.shape[2] == 4 else b
         if np.array_equal(aa, bb):
             px_same += 1
         else:
-            px_diff.append((page, r['layer_id'],
+            px_diff.append((src, r['layer_id'],
                             int(np.count_nonzero(aa != bb))))
     print(f'  見つからない層 {len(missing)} -> '
           f'{"PASS" if not missing else "**FAIL**"}')
@@ -120,19 +142,11 @@ def main(argv):
     print(f'\n== KC-R4c 届いたラスタで標準を作り直す ==')
     # m16 の measure_standard をそのまま使うには manifest の file 名が要るので、
     # 納品側のファイル名に差し替えた manifest を組む(規則は m16 と同一)。
-    import json
-    mm = json.load(open(m12.MANIFEST, encoding='utf-8'))
-    byp = {p['source']: p for p in mm['pages']}
     rowsrc = {r['page_path'] for r in want}
     tot = collections.Counter()
     bad = []
-    for src in rowsrc:
-        p = byp[src]
-        for l in p['layers']:
-            f = find(d, p['page'], str(l['layer_id']))
-            if f is not None:
-                l['file'] = str(f.relative_to(d)) if f.is_relative_to(d) \
-                    else str(f)
+    for src in sorted(rowsrc):
+        p = dm[src]
         s = int(round(p['preview']['縮小率']))
         pw, ph = p['preview']['size']
         grid = (ph * s, pw * s)
