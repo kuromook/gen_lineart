@@ -26,8 +26,15 @@ OUT = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui'
 SEED = 20261025
 MAXSIDE, CTXSIDE = 1500, 1100
 # **事前登録の階級**(上から順に当てはめ、層は1つの階級にしか入れない)
-STRATA = [('A_preview_dark', 20), ('B_keep4', 20), ('C_bad_max', 20), ('D_anchor', 15)]
-WORDS = ['線', 'ベタ', '両方が混じっている', '絵ではない(マスク・紙・下地)', '分からない']
+STRATA = [('A_preview_dark', 20), ('B_keep4', 20), ('C_bad_max', 20),
+          ('D_anchor', 15), ('E_random', 15)]
+REPEAT = 5          # 既知セル: 同じ層をもう一度出して、**人の答の再現性**を測る
+# **答は2つの軸を混ぜない。** 形(線/ベタ)と役割(完成の絵か、工程のものか)は別。
+# 2026-10-25 作者の指摘「下絵は『絵ではない』でいいのだろうか」で足した ——
+# ペンで描いた下絵は**形は線、役割は完成の絵ではない**ので、どちらの箱にも入らなかった。
+WORDS = ['線(完成の線画)', 'ベタ(完成の塗り)', '線とベタが混じっている',
+         '下絵・ラフ(ペンでも。完成の絵ではない)',
+         '絵ではない(マスク・紙・下地・トーン)', '分からない']
 
 
 def fnum(x):
@@ -38,6 +45,12 @@ def fnum(x):
 
 
 def stratum(r, kk):
+    """**上から順に当てはめ、層は1つの階級にしか入れない。**
+
+    `E_random` はここでは付かない —— **境界と無関係に母集団から引く**階級なので、
+    抽出の側で別に引く(基盤 `reply_l_layer_truth_registration_20261025.md` 条件2:
+    無作為の階級が無いと、**境界から離れた所の誤り率が最後まで分からない**)。
+    """
     pd = fnum(r['preview_dark'])
     ba = fnum(r['black_among_drawn'])
     k4 = fnum(kk['keep4']) if kk else None
@@ -106,18 +119,26 @@ def main():
         by.setdefault(s, []).append((r, kk))
     print('母集団(階級ごと):', {k: len(v) for k, v in sorted(by.items())})
     rng = np.random.default_rng(SEED)
-    picked = []
+    picked, taken = [], set()
+    allr = sorted(pool_rows, key=lambda t: (t[0]['page_id'], int(t[0]['layer_id'])))
+    by['E_random'] = [(r, kk) for r, kk, _ in allr]      # **母集団そのまま**から引く
     for sid, want in STRATA:
         cand = sorted(by.get(sid, []), key=lambda t: (t[0]['page_id'], int(t[0]['layer_id'])))
         if not cand:
             print(f'  {sid}: 候補 0。この階級は空', flush=True)
             continue
-        idx = rng.permutation(len(cand))[:min(want, len(cand))]
-        for i in idx:
+        got = 0
+        for i in rng.permutation(len(cand)):
+            if got >= want:
+                break
             r, kk = cand[int(i)]
+            key = (r['page_id'], r['layer_id'])
+            if key in taken:        # **同じ層を2つの階級に入れない**
+                continue
+            taken.add(key); got += 1
             w = 'ako6' if '_ako6_' in r['page_id'] else 'ako7'
             picked.append((r['page_id'], w, r['layer_id'], sid))
-        print(f'  {sid}: 候補 {len(cand)} -> 抽出 {min(want, len(cand))}')
+        print(f'  {sid}: 候補 {len(cand)} -> 抽出 {got}')
     print(f'抽出 {len(picked)} 層。切り出しを作る', flush=True)
     rows = []
     with Pool(4) as p:
@@ -128,8 +149,12 @@ def main():
                 print(f'  {i}/{len(picked)}', flush=True)
     rows.sort(key=lambda r: (r['work'], r['pid'], r['lid']))   # **並びを決定的に**
     rng2 = np.random.default_rng(SEED)
-    order = rng2.permutation(len(rows))
-    q = [rows[int(i)] for i in order]
+    # 既知セル: REPEAT 枚を**もう一度出す**。同じ答が返るかで人の答の再現性を測る
+    rep = [dict(rows[int(i)], why=rows[int(i)]['why'] + '_repeat')
+           for i in rng2.permutation(len(rows))[:REPEAT]]
+    rows2 = rows + rep
+    order = rng2.permutation(len(rows2))
+    q = [rows2[int(i)] for i in order]
     for i, r in enumerate(q):
         r['order'] = i
         r['cands'] = []            # 層名も統計も渡さない
@@ -145,8 +170,10 @@ def main():
                    ask='このレイヤは何?',
                    help='1枚のレイヤの墨だけを原寸 1:1 で出している。'
                         'C で頁のどこにあるか(赤枠が今見ている範囲)。'
-                        '迷ったら M で保留して後に回せる。',
-                   others=[['mixed', '保留(後で見直す)', 'M']],
+                        '迷ったら M で保留、当てはまる語が無ければ T で入力。',
+                   # **自由入力を残す** —— L19 では「黒消し」がここから出て語に昇格した
+                   others=[['free', 'その他(語を入力)', 'T'],
+                           ['mixed', '保留(後で見直す)', 'M']],
                    queue=q),
               open(f'{OUT}/queue.json', 'w'), ensure_ascii=False)
     print(f'-> {OUT}/queue.json  行列 {len(q)}  階級 {dict(cnt)}')
