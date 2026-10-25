@@ -1432,6 +1432,38 @@ work, and the stated expectation is that the pieces make each other easier.
   withdrew as #2 for being heavy and producing plausible wrong pictures. The pilot
   will carry the preview at its own size with the reduction in the manifest and
   **not offered as a substitute for native**.
+  **2026-10-25, the foundation paid the band check Track M had owed since the
+  previous day's eleven bulletins, and the first thing it changed is what may be
+  quoted.** The three p-values reproduce exactly from M's own win/loss rows
+  (0.1250 / 0.6875 / 0.2188) **but the design is weaker than "n=8" suggests**:
+  ties leave the sign test, so the effective n is **7 / 6 / 6**, and at n=6
+  nothing but **6-0** passes two-sided alpha 0.05. **"The bar is not met" on the
+  registered set is therefore the design's near-certain output, not evidence that
+  A0 is at chance** -- M's own reading, confirmed. What carries the conclusion is
+  the effect size, which has no power problem: **A0 over-segments by one to three
+  orders of magnitude** (precision 0.002-0.068, region-count ratio 4.9-1,156x,
+  recall 0.192 / 0.239 against the corrected standard of 183 bases -> 823
+  components -> 801 regions). **The p-values are not the claim.** Rulings on the
+  three questions: **(1) keeping the five of eight rows whose coverage ratio falls
+  outside [0.9, 1.1] is correct** -- dropping them leaves n=3, which cannot pass
+  any sign test, so "exclude" and "delete the test" are the same option, and the
+  ratio also correlates with the standard's completeness -- **but a window five of
+  eight rows fail is not a sanity window**; it is printed as a column, and the
+  denominator it now uses must be stated, T-M3 having made that quantity 1.0000 on
+  seven of eight pages. **(2) A page whose standard is empty (`page0073`) is kept
+  in the registered set as registered, and excluded from the test set by a rule
+  declared in advance**, because the sign of such a row is fixed by the `0/0`
+  convention -- `blank` is 1.0 by definition and any arm that proposes a region is
+  0 -- which is T-M4's shape again, a null winning by convention rather than by
+  material. **The correction is safe to make because it changes nothing**: if that
+  page is N1's single loss, N1 becomes 6-0 at p=0.03125 and passes, **while N2
+  stays at 0.6875 or 0.375 and the bar, which demands all three, fails either
+  way** (M is asked to print which row it was rather than let the foundation
+  assume). **(3) The test set's size is now a design input**: tolerating one loss
+  needs an effective **n >= 10**, tolerating a quarter needs **n >= 20**, ties
+  excluded -- and the registered set produced 2 ties in 8, so the page count must
+  be budgeted above the effective n. **Written before the request-4 rasters are
+  ordered**, since adding pages after reading the result is widening the exposure.
 
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
