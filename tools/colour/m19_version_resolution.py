@@ -135,10 +135,31 @@ def main():
         return 'B' if pref else 'C'
 
     out, kinds = {}, collections.Counter()
-    need_mtime, need_author, pairs_ad = [], [], []
+    need_mtime, need_author, pairs_ad, pairs_sup = [], [], [], []
     for ci, group in enumerate(clusters, start=1):
         k = kind_of(group)
         kinds[k] += 1
+        # R-0(追補13 §L6 で登録): **層の指紋の集合が完全に同一**なら、
+        # 名前による種類分けより先にここで決める。どれを残しても metadata は同じ
+        # (画素は比べていない)。残すのは `page_path` の辞書順で最初の1つ。
+        # `page0005 ↔ page0009` のように、名前では C(別の頁)に見えて
+        # 中身が同一の組があるため、この判定を種類分けより前に置く。
+        if len({frozenset(pset[q]) for q in group}) == 1 and len(pset[group[0]]):
+            # **年が違えば新しい年を採る**(作者の 5「バイトまで一致するものは
+            # 新しい年のフォルダでよい」)。年が同じときだけ `page_path` の辞書順。
+            # 最初に書いた版は辞書順だけで選んでいて、2016 対 2018 の完全同一の組で
+            # **古い年を採っていた** = 作者の指示に反していた。
+            best = sorted(group, key=lambda q: (-info[q]['year_num'], q))[0]
+            kinds['R0'] += 1
+            for q in group:
+                out[q] = dict(
+                    dup_cluster_id=ci, cluster_kind=k,
+                    version_role='final' if q == best else 'superseded',
+                    decided_by=('identical_metadata+year'
+                                if len({info[q2]['year_num'] for q2 in group}) > 1
+                                else 'identical_metadata'),
+                    superseded_by='' if q == best else best)
+            continue
         if k == 'C':
             for p in group:
                 out[p] = dict(dup_cluster_id=ci, cluster_kind=k,
@@ -147,6 +168,22 @@ def main():
             need_author.append((ci, group))
             continue
         ys = sorted({info[p]['year_num'] for p in group})
+        if len(ys) == 1:
+            # R-2' (追補13 §L4): 同じ年なら、層の指紋が他を真に含む頁を新しいとする
+            sup = [q for q in group
+                   if all(q == r2 or pset[r2] < pset[q] for r2 in group)]
+            if len(sup) == 1:
+                best, dec = sup[0], 'superset'
+                for o in group:
+                    if o != best:
+                        pairs_sup.append((best, o))
+                for q in group:
+                    out[q] = dict(
+                        dup_cluster_id=ci, cluster_kind=k,
+                        version_role='final' if q == best else 'superseded',
+                        decided_by=dec,
+                        superseded_by='' if q == best else best)
+                continue
         if len(ys) > 1:
             best = max(group, key=lambda p: info[p]['year_num'])
             dec = 'year'
@@ -176,6 +213,7 @@ def main():
     print(f'== 塊 {len(clusters)} 個 / 関わるページ '
           f'{sum(len(g) for g in clusters)} / {len(pages)} ==')
     print(f'  種類: ' + '  '.join(f'{k} {kinds[k]}' for k in 'ABCD'))
+    print(f'  **R-0 指紋が完全に同一で決まった塊: {kinds["R0"]}**')
     print(f'  R-1(年)で決まった塊: '
           f'{sum(1 for g in clusters if kind_of(g) != "C" and len({info[p]["year_num"] for p in g}) > 1)}')
     print(f'  **R-2(更新時刻)が要る塊: {len(need_mtime)}**  '
@@ -189,6 +227,20 @@ def main():
           f'(**年で置き換えが確定した superseded {role["superseded"]} だけ落とす**)')
     print(f'    undecided {role["undecided"]} ページは更新時刻が届いたら減る'
           f'(**その時点で母集団が変わることを先に書いておく**)')
+
+    print(f'\n== R-2\u2032 包含で決まった塊(期待: 63 の 1/3 以上) ==')
+    bysup = {}
+    for n, o in pairs_sup:
+        bysup.setdefault(n, []).append(o)
+    print(f'  **包含で決まった塊 {len(bysup)} / 63**  '
+          f'置き換えられた頁 {len(pairs_sup)}')
+    for n, os in list(bysup.items())[:10]:
+        print(f'    新 {info[n]["year_txt"]}/{info[n]["work"]}/'
+              f'{Path(n.replace(chr(92),"/")).name} 層{per[n]["layers"]} '
+              f'形式5 {per[n]["f5"]}  <- '
+              + ', '.join(f'{Path(o.replace(chr(92),"/")).name}'
+                          f'(層{per[o]["layers"]},形式5 {per[o]["f5"]})'
+                          for o in os))
 
     print('\n== P22 / P23: 年を跨ぐ組で、新しい年のほうが大きいか ==')
     if pairs_ad:
