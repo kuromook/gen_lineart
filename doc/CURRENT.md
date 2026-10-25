@@ -2586,10 +2586,22 @@ incident that actually happened here.
    `provisional-selection`, with the condition that would kill them written into
    the section: *if the whole cost was the upstream rule being undocumented, the
    rule is "get the upstream rule in writing" and it is one line, not three*.
-   The in-project 正本 stays `CLAUDE.md` §3-7 plus the cleansing notice. **And
-   the installed plugin is the working tree itself** (`installLocation` is that
-   path), so a checkout in `/home/sh1/deepl/moat` decides which rules are in
-   force -- the foundation left it on `main`. T92's family, one level up.
+   **And the installed plugin is the working tree itself** (`installLocation` is
+   that path), so a checkout in `/home/sh1/deepl/moat` decides which rules are
+   in force -- the foundation left it on `main`. T92's family, one level up.
+   **§3 of `CLAUDE.md` was compressed the same day, after the install** -- that
+   order, because the reverse leaves a pointer with no target in any tree
+   without the plugin. The general rules are now one pointer to the installed
+   skills, and what stays is only what is this material's: the preprocessor
+   baseline, a generation being a pool, the author deciding what a picture
+   depicts, discipline 9, and the two riders `moat` does not carry (the
+   "configuration" includes a property of **the output itself**, and the known
+   cell is **one per generation**). **The items are now numbered as this ledger
+   numbers them**: the old §3 listed selection as its item 7 while every
+   citation in the project calls it 規律9, so the file a new session reads
+   first disagreed with the file it then cites. 151 -> 150 lines.
+   **Discipline 9 states in the file that it is not in the installed `main`**,
+   so no reader can take it on the skill's authority.
 8. **Conformal prediction is adopted as a component in one named place, not as
    a programme.** Raised by the user 2026-10-23 as a general method; run
    through the same test as item 7 -- a general method is adopted only where it
