@@ -74,6 +74,25 @@ def gal_deep(p1, p2):
             and a[3] == b[3] == 'gal' and b[4:] == ['gal'] + a[4:])
 
 
+def scoring_population(new):
+    """**採点の母集団**: `superseded` を落とし、**内容の重複の塊は代表1つ**
+    (T95: プールの単位は塊)。塊に `final` が居ればそれが代表。
+    `m25` と `m26` が**同じ規則を1か所から**使う。"""
+    hasfinal = {v['dup_cluster_id'] for v in new.values()
+                if v['version_role'] == 'final' and v['dup_cluster_id']}
+    out, seen = [], set()
+    for q, v in new.items():
+        role, ci = v['version_role'], v['dup_cluster_id']
+        if role == 'superseded':
+            continue
+        if role == 'duplicate_content':
+            if ci in hasfinal or ci in seen:
+                continue
+            seen.add(ci)
+        out.append(q)
+    return out
+
+
 def main():
     rows = list(csv.DictReader(open(SRC, encoding='utf-8')))
     byc = collections.defaultdict(list)
@@ -188,18 +207,7 @@ def main():
     # 初版は `duplicate_content` を全部落としていて、**構成員が全員
     # `duplicate_content` の塊(作品を跨ぐ3塊)が0頁になっていた** ——
     # 「両方を母集団に残す」(裁定§4)の逆。代表を1つ残す形に直した。
-    hasfinal = {v['dup_cluster_id'] for v in new.values()
-                if v['version_role'] == 'final' and v['dup_cluster_id']}
-    scoring, seen = [], set()
-    for q, v in new.items():
-        role, ci = v['version_role'], v['dup_cluster_id']
-        if role == 'superseded':
-            continue
-        if role == 'duplicate_content':
-            if ci in hasfinal or ci in seen:
-                continue
-            seen.add(ci)
-        scoring.append(q)
+    scoring = scoring_population(new)
     print(f'\n  頁の母集団(superseded だけ落とす)  : **{len(keep)}** ページ'
           f'  ← 作者の持つ頁。重複も両方残す(裁定§4)')
     print(f'  採点の母集団(重複の塊は代表1つ)    : **{len(scoring)}** ページ'

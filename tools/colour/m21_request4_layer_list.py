@@ -38,21 +38,10 @@ def num(s, d=None):
         return d
 
 
-def main():
-    rows = list(csv.DictReader(open(CSV872, encoding='utf-8')))
-    roles = {r['page_path']: r['version_role']
-             for r in csv.DictReader(open(ROLES, encoding='utf-8'))}
-    pages = list(dict.fromkeys(r['page_path'] for r in rows))
-    reg = pages[:REG8]
-    keep = [p for p in pages if roles[p] not in DROP]
-    order = reg + [p for p in keep if p not in set(reg)]
-    print(f'母集団 {len(keep)} ページ(872 − ' +
-          ' − '.join(f'{k} {sum(1 for p in pages if roles[p] == k)}'
-                     for k in sorted(DROP)) + ')')
-    print(f'  役割の内訳: ' + '  '.join(
-        f'{k} {v}' for k, v in sorted(collections.Counter(
-            roles[p] for p in keep).items())))
-
+def select(rows, order):
+    """**面の標準を作るのに要る層**を選ぶ。ベース(非フォルダー・描画>0・
+    `rendered=True`)と、フォルダーのベースの描画する子孫。
+    `m21` と `m26`(母集団の訂正)が**同じ規則を1か所から**使う。"""
     bypage = collections.defaultdict(list)
     for r in rows:
         bypage[r['page_path']].append(r)
@@ -109,9 +98,29 @@ def main():
             continue
         seen.add((r[0], r[1]))
         uniq.append(r)
+    stat['rows'] = len(out_rows)
+    return uniq, stat
+
+
+def main():
+    rows = list(csv.DictReader(open(CSV872, encoding='utf-8')))
+    roles = {r['page_path']: r['version_role']
+             for r in csv.DictReader(open(ROLES, encoding='utf-8'))}
+    pages = list(dict.fromkeys(r['page_path'] for r in rows))
+    reg = pages[:REG8]
+    keep = [p for p in pages if roles[p] not in DROP]
+    order = reg + [p for p in keep if p not in set(reg)]
+    print(f'母集団 {len(keep)} ページ(872 − ' +
+          ' − '.join(f'{k} {sum(1 for p in pages if roles[p] == k)}'
+                     for k in sorted(DROP)) + ')')
+    print(f'  役割の内訳: ' + '  '.join(
+        f'{k} {v}' for k, v in sorted(collections.Counter(
+            roles[p] for p in keep).items())))
+
+    uniq, stat = select(rows, order)
     print(f'\n一覧: **{len(uniq)} 層** / {len({r[0] for r in uniq})} ページ'
           f'  (ベース {stat["base"]} + フォルダーのベースの子孫 {stat["child"]}'
-          f'、重複除去で {len(out_rows) - len(uniq)} 行減)')
+          f'、重複除去で {stat["rows"] - len(uniq)} 行減)')
     print(f'  ラスタを持たないベース(一覧に入れられない) {stat["base_no_raster"]}')
     print(f'  ベースが1枚も無いページ(アルファ不要・プレビューのみ): '
           f'{len(keep) - len({r[0] for r in uniq})}')
