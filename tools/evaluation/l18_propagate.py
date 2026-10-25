@@ -85,13 +85,16 @@ def one_page(job):
                 drop_gf += 1
                 continue          # **両腕から同じ面を落とす**(L17 §5 と同じ規律)
             cname[gi] = nm
-        if drop_gf:
-            pans[-1]['drop_gapfill'] = drop_gf
         # ---- 縮退 (成分の単位。登録 §3)
+        # 2026-10-26: ここは `pans[-1]['drop_gapfill'] = drop_gf` だった ——
+        # **append の前に [-1] を書いていた**ので、最初のコマで IndexError、
+        # 落ちなければ**1つ前のコマに数を付けていた**。
+        # `--exclude-gapfill` は一度も走ったことがなかった(T102 の族: 走らない経路)。
         areas = sorted((int(st_[i, A]) for i in range(1, n)), reverse=True)
         pans.append(dict(pid=pid, work=work, comp=ci, ink=tot, n_comp=n - 1,
                          top_share=round(areas[0] / tot, 4) if areas else 0,
-                         med_comp=areas[len(areas) // 2] if areas else 0))
+                         med_comp=areas[len(areas) // 2] if areas else 0,
+                         drop_gapfill=drop_gf))
         if ARMS == 'degen':
             for i in range(1, n):
                 C = cl == i
