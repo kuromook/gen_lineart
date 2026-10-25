@@ -414,6 +414,54 @@ def ignores_data(path):
     return done.returncode == 0
 
 
+def foundation_ref(path):
+    """Which name for the foundation resolves *in that tree*: a remedy is a string.
+
+    The two trees that live in the other clone have no local `foundation` ref at
+    all, and their `origin/foundation` is whatever they last fetched. Telling
+    them `git checkout foundation -- X` hands them `fatal: ambiguous argument`,
+    which is how the `data/` finding survived being reported and acted on
+    (2026-10-25: Track H aligned its `.gitignore` to `origin/foundation` at
+    `0ddb43e`, a stale fetch predating the rule, and reported it fixed).
+    Returns ("foundation", None), ("origin/foundation", <behind by>) or
+    (None, None).
+    """
+    if run(["git", "rev-parse", "--verify", "-q", "foundation"], cwd=path):
+        return "foundation", None
+    if run(["git", "rev-parse", "--verify", "-q", "origin/foundation"], cwd=path):
+        here = run(["git", "rev-parse", "origin/foundation"], cwd=path)
+        mine = run(["git", "rev-parse", "HEAD"], cwd=FOUNDATION)
+        behind = None
+        if here and mine and here != mine:
+            count = run(
+                ["git", "rev-list", "--count", f"{here}..{mine}"], cwd=FOUNDATION
+            )
+            behind = int(count) if count and count.isdigit() else None
+        return "origin/foundation", behind
+    return None, None
+
+
+def remedy(ref, behind, filename):
+    """The command that repairs `filename` in a tree whose ref state is this."""
+    if ref == "foundation":
+        return f"`git checkout foundation -- {filename}`"
+    if ref == "origin/foundation":
+        stale = (
+            f" (its `origin/foundation` is {behind} commit(s) behind, so the "
+            f"fetch is the fix and the checkout alone would copy the old file)"
+            if behind
+            else ""
+        )
+        return (
+            f"`git fetch origin foundation && git checkout origin/foundation "
+            f"-- {filename}`{stale}"
+        )
+    return (
+        f"copy it from the foundation tree ({FOUNDATION}/{filename}) -- no "
+        f"`foundation` ref resolves in that tree"
+    )
+
+
 ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 
@@ -702,7 +750,17 @@ def self_test():
     assert "no bar" in found[1]
     # Outside the window, the same log says nothing.
     assert log_findings(log, "t", 2, today.replace(day=28)) == []
-    print("self-test: 28 cases pass")
+    # A remedy names a ref that resolves in the tree being told off.
+    assert remedy("foundation", None, ".gitignore") == (
+        "`git checkout foundation -- .gitignore`"
+    )
+    fetched = remedy("origin/foundation", 7, ".gitignore")
+    assert fetched.startswith("`git fetch origin foundation &&"), fetched
+    assert "7 commit(s) behind" in fetched, fetched
+    assert "fetch is the fix" in fetched, fetched
+    assert "behind" not in remedy("origin/foundation", None, "CLAUDE.md")
+    assert "no `foundation` ref resolves" in remedy(None, None, ".gitignore")
+    print("self-test: 33 cases pass")
     return 0
 
 
@@ -844,12 +902,15 @@ def main():
 
         # 10: a constant corrected on the foundation, still live in a frozen copy.
         # Only where someone still reads it: a finished tree's copy misleads no one.
-        for addr in ([] if finished else stale_addresses(path, live_addresses)):
+        stale = [] if finished else stale_addresses(path, live_addresses)
+        if stale:
+            ref, behind = foundation_ref(path)
+        for addr in stale:
             findings.append(
                 f"`{name}`'s `CLAUDE.md` still names `{addr}`, which the "
                 f"foundation's copy no longer does -- a replicated file is a copy, "
                 f"not a record. Fix on that branch with "
-                f"`git checkout foundation -- CLAUDE.md`"
+                f"{remedy(ref, behind, 'CLAUDE.md')}"
             )
 
         # 11-12: what this track is claiming right now, from its own log.
@@ -862,10 +923,11 @@ def main():
 
         # 9: the manuscript deliveries are one `git add -A` from a public repo.
         if ignores_data(path) is False:
+            ref, behind = foundation_ref(path)
             findings.append(
                 f"`{name}` does not ignore `data/` -- the manuscript deliveries "
                 f"land there and this tree would stage them. Fix on that branch "
-                f"with `git checkout foundation -- .gitignore` (the rule came in "
+                f"with {remedy(ref, behind, '.gitignore')} (the rule came in "
                 f"with `f7372e6`, the 2026-10-23 incident's own fix)"
             )
 

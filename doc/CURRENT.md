@@ -2839,7 +2839,7 @@ withdrawal.
 - **T76** `git add -A` put the author's artwork into a public repository, and a force-push does not take it back out.
 - **T77** A quoted commit hash can stop resolving, and then it is a number that looks like provenance and leads nowhere.
 - **T82** A multi-day run's completion procedure must not be addressed to the session that launched it.
-- **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9).
+- **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9). **2026-10-25, the half of it that kept the finding alive: the remedy named a ref that does not resolve where it was sent.** The audit said `git checkout foundation -- .gitignore`, but the two trees in the other clone (`face-words`, `panel-generation`) have no local `foundation` ref, and their `origin/foundation` is a fetch from whenever -- `0ddb43e`, **108 commits behind**, with no `data/` rule in it. Track H followed the advice as well as it could, aligned to that stale ref, and reported the fix in good faith while the audit kept flagging the tree. The check was right and its *instruction* was the defect (T93's family: a remedy is a string, not a check). The audit now resolves the ref per tree and prints `git fetch origin foundation && git checkout origin/foundation -- <file>` with how far behind that ref is, or says to copy from the foundation tree when no ref resolves (self-test 33 cases).
 - **T85** A `.gitignore` rule with a trailing slash does not match a symlink, so importing the integration tree's ignore file into a tree that symlinks `venv` silently un-ignores it. The fix for one hole opened another, in the same command.
 - **T86** The dataset's panel line-art raster is **a different page from the author's manuscript**: only **63.0%** of the layers' ink reaches it and **54.0% of the area layers are missing outright** (line layers 5.1%), per-panel median 0.795 with **140 of 248 panels below 0.90**. Any arm whose input is that raster is predicting against something other than the ground truth. The rule the raster drops by **cannot be derived from `page_layers_priority65.csv`** -- by name and by parent folder, both the kept and the dropped appear (the commonest immediate parent among the dropped is `トーン`, 108) -- so it is a question for the extraction side, not a filter anyone here can reconstruct. **Asked 2026-10-25 with the user's approval and answered the same hour, and the answer reclassifies the number**: the raster is a **line-only instrument** (`extract_clip_dataset.py`'s `process_clip`, commit `0d975ac`), so most of what Track L's population carried was never meant to arrive. Of the 83,023,430 px that the named families account for (35.4% of the measured ink, 83.1% of the `<0.5` class), **A: 12,633,293 px = 5.4% of the ink is not line material at all** (`effect`, `描き文字　白フチ`, `MASK`); **B: 11,038,367 px = 4.7% is line material genuinely lost** (`線画` 10.56M via the width rule, `rendering_lineart_middle0001` 0.48M via the 3D rule); **C: 59,351,770 px = 25.3% is `black`, which the author uses for both roles**. **So the raster's defect, for this project's purposes, is 4.7% and not 37%** -- the rest is a selection rule doing its job and one ambiguous name. The reason-by-reason ledger the extraction side is building will turn A/B/C from an estimate into a count. **And the dropped layers' `visibility=1` / `opacity=256` says nothing**: the selector never reads either column.
 - **T87** `has_mask` is **True on all 2,963 layers**: a column with a check's name that performs no check, and an attempt to split on it comes back empty. The same family as "names are not checks" -- silence reads as normal operation.
@@ -3520,3 +3520,32 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       would move the population with no registered question attached, so they
       are recorded by `order` as known dirt and the swap is where that choice
       gets registered.
+    - **The zero rows came back the same evening and they settle it: the
+      concentration is the WORK, not the generation.** With all 59
+      denominators (`per_work_all.csv`), **2019 without succor is 1/48 against
+      a background of 5/456, p = 0.43** -- the year table's 8/74 was succor
+      carrying it. **succor survives the multiple comparison**: Fisher 3.8e-7,
+      **Bonferroni over 59 works 2.2e-5**, while the next-smallest raw p is
+      housei's 0.025 on a denominator of one panel and corrects to 1. The
+      95% intervals do not overlap (succor 11.6-47.8%, the rest 0.36-2.54%).
+      **So the first question to the extraction side narrows from "the line art
+      is dirty" to "what is different about 030_2019_succor, or about its pass
+      through the program"** -- and because the author's reading is about
+      compositing, the structure DB can be asked before anything is
+      rasterised: the five pages against reported-free pages of the same work,
+      joined on `page_path` and `content_fingerprint`, never on title.
+      **One relation the foundation found and is NOT reporting as a result**:
+      the five non-succor reports all sit in works with few face-bearing
+      panels (1, 4, 5, 5, 9); threshold-free, the mean work size of a reported
+      panel is **4.80 against 13.71 expected, permutation p = 0.0018**. It is
+      held as a hypothesis for two reasons -- **the statistic was built after
+      looking**, and **the selection bias already on record predicts it** (a
+      broken panel yields no detected face, so a badly handled work has both
+      few panels in this population and a higher reported rate, one cause
+      producing both). succor is not explained by it (26 panels, on the large
+      side). **Two riders on the year column**: it is the second field of
+      `work_id`, not a verified production year (five works have a non-year
+      there -- 42 panels, zero reports, so adding them anywhere only lowers
+      that year's rate), and H's year table silently pools the `b`/`c`
+      suffixes, which may be separate batches of one year (a generation is a
+      pool).

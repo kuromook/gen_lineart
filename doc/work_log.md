@@ -7559,3 +7559,39 @@ fringe も 1/5。**0 の行こそが表の本体**) **②印の付いた5顔は�
 
 便: `outbox/relay_h_panel_anomaly_to_l_and_m_20261025.md`(原本と同封で L・M へ)、
 `outbox/reply_h_panel_anomaly_bandcheck_20261025.md`(H へ)。
+
+### 同日夜: 0 の行が揃った —— **偏りは作品であって世代ではない**。audit の助言文が欠陥だった
+
+H が59作品のコマ数(報告0の行も全部)を出した(`per_work_all.csv`)。
+
+- **2019 から succor を除くと 1/48** 対 背景 5/456 = **p 0.43**。**世代の仮説は支持
+  されない**(2019 の 8/74 は succor が全部運んでいた)
+- **succor は多重比較を通る**: Fisher 3.8e-7、**Bonferroni(59) 2.2e-5**。他の5件は
+  1件ずつで補正後 1。95%区間は succor 11.6〜47.8% 対 残り 0.36〜2.54% で**重ならない**
+- **起案の第一の問いが絞れた**: 「線画が汚い」ではなく「**succor の原稿、またはこの作品が
+  プログラムを通った経路の何が違うのか**」。作者の所見(別ページの層の合成)なら、
+  **構造 DB に画素を作らずに問える**(`page_path` と `content_fingerprint` で突き合わせ)
+- **基盤が見つけた関係を、結果としてではなく仮説として渡した**: succor 以外の5件は全部
+  コマ数の少ない作品(1・4・5・5・9)。閾値なしで平均作品コマ数 4.80 対 期待 13.71、
+  並べ替え p 0.0018。それでも結果にしない理由2つ —— **見た後に作った統計**であること、
+  **既報の選別の偏りで予期される**こと(壊れたコマは顔が検出されない → コマ数の少なさと
+  報告率の高さが同じ原因から出る)。succor はこれでは説明できない(26コマ)
+- 年の欄は `work_id` の2番目の欄で**制作年とは別の量**。5作品はそこが年でない
+  (42コマ・報告0なので判定は不変)。年別表は `b`・`c` の接尾辞を黙って足している
+
+### audit: 点検は正しく、**指示が欠陥だった**(T84 の残り半分)
+
+H は「`.gitignore` を `origin/foundation` に揃えた」と報告したが、
+`check-ignore data/x` は**今も通らない**。原因は H ではない: その木は Track G の
+クローンの worktree で **local の `foundation` ref が無く**、`origin/foundation` は
+**`0ddb43e` = 本家から 108 コミット遅れ**で、**その中に `data/` の規則がまだ無い**。
+audit の助言 `git checkout foundation -- .gitignore` は**その木では
+`fatal: ambiguous argument`** になる。**T93 の family: 助言は文字列であって点検ではない。**
+
+直した: `foundation_ref(path)` が木ごとに ref を解決し、`remedy(ref, behind, file)` が
+`git fetch origin foundation && git checkout origin/foundation -- <file>` と
+**何コミット遅れているか**を印字する。ref が1つも解決しない木には基盤の木からのコピーを
+指示する。**自己試験 28 → 33 ケース。** `panel-generation` も同じ状態。
+
+便: `outbox/reply_h_per_work_and_gitignore_20261025.md`(H)、
+`outbox/relay_h_panel_anomaly_addendum_20261025.md`(L・M)。
