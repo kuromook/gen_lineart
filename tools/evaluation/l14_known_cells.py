@@ -3,10 +3,12 @@
 
 KC8  器具: 線だけ閉じたリング -> 腕1 が照合 / 10px の切れ目 -> 腕1 は漏れる /
            切れ目に 10px の印を置く -> 腕2 が照合。工程1->2 の因果を3行で通す
-KC9  データ経路: FILL_SOLID ⊆ truth4 (L12 の正解は上位集合)
+KC9  データ経路: FILL_SOLID **⊆** truth4、頁単位 (L12 の正解は上位集合。
+     **包含であって一致ではない** —— 向きは片方だけ。2026-10-25 時点で回せない)
 KC11 器具: 自前 matcher の**組**が記録した定数と一致 (件数は region_metrics とも一致。
      件数の一致は組の一致ではない -- 罠 T101)
-KC33 データ経路: 門の drawn_ratio と台帳の ink_px が層単位で一致 (逆向きは31層ずれ)
+KC33 データ経路: `drawn_ratio<=0` **→** `ink_px==0` が**層単位**で例外0 (4,399層)。
+     **逆向きは成り立たない** —— `ink_px==0` かつ `drawn_ratio>0` が31層
 """
 import csv, os, sys
 import numpy as np, cv2
@@ -171,7 +173,10 @@ def page_fill_solid(layers):
 
 def kc9(npages=6):
     if not TRUTH or not os.path.isdir(TRUTH):
-        print('KC9 FAIL: L12_TRUTH が無い'); return False
+        print('KC9 回せない: L12_TRUTH が無い。**t4 画像はディスク上のどこにも無い**ので、'
+              '環境変数を足すだけでは回らない(2026-10-25)。'
+              '以前の走行の定数は results/l12_panel_regions/page_truth.csv と per_panel.csv')
+        return False
     fill, _ = gated_layers()
     keys = sorted(fill)
     pick = [k for k in keys if k[1] == 'ako6'][:npages // 2] + \
