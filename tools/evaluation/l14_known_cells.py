@@ -5,6 +5,7 @@ KC8  器具: 線だけ閉じたリング -> 腕1 が照合 / 10px の切れ目 -
            切れ目に 10px の印を置く -> 腕2 が照合。工程1->2 の因果を3行で通す
 KC9  データ経路: FILL_SOLID ⊆ truth4 (L12 の正解は上位集合)
 KC11 器具: 自前 matcher と region_metrics.match が8連結で一致
+KC33 データ経路: 門の drawn_ratio と台帳の ink_px が層単位で一致 (逆向きは31層ずれ)
 """
 import csv, os, sys
 import numpy as np, cv2
@@ -176,7 +177,58 @@ def kc9(npages=6):
     return ok
 
 
+LEDGER_PX = '/home/sh1/deepl/lineart-fill-region/inbox/line_selection_ledger_priority65_px.csv'
+
+
+def kc33():
+    """KC33 データ経路: **別々に作った器具2つが層単位で一致する**(2026-10-25)。
+
+    L の門は `drawn_ratio<=0` を「墨ゼロ」と数え、抽出側の台帳は `ink_px` を持つ。
+    片側は**完全に一致する**: `drawn_ratio<=0` の 4,399 層は全部 `ink_px==0`。
+    **逆向きは一致しない。31 層が `ink_px==0` で `drawn_ratio>0`**(最大 0.194)——
+    `ink_px` は**墨**(黒)、`drawn_ratio` は**描画**(不透明)で、別の量である。
+    31層はどれも `black_among_drawn=0.0`、`drawn_gray_mean` が 144-145 の灰色
+    (3D レンダーとトーン)。**どれも L の門は通らない**(`preview_dark` が空)。
+
+    ここを「同じ量」として扱うと、**3D とトーンの層が重み0 になって黙って消える**。
+    """
+    import csv as _csv
+    led = {(r['page_path'], r['layer_id']): r
+           for r in _csv.DictReader(open(LEDGER_PX, encoding='utf-8-sig'))}
+    inv = list(_csv.DictReader(open(INV, encoding='utf-8-sig')))
+    if len(led) != 7362 or len(inv) != 7362:
+        print(f'KC33 FAIL: 行数 台帳 {len(led)} INV {len(inv)} (どちらも 7,362 のはず)')
+        return False
+
+    def fnum(v):
+        try:
+            return float((v or '').strip())
+        except ValueError:
+            return None
+
+    zero_dr, leak, grey = 0, [], []
+    for r in inv:
+        g = led.get((r['page_path'], r['layer_id']))
+        if g is None:
+            print(f'KC33 FAIL: 台帳に行が無い {r["page_id"]} L{r["layer_id"]}')
+            return False
+        ink0 = int(g['ink_px'] or 0) == 0
+        dr0 = (fnum(r['drawn_ratio']) or 0) <= 0
+        if dr0:
+            zero_dr += 1
+            if not ink0:
+                leak.append((r['page_id'], r['layer_id']))
+        elif ink0:
+            grey.append((r['page_id'], r['layer_id'], (fnum(r['preview_dark']) or 0) >= 0.5))
+    gated = sum(1 for _, _, pd in grey if pd)
+    ok = (zero_dr == 4399 and not leak and len(grey) == 31 and gated == 0)
+    print(f'KC33: drawn_ratio<=0 {zero_dr} (==4,399) / そのうち ink_px>0 {len(leak)} (==0) / '
+          f'ink_px==0 かつ drawn_ratio>0 {len(grey)} (==31、墨0の灰色) / '
+          f'そのうち門を通る {gated} (==0)  {"PASS" if ok else "FAIL"}')
+    return ok
+
+
 if __name__ == '__main__':
-    a, b, c = kc8(), kc11(), kc9()
-    print('\n既知セル', 'PASS' if (a and b and c) else 'FAIL')
-    sys.exit(0 if (a and b and c) else 1)
+    a, b, c, d = kc8(), kc11(), kc9(), kc33()
+    print('\n既知セル', 'PASS' if (a and b and c and d) else 'FAIL')
+    sys.exit(0 if (a and b and c and d) else 1)
