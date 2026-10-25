@@ -298,6 +298,26 @@ first (`f6faae0`, the rule is now `venv`), then re-imported: **T85**.
 repo is not flagged), self-test 13 cases. The rule was already in CLAUDE.md and
 in every briefing, which is exactly what made it worth checking mechanically:
 **T84**.
+**The audit carries 12 checks from 2026-10-25, self-test 28 cases**, and the
+two new ones read each live track's own `doc/work_log.md`, dated level-2
+sections from the last two days only: **11** a result whose own measurement is
+registered by no heading in that log (registration cannot be checked by reading
+a result; the one mechanical trace it leaves here is a heading), and **12** a
+PASS or FAIL with no bar *and its number* in the section -- "FAIL (below the
+bar)" names a threshold without stating it. On the first run 11 found nothing
+and 12 found four, all of them verdicts whose threshold is genuinely absent
+(two known-cell PASSes among them). **A third check was written for discipline
+9-1 and removed after it ran**: it reported eight findings on two tracks and
+every one was a false positive, because to a scanner the sentence that performs
+the practice ("落とした数を別に印字する"), the sentence that reports a zero
+("落としたページ 0") and the sentence that omits the reasons are one text. That
+is **T93** again, so the removal is recorded rather than the check: **9-1 is not
+checkable on prose**, its mechanical form is the per-reason table the instrument
+prints, and before the run it is `moat`'s provisional rule 11. The audit also
+flagged its own ledger on the first run: `0d975ac` and `4941c60` are commits in
+the **extraction tool's** repository, now declared in `DEAD_HASHES_OK` with that
+reason (**T77**'s family -- a hash that resolves somewhere else is provenance
+only for a reader standing in the other repository).
 
 **Two more deliveries were verified complete by Track L the same morning**, and
 these are counts, not readings: tone **1,302 / 1,302** PNGs over 65 pages
