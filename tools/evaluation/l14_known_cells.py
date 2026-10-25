@@ -9,6 +9,10 @@ KC11 器具: 自前 matcher の**組**が記録した定数と一致 (件数は 
      件数の一致は組の一致ではない -- 罠 T101)
 KC33 データ経路: `drawn_ratio<=0` **→** `ink_px==0` が**層単位**で例外0 (4,399層)。
      **逆向きは成り立たない** —— `ink_px==0` かつ `drawn_ratio>0` が31層
+KC34 データ経路: 台帳の4量 (`drawn_ratio` / `drawn_gray_mean` / `black_among_drawn` /
+     `ink_px`) が、**L 側の層 PNG から、アルファの閾値として、層単位で丸めの幅の中で
+     再現する** (無作為30層・読めた16層で16一致・ずれ0)。
+     **これが「どれも色を見ていない」ことの点検である。**
 """
 import csv, os, sys
 import numpy as np, cv2
@@ -245,7 +249,63 @@ def kc33():
     return ok
 
 
+def kc34(n=30, seed=20261025):
+    """KC34 データ経路: **台帳の4量は L 側の層 PNG から、アルファの閾値として再現する**
+    (2026-10-25)。
+
+    抽出側の回答: `cov` は層のアルファの面だけ(`clip_render.py` 214行 `tile = planes[0]`)、
+    統計は `g = 255 - アルファ`。L の層 PNG はその `g` なので、**同じ閾値を L 側で当てれば
+    同じ数になるはず**で、ならなければどちらかの読みが違う。閾値:
+
+        drawn_ratio       アルファ >= 26   <=>  g <= 229
+        ink_px            アルファ >= 128  <=>  g <= 127
+        black_among_drawn アルファ >= 224  <=>  g <= 31   (描画画素のうちの割合)
+
+    **向きは両方、粒度は層。** 丸めの幅は台帳の桁(dr 6桁 / gray 2桁 / bad 4桁 / ink 整数)。
+    `all_layers` に PNG が無い層は飛ばし、**飛ばした数も印字する**(規律7)。
+    """
+    import random as _random
+    import csv as _csv
+    led = {(r['page_path'], r['layer_id']): r
+           for r in _csv.DictReader(open(LEDGER_PX, encoding='utf-8-sig'))}
+    rows = [r for r in _csv.DictReader(open(INV, encoding='utf-8-sig'))
+            if r['folder'] == 'False' and r['rendered'] == 'True']
+    pick = _random.Random(seed).sample(rows, n)
+    agree, off, skip = 0, [], 0
+    for r in pick:
+        pid, lid = r['page_id'], r['layer_id']
+        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        path = f'{BASE}/{w}/all_layers/{pid}_L{lid}.png'
+        g = cv2.imread(path, cv2.IMREAD_GRAYSCALE) if os.path.exists(path) else None
+        if g is None:
+            skip += 1
+            continue
+        drawn = g <= 229
+        dr = drawn.sum() / g.size
+        gm = g[drawn].mean() if drawn.any() else 0.0
+        ba = (g[drawn] <= 31).sum() / drawn.sum() if drawn.any() else 0.0
+        ink = int((g <= 127).sum())
+        L = led[(r['page_path'], lid)]
+        d = (abs(dr - float(r['drawn_ratio'] or 0)),
+             abs(gm - float(r['drawn_gray_mean'] or 0)),
+             abs(ba - float(r['black_among_drawn'] or 0)),
+             abs(ink - int(L['ink_px'] or 0)))
+        if d[0] <= 5e-7 and d[1] <= 5e-3 and d[2] <= 5e-5 and d[3] == 0:
+            agree += 1
+        else:
+            off.append((pid, lid, d))
+    read = agree + len(off)
+    ok = read > 0 and not off
+    print(f'KC34 データ経路: 層 {n} のうち PNG を読めた {read} / 飛ばした {skip} —— '
+          f'**4量すべて層単位で一致 {agree}/{read}**  ずれ {len(off)}  '
+          f'{"PASS" if ok else "FAIL"}')
+    for pid, lid, d in off[:5]:
+        print(f'    ずれ {pid} L{lid}: dr={d[0]:.2e} gray={d[1]:.4f} '
+              f'bad={d[2]:.2e} ink={d[3]}')
+    return ok
+
+
 if __name__ == '__main__':
-    a, b, c, d = kc8(), kc11(), kc9(), kc33()
-    print('\n既知セル', 'PASS' if (a and b and c and d) else 'FAIL')
-    sys.exit(0 if (a and b and c and d) else 1)
+    a, b, c, d, e = kc8(), kc11(), kc9(), kc33(), kc34()
+    print('\n既知セル', 'PASS' if (a and b and c and d and e) else 'FAIL')
+    sys.exit(0 if (a and b and c and d and e) else 1)
