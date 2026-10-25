@@ -228,13 +228,29 @@ def report(rows, arm, pool):
 
 def report_unplaced(rows, pool):
     """開示3 (棒なし): 対照が置けなかった大きい面を、本来の腕でだけ測った値。"""
-    s = [r for r in rows if r['arm'] == 'real' and r['work'] == pool
-         and r['placeable'] == 0 and r[f'pur{D1}'] != '']
+    allu = [r for r in rows if r['arm'] == 'real' and r['work'] == pool
+            and r['placeable'] == 0]
+    s = [r for r in allu if r[f'pur{D1}'] != '']
+    # **この開示は「黙って落とさないため」の開示である。**
+    # 2026-10-26: その中で `pur` が空の面を**黙って落としていた**(規律7)。
+    # ako6 で2面、しかも**プールで最も大きい2面**(4,265,910px) —— 印字していた
+    # 最大 2,015,180px の2倍で、どちらも `adj` が全距離で 0(層の墨が1画素も触らない)。
+    # purity は触る層が無ければ定義できないので空になる。**定義できないことを印字する。**
+    void = [r for r in allu if r[f'pur{D1}'] == '']
+    if void:
+        va = sorted(r['area'] for r in void)
+        print(f'  {pool}: **adj が空で purity が定義できない面 {len(void)}** '
+              f'(面積 中央 {med(va):.0f}px 最大 {va[-1]}px) —— '
+              f'**層の墨が1画素も触らない。数だけ出す**')
+        for r in sorted(void, key=lambda r: -r['area']):
+            print(f'      {r["pid"]} 面積 {r["area"]:,}px  '
+                  f'adj{D1}={r[f"adj{D1}"]}')
     if not s:
         return
     s2 = [r for r in s if r[f'lay{D1}'] >= 2]
     ar = sorted(r['area'] for r in s)
-    print(f'  {pool}: 面 {len(s)}  面積 中央 {med(ar):.0f}px 最大 {ar[-1]}px  '
+    print(f'  {pool}: 面 {len(s)} (対照が置けない面 {len(allu)} のうち、'
+          f'purity が定義できる分)  面積 中央 {med(ar):.0f}px 最大 {ar[-1]}px  '
           f'面/コマ 中央 {med(sorted(r["frac"] for r in s)):.4f}')
     print(f'    adj に層が1枚 {len(s)-len(s2)}  -> 2枚以上 {len(s2)}')
     if s2:
