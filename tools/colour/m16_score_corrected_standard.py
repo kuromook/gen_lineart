@@ -180,7 +180,9 @@ def measure_standard(page, rows, grid, floor_px, out_comps=None):
     # 比較(印字のみ): 面積の小さい成分が勝つ(追補7 R3)
     lab_a, area_a = paint(lambda c: -c['area'], lambda c: c['area'])
     for c in comps:
-        c.pop('mask')
+        # **呼び手がマスクを頼んだときは残す**(m27 の原寸切り出し)。
+        if out_comps is None:
+            c.pop('mask')
     return (lab_z, area_z), (lab_a, area_a), st
 
 
