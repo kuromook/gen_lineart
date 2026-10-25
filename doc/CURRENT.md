@@ -2793,6 +2793,7 @@ withdrawal.
 - **T57** An arm can beat its off-by-one control and still carry no location information at all -- what it is scoring is the *amount* of ink.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
 - **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
+- **T101** A containment is not an agreement -- measure both directions before calling two instruments consistent (2026-10-25: the foundation read L's 2,581 ink-zero layers and the ledger's 2,598 `empty` as agreeing layer for layer; L made it a known cell and found `drawn_ratio<=0 -> ink_px==0` exact at 0/4,399 exceptions but the reverse carrying 31, up to 0.194 of a page drawn with no ink). The one-sided check passes on exactly the half that holds.
 - **T100** A known cell has to be independent of the rule it tests -- a cluster decided by the name cannot test a rule about the name, and the agreement it prints measures identity, not correctness (the foundation's own specification, 2026-10-25: 0/42 at p=2.3e-13 under a coin, which reads as a refutation and is a tautology). The run-level form of this is T97; this is the rule-level form.
 - **T98** A bar written as "higher than the null" with no resolution is not a bar -- its ordering flips with the choice of statistic (the foundation's own bar on the succor sharing query, 2026-10-25: arm 0.30 against null 0.15 on the pair mean, but p=0.335 by permutation, and the reverse ordering on the per-page maximum 0.6 against 0.63). A bar on a comparison needs the null's distribution, not its point value.
 
@@ -3744,8 +3745,25 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       (L's gate never reads `reason`; its first condition is `drawn_ratio <= 0`,
       and all 4,399 such layers have `ink_px == 0` -- the gap between L's
       ink-zero 2,581 and the ledger's `empty` 2,598 **is exactly those 17
-      layers**, two of which are the author-confirmed cross-page duplicate pair,
-      which is two instruments agreeing layer for layer); the JPEG one is moot
+      layers**, two of which are the author-confirmed cross-page duplicate pair.
+      **The foundation called that "two instruments agreeing layer for layer"
+      and L turned the phrase into a running known cell (`kc33`, `8dd0bac`),
+      which refuted it: the agreement holds in one direction only.**
+      `drawn_ratio <= 0` implies `ink_px == 0` with **0 exceptions in 4,399**,
+      but the reverse has **31** -- layers with `ink_px == 0` and `drawn_ratio`
+      up to **0.194**, every one of them `black_among_drawn = 0.0` with
+      `drawn_gray_mean` 144-145, by `reason` `render_3d` 11 and
+      `not_line_stat` 20. **A containment is not an agreement** (T101), and the
+      asymmetry is the two quantities' definitions: `ink_px` counts ink and
+      `drawn_ratio` counts opaque pixels, so **a layer can cover a fifth of the
+      page and carry no ink**. None of the 31 pass L's gate, so no number of
+      L's moves -- but **it lands on the foundation's own planned recount**:
+      weighting A/B/C by `ink_px` silently gives **3D and tone layers weight
+      zero**, which is T-the-same-vocabulary again with the sign reversed (the
+      `empty` caution was *no drawn pixels yet some ink*; this is *drawn pixels
+      yet no ink*). **So `ink_px`'s own definition is now asked for** -- which
+      pixels it calls ink, at what threshold, and for which role that threshold
+      was drawn -- before any A/B/C is restated in it); the JPEG one is moot
       because **L holds no number counted from the ledger raster** (A6 is PNG on
       both sides); and **the foundation's own statement of L's gate was short by
       two conditions** -- it is `folder=False & rendered=True`, `drawn_ratio > 0`,
