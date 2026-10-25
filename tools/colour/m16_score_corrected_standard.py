@@ -113,8 +113,12 @@ def tree_bases(rows):
     return bases, kids
 
 
-def measure_standard(page, rows, grid, floor_px):
-    """183ベースの原寸ラベル地図を2通り作る(z順 / 小さい成分が勝つ)。"""
+def measure_standard(page, rows, grid, floor_px, out_comps=None):
+    """183ベースの原寸ラベル地図を2通り作る(z順 / 小さい成分が勝つ)。
+
+    `out_comps` にリストを渡すと、成分(マスク・箱・元の層・使ったファイル)を
+    そこに積む。**標準の作り方を2か所に書かないため**(m27 が原寸の切り出しに使う)。
+    """
     gh, gw = grid
     files = {l['layer_id']: l['file'] for l in page['layers']}
     bases, kids = tree_bases(rows)
@@ -151,10 +155,13 @@ def measure_standard(page, rows, grid, floor_px):
                           stats[i, cv2.CC_STAT_HEIGHT], stats[i, cv2.CC_STAT_WIDTH])
             comps.append({'z': zz, 'area': a, 'layer_id': lid,
                           'folder': is_folder, 'box': (y, x, h, w),
+                          'ids': list(ids),
                           'mask': np.ascontiguousarray(cl[y:y + h, x:x + w] == i)})
         del m, cl
     st['bases'] = len(bases)
     st['components'] = len(comps)
+    if out_comps is not None:
+        out_comps.extend(comps)
 
     def paint(order_key, prio_key):
         lab = np.zeros(grid, np.int32)
