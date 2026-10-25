@@ -2601,7 +2601,12 @@ incident that actually happened here.
    citation in the project calls it 規律9, so the file a new session reads
    first disagreed with the file it then cites. 151 -> 150 lines.
    **Discipline 9 states in the file that it is not in the installed `main`**,
-   so no reader can take it on the skill's authority.
+   so no reader can take it on the skill's authority. **The renumbering had a
+   cost outside the file**: the cleansing notice already distributed to five
+   trees named its own 正本 as "§3 の規律7", so aligning the numbers aged
+   every letter that cited one. Repaired the same sitting (discipline 3) by
+   **appending a dated correction and redistributing**, not by rewriting the
+   body -- a sent letter is a record (T92).
 8. **Conformal prediction is adopted as a component in one named place, not as
    a programme.** Raised by the user 2026-10-23 as a general method; run
    through the same test as item 7 -- a general method is adopted only where it
