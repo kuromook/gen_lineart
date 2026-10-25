@@ -1077,7 +1077,11 @@ work, and the stated expectation is that the pieces make each other easier.
   are missing outright** against 5.1% of line layers, per-panel median 0.795,
   **140 of 248 panels below 0.90**. It is the *prediction-side input* of L7, L12
   and L13, so those arms were scored against something other than the ground
-  truth.
+  truth. **The measurement stands and its meaning changed on 2026-10-25** (T86):
+  the raster is a line-only instrument, so **4.7% of the ink is line material it
+  lost** and the rest is its selection rule plus the `black` ambiguity. **The
+  arms' scoring problem is unaffected** -- an input that omits 37% of the page's
+  ink is the wrong page whether the omission was intended or not.
   **C2 -- so L6/L7's "35 clean panels" are a product of the raster** (T74
   corrected): all 35 have area layers the raster dropped, `in_raster` median
   **0.1395** against **1.0000** for the LEAKY set. Not "panels where the fill is
@@ -1162,6 +1166,19 @@ work, and the stated expectation is that the pieces make each other easier.
   width cap, and what it loses is that layer -- widest single-layer width first.*
   **Which layer drops is predictable**, where before this file said it could not
   be predicted from names.
+  **Narrowed 2026-10-25 by the extraction side's own code** (`reply_raster_layer_
+  drop_rule_20261025.md`): **that rule is real but it is a post-merge rule, and it
+  only reaches layers that entered the merge pool.** A fill named `black` never
+  gets there -- it is rejected earlier by the statistics (`black_among_drawn`
+  capped at **0.98**, so a layer is excluded for being *too* black) and by the
+  name family, and `black` is not in the line-name list because **this corpus uses
+  `black` for line layers and for fills alike**, which the generator's own comment
+  says. **So the width cap explains the fills that are named `線画`, not fills in
+  general**; the general form above is correct for that family and wrong as the
+  mechanism of the missing fill. **And the 16.0 is measured on the page reduced to
+  a 1,024px long edge**, not in native pixels -- on a 4,000px page it is about 60
+  native pixels, and the cap is calibrated as the last net against taking a fill
+  for a line (healthy 11.21 against bad 43.93).
   **And the consequence is better than the earlier reading allowed.** The missing
   fill is **not absent from the manuscripts and not lost in production**: it is
   **discarded by a threshold in this project's own extraction step**, which means
@@ -2697,7 +2714,7 @@ withdrawal.
 - **T82** A multi-day run's completion procedure must not be addressed to the session that launched it.
 - **T84** A `.gitignore` rule written after a branch was cut does not exist on that branch. The `data/` rule came in with the 2026-10-23 incident's own fix and 10 of 14 trees never got it; the audit checks it from 2026-10-24 (check 9).
 - **T85** A `.gitignore` rule with a trailing slash does not match a symlink, so importing the integration tree's ignore file into a tree that symlinks `venv` silently un-ignores it. The fix for one hole opened another, in the same command.
-- **T86** The dataset's panel line-art raster is **a different page from the author's manuscript**: only **63.0%** of the layers' ink reaches it and **54.0% of the area layers are missing outright** (line layers 5.1%), per-panel median 0.795 with **140 of 248 panels below 0.90**. Any arm whose input is that raster is predicting against something other than the ground truth. The rule the raster drops by **cannot be derived from `page_layers_priority65.csv`** -- by name and by parent folder, both the kept and the dropped appear (the commonest immediate parent among the dropped is `トーン`, 108) -- so it is a question for the extraction side, not a filter anyone here can reconstruct.
+- **T86** The dataset's panel line-art raster is **a different page from the author's manuscript**: only **63.0%** of the layers' ink reaches it and **54.0% of the area layers are missing outright** (line layers 5.1%), per-panel median 0.795 with **140 of 248 panels below 0.90**. Any arm whose input is that raster is predicting against something other than the ground truth. The rule the raster drops by **cannot be derived from `page_layers_priority65.csv`** -- by name and by parent folder, both the kept and the dropped appear (the commonest immediate parent among the dropped is `トーン`, 108) -- so it is a question for the extraction side, not a filter anyone here can reconstruct. **Asked 2026-10-25 with the user's approval and answered the same hour, and the answer reclassifies the number**: the raster is a **line-only instrument** (`extract_clip_dataset.py`'s `process_clip`, commit `0d975ac`), so most of what Track L's population carried was never meant to arrive. Of the 83,023,430 px that the named families account for (35.4% of the measured ink, 83.1% of the `<0.5` class), **A: 12,633,293 px = 5.4% of the ink is not line material at all** (`effect`, `描き文字　白フチ`, `MASK`); **B: 11,038,367 px = 4.7% is line material genuinely lost** (`線画` 10.56M via the width rule, `rendering_lineart_middle0001` 0.48M via the 3D rule); **C: 59,351,770 px = 25.3% is `black`, which the author uses for both roles**. **So the raster's defect, for this project's purposes, is 4.7% and not 37%** -- the rest is a selection rule doing its job and one ambiguous name. The reason-by-reason ledger the extraction side is building will turn A/B/C from an estimate into a count. **And the dropped layers' `visibility=1` / `opacity=256` says nothing**: the selector never reads either column.
 - **T87** `has_mask` is **True on all 2,963 layers**: a column with a check's name that performs no check, and an attempt to split on it comes back empty. The same family as "names are not checks" -- silence reads as normal operation.
 - **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
 - **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
