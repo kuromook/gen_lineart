@@ -181,6 +181,34 @@ def med(v):
     return st.median(v) if v else float('nan')
 
 
+FULL_LOG = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate/run_full.log'
+
+
+def print_full_population():
+    """`--exclude-gapfill` の許可の条件: **全面の版と並べて印字する**
+    (結果を見た後の母集団変更にあたるため。基盤 2026-10-26)。
+
+    全面の版は**同じ器具・同じ seed で既に走っており**、その A/B/C を
+    `run_full.log` から読んで並べる。**この走行で計算し直した数ではない**ので、
+    「前の走行の記録」と印字する(規律2 の「より早い走行が記録した値」の形)。
+    **読めなければ走らない** —— 片方だけが出回るのを防ぐのが条件の趣旨である。
+    """
+    if not os.path.exists(FULL_LOG):
+        sys.exit(f'止める: 全面の版の記録 {FULL_LOG} が無い。'
+                 ' 外した版だけを出すことは許可されていない')
+    txt = open(FULL_LOG, encoding='utf-8').read()
+    key = 'A / B / C ('
+    if key not in txt:
+        sys.exit(f'止める: {FULL_LOG} に A/B/C の節が無い(走り切っていない)')
+    blk = txt[txt.index(key):]
+    print('\n' + '=' * 92)
+    print('**全面の版(前の走行の記録。この走行で計算し直したものではない)**')
+    print('  同じ器具(crc32 の種)・同じ seed・KC30 PASS。'
+          '外した版だけを読まないために並べる')
+    for ln in blk.splitlines():
+        print('  | ' + ln)
+
+
 def main():
     global ARMS, EXCLUDE
     ap = argparse.ArgumentParser()
@@ -192,6 +220,11 @@ def main():
                          ' (残り635面は未知)')
     a = ap.parse_args()
     if a.exclude_gapfill:
+        # **起動の門**: 全面の版の記録が読めなければ、2時間走ってから気付かない
+        if not os.path.exists(FULL_LOG) or 'A / B / C (' not in open(
+                FULL_LOG, encoding='utf-8').read():
+            sys.exit(f'止める: 全面の版の記録 {FULL_LOG} が読めない。'
+                     ' 外した版だけを出すことは許可されていない(基盤 2026-10-26)')
         EXCLUDE = gapfill_crops()
         print(f'母集団: **判定のある551面の中で見つかった隙間埋け {len(EXCLUDE)} 面だけを'
               f'除いた版**。**残り 635 面の隙間埋けは未知**', flush=True)
@@ -406,6 +439,8 @@ def main():
                 print(f'    {w:<6}{lab2:<14}{a1["ink_share"]:>7.3f}{a1["ch"]:>14.4f}'
                       f'{fl:>14.4f}{a1["rate"]:>9.4f}  {verdict}'
                       + ('  **このセルは通った**' if (vA and vB and vC) else ''))
+    if EXCLUDE:
+        print_full_population()
 
 
 if __name__ == '__main__':
