@@ -11,10 +11,15 @@
 |---|---|---|
 | **K1 色の境目が面の中にある** | 成分の中をプレビュー(1/8)で見て、`>>4` 量子化した色が **share >= 0.15 で2つ以上**。切り出しは**その色の境目**を中心にする | 2 |
 | **K2 巨大な面** | ページで最大面積の成分 | 1 |
-| **K3 対照(分けて正しい見込み)** | 成分の中の最頻色の share が **>= 0.90**(1色 = 作者の1面の見込み) | 1 |
+| **K3 対照(分けて正しい見込み)** | 成分の中の最頻色の share が **>= 0.90** **かつ 箱に対する占有率 >= 0.40**(1色でまとまった形 = 作者の1面の見込み) | 1 |
+
+**占有率を足したのは、初版の対照が「細い筋」**(面積10万px・箱はほぼ空)**になったから。**
+対照は「ここは1面で合っている」と作者が頷ける形でなければ、対照として働かない。
 
 - **作品が違うページから選ぶ**(同じ作品に偏らせない)。1ページから最大1件
 - **縮小しない。** 画素は原寸1:1、窓は最大 1400×1400。縮小モンタージュは作らない(規律6)
+- **輪郭は外周を線で描く**(`findContours`)。**画素勾配で描くと網点の成分で点ごとに
+  マゼンタが乗り、絵が潰れる**(初版の `sunshine2 page0019` がそれ)
 - 2枚組で出す: **`_raw`(何も描き込まない原寸)** と
   **`_marked`(成分の輪郭だけマゼンタ)**。**判定は `_raw` で、問いは `_marked` で示す**
 - 合成するのは**そのページの届いた層すべて**(z 順。ベースとフォルダーのベースの子孫)。
@@ -164,7 +169,8 @@ def main():
                 rec2 = dict(rec)
                 rec2['centre'] = edge_pt
                 best['K2'] = rec2
-            if top >= 0.90 and 'K3' not in best:
+            fill = c['area'] / max(1, h * w)
+            if top >= 0.90 and fill >= 0.40 and 'K3' not in best:
                 rec3 = dict(rec)
                 rec3['centre'] = edge_pt
                 best['K3'] = rec3
@@ -222,10 +228,10 @@ def main():
                 full = np.zeros((H, W), bool)
                 full[y:y + h, x:x + w] = rec['mask']
                 sub = full[y0:y1, x0:x1].astype(np.uint8)
-                ed = cv2.morphologyEx(sub, cv2.MORPH_GRADIENT,
-                                      np.ones((3, 3), np.uint8)) > 0
                 mk = img.copy()
-                mk[ed] = (255, 0, 255)
+                cs, _ = cv2.findContours(sub, cv2.RETR_CCOMP,
+                                         cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(mk, cs, -1, (255, 0, 255), 3)
                 base = (f'case{n}_{rec["kind"]}_{p["page"]}_L{rec["layer_id"]}'
                         f'_x{x0}_y{y0}_{x1 - x0}x{y1 - y0}')
                 cv2.imwrite(str(OUT / f'{base}_raw.png'), img)
@@ -235,10 +241,10 @@ def main():
                 small = full[::sc, ::sc].astype(np.uint8)
                 sh = min(small.shape[0], pv.shape[0])
                 sw = min(small.shape[1], pv.shape[1])
-                eds = cv2.morphologyEx(small[:sh, :sw], cv2.MORPH_GRADIENT,
-                                       np.ones((3, 3), np.uint8)) > 0
                 ctx = pv.copy()
-                ctx[:sh, :sw][eds] = (255, 0, 255)
+                cs2, _ = cv2.findContours(small[:sh, :sw], cv2.RETR_CCOMP,
+                                          cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(ctx, cs2, -1, (255, 0, 255), 2)
                 cv2.rectangle(ctx, (x0 // sc, y0 // sc),
                               (x1 // sc, y1 // sc), (0, 180, 255), 3)
                 cv2.imwrite(str(OUT / f'{base}_context_1of8.png'), ctx)

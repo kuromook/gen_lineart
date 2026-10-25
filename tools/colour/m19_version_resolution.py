@@ -63,6 +63,15 @@ def parts(p):
             'year_suf': m.group(2) if m else '', 'work': work, 'stem': stem}
 
 
+def sig(r):
+    """**塊を組んだ基準**。層ごとの統計量の署名で、**画素は1つも読んでいない。**
+    「中身が一致」ではなく「統計量の署名が一致」である(2026-10-26 に言い直した)。
+    `m30` が重なりの量を測るのに同じ式を使うので、ここに1つだけ置く。"""
+    return hashlib.md5('|'.join((
+        r['name'], r['layer_type'], r['drawn_ratio'], r['sat_mean'],
+        r['top_colour_share'], r['colours_q16'])).encode()).hexdigest()[:16]
+
+
 def main():
     rows = list(csv.DictReader(open(CSV872, encoding='utf-8')))
     pages = list(dict.fromkeys(r['page_path'] for r in rows))
@@ -79,10 +88,6 @@ def main():
             if r['formats'] == '5':
                 a['f5'] += 1
 
-    def sig(r):
-        return hashlib.md5('|'.join((
-            r['name'], r['layer_type'], r['drawn_ratio'], r['sat_mean'],
-            r['top_colour_share'], r['colours_q16'])).encode()).hexdigest()[:16]
     inv, pset = collections.defaultdict(set), collections.defaultdict(set)
     for r in rows:
         if r['folder'] == 'True' or (num(r['drawn_ratio'], 0) or 0) <= 0:
