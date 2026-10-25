@@ -227,8 +227,10 @@ def print_both_populations(res):
     for w in ('ako6', 'ako7'):
         f = full.get(w)
         if f:
+            # **`r0` に † を付ける**: 前の走行の印字は `3r0` なので、これは
+            # 3で割って得た**導出値**である。この走行の `r0` は生の値で出す
             print(f'  {"全面 (前の走行の記録)":<24}{w:<7}{f["arm"]:>9.4f}{f["ctl"]:>9.4f}'
-                  f'{f["r0"]:>9.4f}{f["floor"]:>13.4f}  '
+                  f'{f["r0"]:>8.4f}†{f["floor"]:>13.4f}  '
                   f'{"床の上" if f["arm"] >= f["floor"] else "床の下"}')
         a1 = res.get(('real', w, 'ch')); a0 = res.get(('shuffled', w, 'ch'))
         if a1 and a0:
@@ -238,6 +240,8 @@ def print_both_populations(res):
                   f'{a0["ch"]:>9.4f}{a0["r0"]:>9.4f}{fl:>13.4f}  '
                   f'{"床の上" if a1["ch"] >= fl else "床の下"}')
         print()
+    print('  † 前の走行の印字は `3r0` なので、この `r0` は3で割って得た**導出値**。'
+          'この走行の `r0` は生の値')
 
 
 def main():
