@@ -25,6 +25,9 @@ m17 の結果(2026-10-25、既知セル3つ PASS):
      跨いでいれば分割が漏れている(Track L 1-1/1-2 と同じ費用)
   F6 `has_gradation_fill` が真の層のうち、**クリップのベース**(= 標準になる層)の数。
      標準は色の列を使わないので、効くのは falsifier と B1 だけのはず
+  **F8 帰無値(N5 の指紋の重複に対して)**: 層の指紋をページに**無作為に振り直す**
+     (ページごとの層数は保ったまま)。**期待: Jaccard>=0.5 の組は 0。**
+     0 でなければ、150組のうちいくらかは偶然の一致である
   F7 `visibility` の値ごとに、他の列(`rendered` / `drawn_ratio` / `opacity`)が
      どう違うか。**意味は抽出側に聞く。こちらで決めない**
 """
@@ -141,7 +144,21 @@ def main():
         if not same:
             unexplained.append((abs(s - d * area) / (d * area), r, implied))
     unexplained.sort(key=lambda t: -t[0])
-    print(f'  5%超 {over} 層、うち**丸めで説明できない** {len(unexplained)} 層')
+    print(f'  5%超 {over} 層、うち有効桁の丸めで説明できない {len(unexplained)} 層')
+    # F4b 仮説: drawn_ratio は小数6桁に丸められている(min が 1.00e-06 だった)。
+    # それなら round(和/面積, 6) が申告値と一致するはずである。全描画層で検定する。
+    bad6 = []
+    for r in drawn:
+        cv = r['canvas'].strip('[]').split(',')
+        area = int(cv[0]) * int(cv[1])
+        s6 = sum(int(r[c]) for c in SAT if r[c] != '')
+        if round(s6 / area, 6) != round(num(r['drawn_ratio'], 0), 6):
+            bad6.append((r, s6 / area))
+    print(f'  **F4b 仮説「drawn_ratio = round(和/面積, 6)」: 合わない層 '
+          f'{len(bad6)} / {len(drawn)}**')
+    for r, imp in bad6[:6]:
+        print(f'      申告 {r["drawn_ratio"]} 和からの比 {imp:.8f} '
+              f'{Path(r["page_path"].replace(chr(92),"/")).name} L{r["layer_id"]}')
     for e, r, imp in unexplained[:8]:
         print(f'    誤差 {e:.3f} 申告 {r["drawn_ratio"]} 和からの比 {imp:.3e}  '
               f'{Path(r["page_path"].replace(chr(92),"/")).name} L{r["layer_id"]} '
@@ -191,9 +208,6 @@ def main():
     big = sorted((c for c in cl.values() if c > 1), reverse=True)
     print(f'  重複の塊: {len(big)} 個、含まれるページ {sum(big)} / {len(pages)}  '
           f'大きさ {big[:12]}')
-    works = collections.Counter()
-    for p in pages:
-        works[find(p)] |= {0}
     cross_work = 0
     byroot = collections.defaultdict(list)
     for p in pages:
@@ -203,6 +217,33 @@ def main():
                                 for p in ps}) > 1:
             cross_work += 1
     print(f'  うち**作品を跨ぐ塊 {cross_work}** 個')
+
+    print('\n== F8 帰無値: 指紋をページに無作為に振り直す(層数は保つ) ==')
+    import random
+    allsig = [sig(r) for r in drawn]
+    sizes = list(collections.Counter(
+        r['page_path'] for r in drawn).items())
+    for seed in (0, 1, 2):
+        random.Random(seed).shuffle(allsig)
+        per_n, i = {}, 0
+        for p_, k in sizes:
+            per_n[p_] = set(allsig[i:i + k]); i += k
+        inv_n = collections.defaultdict(set)
+        for p_, ss in per_n.items():
+            for x in ss:
+                inv_n[x].add(p_)
+        sh = collections.Counter()
+        for x, ps in inv_n.items():
+            if 1 < len(ps) <= 12:
+                pl = sorted(ps)
+                for a_ in range(len(pl)):
+                    for b_ in range(a_ + 1, len(pl)):
+                        sh[(pl[a_], pl[b_])] += 1
+        hi = sum(1 for (a_, b_), c in sh.items()
+                 if c / (len(per_n[a_]) + len(per_n[b_]) - c) >= 0.5)
+        mx = max((c for c in sh.values()), default=0)
+        print(f'  seed {seed}: Jaccard>=0.5 の組 **{hi}**  '
+              f'共有数の最大 {mx}  (実測は 150 組、共有最大 204)')
 
     print('\n== F6 has_gradation_fill とクリップのベース ==')
     sib = collections.defaultdict(list)
