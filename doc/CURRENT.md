@@ -1279,6 +1279,40 @@ work, and the stated expectation is that the pieces make each other easier.
   wand" is a claim discipline 6 reserves for the author (P37's disclosure). A
   PASS may say only that **the ink adjacent to a fill area concentrates in one
   layer per region**.
+  **2026-10-25, the control arm ran and the band is fixed at a value, not a
+  formula.** L placed the regions with a per-region seed so both arms see the
+  same placement, dropped the regions no seed can place **from both arms** (the
+  dropped set is the large end: **17 / 19 regions, 2.7% / 2.0%, median area
+  748,881 / 783,136 px, up to a whole panel**), and reported, over 5 seeds at
+  d=4px on regions whose ring is touched by two or more layers:
+  **q0 = 0.1344 / 0.1558, r0 = 0.0172 / 0.0543, m0 = 0.6498 / 0.6672, k0 = 2.0 /
+  2.0** (ako6 / ako7). KC20 PASS on synthetic data only -- a zero-displacement
+  control reproducing the arm **must not be run on the real pages**, where it
+  *is* the arm. The remaining 608 / 919 **agree to the digit with the count the
+  foundation took from the old control**, so the same 17 / 19 were what the
+  earlier T90 gap consisted of. **The band, with the pre-registered formula's
+  arguments filled in: `q1 >= 0.5672` (ako6) / `q1 >= 0.5779` (ako7), both pools,
+  and `k1 <= 2`**; the readability floor `q0 + 3 r0` (0.1860 / 0.3187) is the
+  weaker clause. The saturation branch does not fire (`q0 < 0.50`;
+  `share >= 0.98` nulls are 0.0269 / 0.0346).
+  **And the degeneracy filter is what makes this a test rather than a
+  tautology.** In the control, **38%** of rows touch no ink at all (1,185/3,040
+  and 1,732/4,595) and **about half of those that do touch exactly one layer**
+  (922/1,855 = 0.4970 and 1,600/2,863 = 0.5589), where `purity = 1.0` and
+  `n_lay90 = 1` hold by definition. Without the two-layer filter the null would
+  be **0.5646 / 0.6276** -- level with the 0.5672 bar in ako6 and **above the
+  0.5779 bar in ako7**, so the control alone would pass. **The foundation's
+  one-unit-too-high finding about the degeneracy check is confirmed in numbers by
+  the control itself.** The `|adj|` strata run in the predicted direction (ako6
+  `<200` share 0.4118 against `>=1000` 0.1269), and because both arms use the
+  same region shapes and differ only in placement, the real arm's denominators
+  will be **larger** -- the denominator bias now runs **against** the arm, so a
+  PASS cannot be its artefact and only a FAIL could be partly explained by it.
+  Four bar-less disclosures were added before the run (single-layer regions in
+  the real arm, where they are a **success** mode rather than a degeneracy but
+  still cannot carry the bar; the unfiltered figure; the 17 / 19 excluded large
+  regions measured in the real arm only; the strata and the d grid), and L
+  weakened the registration's PASS wording before running, as asked.
 - `../lineart-colour-manuscripts` (branch `colour-manuscripts`, **Track M**) --
   **active, opened 2026-10-24 by user approval**, worktree of this repo cut at
   `e9d680b`, briefing committed at `94c19cb`. **Nobody has worked in it yet.**
@@ -2554,6 +2588,7 @@ withdrawal.
 - **T87** `has_mask` is **True on all 2,963 layers**: a column with a check's name that performs no check, and an attempt to split on it comes back empty. The same family as "names are not checks" -- silence reads as normal operation.
 - **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
 - **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
+- **T91** An order handed over outside the written channel leaves no record on **either** side. The 2026-10-24 z-order request produced a 7,362-row delivery in ten minutes, and on 2026-10-25 the foundation found that **neither that request nor the panel-geometry one exists anywhere in the extraction side's tree** (its `inbox/` ends at 10-24 17:26; a whole-tree search finds only the delivered CSV, the delivery note and the generating script) while the foundation's own `outbox/` held no copy. The delivery cites a request its recipient does not hold. **The rules had no slot for it** -- `reply_*` was defined as track-bound -- so the gap was in CLAUDE.md, not in anyone's attention; `outbox/push_<topic>_<date>.md` with a one-line delivery record is now the slot (Track L's diagnosis and proposal, adopted). Retroactive copies exist for both orders, marked **route unknown**.
 
 ### 素材の性質と外部標準(塗り)
 

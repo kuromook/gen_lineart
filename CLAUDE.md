@@ -105,13 +105,13 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 `inbox/` `outbox/` は往復書簡専用で **`.gitignore` 配下**(= push されない)。プロジェクト
 文書は必ず `doc/` に置く。track の引き継ぎ書を `inbox/` に置いて失った事故から来ている。
 
-- `inbox/note_*.md` — track や抽出ツールから基盤へ(受信)
-- `outbox/reply_*.md` — 基盤から track へ(送信)。配送は
-  `cp outbox/<file> ../lineart-<topic>/inbox/`
-- 抽出ツール(Windows, `sh1@192.168.1.5`)への通達は **SCP でプッシュ**する(鍵認証済み)。
-  宛先は `sh1@192.168.1.5:C:/Users/sh1/code/extract_line_and_sketch/inbox/` のみ
-  (`inbox_from_lineart/` は旧)。**送った後に `dir` で着弾確認**、**便ごとにファイルを
-  残す**(作者の指示。メッセージだけでは記録に残らない)
+- `inbox/note_*.md` 受信(track・抽出ツールから) / `outbox/reply_*.md` 送信(track 宛)。
+  配送は `cp outbox/<file> ../lineart-<topic>/inbox/`
+- 抽出ツール(Windows)への通達は **SCP でプッシュ**し、宛先は
+  `sh1@192.168.1.5:C:/Users/sh1/code/extract_line_and_sketch/inbox/` のみ(鍵認証済み)。
+  **送った後に `dir` で着弾確認**、**控えを `outbox/push_<topic>_<日付>.md` に残す**
+  (末尾に配送記録1行。`reply_*` は track 宛なので名を分ける)。メッセージだけで渡すと
+  **先方の記録にも残らない**。**ping は使えない**(ICMP を落とす。`ssh` で確かめる)
 - **原稿由来の納品物は `data/` 配下。`.gitignore` 済み、絶対にコミットしない**
   (2026-10-23 に 99MB を public repo に上げた。force-push では消えない)
 - 結果が出たら `doc/work_log.md` に要約を戻す。状態や方向が変わるなら `doc/CURRENT.md` も
