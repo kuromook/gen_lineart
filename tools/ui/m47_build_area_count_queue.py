@@ -186,9 +186,9 @@ def main():
                   'pid': c['source'], 'lid': c['layer_id'],
                   'why': ('known' if (c['page'], c['layer_id']) in
                           [(a, b) for a, b in KNOWN] else c['stratum']),
-                  'work': c['page'], 'fits_window': fits,
+                  'work': c['page'], 'fits_window': bool(fits),
                   'page_covered_by_one_area': c['page'] in DOMINATED,
-                  'area_px': int(c['area']),
+                  'area_px': int(c['area']),  # numpy の型は json に出せない
                   'cands': [], 'word_share': {}, 'top_word': '', 'purity': 0.0,
                   'n_lay': 0, 'n_lay90': 0, 'auto': 0, 'comp': 0,
                   'region': c['layer_id']})
