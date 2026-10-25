@@ -79,6 +79,7 @@ def scoring_population(new):
     **内容の重複の塊は代表1つ**(T95: プールの単位は塊)。
     塊に `final` が居ればそれが代表。`m25`〜`m33` が**同じ規則を1か所から**使う。
 
+    **`reference_copy`(続編の作業フォルダーへの資料コピー)も同日に足した。**
     **`rough`(下絵のみ)も 2026-10-26 に足した** —— `m36` の KC-H3 が、
     `not_used` のときと**同じ穴**をまた捕まえた(**新しい札を足したら、この関数も直す**)。
     **`not_used` を 2026-10-26 に足した** —— 作者が「backupのほうは使わない」と
@@ -89,7 +90,8 @@ def scoring_population(new):
     out, seen = [], set()
     for q, v in new.items():
         role, ci = v['version_role'], v['dup_cluster_id']
-        if role in ('superseded', 'not_used', 'rough'):
+        if role in ('superseded', 'not_used', 'rough',
+                    'reference_copy'):
             continue
         if role == 'duplicate_content':
             if ci in hasfinal or ci in seen:
