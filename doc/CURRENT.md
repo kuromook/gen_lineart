@@ -3589,7 +3589,23 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       chain-less pages against the 566 with a chain differ **2 against 22
       colour-format layers, over tenfold** (style 1.4x, year 0.12-0.84), so the
       standard built on the 566 is **the standard of pages that have a clip
-      chain -- pages with more layers and more colour layers -- and not the
-      standard of colour manuscripts**. **42 works are chain-less throughout**
-      (115 of the 306 pages), so the list of works that have no standard goes
-      beside it: a selection that removes whole works is felt later.
+      chain, and not the standard of colour manuscripts**. **42 works are
+      chain-less throughout** (115 of the 306 pages), so the list of works that
+      have no standard goes beside it: a selection that removes whole works is
+      felt later. **The foundation's gloss "pages with more layers and more
+      colour layers" is withdrawn the same night.** It holds on the medians and
+      dies on the exceptions: `nuru` carries **135 colour layers with no clip
+      chain at all** (`NY` 81, `mars` 35), so **thickness is not the
+      mechanism**. Track M went to look at the exceptions after the foundation
+      had asked only for the medians, which is what a band check is for.
+      **The name stays the field the selection actually used.** M proposed *the
+      standard of pages painted by clipping to the silhouette* -- a better
+      reading, and not a usable name: it interprets `LayerClip`, whose mapping
+      the structure DB itself says is unverified, and a way of painting is the
+      author's to state (規律6). **M's reading travels as a registered
+      hypothesis in the same paragraph**: the author holds at least two ways of
+      painting and this standard touches one of them. **And if the first branch
+      of M's question is the answer -- that in those works the painted layer
+      itself is the region -- then excluding S2 (追補6 §F5) is what puts 42
+      works beyond the standard's reach**: material for the author to revisit
+      their own call, never grounds to overturn it.
