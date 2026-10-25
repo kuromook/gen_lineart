@@ -992,6 +992,34 @@ work, and the stated expectation is that the pieces make each other easier.
       the right number*.
     - **Track G's dependency is not payable yet**: at group recall 0.351 the
       unit is not ready to hand over, and Track H says so itself.
+  - *2026-10-25: **H18 fails its bar, and the user paused the track on the
+    material rather than on the method.*** 260 -> 317 learning faces lifts the
+    original 193 from 0.351 to **0.369, against a registered +0.025**, so the
+    author's marking stops; H19 (pixels around the stroke) is **+0.044 against
+    0.05**, negative control -0.018. **No bar moved, and the track proposed its
+    own stop.** The user's reading of the ceiling is **the material**: the
+    marking set shows **unnaturally cut panels** (the author saw them; the
+    effect on H's numbers was small because the marking was of faces), and H's
+    strokes come from Track F's `panel_pack_20260919` thinning, whose source is
+    the pair-dataset extraction program. **So H is paused, not closed**, on two
+    conditions: the stroke-connection repair coming out of the region work, and
+    clean line art -- then the 619 marks (order 0-502) are re-run with the line
+    art swapped, which is H's own design and needs an old-to-new stroke
+    correspondence H will build **after** the material is in sight.
+    **Two consequences.** The 5-page part-layer export request is withdrawn and
+    **was never relayed**: no `request_*`/`push_*` in this tree's `outbox` and
+    the extraction side's `inbox` holds no such file (checked by `dir`, 23
+    entries), so **a request that never left cannot be retracted** -- T91 read
+    from the other end, and the withdrawal closes inside this project. And the
+    **body-and-hands track the author proposed is deferred** until the extraction
+    dirtiness is addressed, because two new yardsticks on dirty material cannot
+    separate a ceiling of the material from a ceiling of the formulation; what
+    H would hand it (the marking UI, the T2 net, group recall, the registration
+    pattern) and the author's warning that **clothing complicates the body** are
+    held in Next Actions rather than dropped. **The dirtiness case is drafted by
+    L and M, not by H** (the user: it is already visible there); H contributes
+    its panel-crop observation as an *observation with provenance*, owed in the
+    form of native 1:1 crops and a count with a denominator.
 - `../lineart-fill-region` (branch `fill-region`, **Track L**) -- **active,
   opened 2026-10-23 by user approval**, worktree of this repo, briefing
   committed at `7d9f080`. Catching the fill as an **area**, in a clean tree, on
@@ -3425,3 +3453,33 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       pre-annotation is **the only thing that reopens the data route at all**.
     - Mechanism: Working Discipline item 8 (conformal prediction, class-
       conditional, calibrated at face level).
+13. **The dirtiness of the line art -- drafted by L and M, and two things wait
+    on it.** Opened 2026-10-25 on the user's decision. The author reads part of
+    Track H's ceiling as the material: the extraction program's line art is
+    dirty and under-thinned, and H's marking set shows unnaturally cut panels.
+    **H is paused and the body-and-hands track is deferred until this moves**
+    (item in Track H's ledger entry). **The case is not H's to make**: the user
+    says it is already visible in L and M, so each of those tracks sends the
+    foundation `note_<track>_dirtiness_*.md`, the foundation merges the two into
+    one request and pushes it to the extraction side.
+    - **The form is a measurement, not an impression**: one named defect per
+      item, with the upstream step that produced it (or "unknown", which is the
+      most important field), a count with its denominator and the population's
+      name, native 1:1 crops under `results/` (規律6), and **what would change
+      downstream if it were fixed** -- the field that makes the request
+      refusable.
+    - **Selection and defect must be separated** (T86, 規律9). The raster's
+      63.0% was a selection rule, not a defect rate, and the same confusion is
+      available here: unnaturally cut panels may be the koma cutting rule
+      rather than breakage. H's observation travels with its provenance (Track
+      F `panel_pack_20260919` thinning, from the pair-dataset extraction
+      program) and with H's own words that the effect on its numbers was small.
+    - **The conclusion may legitimately be "put the selection rule in
+      writing".** That is provisional rules 11-13 naming their own killer, and
+      the precedent is on record: getting the raster layer-drop rule in writing
+      changed what 63.0% meant. A one-line outcome is a sufficient outcome.
+    - **Register before the clean line art arrives**: the known cell it must
+      reproduce (one per generation), and the null value for "cleaner" -- after
+      the swap, instrument difference and material difference are no longer
+      separable. H's old-to-new stroke correspondence is H's instrument, built
+      once the material is in sight.
