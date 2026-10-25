@@ -137,8 +137,10 @@ matching the notice. Four things a re-cut has to know, all in the reply:
   below), so filtering by `layer_type==1` is not filtering by
   `folder==False`, and which one was used belongs in the registration
 - **`用紙` comes back `drawn_ratio 1.0` / `black_among_drawn 1.0` on all 65
-  pages** -- white on the page, entirely pure black as measured -- so **any
-  blackness cut passes the paper layer**
+  pages** -- white on the page, **fully opaque as measured** (not black: the
+  quantity is alpha, corrected 2026-10-25, and the extraction side's own
+  `draw_color_main` is `[255,255,255]` on the paper rows it could not render)
+  -- so **any cut on this quantity passes the paper layer**
 - **31 layers have content but no `preview_dark`** (`マンガ用グラデーション` 15,
   `rendering_shadow_*` 9, `背景グラデ` 3), which a `preview_dark >= 0.5`
   condition **drops silently**
@@ -3798,7 +3800,33 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       **The foundation's own documents stop calling `ink_px` ink** (it is
       `cov128_px`, a half-opacity coverage); the extraction side is explicitly
       *not* asked to rename its columns, because renaming would make every
-      existing ledger unreadable. So the question to the extraction side rises from *what value*
+      existing ledger unreadable. **Track L then did the thing that keeps an
+      explanation from becoming a T103: it turned the received explanation into
+      a check instead of a fact (`KC34`, `bd3bb1b`).** L's own layer PNGs are
+      the extraction side's `g` itself, so the same thresholds were applied to
+      them: **30 layers drawn at random, 16 with a PNG on disk, all four
+      quantities agreeing within the rounding width, zero discrepancies, both
+      directions, layer granularity** (the 14 without a PNG counted and
+      printed). **Two layers show the quantity's identity outright**: a 3D layer
+      (`ako6_page0117 L110`) spans `g` 144-255 over 112 distinct values and
+      scores `bad = 0.0` -- **no pixel of it is more than 44% opaque** -- while
+      `ako7_page0069 L23` holds **two** distinct values, 0 and 255, and scores
+      **1.0**. So `black_among_drawn` is **the amount of edge softness**: a
+      layer with no antialiased pixel at all sits at 1.0. That also settles
+      KC33's "grey" layers -- they are **semi-transparent**, grey 145 being
+      alpha ~110. **Nothing measured moves** (the author's 19/19, AUC 0.7750
+      and its sign, 43/54 in the unselected frame, the constant's lack of
+      calibration), and **the author's 64 answers are uncontaminated by the
+      name**, because L's UI never displayed the layer name, `preview_dark`,
+      `keep4` or `black_among_drawn` -- registered in advance, not argued
+      afterwards. **The author-facing vocabulary changes with it**: not *black
+      or not black* but **soft-edged or hard-edged**, which maps onto the
+      author's own practice of drawing with antialiasing off and is therefore
+      checkable. L also corrected the dirtiness case's L23 item the same night:
+      the paper layer's PNG is **fully opaque, not black**, so *z-ordering every
+      layer does not reproduce the manuscript* stands, but its reason moves from
+      a claim about the data to a claim about our own compositing, which was
+      reading alpha as darkness. So the question to the extraction side rises from *what value*
       to **can this quantity separate line from fill at all** -- 9-2's deeper
       form, a borrowed *quantity* rather than a borrowed constant, and the
       registered next number is the overlap (or AUC, null 0.5) of
