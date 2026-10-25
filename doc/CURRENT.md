@@ -3666,8 +3666,8 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       the agreement measured was identity. The shape of the deciding rule is
       readable from the 42: the `superseded` side carries a **`b` suffix on the
       year folder** in 23 (`2019`->`2019b` 18, `2022`->`2022b` 5), **`_bk`** in
-      4, is **nested one level deeper** in 2 -- and in **12 the `final` is the
-      deeper side** (`comics4\underworld\underworld` 10, `gal\gal` 2), so the
+      4, is **nested one level deeper** in 2 -- and in **11 the `final` is the
+      deeper side** (`comics4\underworld\underworld` 9, `gal\gal` 2), so the
       nesting rule runs both ways and no single rule can be written. **`decided_by`
       must name the tie-break actually used, not the evidence of equality.**
       **Four riders, none of them a number the foundation will move itself.**
@@ -3740,12 +3740,25 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       mtimes lying outside the bulk-copy window agree with the author 2/2
       (2022-10-19 over 2022-03-07, 2022-07-16 over 2022-05-01), the first
       evidence that a timestamp outside that window may be a drawing time --
-      T99 is about timestamps inside it. **And the next one-line author
-      question is written and queued, not asked**: *of the nested same-name
-      folders (`gal\gal` against `gal`, `comics4\underworld\underworld`
-      against `underworld\underworld`, `skima10\skima10` against `skima10`),
-      which is newer?* -- it would decide **15** of the 42, and the order of the
-      author's time is the user's to set.
+      T99 is about timestamps inside it. **And the next author questions are written and
+      queued, not asked. The foundation's first count of them was wrong and is
+      corrected here**: the one-line question it proposed covered **two
+      different folder shapes**, not one, and 14 clusters rather than 15.
+      **(A) a grouping folder**: `2018\comics4\underworld\underworld` against
+      `2018\underworld\underworld`, **9 clusters** (pages 0001-0007, 0009,
+      0010), both sides inside 2018 so the year decides nothing -- and
+      `comics4` holds 5 further clusters (`china_v2` 3, `mars_v2` 2) which are
+      cross-year and already decided, so the answer would also tell us what
+      that folder is. **(B) the same name repeated one level down**:
+      `2018\skima10` against `2018\skima10\skima10` (2 clusters, `final` the
+      shallow side) and `2016\gal` against `2016\gal\gal` (**3 clusters
+      resolved both ways in our own ledger** -- 31 and 32 make the deep side
+      `final`, 33 the shallow one), **5 clusters**, and this is the pair where
+      the ledger contradicts itself. Three singles sit outside both:
+      `skima11\skima12chara` against `skima12chara`**`Done`**,
+      `ako6\done4\ako6-14` against `done5\ako6-14`, and
+      `ako4\color\ako4_`**`backup`** against `ako4.clip`. **The order of the
+      author's time is the user's to set.**
     - **The per-layer ground truth is approved** (the user: *already gave the
       OK*), repurposing L19's UI so one truth calibrates `preview_dark`,
       `keep4` and `bad_max`. **The foundation's condition is registration
