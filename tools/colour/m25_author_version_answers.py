@@ -87,6 +87,12 @@ def scoring_population(new):
     この関数が新しい札を知らないことを捕まえた。**"""
     hasfinal = {v['dup_cluster_id'] for v in new.values()
                 if v['version_role'] == 'final' and v['dup_cluster_id']}
+    # **`use` 列が在るならそれが正本。** 札を足すたびにこの関数を直し忘れて
+    # 同じ穴を踏んだ(not_used → KC-F3 / rough → KC-H3 / revision → KC-K3)。
+    # → **札の一覧ではなく、`use` の文面で判断する。**
+    if any('use' in v for v in new.values()):
+        return [q for q, v in new.items()
+                if str(v.get('use', '')).startswith(('採点する', '別行'))]
     out, seen = [], set()
     for q, v in new.items():
         role, ci = v['version_role'], v['dup_cluster_id']

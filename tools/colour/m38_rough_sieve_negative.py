@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import m19_version_resolution as m19                     # noqa: E402
 import m25_author_version_answers as m25                 # noqa: E402
 
-SRC = Path('results/m37_done_b/version_roles_current.csv')
+SRC = Path('results/m40_revision/version_roles_current.csv')
 OUT = Path('results/m38_rough_sieve'); OUT.mkdir(parents=True, exist_ok=True)
 TMPL = re.compile(r'(下絵|下書|下描|ラフ|rough|用紙|断ち落とし|トンボ|ノンブル'
                   r'|PICO|調整)', re.I)
@@ -78,6 +78,17 @@ def main():
     if not cand:
         print('    **0頁**(規律7)')
 
+    print(f'\n== 棒の出所と感度(**判定には使わない。棒がどれだけ効くかだけ**)==')
+    print(f'  **棒 {CUT} の出所: 作者が確認した下絵の最大値。**'
+          f'**確認済みの集合では再現率100%が保証されており、それは測定ではない。**')
+    print(f'  **50 は候補の数であって下絵の数ではない。'
+          f'未確認の下絵でテンプレートの外に墨が多めのものは通り抜ける —— 再現率は未知。**')
+    print(f'  分布の下位5% は 0.016 で、**棒は密な所に立っている**:')
+    for t in (0.010, 0.016, 0.020, 0.030, 0.050):
+        print(f'    <= {t:.3f} : {sum(1 for q in scored if vals[q] <= t):>4} 頁')
+    z = [q for q in scored if vals[q] == 0.0]
+    print(f'  **テンプレートの外が 0.0000 の {len(z)} 頁が最も強い候補**(候補の先頭に置く)')
+
     print(f'\n== 曖昧な1頁の両方の数(腕2つを床1つに当てない、の母集団版)==')
     both = len([q for q, v in new.items() if v['use'].startswith('採点する')])
     print(f'  3頁を `rough` として除外(いまの数) : **{both}**')
@@ -90,7 +101,7 @@ def main():
         w = csv.writer(fh)
         w.writerow(['page_path', 'テンプレート外の描画比の和', '層の数',
                     'いまの version_role', 'いまの use'])
-        for q in cand:
+        for q in sorted(cand, key=lambda q: (vals[q] != 0.0, vals[q])):
             w.writerow([q, f'{vals[q]:.6f}', len(bp[q]),
                         new[q]['version_role'], new[q]['use']])
     print(f'\nwrote {OUT}/rough_candidates_negative.csv')
