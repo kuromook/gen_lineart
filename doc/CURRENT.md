@@ -2543,6 +2543,33 @@ incident that actually happened here.
    asks for. **What would reopen this**: a UI that someone other than the author
    has to use, or a track's tooling becoming a real maintenance burden. Then it
    is installed project-scoped in that track's own tree, not by the foundation.
+   **A record hole, filled 2026-10-25: this project's own measurement
+   discipline was exported as a public plugin on 2026-10-10/11 and this file
+   never said so.** `kuromook/moat` (`/home/sh1/deepl/moat`) holds the general
+   form of disciplines 1-3 and their relatives as five skills -- `moat`,
+   `moat-register`, `moat-controls`, `moat-audit`, `moat-retract` -- named after
+   the user's own reading on the day the minimality skill was declined (*the
+   detours have been paying for the outer moat*). The user raised it when the
+   foundation proposed writing a **new** cleansing skill: the proposal was the
+   wrong shape, because a second home for one discipline is the duplication this
+   file's own opening warns about. **Installed user-scoped the same day**
+   (`~/.claude`, so it reaches every tree regardless of when the tree was cut --
+   the `.claude/skills/` route would have reproduced T84/T92 exactly), measured
+   cost **~425 tok always-on** with bodies loaded on invocation, which retires
+   the third objection above. **It does not retire the foundation's band
+   checks**: a skill can approve its own design, and L17's two design errors (a
+   floor written as a verdict gate, a bar the control also satisfied) were found
+   by the outside eye. **Discipline 9 was deliberately NOT merged into it**, on
+   the user's objection that selection rules look like instrument design and may
+   instead be a property of this material -- the three rules, a fourth way a
+   control is born useless, and four abstracted incidents live on the branch
+   `provisional-selection`, with the condition that would kill them written into
+   the section: *if the whole cost was the upstream rule being undocumented, the
+   rule is "get the upstream rule in writing" and it is one line, not three*.
+   The in-project 正本 stays `CLAUDE.md` §3-7 plus the cleansing notice. **And
+   the installed plugin is the working tree itself** (`installLocation` is that
+   path), so a checkout in `/home/sh1/deepl/moat` decides which rules are in
+   force -- the foundation left it on `main`. T92's family, one level up.
 8. **Conformal prediction is adopted as a component in one named place, not as
    a programme.** Raised by the user 2026-10-23 as a general method; run
    through the same test as item 7 -- a general method is adopted only where it
@@ -2754,7 +2781,7 @@ withdrawal.
 - **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
 - **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
 - **T91** An order handed over outside the written channel leaves no record on **either** side. The 2026-10-24 z-order request produced a 7,362-row delivery in ten minutes, and on 2026-10-25 the foundation found that **neither that request nor the panel-geometry one exists anywhere in the extraction side's tree** (its `inbox/` ends at 10-24 17:26; a whole-tree search finds only the delivered CSV, the delivery note and the generating script) while the foundation's own `outbox/` held no copy. The delivery cites a request its recipient does not hold. **The rules had no slot for it** -- `reply_*` was defined as track-bound -- so the gap was in CLAUDE.md, not in anyone's attention; `outbox/push_<topic>_<date>.md` with a one-line delivery record is now the slot (Track L's diagnosis and proposal, adopted). Retroactive copies exist for both orders, marked **route unknown**. **It recurred on 2026-10-25 in the other direction**: a 99MB structure DB and its documentation existed for over an hour with no notice in the extraction side's `outbox/` and nothing in the foundation's `inbox/`, and were found only because Track L read the other tree. The foundation's receipt asks for **a one-line notice at creation** rather than a written-up one -- the placement is the record, and the body can be read later.
-- **T92** A replicated file is a copy, not a record. `CLAUDE.md` is copied into every tree at branch time, so a constant corrected on the foundation keeps answering with the old value: on 2026-10-25 **10 of 11 track copies still named `192.168.1.9`** after the extraction host had been corrected to `.5`, and Track L, following its own copy, concluded the machine was unreachable. Now audit check 10, scoped to live trees. (And `ping` is not a liveness test there -- Windows drops ICMP, so `.5` is silent while `ssh` works.)
+- **T92** A replicated file is a copy, not a record. `CLAUDE.md` is copied into every tree at branch time, so a constant corrected on the foundation keeps answering with the old value: on 2026-10-25 **10 of 11 track copies still named `192.168.1.9`** after the extraction host had been corrected to `.5`, and Track L, following its own copy, concluded the machine was unreachable. Now audit check 10, scoped to live trees. **And the family reaches outside git-tracked files**: an installed plugin whose `installLocation` is a working tree serves whatever that tree has checked out, so a branch left switched would change the disciplines in force for every session on the machine. (And `ping` is not a liveness test there -- Windows drops ICMP, so `.5` is silent while `ssh` works.)
 - **T93** The remedy quoted the sentence it removed, so the check flagged its own fix. The pointer files that replaced the frozen ledgers explain that the old copy said *"this file is the first document to read"* -- which is exactly what check 8 searched for; a date clause hid it until a ledger commit on 2026-10-25 lit up ten repaired trees at once. A check whose predicate is a quoted string matches the text about the problem as readily as the problem.
 
 ### 素材の性質と外部標準(塗り)
