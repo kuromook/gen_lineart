@@ -2793,9 +2793,11 @@ withdrawal.
 - **T57** An arm can beat its off-by-one control and still carry no location information at all -- what it is scoring is the *amount* of ink.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
 - **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
+- **T98** A bar written as "higher than the null" with no resolution is not a bar -- its ordering flips with the choice of statistic (the foundation's own bar on the succor sharing query, 2026-10-25: arm 0.30 against null 0.15 on the pair mean, but p=0.335 by permutation, and the reverse ordering on the per-page maximum 0.6 against 0.63). A bar on a comparison needs the null's distribution, not its point value.
 
 ### 閾値・定義・単位
 
+- **T99** A file's modification time is the time it was copied, not the time it was drawn -- and when that order matches the folder-name order, deciding by time is deciding by name in disguise (2026-10-25, the extraction side's own distribution: 4,312 of 7,634 pages within a few hours of 2022-05-06, in folder-name order, seconds apart; 10 of the 11 undecided version clusters lie entirely inside it). `decided_by` must name the rule that actually decided.
 - **T3** A threshold on grey reads pencil grain as strokes, so an unmatched-length figure is not an unused-input figure (Track D's own caveat on its result, adopted 2026-10-19)
 - **T11** A radius taken from the sample point collapses exactly where it is needed (Track K, 2026-10-18, second failure of the same instrument)
 - **T18** A definition can be right in mechanism and one case short in coverage
@@ -3553,6 +3555,34 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       that year's rate), and H's year table silently pools the `b`/`c`
       suffixes, which may be separate batches of one year (a generation is a
       pool).
+      **The copying hypothesis is closed on a bound, not on a comparison
+      (2026-10-25 night).** The extraction side compared layers from the .clip
+      files directly -- the sha1 of each layer's compressed pixel block, nothing
+      expanded or rendered -- over all 69 pages of succor, keyed on `page_path`,
+      with template blocks removed two ways (repeated inside one page, or
+      present on more than half the folder's pages). **No picture layer is
+      byte-identical across pages anywhere in the work.** The foundation's own
+      sweep of `succor_sharing_hashes.csv` found exactly **three** non-template
+      blocks shared across pages, all three the empty ones they had already
+      identified (81,616 bytes on 61 pages, the same size on 24, 160,240 on
+      three). **The five reported pages carry 407 picture layers, so 0/407 is a
+      one-sided 95% upper bound of 0.73%** (0.078% over all 3,848 in the work),
+      and the reported rate is **27% in succor, 2.49% overall** -- the mechanism
+      is three orders short, which is a stronger statement than any comparison
+      of counts. **And the comparison the foundation had registered does not
+      work**: the bar said "if the five reported pages are not higher than
+      pages with no report, the hypothesis falls", and on the pair mean the arm
+      **is** higher (0.30 against 0.15) -- but a permutation over all 5-page
+      subsets of the 69 (200,000 draws, seed printed, computed in the same run)
+      puts it at **p = 0.335** (raw counts p = 0.622), and the per-page maximum
+      the extraction side reported reverses the ordering (0.6 against 0.63).
+      **A bar on a point comparison with ten pairs has no resolution** (T98,
+      the foundation's error). The scope stands as registered: copying followed
+      by any redrawing, any shift, or mixing at the composite stage is invisible
+      to this instrument, so the finding is **"as-is copying cannot explain
+      it"**, and the composite stage remains the live candidate. **The deeper
+      pixel comparison is declined for now** -- H is paused, the author reports
+      little downstream harm, and the dirtiness of extraction is the front.
 14. **Two authorisations given 2026-10-25 night, and the records that back them.**
     - **Request 4 (the silhouette alphas) is ordered.** Three approval records
       exist and they are **not the same kind**: `5d31507` (10-24, work_log line
@@ -3570,7 +3600,16 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       -> ~2.0GB** because the previews were counted separately. The known cell
       is the **first 8 pages / 303 layers byte-matched against the pilot, and
       the rest is not read if they differ** -- the only place to stop before
-      reading 2GB.
+      reading 2GB. **The known cell passed the same night: 303/303 alphas
+      and 8/8 previews byte-identical, nothing named-but-missing**, so the main
+      run (779 pages, 7,773 layers, ~1.2GB + ~0.7GB) is inside the 10-24
+      authorisation and waits only on M's own reconciliation. **A met condition
+      is not a new approval**, and the foundation said so in the same letter.
+      One identity conflict came with it and is ruled the same way as T94:
+      `2018\skima10\skima10\page0064.clip` has 39 layers in the layer list and
+      no row in the page list because `version_roles` marks it `superseded` --
+      **the page list is the population, the superseded file's 39 layers stay as
+      known-cell material only**, and both records are correct.
     - **The per-layer ground truth is approved** (the user: *already gave the
       OK*), repurposing L19's UI so one truth calibrates `preview_dark`,
       `keep4` and `bad_max`. **The foundation's condition is registration
