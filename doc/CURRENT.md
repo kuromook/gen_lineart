@@ -330,6 +330,36 @@ explain were answered earlier (an **invalid** tone effect, a condition that was
 not in the rule), the size question was superseded by the extraction side's own
 revised 0.52-1.07GB estimate before delivery and landed inside it at 733MB, and
 the tone and gradient covering notices arrived.
+
+**A structure DB over the whole corpus exists as of 2026-10-25, and no notice
+announced it.** `db/manuscripts.duckdb`, **99,364,864 bytes**, built 10:16 from
+`db/clip_structure.jsonl` (353MB, a scan of all 7,634 pages, ~2h idle),
+documented in the extraction side's `doc/structure_db.md`: one row per page, per
+layer (folders included), per page x SQLite table, plus the colour and koma-frame
+CSVs already delivered. Joins are **by `page_path` and `layer_id`, never by work
+or page name** (same-named alternate versions exist). It reads the SQLite tables
+only -- **no layer is rendered** -- so any question about pixels still needs a
+render. **Track L found it by reading the extraction tree**; the foundation
+verified the files by `dir` and fetched only the doc
+(`inbox/note_extract_structure_db_20261025.md`, copied to L and M). **The 99MB
+body was deliberately not fetched**: that is the size of the 2026-10-23 incident,
+and it goes under `data/` only when a question needs it -- SQL questions are
+cheaper to send than the DB is to hold. Three caveats are the extraction side's
+own and travel with every column quoted from it: the `name_*` marks
+(`name_balloon` / `name_lineart` / `name_frame` / `name_3d` / `name_sfx`) rely on
+the author's naming and **miss layers**; `blend_mode` / `clip_raw` /
+`colour_type_index` are **raw values whose meaning is unverified** (as are
+`v_work_colour`'s 0 / 0.02 / 0.5 colour cuts); and **a field being present is not
+a pixel being present -- an empty layer still has a mipmap**, which is T-M3
+written by the other side first. Two columns are already checked against things
+this project holds: **`has_frame_line` matches the author's frames on the 65
+pages**, and **`z_global` is 0-at-root**, the direction Track L used for L15's
+occlusion. In the same hour the **reason-by-reason line-selection ledger** is
+being generated -- `config/line_selection_ledger_priority65.csv` with **`reason`
+and `failed`** columns alongside the statistics, **[41/65] at 11:31**, each page
+cross-checking `ledger_line_id == delivered_line_id` with JPEG diff 0 -- which is
+request (3) of **T86** and the thing that turns A/B/C from an estimate into a
+count.
 **Owed**: nothing, in the sense that both sides have paid. **L registered L10
 before running it (`1004fba`, 10:40) and the foundation's band check is
 delivered** (`outbox/band_check_l10_20261024.md`): three of four predictions
@@ -2718,7 +2748,7 @@ withdrawal.
 - **T87** `has_mask` is **True on all 2,963 layers**: a column with a check's name that performs no check, and an attempt to split on it comes back empty. The same family as "names are not checks" -- silence reads as normal operation.
 - **T88** "Not in the inventory" is not "does not exist". The delivered CSV carries folder rows with `parent_id` / `order_in_parent`; the pilot manifest **drops folder rows**, and reading only the manifest turned an omission into the ground for an instrument rule. Rebuilt from the tree: 167 -> **183** bases, **16 of which are folders** named for body parts, and components 504 -> **823**.
 - **T89** `drawn_ratio` is **not a clipping layer's coverage**, because the export does not apply clips: effective against declared has median **0.042** over 303 of 698 layers and **135 layers declare the whole canvas**. The trap reaches the denominator as well as the numerator -- taking an occlusion denominator as "the sum of all layer alpha" returned **1.0000 on 7 of 8 pages**.
-- **T91** An order handed over outside the written channel leaves no record on **either** side. The 2026-10-24 z-order request produced a 7,362-row delivery in ten minutes, and on 2026-10-25 the foundation found that **neither that request nor the panel-geometry one exists anywhere in the extraction side's tree** (its `inbox/` ends at 10-24 17:26; a whole-tree search finds only the delivered CSV, the delivery note and the generating script) while the foundation's own `outbox/` held no copy. The delivery cites a request its recipient does not hold. **The rules had no slot for it** -- `reply_*` was defined as track-bound -- so the gap was in CLAUDE.md, not in anyone's attention; `outbox/push_<topic>_<date>.md` with a one-line delivery record is now the slot (Track L's diagnosis and proposal, adopted). Retroactive copies exist for both orders, marked **route unknown**.
+- **T91** An order handed over outside the written channel leaves no record on **either** side. The 2026-10-24 z-order request produced a 7,362-row delivery in ten minutes, and on 2026-10-25 the foundation found that **neither that request nor the panel-geometry one exists anywhere in the extraction side's tree** (its `inbox/` ends at 10-24 17:26; a whole-tree search finds only the delivered CSV, the delivery note and the generating script) while the foundation's own `outbox/` held no copy. The delivery cites a request its recipient does not hold. **The rules had no slot for it** -- `reply_*` was defined as track-bound -- so the gap was in CLAUDE.md, not in anyone's attention; `outbox/push_<topic>_<date>.md` with a one-line delivery record is now the slot (Track L's diagnosis and proposal, adopted). Retroactive copies exist for both orders, marked **route unknown**. **It recurred on 2026-10-25 in the other direction**: a 99MB structure DB and its documentation existed for over an hour with no notice in the extraction side's `outbox/` and nothing in the foundation's `inbox/`, and were found only because Track L read the other tree. The foundation's receipt asks for **a one-line notice at creation** rather than a written-up one -- the placement is the record, and the body can be read later.
 - **T92** A replicated file is a copy, not a record. `CLAUDE.md` is copied into every tree at branch time, so a constant corrected on the foundation keeps answering with the old value: on 2026-10-25 **10 of 11 track copies still named `192.168.1.9`** after the extraction host had been corrected to `.5`, and Track L, following its own copy, concluded the machine was unreachable. Now audit check 10, scoped to live trees. (And `ping` is not a liveness test there -- Windows drops ICMP, so `.5` is silent while `ssh` works.)
 - **T93** The remedy quoted the sentence it removed, so the check flagged its own fix. The pointer files that replaced the frozen ledgers explain that the old copy said *"this file is the first document to read"* -- which is exactly what check 8 searched for; a date clause hid it until a ledger commit on 2026-10-25 lit up ten repaired trees at once. A check whose predicate is a quoted string matches the text about the problem as readily as the problem.
 
