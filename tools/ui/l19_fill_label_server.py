@@ -134,19 +134,41 @@ def first_todo():
     return len(S['q']) - 1
 
 
-def save(d, annotator):
-    o = int(d['order'])
+def make_rec(o, d, annotator):
+    """保存する記録を組み立てる。**行列に候補が無くても落ちないこと。**
+
+    2026-10-25: ここが `q['cands'][0]` で落ち、POST が 400 を返していた。
+    クライアントが戻り値を見ずに次へ進んでいたので、**72問が無言で捨てられた。**
+    起動時に全行でこれを空打ちして、落ちるなら**サーバを起動しない**(下の self_check)。
+    """
     q = S['q'][o]
+    cands = q.get('cands') or []
+    top = cands[0] if cands else {}
     rec = dict(order=o, work=q['work'], pid=q['pid'], comp=q['comp'],
-               region=q['region'], why=q.get('why'), auto=q['auto'],
-               purity=q['purity'], n_lay=q['n_lay'], n_lay90=q['n_lay90'],
-               top_lid=q['cands'][0]['lid'], top_name=q['cands'][0]['name'],
+               region=q['region'], why=q.get('why'), auto=q.get('auto', 0),
+               purity=q.get('purity'), n_lay=q.get('n_lay'),
+               n_lay90=q.get('n_lay90'), lid=q.get('lid'), area=q.get('area'),
+               top_lid=top.get('lid'), top_name=top.get('name'),
                top_word=q.get('top_word', ''), word_share=q.get('word_share', {}),
                choice=d.get('choice'), word=d.get('word'), free=d.get('free'),
                ms=int(d.get('ms', 0)), annotator=annotator,
                ts=time.strftime('%Y-%m-%dT%H:%M:%S'))
     rec['agree'] = int(rec['choice'] == 'word' and rec['word'] == rec['top_word']
                        and bool(rec['top_word']))
+    return rec
+
+
+def self_check():
+    """**起動の門**: 行列の全行で記録を組み立ててみる。1行でも落ちたら起動しない。"""
+    probe = dict(choice='word', word='_probe_', free=None, ms=0)
+    for o in range(len(S['q'])):
+        make_rec(o, probe, 'probe')
+    return True
+
+
+def save(d, annotator):
+    o = int(d['order'])
+    rec = make_rec(o, d, annotator)
     with lock:
         S['done'][o] = rec
         S['re'].add(o)
@@ -273,9 +295,19 @@ function info(){
     (it.flagged?'   ⚑ 異常として報告済み: '+it.flagged.note:'');
 }
 async function pick(choice,word,free){
-  await fetch('/api/save',{method:'POST',body:JSON.stringify({
-    order:cur,choice:choice,word:word,free:free,
-    ms:Math.round(performance.now()-t0)})});
+  // **保存できなかったら進まない。** 2026-10-25: ここで戻り値を見ていなかったため、
+  // 400 を返し続けたまま 72 問が無言で捨てられた
+  let r;
+  try{
+    r=await fetch('/api/save',{method:'POST',body:JSON.stringify({
+      order:cur,choice:choice,word:word,free:free,
+      ms:Math.round(performance.now()-t0)})});
+  }catch(e){ alert('保存できませんでした(接続): '+e+'\nこの問は記録されていません'); return; }
+  if(!r.ok){
+    const t=await r.text();
+    alert('保存できませんでした: '+t+'\n**この問は記録されていません。**進みません');
+    return;
+  }
   nxt();
 }
 addEventListener('keydown',e=>{
@@ -373,6 +405,8 @@ def main():
         print(f'  開始位置 {a.start}  (全問を B / N で見直せます)', flush=True)
     print(f'  異常の報告: X または「⚑ 異常を報告」ボタン -> {S["flagfile"]}'
           f'  既報 {len(S["flag"])} 件', flush=True)
+    self_check()
+    print(f'  起動の門: 行列 {len(S["q"])} 行すべてで記録を組み立てられた', flush=True)
     H.annotator = a.annotator
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
 
