@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """L17 本体: ベタ面に隣接する線は、作者が1枚にまとめた線の束と一致するか。
 
-登録は `doc/work_log.md § 2026-10-24 L17 事前登録` (commit 926c280)。
-器具と既知セルは `l17_known_cells.py`。**既知セルが PASS していなければ回さない。**
+登録は `doc/work_log.md § 2026-10-24 L17 事前登録` (926c280)。器具と既知セルは
+`l17_known_cells.py`(KC16〜KC20 が PASS していなければ回さない)。
+帯は基盤の `inbox/band_check_l17_20261025.md` §6 に**関数として**書かれている。
+この走りが報告するのは**その引数だけ**。
 
-  --arms control   対照(帰無値)だけを出す。本来の腕の値は計算しない
-  --arms real      本来の腕だけ
-  --arms both      両方 (既定)
+基盤の指摘で直した点:
+  §5 対照の面集合が腕と違っていた(面 17/19 枚少なく、落ちていたのは大きい面)。
+     **置けない面は両方の腕から外す**。乱数は面ごとに種を切るので、どの腕を走らせても
+     同じ面集合になる。落とした面は面積つきで印字(規律9-1)
+  §3 対照は **seed 5本**。報告は seed 間の中央と 最大−最小
+  §6 一次は「中央値」ではなく **share(purity >= 0.90)**。`adj` に 2枚以上触る面に限る
 
-一次は d=4。d ∈ {2,4,8,16} は毎回印字するが判定には使わない。
-プールは ako6/ako7 を行ごとに分ける。
+  --arms control   対照(帰無値)だけ。本来の腕の purity は計算しない
+  --arms real      本来の腕だけ        --arms both  両方
 """
 import argparse, csv, os, statistics as st, sys
 from multiprocessing import Pool
@@ -18,87 +23,79 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import A
 from l15_known_cells import boundary
 from l17_known_cells import (DS, D1, adj_sets, assign_top, gated_layers, jobs,
-                             n_lay90, panels_and_regions, purity, zmap)
+                             n_lay90, panels_and_regions, place, purity, zmap,
+                             SEEDS, TRIES)
 
-INV  = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
-OUT  = '/home/sh1/deepl/lineart-fill-region/results/l17_fill_adjacency'
-SEED = 20261026
+INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
+OUT = '/home/sh1/deepl/lineart-fill-region/results/l17_fill_adjacency'
 ARMS = 'both'
+TSTEP = [round(x, 2) for x in np.arange(0.0, 1.001, 0.1)]
+
+
+def measure(R, lab, P, bnd, rec):
+    got = adj_sets(R, lab, P, ds=DS, bnd=bnd)
+    for d in DS:
+        vals, cnt = got[d]
+        tot = int(cnt.sum())
+        rec[f'adj{d}'] = tot; rec[f'lay{d}'] = int(len(vals))
+        if tot == 0:
+            rec[f'pur{d}'] = ''; rec[f'nl{d}'] = ''; rec[f'top{d}'] = ''
+            continue
+        rec[f'pur{d}'] = round(purity(cnt), 4)
+        rec[f'nl{d}'] = n_lay90(cnt)
+        rec[f'top{d}'] = int(vals[int(np.argmax(cnt))])
+    return got
 
 
 def one_page(job):
-    pid, work, fz, lz, sel = job
-    rng = np.random.default_rng(SEED + abs(hash(pid)) % 100000)
-    rows, pages = [], []
-    for pid_, w_, ci, P, glab, gids, gstat, sub in panels_and_regions(job):
+    rows, pages, sel = [], [], []
+    for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job):
         if not sub:
             continue
         lab, keys = assign_top(sub, P.shape)
         ph, pw = P.shape
-        big = [1 for lid, ink, z in sub if int(ink.sum()) >= 500]
+        big = sum(1 for lid, ink, z in sub if int(ink.sum()) >= 500)
         inkP = (lab > 0) & P
         cov_hit = {d: np.zeros(P.shape, bool) for d in DS}
         dom = {d: {} for d in DS}
         for gi in gids:
             R = glab == gi
             b = boundary(R)
-            npx = int(R.sum()); nb = max(int(b.sum()), 1)
-            rec = dict(pid=pid_, work=w_, comp=ci, region=gi, area=npx, bnd=nb,
-                       panel_area=int(P.sum()), n_lay_panel=len(big), arm='real')
+            npx = int(R.sum()); nb = max(int(b.sum()), 1); pa = int(P.sum())
+            base = dict(pid=pid, work=work, comp=ci, region=gi, area=npx, bnd=nb,
+                        panel_area=pa, frac=round(npx / max(pa, 1), 4),
+                        n_lay_panel=big)
+            # --- 先に置けるかを決める。腕に依らない(面ごとに種を切る)
+            pos = {}
+            for sd in SEEDS:
+                pos[sd] = place(glab, gi, gstat, P, sd, pid, ci, tries=TRIES)
+            placed = sum(1 for v in pos.values() if v is not None)
+            ok = (placed == len(SEEDS))
+            sel.append(dict(base, placed=placed, placeable=int(ok)))
+            if not ok:
+                continue                      # 両方の腕から外す (基盤 §5)
             if ARMS in ('both', 'real'):
-                got = adj_sets(R, lab, P, ds=DS, bnd=b)
+                rec = dict(base, arm='real', seed=0)
+                got = measure(R, lab, P, b, rec)
                 dt = cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2,
                                            cv2.DIST_MASK_PRECISE)
                 for d in DS:
-                    vals, cnt = got[d]
-                    tot = int(cnt.sum())
-                    rec[f'adj{d}'] = tot
-                    if tot == 0:
-                        rec[f'pur{d}'] = ''; rec[f'nl{d}'] = ''; rec[f'top{d}'] = ''
-                        continue
-                    k = int(vals[int(np.argmax(cnt))])
-                    rec[f'pur{d}'] = round(purity(cnt), 4)
-                    rec[f'nl{d}'] = n_lay90(cnt)
-                    rec[f'top{d}'] = keys[k - 1]
-                    dom[d].setdefault(keys[k - 1], []).append(gi)
-                    cov_hit[d] |= (dt <= d)
+                    if rec[f'pur{d}'] != '':
+                        dom[d].setdefault(rec[f'top{d}'], []).append(gi)
+                        cov_hit[d] |= (dt <= d)
                 rows.append(rec)
-            # --- 対照: 同じ面をコマ内のランダムな位置へ平行移動し、本物の線層で測る
-            if ARMS not in ('both', 'control'):
-                continue
-            yy, xx = gstat[gi, cv2.CC_STAT_TOP], gstat[gi, cv2.CC_STAT_LEFT]
-            hh, ww = gstat[gi, cv2.CC_STAT_HEIGHT], gstat[gi, cv2.CC_STAT_WIDTH]
-            if ww + 2 >= pw or hh + 2 >= ph:
-                continue
-            patch = (glab[yy:yy + hh, xx:xx + ww] == gi); pn = int(patch.sum())
-            for _ in range(24):
-                nx = int(rng.integers(1, pw - ww - 1)); ny = int(rng.integers(1, ph - hh - 1))
-                if abs(nx - xx) + abs(ny - yy) < 0.10 * (pw + ph):
-                    continue
-                Rs = np.zeros(P.shape, bool); Rs[ny:ny + hh, nx:nx + ww] = patch
-                if int((Rs & P).sum()) < 0.9 * pn:
-                    continue
-                bs = boundary(Rs)
-                r2 = dict(pid=pid_, work=w_, comp=ci, region=gi, area=npx,
-                          bnd=max(int(bs.sum()), 1), panel_area=int(P.sum()),
-                          n_lay_panel=len(big), arm='shuffled')
-                got = adj_sets(Rs, lab, P, ds=DS, bnd=bs)
-                for d in DS:
-                    vals, cnt = got[d]
-                    tot = int(cnt.sum()); r2[f'adj{d}'] = tot
-                    if tot == 0:
-                        r2[f'pur{d}'] = ''; r2[f'nl{d}'] = ''; r2[f'top{d}'] = ''
-                        continue
-                    r2[f'pur{d}'] = round(purity(cnt), 4)
-                    r2[f'nl{d}'] = n_lay90(cnt)
-                    r2[f'top{d}'] = keys[int(vals[int(np.argmax(cnt))]) - 1]
-                rows.append(r2)
-                break
+            if ARMS in ('both', 'control'):
+                for sd in SEEDS:
+                    Rs = pos[sd]
+                    bs = boundary(Rs)
+                    rec = dict(base, arm='shuffled', seed=sd,
+                               bnd=max(int(bs.sum()), 1))
+                    measure(Rs, lab, P, bs, rec)
+                    rows.append(rec)
         if ARMS in ('both', 'real'):
-            rec = dict(pid=pid_, work=w_, comp=ci, n_lay_panel=len(big),
+            rec = dict(pid=pid, work=work, comp=ci, n_lay_panel=big,
                        ink=int(inkP.sum()), n_region=len(gids))
             for d in DS:
                 rec[f'cov{d}'] = int((cov_hit[d] & inkP).sum())
@@ -106,11 +103,75 @@ def one_page(job):
                 rec[f'dom_lay{d}'] = len(sp)
                 rec[f'dom_split{d}'] = round(sum(sp) / len(sp), 3) if sp else ''
             pages.append(rec)
-    return rows, pages
+    return rows, pages, sel
 
 
 def med(v):
     return st.median(v) if v else float('nan')
+
+
+def report(rows, arm, pool):
+    """基盤 §6 の引数。`adj` に 2枚以上触る面に限る。"""
+    allr = [r for r in rows if r['arm'] == arm and r['work'] == pool]
+    s = [r for r in allr if r[f'pur{D1}'] != '']
+    if not s:
+        return None
+    zero = len(allr) - len(s)
+    one = [r for r in s if r[f'lay{D1}'] <= 1]
+    s2 = [r for r in s if r[f'lay{D1}'] >= 2]
+    print(f'  {pool} {arm}: 行 {len(allr)}  うち adj が空(線墨に触らない) {zero} '
+          f'({zero/len(allr):.4f})  -> 測った面 {len(s)}')
+    print(f'    adj に層が1枚 {len(one)} ({len(one)/len(s):.4f})  '
+          f'-> 2枚以上 {len(s2)} (帯の母集団)')
+    if not s2:
+        return None
+    out = {}
+    seeds = sorted({r['seed'] for r in s2})
+    per = []
+    for sd in seeds:
+        t = [r for r in s2 if r['seed'] == sd]
+        pu = [float(r[f'pur{D1}']) for r in t]
+        nl = [int(r[f'nl{D1}']) for r in t]
+        wt = sum(float(r[f'pur{D1}']) * r[f'adj{D1}'] for r in t) / \
+            sum(r[f'adj{D1}'] for r in t)
+        per.append(dict(seed=sd, n=len(t),
+                        q90=sum(1 for x in pu if x >= 0.90) / len(pu),
+                        q98=sum(1 for x in pu if x >= 0.98) / len(pu),
+                        mpur=med(pu), wpur=wt, mnl=med(nl)))
+    print(f'    {"seed":>9} {"面":>6} {"share>=0.90":>12} {"share>=0.98":>12} '
+          f'{"median":>8} {"画素重み":>9} {"median n_lay90":>15}')
+    for p in per:
+        print(f'    {p["seed"]:>9} {p["n"]:6d} {p["q90"]:12.4f} {p["q98"]:12.4f} '
+              f'{p["mpur"]:8.4f} {p["wpur"]:9.4f} {p["mnl"]:15.1f}')
+    for k in ('q90', 'q98', 'mpur', 'wpur', 'mnl'):
+        v = [p[k] for p in per]
+        out[k] = med(v); out[k + '_rng'] = max(v) - min(v)
+        if len(seeds) > 1:
+            print(f'    {k:>9} seed間 中央 {med(v):.4f}  最大−最小 {max(v)-min(v):.4f}')
+    pu = [float(r[f'pur{D1}']) for r in s2]
+    print('    purity の累積 (0.1 刻み。読みが閾値1点に依存しないように)')
+    print('      ' + ' '.join(f'>={t:.1f}:{sum(1 for x in pu if x>=t)/len(pu):.3f}'
+                              for t in TSTEP[1:]))
+    print('    |adj| の層別')
+    for lab2, lo, hi in (('<200', 0, 200), ('200-999', 200, 1000),
+                         ('>=1000', 1000, 10 ** 12)):
+        t = [r for r in s2 if lo <= r[f'adj{D1}'] < hi]
+        if not t:
+            continue
+        pu2 = [float(r[f'pur{D1}']) for r in t]
+        print(f'      {lab2:8} 面 {len(t):5d}  share>=0.90 '
+              f'{sum(1 for x in pu2 if x>=0.90)/len(pu2):.4f}  中央 {med(pu2):.4f}  '
+              f'median n_lay90 {med([int(r[f"nl{D1}"]) for r in t]):.1f}')
+    print('    感度 d (判定に使わない)')
+    for d in DS:
+        t = [r for r in s2 if r[f'pur{d}'] != '' and r[f'lay{d}'] >= 2]
+        if not t:
+            continue
+        pu2 = [float(r[f'pur{d}']) for r in t]
+        print(f'      d={d:2d}  面 {len(t):5d}  share>=0.90 '
+              f'{sum(1 for x in pu2 if x>=0.90)/len(pu2):.4f}  中央 {med(pu2):.4f}  '
+              f'|adj| 中央 {med([r[f"adj{d}"] for r in t]):.0f}')
+    return out
 
 
 def main():
@@ -118,6 +179,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--arms', default='both', choices=('both', 'real', 'control'))
     ap.add_argument('--tag', default='')
+    ap.add_argument('--limit', type=int, default=0, help='smoke test 用に頁を絞る')
     a = ap.parse_args()
     ARMS = a.arms
     os.makedirs(OUT, exist_ok=True)
@@ -125,71 +187,81 @@ def main():
              for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
     zz = zmap(); fill, line = gated_layers()
     js = jobs(zz, fill, line)
-    print(f'腕 {ARMS}  頁 {len(js)}  (既知セル KC16-19 は別プロセスで PASS 済みであること)')
-    rows, pages = [], []
+    if a.limit:
+        js = js[:a.limit]
+    print(f'腕 {ARMS}  頁 {len(js)}  seed {list(SEEDS)}  '
+          f'(既知セル KC16-20 は別プロセスで PASS 済みであること)')
+    rows, pages, sel = [], [], []
     with Pool(4) as pool:
-        for i, (r, p) in enumerate(pool.imap_unordered(one_page, js), 1):
-            rows += r; pages += p
+        for i, (r, p, s) in enumerate(pool.imap_unordered(one_page, js), 1):
+            rows += r; pages += p; sel += s
             if i % 10 == 0:
                 print(f'  {i}/{len(js)} 頁  行 {len(rows)}', flush=True)
+    tag = a.tag or ARMS
+    keys = ['pid', 'work', 'comp', 'region', 'area', 'bnd', 'panel_area', 'frac',
+            'n_lay_panel', 'arm', 'seed'] + \
+           [f'{k}{d}' for d in DS for k in ('adj', 'lay', 'pur', 'nl', 'top')]
     for r in rows:
         for d in DS:
             t = r.get(f'top{d}')
             if t not in ('', None):
                 r[f'top{d}'] = names.get((r['pid'], str(t)), f'id={t}')
-    tag = a.tag or ARMS
-    keys = ['pid', 'work', 'comp', 'region', 'area', 'bnd', 'panel_area',
-            'n_lay_panel', 'arm'] + [f'{k}{d}' for d in DS
-                                     for k in ('adj', 'pur', 'nl', 'top')]
     with open(f'{OUT}/per_region_{tag}.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.DictWriter(fh, fieldnames=keys, extrasaction='ignore')
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    pk = ['pid', 'work', 'comp', 'n_lay_panel', 'ink', 'n_region'] + \
-         [f'{k}{d}' for d in DS for k in ('cov', 'dom_lay', 'dom_split')]
+    with open(f'{OUT}/selection_{tag}.csv', 'w', newline='', encoding='utf-8') as fh:
+        w = csv.DictWriter(fh, fieldnames=['pid', 'work', 'comp', 'region', 'area',
+                                           'panel_area', 'frac', 'n_lay_panel',
+                                           'placed', 'placeable'],
+                           extrasaction='ignore')
+        w.writeheader()
+        for r in sel:
+            w.writerow(r)
     if pages:
+        pk = ['pid', 'work', 'comp', 'n_lay_panel', 'ink', 'n_region'] + \
+             [f'{k}{d}' for d in DS for k in ('cov', 'dom_lay', 'dom_split')]
         with open(f'{OUT}/per_panel_{tag}.csv', 'w', newline='', encoding='utf-8') as fh:
             w = csv.DictWriter(fh, fieldnames=pk, extrasaction='ignore')
             w.writeheader()
             for r in pages:
                 w.writerow(r)
     print(f'-> {OUT}/per_region_{tag}.csv  行 {len(rows)}')
+    print(f'-> {OUT}/selection_{tag}.csv  面 {len(sel)}')
 
-    def rep(sel, label):
-        print(f'\n{label}')
-        print(f'{"作品":5} {"d":>3} {"面":>5} {"purity中央":>11} {"purity画素重み":>14} '
-              f'{"n_lay90中央":>12} {"n_lay90<=2":>11} {"adj中央":>9}')
-        for w in ('ako6', 'ako7'):
-            s = [r for r in sel if r['work'] == w]
-            for d in DS:
-                v = [r for r in s if r.get(f'pur{d}') not in ('', None)]
-                if not v:
-                    continue
-                pu = [float(r[f'pur{d}']) for r in v]
-                wt = sum(float(r[f'pur{d}']) * r[f'adj{d}'] for r in v) / \
-                    sum(r[f'adj{d}'] for r in v)
-                nl = [int(r[f'nl{d}']) for r in v]
-                print(f'{w:5} {d:3d} {len(v):5d} {med(pu):11.4f} {wt:14.4f} '
-                      f'{med(nl):12.1f} {sum(1 for x in nl if x<=2)/len(nl):11.4f} '
-                      f'{med([r[f"adj{d}"] for r in v]):9.0f}')
+    print('\n' + '=' * 92)
+    print('選別 (規律9-1。両方の腕から同じ面を外している。基盤 §5 の指摘)')
+    for w in ('ako6', 'ako7'):
+        s = [r for r in sel if r['work'] == w]
+        if not s:
+            continue
+        drop = [r for r in s if not r['placeable']]
+        print(f'  {w}: 列挙した面 {len(s)}  -> 測る面 {len(s)-len(drop)}  '
+              f'外した面 {len(drop)} ({len(drop)/len(s):.4f})')
+        if drop:
+            ar = sorted(r['area'] for r in drop)
+            fr = sorted(r['frac'] for r in drop)
+            print(f'    外した面の面積 中央 {med(ar):.0f}px 最大 {ar[-1]}px  '
+                  f'面/コマ 中央 {med(fr):.4f} 最大 {fr[-1]:.4f}')
+            print(f'    (内訳) 5 seed 全部で置けた {sum(1 for r in s if r["placed"]==5)}  '
+                  f'一部だけ {sum(1 for r in s if 0 < r["placed"] < 5)}  '
+                  f'1本も置けなかった {sum(1 for r in s if r["placed"]==0)}')
+        kept = [r['frac'] for r in s if r['placeable']]
+        print(f'    測る面の 面/コマ: 中央 {med(kept):.4f}  >0.2 '
+              f'{sum(1 for x in kept if x>0.2)}  >0.5 {sum(1 for x in kept if x>0.5)}  '
+              f'最大 {max(kept):.4f}')
 
-    if ARMS in ('both', 'real'):
-        rep([r for r in rows if r['arm'] == 'real'], '本来の腕 (面ごと)')
+    print('\n' + '=' * 92)
     if ARMS in ('both', 'control'):
-        rep([r for r in rows if r['arm'] == 'shuffled'],
-            '対照 = 帰無値 (面をコマ内のランダムな位置へ平行移動、本物の線層で測る)')
-    if ARMS == 'both':
-        print('\nP34/P35 (登録 §4。帯は基盤の確認を受けたもの)')
+        print('対照 = 帰無値 (面をコマ内のランダムな位置へ平行移動、本物の線層で測る)')
+        print('**基盤 §6 の引数。q0 / r0 / m0 / k0 はここから読む**')
         for w in ('ako6', 'ako7'):
-            rr = [float(r[f'pur{D1}']) for r in rows
-                  if r['work'] == w and r['arm'] == 'real' and r.get(f'pur{D1}') != '']
-            cc = [float(r[f'pur{D1}']) for r in rows
-                  if r['work'] == w and r['arm'] == 'shuffled' and r.get(f'pur{D1}') != '']
-            nl = [int(r[f'nl{D1}']) for r in rows
-                  if r['work'] == w and r['arm'] == 'real' and r.get(f'nl{D1}') != '']
-            print(f'  {w}: purity中央 {med(rr):.4f}  対照 {med(cc):.4f}  '
-                  f'差 {med(rr)-med(cc):+.4f}  n_lay90中央 {med(nl):.1f}')
+            report(rows, 'shuffled', w)
+    if ARMS in ('both', 'real'):
+        print('\n本来の腕')
+        for w in ('ako6', 'ako7'):
+            report(rows, 'real', w)
     if pages:
         print('\nP36 開示 (棒なし): 語彙の被覆 —— 線墨のうちベタ面に隣接する割合')
         for w in ('ako6', 'ako7'):
@@ -206,7 +278,8 @@ def main():
             s = [r for r in pages if r['work'] == w and r[f'dom_split{D1}'] != '']
             if not s:
                 continue
-            print(f'  {w} d={D1}: 面を代表する線層 中央 {med([r[f"dom_lay{D1}"] for r in s]):.1f} 層/コマ  '
+            print(f'  {w} d={D1}: 面を代表する線層 中央 '
+                  f'{med([r[f"dom_lay{D1}"] for r in s]):.1f} 層/コマ  '
                   f'1層あたりの面 中央 {med([float(r[f"dom_split{D1}"]) for r in s]):.2f}')
 
 

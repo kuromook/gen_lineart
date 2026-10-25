@@ -25,6 +25,9 @@ PREV = '/home/sh1/deepl/lineart-fill-region/results/l15_zorder_occ/per_region.cs
 DS   = (2, 4, 8, 16)
 D1   = 4
 MIN_FRAC, MAX_FRAC = 0.002, 0.50
+SEEDS = (20261026, 20261027, 20261028, 20261029, 20261030)
+TRIES = 48
+MIN_IN, MIN_MOVE = 0.9, 0.10
 
 
 # ---------------------------------------------------------------- 器具
@@ -58,6 +61,44 @@ def adj_sets(R, lab, P, ds=DS, bnd=None):
             vals, cnt = np.unique(v, return_counts=True)
             out[d] = (vals, cnt)
     return out
+
+
+def patch_of(glab, gi, gstat):
+    yy = int(gstat[gi, cv2.CC_STAT_TOP]); xx = int(gstat[gi, cv2.CC_STAT_LEFT])
+    hh = int(gstat[gi, cv2.CC_STAT_HEIGHT]); ww = int(gstat[gi, cv2.CC_STAT_WIDTH])
+    return (glab[yy:yy + hh, xx:xx + ww] == gi), yy, xx, hh, ww
+
+
+def shift_to(patch, ny, nx, shape):
+    out = np.zeros(shape, bool)
+    hh, ww = patch.shape
+    out[ny:ny + hh, nx:nx + ww] = patch
+    return out
+
+
+def place(glab, gi, gstat, P, seed, pid, ci, tries=TRIES,
+          min_in=MIN_IN, min_move=MIN_MOVE):
+    """面をコマ内のランダムな位置へ平行移動する。置けなければ None。
+
+    **乱数は面ごとに種を切る**ので、どの腕を走らせても同じ面が同じ位置に置かれる。
+    (基盤 §5: 対照の面集合が腕と違っていた件の直し。頁単位の rng では
+    腕の構成で位置が変わりうる)
+    """
+    ph, pw = P.shape
+    patch, yy, xx, hh, ww = patch_of(glab, gi, gstat)
+    if ww + 2 >= pw or hh + 2 >= ph:
+        return None
+    pn = int(patch.sum())
+    rng = np.random.default_rng([int(seed), abs(hash(pid)) % 100000, int(ci), int(gi)])
+    for _ in range(tries):
+        nx = int(rng.integers(1, pw - ww - 1)); ny = int(rng.integers(1, ph - hh - 1))
+        if abs(nx - xx) + abs(ny - yy) < min_move * (pw + ph):
+            continue
+        Rs = shift_to(patch, ny, nx, P.shape)
+        if int((Rs & P).sum()) < min_in * pn:
+            continue
+        return Rs
+    return None
 
 
 def purity(cnt):
@@ -261,8 +302,38 @@ def kc19():
     return ok
 
 
+def kc20():
+    """合成のみ: 対照の経路で平行移動量0にすると本来の腕と一致する (基盤 §3)。
+
+    **実頁では走らせない** —— 平行移動量0の対照は本来の腕そのもので、見たことになる。
+    """
+    R, rg, ang = ring()
+    P = np.ones(R.shape, bool)
+    a1 = rg & (ang < 0.7); a2 = rg & (ang >= 0.7)
+    lab, _ = assign_top([(1, a1, 0), (2, a2, 1)], R.shape)
+    n, glab, gstat, _ = cv2.connectedComponentsWithStats(R.astype(np.uint8), 8)
+    gi = 1
+    patch, yy, xx, hh, ww = patch_of(glab, gi, gstat)
+    R0 = shift_to(patch, yy, xx, P.shape)         # 平行移動量0 = 対照の経路
+    same = bool((R0 == (glab == gi)).all())
+    v0, c0 = adj_sets(glab == gi, lab, P, ds=(D1,))[D1]
+    v1, c1 = adj_sets(R0, lab, P, ds=(D1,))[D1]
+    bad = (not same) or purity(c0) != purity(c1) or n_lay90(c0) != n_lay90(c1) \
+        or int(c0.sum()) != int(c1.sum())
+    print('KC20 対照の経路 (合成のみ): 平行移動量0 は本来の腕と一致するか')
+    print(f'  マスク一致 {same}  purity {purity(c0):.4f} / {purity(c1):.4f}  '
+          f'n_lay90 {n_lay90(c0)} / {n_lay90(c1)}  adj {int(c0.sum())} / {int(c1.sum())}  '
+          f'{"NG" if bad else "ok"}')
+    # 置けない面は None を返すこと (コマより大きい面)
+    small = np.zeros(R.shape, bool); small[2:-2, 2:-2] = True
+    got = place(glab, gi, gstat, ~small, SEEDS[0], 'kc20', 1)
+    print(f'  コマがほぼ無い場合に置かない: {"ok" if got is None else "NG"}')
+    return (not bad) and got is None
+
+
 def main():
-    res = [('KC16', kc16()), ('KC17', kc17()), ('KC18', kc18()), ('KC19', kc19())]
+    res = [('KC16', kc16()), ('KC17', kc17()), ('KC20', kc20()),
+           ('KC18', kc18()), ('KC19', kc19())]
     print('=' * 72)
     for k, v in res:
         print(f'{k}: {"PASS" if v else "FAIL"}')
