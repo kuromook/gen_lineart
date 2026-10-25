@@ -2478,7 +2478,24 @@ incident that actually happened here.
    A matcher that gets the counts right and the pairs wrong passes it. **L's own
    `KC9` was honest because its name carries the `⊆`.** So the direction and
    the granularity belong in the name, where they are checkable before the cell
-   runs. **And L's repair carries a second rule: when the instrument does not
+   runs. **By the end of that evening the list of levels was five, and it is
+   the most reusable thing the day produced**: the **run** (T97 -- a bar
+   computed inside one run cannot see per-run drift), the **rule** (T100 -- a
+   cluster decided by the name cannot test a rule about the name), the
+   **direction** and the **granularity** (T101 -- a containment read as an
+   agreement, three counts read as a pairing, a sum read as a per-panel
+   agreement), **whether the cell runs at all** (T102 -- `KC7`/`KC9` read a
+   `truth4` image that is nowhere on either disk, and `l13_known_cells.py`
+   raised `KeyError` from `os.environ[...]` at import, so the caller could not
+   tell *no check* from *no environment*; it now prints the reason and FAILs),
+   and **whether the cell's own answer is right** (T103 -- the `ProjectName`
+   anchor's known cell was the `superset` decisions, which the author then
+   refuted 2/2). **L's constants survived the missing image at a finer
+   granularity than the cells had used** -- `page_truth.csv` 65 rows per page,
+   `per_panel.csv` 248 rows per panel -- so L12's re-run is anchored page by
+   page and panel by panel rather than by a total, and the method was never
+   lost (stage 1 of `l12_panel_regions.py` rebuilds the image).
+   **And L's repair carries a second rule: when the instrument does not
    expose the intermediate** -- `region_metrics.match` returns counts, not pairs
    -- **re-implementing it in order to compare is comparing with your own copy.**
    L anchored on four pairings derived by hand from the circles' radii
@@ -2813,6 +2830,8 @@ withdrawal.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
 - **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
 - **T101** A containment is not an agreement -- measure both directions before calling two instruments consistent (2026-10-25: the foundation read L's 2,581 ink-zero layers and the ledger's 2,598 `empty` as agreeing layer for layer; L made it a known cell and found `drawn_ratio<=0 -> ink_px==0` exact at 0/4,399 exceptions but the reverse carrying 31, up to 0.194 of a page drawn with no ink). The one-sided check passes on exactly the half that holds. **The same shape at the summary level, found by L the same night in its own `KC11`**: a cell named *our matcher agrees with `region_metrics.match`* compared only the counts `matched`/`n_pred`/`n_gt`, which a matcher with the right counts and the wrong pairs passes; and since that function returns no pairs, re-implementing it to compare would compare with one's own copy, so the repair anchors on four pairings computed by hand from the circles' radii (`1116143`).
+- **T102** A check that cannot run fails as silently as a check that does not exist (2026-10-25, Track L: `KC7` and `KC9` read a `truth4` image absent from both disks, and `os.environ['L13_TRUTH']` raised `KeyError` at import, so the caller saw neither a pass nor a reason). Print why it cannot run, and FAIL.
+- **T103** A known cell is worth no more than its own answer -- the `ProjectName` anchor's cell was the `superset` decisions, and the author refuted that rule 2/2 the same night, voiding the cell rather than the arm (2026-10-25).
 - **T100** A known cell has to be independent of the rule it tests -- a cluster decided by the name cannot test a rule about the name, and the agreement it prints measures identity, not correctness (the foundation's own specification, 2026-10-25: 0/42 at p=2.3e-13 under a coin, which reads as a refutation and is a tautology). The run-level form of this is T97; this is the rule-level form.
 - **T98** A bar written as "higher than the null" with no resolution is not a bar -- its ordering flips with the choice of statistic (the foundation's own bar on the succor sharing query, 2026-10-25: arm 0.30 against null 0.15 on the pair mean, but p=0.335 by permutation, and the reverse ordering on the per-page maximum 0.6 against 0.63). A bar on a comparison needs the null's distribution, not its point value.
 
@@ -3681,7 +3700,52 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       (7/64), the null being name order's own 3/6 on the same six, with the
       count of missing and tied values printed before the result, and the
       statement *there is no save-order field inside the file* recorded as the
-      outcome if it fails.
+      outcome if it fails. **Both came back inside the hour, and the author
+      answered too (2026-10-25 night).** The author, asked which of
+      `2019`/`2019b` and `2022`/`2022b` is newer: *"b付きが新しい　どちらも"*;
+      and on the two `superset` clusters: *"2022b\sketch のほうが新しい
+      作業もすすン出る頁がおおくある"*. **One rule covers both answers -- the
+      `b` suffix is newer -- and it reverses 25 of M's clusters**, the 18
+      `2019`/`2019b`, the 5 `2022`/`2022b` and clusters 83/85. **Three
+      consequences, in rising order of weight.** (1) The 23
+      `identical_metadata` flips wait on a **byte comparison**, because the
+      author's rule is *bytes identical -> take the newer year folder* and
+      `identical_metadata` is metadata, not bytes: byte-identical means
+      relabelling with a mapping file (the delivery's `source` would otherwise
+      name the non-current path), byte-different means re-rendering at most 23
+      pages. Clusters 83/85 need no byte check -- the author spoke about
+      content -- and flip now. **The main run was not stopped**: 779 of the 786
+      pages are untouched by this. (2) **The `ProjectName` anchor is FAIL as
+      registered**, 4/6 with the other two tied, and the degeneracy print asked
+      for in advance says *why* in a stronger form than the bar does: ties in
+      **61 of 65** clusters, all 58 metadata-identical clusters tied, while
+      **10 of the 11 undecided clusters have distinct values** -- a quantity
+      that degenerates exactly where an independent decision exists and
+      separates only where none does **cannot be validated where it would be
+      used**. `final` never carries the smaller number in any of the 65, so the
+      direction is kept as a registered hypothesis and no author time is spent
+      on it; the 11 stay `undecided`, which blocks nothing. (3) **The `superset`
+      rule is refuted in direction by the author, 2 for 2** -- the only two of
+      its six clusters the author could speak to. *More layers* is not *later*
+      in this manuscript, and the author's own words point at a different
+      mechanism (*more pages are further along* in the `b` folder, a statement
+      about the set of pages, not about one page's layer count). **Two of the
+      foundation's rulings go with it.** Its advice that `2016\gal`'s
+      content-based resolution was the one to trust is **withdrawn** -- all
+      three gal clusters are flagged and held, and `gal` carries no `b` to
+      decide them -- and **the `ProjectName` known cell is void**, because it
+      was built from the `superset` decisions. **So four of the foundation's
+      known cells failed in one evening, each at a different level** (see
+      discipline 2's naming sibling). **What did gain a number**: the two
+      mtimes lying outside the bulk-copy window agree with the author 2/2
+      (2022-10-19 over 2022-03-07, 2022-07-16 over 2022-05-01), the first
+      evidence that a timestamp outside that window may be a drawing time --
+      T99 is about timestamps inside it. **And the next one-line author
+      question is written and queued, not asked**: *of the nested same-name
+      folders (`gal\gal` against `gal`, `comics4\underworld\underworld`
+      against `underworld\underworld`, `skima10\skima10` against `skima10`),
+      which is newer?* -- it would decide **15** of the 42, and the order of the
+      author's time is the user's to set.
     - **The per-layer ground truth is approved** (the user: *already gave the
       OK*), repurposing L19's UI so one truth calibrates `preview_dark`,
       `keep4` and `bad_max`. **The foundation's condition is registration
@@ -3697,10 +3761,31 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       **The truth came back in five minutes of the author's time (92 layers,
       median 2.1s) and it convicts `bad_max`**: in the 0.95-1.00 band, 2
       layers pass and **19 are dropped, and all 19 are finished line art**,
-      with the mechanism falling out of the definition -- `black_among_drawn`
-      is the pure-black share of drawn pixels, so **crisply drawn line art
-      approaches 1.0 and `<= 0.98` drops hard line art while meaning to drop
-      fills**. So the question to the extraction side rises from *what value*
+      with the mechanism falling out of the definition -- **and the
+      definition turned out not to be the one in the name (2026-10-25 night,
+      from the extraction side's own code)**. `cov` is the layer's **alpha
+      plane only** (`clip_render.py` line 214), never the grey plane and never
+      the colour, and the statistics run on `g = 255 - alpha`, so
+      `black_among_drawn` is **the share of drawn pixels that are at least 224
+      alpha -- near-opacity, not blackness** (and `ink_px` is alpha >= 128,
+      `drawn_ratio` alpha >= 26). **The numbers do not move; the mechanism
+      sentence does**: `<= 0.98` refuses **layers whose edges are not soft**,
+      so line art drawn without antialiasing sits at 1.0 and is refused while
+      meaning to refuse fills, which is what the author's 19/19 says one level
+      down. **A white opaque balloon fill counts as "ink" on this definition**
+      -- the same property Track L had recorded from the other side (*coverage
+      is not colour*), now arrived twice independently. **And discipline 9-2 is
+      at the base of the whole stack**: `g<128`, `g<230` and `g<32` are
+      unchanged since the first commit (`96db0bc`, 2026-06-06) of
+      `features.py`, where they were written to tell line art from rough on
+      **composited page JPEGs, in which `g` really is brightness**, and they
+      are now applied to **layer alpha** -- role and unit both changed, with
+      **no calibration record** ("記録なし", in their words). Every LINE
+      constant, `bad_max` included, sits on top of that reinterpretation.
+      **The foundation's own documents stop calling `ink_px` ink** (it is
+      `cov128_px`, a half-opacity coverage); the extraction side is explicitly
+      *not* asked to rename its columns, because renaming would make every
+      existing ledger unreadable. So the question to the extraction side rises from *what value*
       to **can this quantity separate line from fill at all** -- 9-2's deeper
       form, a borrowed *quantity* rather than a borrowed constant, and the
       registered next number is the overlap (or AUC, null 0.5) of
