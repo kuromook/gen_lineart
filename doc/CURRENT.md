@@ -2793,6 +2793,7 @@ withdrawal.
 - **T57** An arm can beat its off-by-one control and still carry no location information at all -- what it is scoring is the *amount* of ink.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
 - **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
+- **T100** A known cell has to be independent of the rule it tests -- a cluster decided by the name cannot test a rule about the name, and the agreement it prints measures identity, not correctness (the foundation's own specification, 2026-10-25: 0/42 at p=2.3e-13 under a coin, which reads as a refutation and is a tautology). The run-level form of this is T97; this is the rule-level form.
 - **T98** A bar written as "higher than the null" with no resolution is not a bar -- its ordering flips with the choice of statistic (the foundation's own bar on the succor sharing query, 2026-10-25: arm 0.30 against null 0.15 on the pair mean, but p=0.335 by permutation, and the reverse ordering on the per-page maximum 0.6 against 0.63). A bar on a comparison needs the null's distribution, not its point value.
 
 ### 閾値・定義・単位
@@ -3609,7 +3610,58 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       `2018\skima10\skima10\page0064.clip` has 39 layers in the layer list and
       no row in the page list because `version_roles` marks it `superseded` --
       **the page list is the population, the superseded file's 39 layers stay as
-      known-cell material only**, and both records are correct.
+      known-cell material only**, and both records are correct. **The anchor the foundation asked for came back within the hour and it
+      failed, and the failure found four things worth more (2026-10-25 night).**
+      The extraction side could not tell which 8 clusters were meant, so it
+      counted **all 65 clusters that hold both a `final` and a `superseded`**,
+      split by `decided_by`. Name order puts `final` later in
+      **0 of 42** `identical_metadata` clusters, 11/16 `+year`, 3/6 `superset`,
+      0/1 `mtime_needed`; the foundation reproduced every count from the 65-row
+      file. **So no anchor**: the only rows independent of the name are the 6
+      decided by content (`superset`, 3/6 -- a coin) and the 11 lying wholly
+      outside the bulk copy (name 3/11, mtime 0/11), and **the 10 undecided
+      clusters stay `undecided`**, which the foundation had committed to in
+      advance. **But 0/42 is not an absence of signal -- a coin gives 2.3e-13.**
+      Those 42 were decided *by the name*, so the known cell the foundation
+      specified was **not independent of the rule under test** (T100), and what
+      the agreement measured was identity. The shape of the deciding rule is
+      readable from the 42: the `superseded` side carries a **`b` suffix on the
+      year folder** in 23 (`2019`->`2019b` 18, `2022`->`2022b` 5), **`_bk`** in
+      4, is **nested one level deeper** in 2 -- and in **12 the `final` is the
+      deeper side** (`comics4\underworld\underworld` 10, `gal\gal` 2), so the
+      nesting rule runs both ways and no single rule can be written. **`decided_by`
+      must name the tie-break actually used, not the evidence of equality.**
+      **Four riders, none of them a number the foundation will move itself.**
+      (i) **Three resolutions run against what the names mean**: `skima12chara`
+      is `final` over `skima12chara`**`Done`**, `done4\ako6-14` over
+      `done5\ako6-14` (and the extraction side's own in-file counter is *higher*
+      in `done5`), and `superset` made `ako4_`**`backup`**`.clip` the `final`
+      over `ako4.clip`. A naming habit is the author's to state (規律6), so
+      these are held with both sides printed and the one-line author question
+      is queued -- **no flip on the foundation's guess**. (ii) **Five clusters
+      pair pages whose file names differ, three of them across different
+      works**: `2019\road\page0076` with `2018\skima11\skima12`,
+      `aljanne2\page0029` with `phantom\PhantomThief\page0026`, and
+      `ako7\page0073` with `ako6\done4\ako6-18`. **A duplicate cluster whose
+      members sit in different works is not a version chain** -- identical
+      content, two real pages, which is T94 and T95 arriving together -- so
+      **both stay in the population and the duplication goes in its own
+      column**. The population moves up to 3 pages (786 -> 789) and
+      `skima11`, `phantom` and `ako6` were each silently missing one of their
+      own pages: **not a whole work, so it would have stayed missing**.
+      (iii) The folder pair `2016\gal` is resolved **both ways** across three
+      clusters (31, 32 make `gal\gal` the `final`, 33 makes `gal` the `final`),
+      so "which folder holds the newer version" is not a property of the
+      folder; the content-based one is the one to trust and the other two are
+      to be re-examined. (iv) **A candidate anchor that uses neither the name
+      nor the filesystem**: the `Project` table's counter inside the .clip
+      (`done4\ako6-19` = 150, `done5\ako6-19` = 154) survives copying. The
+      request went out **with its bar written first**: adopted only on **6/6**
+      of the content-decided clusters (a coin gives 1/64), not adopted at 5/6
+      (7/64), the null being name order's own 3/6 on the same six, with the
+      count of missing and tied values printed before the result, and the
+      statement *there is no save-order field inside the file* recorded as the
+      outcome if it fails.
     - **The per-layer ground truth is approved** (the user: *already gave the
       OK*), repurposing L19's UI so one truth calibrates `preview_dark`,
       `keep4` and `bad_max`. **The foundation's condition is registration
@@ -3679,6 +3731,32 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       turned on, and it saved all 92 answers. L asks what a layer
       is, M's known-cell 8 pages ask where a region is, so they do not overlap;
       the order between them is the user's.
+      **Track L fixed the wording of all of this the same night (`e8c3887`) and
+      the fix matters outside L**: "dropped" and "kept" were doing four jobs, so
+      they are now **refused / accepted / excluded / routed**. `keep4` is a
+      **routing and discards nothing**, and the sayable form is *an unselected
+      frame in which `black_among_drawn <= 0.98` refused 54 layers, 43 of them
+      finished line art* -- **not** *40% of the line art was lost*. The layers
+      in question were never in the delivery, and **mixing the two turns the
+      request to the extraction side from "pick these up" into "stop what you
+      are doing"**. Three of the foundation's four cautions on the koma ledger
+      also came back corrected: the `reason=empty` one **does not reach L**
+      (L's gate never reads `reason`; its first condition is `drawn_ratio <= 0`,
+      and all 4,399 such layers have `ink_px == 0` -- the gap between L's
+      ink-zero 2,581 and the ledger's `empty` 2,598 **is exactly those 17
+      layers**, two of which are the author-confirmed cross-page duplicate pair,
+      which is two instruments agreeing layer for layer); the JPEG one is moot
+      because **L holds no number counted from the ledger raster** (A6 is PNG on
+      both sides); and **the foundation's own statement of L's gate was short by
+      two conditions** -- it is `folder=False & rendered=True`, `drawn_ratio > 0`,
+      `preview_dark >= 0.5`, coverage < 95%, `/text` and `/sketch set` excluded,
+      and only all five give 1,981. The double-count caution does apply and L
+      now prints population and source beside the figure; **A6's conclusion
+      stands on counts** (1,709 layers at >= 0.9, 249 below 0.3). The `hash()`
+      sweep came back **zero live uses** -- 12 `hashlib.sha256` wrappers and 11
+      T97 comments, value-position none -- **and L swept the `solid-fill` tree
+      too**, because `l18_known_cells.py` imports from it through `sys.path`, so
+      L's numbers would inherit a defect living there.
     - **M's primary population is 777 / 779 and the foundation's 856/860 is
       withdrawn**: that arithmetic ran on the set before duplicate resolution,
       and a population is named after the resolution, not before. The standard
