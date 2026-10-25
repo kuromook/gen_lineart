@@ -117,22 +117,28 @@ def main():
 
     # --- 登録どおりの食い違い
     print('\n[食い違い] **登録した事象だけ数える。件数と片側95%上限を併記**')
-    print('  **枠の意味**: ここで「落とす/通す」は**その1条件の判定**であって、')
-    print('  ラスタに残るかどうかではない(抽出側の LINE の門には他の条件もある)。')
+    print('  **言葉の意味は定数ごとに違う**(2026-10-25 作者の指摘で直した):')
+    print('    `black_among_drawn` 拒む/受ける = **その1条件の判定**。')
+    print('      **ラスタに残るかどうかではない**(門には他の条件もある)。')
+    print('      ただし**1つでも満たさなければ通らない**ので、拒まれれば確実に外れる')
+    print('    `preview_dark`  外す/入れる = **Track L の母集団に入るかどうか**')
+    print('    `keep4`  振る = **形の分類(ベタの形 / 線の形)。何も捨てていない**')
     print('  **登録した要約は片側上限だが、それは0件のための形**なので、')
     print('  件数が多い側に出た行では**両側95%区間**を併記する(結果を見た後に足した)')
+    # **「通す/落とす」は定数ごとに意味が違う。`keep4` は何も捨てていない**
+    # (2026-10-25 作者の指摘。表だけ見ると「keep4 が57層を捨てた」と読めてしまう)
     jobs = [
         ('preview_dark >= 0.5', 'preview_dark', lambda v: v >= 0.5,
-         '落とした層のうち「完成の絵」', False, ART),
+         '**L の母集団から外した**層のうち「完成の絵」', False, ART),
         ('black_among_drawn <= 0.98', 'black_among_drawn', lambda v: v <= 0.98,
-         '落とした層のうち「線」', False, C.LINEISH),
+         '**この条件が拒んだ**層のうち「線」', False, C.LINEISH),
         ('black_among_drawn <= 0.98', 'black_among_drawn', lambda v: v <= 0.98,
-         '通した層のうち「絵ではない / 下絵」', True,
+         '**この条件が受けた**層のうち「絵ではない / 下絵」', True,
          C.NOTART + C.ROUGH),
         ('keep4 >= 0.95', 'keep4', lambda v: v >= 0.95,
-         '通して「線」(形の食い違い)', True, C.LINEISH),
+         '**「ベタの形」に振った**のに作者は「線」', True, C.LINEISH),
         ('keep4 >= 0.95', 'keep4', lambda v: v >= 0.95,
-         '落として「ベタ」(形の食い違い)', False, C.FILLISH),
+         '**「線の形」に振った**のに作者は「ベタ」', False, C.FILLISH),
     ]
     for label, col, keep, what, side, cats in jobs:
         s = [r for r in rows if r[col] is not None]
