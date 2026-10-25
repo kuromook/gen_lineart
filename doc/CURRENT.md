@@ -3593,7 +3593,34 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       form, a borrowed *quantity* rather than a borrowed constant, and the
       registered next number is the overlap (or AUC, null 0.5) of
       `black_among_drawn` between layers answered "line" and "fill", which
-      scores the quantity without choosing a threshold.
+      scores the quantity without choosing a threshold. **It was measured
+      within the hour and it refuted the foundation's expected answer: the
+      quantity is not beaten, the sign is.** AUC(line > fill) is **0.7750
+      [0.6379, 0.8962]**, so line layers carry the higher pure-black share --
+      and the rule keeps the LOW side (`<= 0.98`), which keeps the fill-ish
+      and drops the line-ish, exactly what L25's 19/19 said one level down.
+      **One ceiling goes with it**: 0.775 is not 0.97, so even oriented
+      correctly a single threshold on this quantity misclassifies a lot, and
+      the extraction side's own reason for the condition was a **tail cut**
+      (*a layer at exactly 1.00 is a binary fill or balloon*) **on a tail that
+      is mixed**: 0.88 lost line art, which they found and fixed, and 1.00
+      admits the 519 balloon/paper/fill layers. **No point on this one
+      quantity satisfies both**, so the final form of tonight's ruling is
+      neither the value nor the sign but **one quantity carrying two jobs**.
+      `preview_dark` fails on its own terms (**0.4417 [0.2288, 0.6591]**,
+      containing the null), and `keep4`'s 0.9970 is **a tautology to be
+      labelled as one in the table** -- it passes fill shapes by construction,
+      so its definition is making the label. The concentration check holds
+      (0.7750 -> 0.7500 -> 0.8435 as the defining strata come out). **And the
+      random stratum cannot deliver the unconcentrated AUC at the size being
+      discussed**: fills are about 1 in 16, so 60 random layers hold ~3.8 of
+      them and give a +/-0.19 interval, wider than the +/-0.13 already in hand
+      -- 60 buys the error upper bound (~4.9% at zero errors) and nothing
+      else, and an unconcentrated AUC needs ~240 random layers (~15 fills,
+      10-15 minutes of the author). The foundation recommends the 60 and says
+      why: **the sign claim is already carried** by 19/19 plus the interval
+      plus the concentration check, so 240 answers a different question, and
+      that question only matters after the orientation is fixed.
       **The heavier finding is not `bad_max`**: 7 of the 18 layers `keep4`
       passes at its boundary are **not pictures at all**, and `keep4` claims
       nothing about role, so **the instrument has a test of shape and no test
