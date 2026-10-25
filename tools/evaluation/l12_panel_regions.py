@@ -30,7 +30,9 @@ FORM  = '/home/sh1/deepl/lineart-fill-region/results/l5_ako7_generation/layer_fo
 L6CSV = '/home/sh1/deepl/lineart-fill-region/results/l6_clean_subset/per_panel.csv'
 BASE  = '/home/sh1/deepl/lineart/data/incoming_manuscript'
 KOMA  = '/home/sh1/deepl/lineart/dataset/regions_clip_pairs_v3_koma_panels_20260826'
-TRUTH = os.environ['L12_TRUTH']
+TRUTH = os.environ.get('L12_TRUTH', '')   # 2026-10-25: KeyError で import が死ぬと、
+                                          # 選別の内訳を数え直すだけでも読めなくなる。
+                                          # 段1 は書く前に理由を印字して止まる
 OUT   = '/home/sh1/deepl/lineart-fill-region/results/l12_panel_regions'
 WORKS = [('ako6', '018_2018_ako6'), ('ako7', '026_2019_ako7')]
 PAD, COV_MAX, DARK_MIN = 32, 0.95, 0.5
@@ -106,6 +108,10 @@ def build_page(job):
 
 
 def stage1():
+    if not TRUTH or not os.path.isdir(TRUTH):
+        print('段1 は回せない: L12_TRUTH(正解画像の置き場)が無い。'
+              'ここに t4/t6/ttxt の png を書く', file=sys.stderr)
+        sys.exit(1)
     cov = {(r['page_id'], r['layer_id']): float(r['cov'])
            for r in csv.DictReader(open(KEEP4))}
     main = collections.defaultdict(list); textl = collections.defaultdict(list)
