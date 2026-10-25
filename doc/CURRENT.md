@@ -3242,6 +3242,18 @@ ako6 は 対照 0.0876 / `r0` 0.0255 / 床 **0.1641** に対し腕 0.0953、ako7
 P36 = 9.2% の壁は残り、**L19 実測の 1,186面 ≈ 274分 (原稿65頁で4.6時間) がそのまま作業量**で、
 **伝播では下がらない**。純度が成分の大きさで落ちる併記は**対照でも同じ向き** (0.1940) なので
 判定にも読みにも使わない。
+**The gap-fill exclusion turned out not to be a filter (L, `e3b4ff5`)**: removing a region
+removes a word, which changes which component receives a word and therefore the purity
+upstream, so **the excluded version cannot be made by filtering the full run's CSV** -- it is
+a second measurement on a smaller population, not a subset analysis of the first. L put the
+condition **into the instrument's startup gate**, so a run that cannot read the full version's
+record stops at launch instead of after two hours, and prints the full version's A/B/C beside
+its own, labelled *a record of the previous run* (same instrument, same seeds, KC30 passing).
+**The foundation's one addition**: each version must print **its own control and floor**, since
+the floor is a function of the control inside that run (T97) and the exclusion moves the
+control too -- two arms against one floor is the next misreading waiting to happen. **A
+reporting condition belongs in the startup gate**, which is T102 from the useful side: the
+check that cannot run is the one that fails silently, so make it fail loudly and early.
 
 **Three fronts and a queue.** Item 1 is Track H on the **author's time**, which
 is this project's scarce resource; item 2 is Track G on the machine's, slot open
