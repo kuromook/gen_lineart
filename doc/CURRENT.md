@@ -1183,6 +1183,102 @@ work, and the stated expectation is that the pieces make each other easier.
   which is discipline 7-7 landing on the foundation's own sentence. One of the 8
   is **`パース定規 1`**: the shape test caught a name the exclusion families miss,
   and it goes to the extraction side.
+  **2026-10-24 evening, the author's three remarks are settled and the occlusion
+  line is closed.** The panel frames arrived from the extraction side, the layer
+  z-order arrived after them (`layer_z_order_priority65.csv`, **7,362 rows x 13
+  cols**, parent empty on 65 rows = one root per page, parents missing from the
+  inventory **0**, frame folders **245/245** agreeing with `koma_manifest.json`
+  -- which the extraction side itself annotated as **not a strong known cell**,
+  the same function having produced both orders; the direction "0 is the bottom"
+  rests instead on a pilot page with no blend modes or clips compositing to
+  **1.58/255** against the CSP preview bottom-up and **131.55** reversed, and
+  **that check was not repeated on the priority 65**). `z_global` is a bottom-up
+  walk of the tree, **not the resolved composite order**, so it is T-M3's
+  neighbourhood and is to be used only with `parent_id` in hand.
+  **(a) The panel correction, which is Track L's own retraction.** A `コマ N`
+  folder is not one panel: the delivered frame masks give **186 folders -> 322
+  8-connected components**, and measuring per component kills the "fragmentation"
+  reading of the earlier bulletin (**top_share median 0.9794 / 0.9860**, merge
+  1.0000 both pools). **The 0.5736 for ako7 is withdrawn.** What survives is the
+  **omission**: of 307 components (whole-page `モザイク` 8 removed), **26.7% /
+  19.9% of the area falls in no delivered rectangle, 58 components (18.9%) lie
+  almost wholly outside, 36 of 65 pages affected** -- the rectangles are accurate
+  where they exist, and the author's panels are about one fifth not covered, so
+  the 248 panels were **a biased subset, not a distorted cut**.
+  **(b) The author's occlusion claim is correct and does not help.** With real
+  z-order and an acyclic selection (occluders **612 passed**; dropped
+  `visibility=3` 128, `/sketch set` 96, `visibility=0` 56, other 4; `OCC_front`
+  never referencing F), the overlap `|R and OCC_front|/|R|` has **median 0.0000
+  in both pools** (regions 625 / 938; mean/p90 0.0263/0.0164 and 0.0423/0.0295;
+  above 0.5: 10 = 1.6% and 30 = 3.2%). **"Nothing is drawn under what sits in
+  front" is true as measured.** But the contour those occluders back is **about
+  2% of the author's fill contour** (support +0.018 / +0.026), and the fill
+  procedure does not move: W2 -> W6 **+0.000 / +0.002**, W3 -> W7 **+0.008 /
+  -0.005** on `IoU>=0.5`; W7 against its control **2.53x / 1.28x**.
+  **(c) And this is the C3 case settled with numbers.** The earlier substitute
+  barrier (`preview_dark>=0.5`, the borrowed constant that dropped 789 pale
+  layers) produced gains of **+0.468 / +0.551**; with the real z-order **they do
+  not reproduce at all** (+0.000 to +0.008), and on the 87% of regions whose
+  overlap is below 0.01 (541/625, 814/938) the difference is +0.002 / +0.001.
+  **The gain was the circularity, not the occluders** -- discipline 9-2's L-side
+  example is confirmed rather than weakened, which is what the user held the
+  distribution of discipline 9 for.
+  **(d) The author's own panels and frame lines do not rescue the procedure
+  either.** On the author's panels, with the frame lines **and the panel edge
+  itself** as barriers (free space = panel mask and not barrier, which is what
+  CSP does), regions 1,325 -> **1,563**: ako6 W0 0.0944 / W2 0.1152 / W3 0.1296
+  against control **0.0757**; ako7 W0 0.0416 / W2 0.0586 / W3 0.0778 against
+  control **0.0707**. **The null rose when the instrument was corrected and in
+  ako7 it passes the non-circular arms**; the 2.1-2.2x of the rectangle era
+  becomes **1.1-1.7x** (ako6 1.25-1.71 / ako7 0.59-1.10). Frame lines contribute
+  **+0.0128 / +0.0032**, so the "all-or-nothing, therefore it could matter"
+  expectation was wrong.
+  **Caveat the foundation found on 2026-10-25 while paying L17's band check**:
+  **that control is not on the arm's population** -- `per_region.csv` holds
+  **real 625/938 against shuffled 608/919**, and what the control loses is the
+  large regions (every region above **0.5** of its panel area is absent from the
+  control in both pools; the `>0.2` class goes 26 -> 19 and **20 -> 10**),
+  because a 90%-inside placement cannot be found for them. **For the 1.1-1.7x
+  statement the effect is at most 0.002** (if all 17/19 missing regions had
+  failed: 0.0757 -> 0.0736, 0.0707 -> 0.0693) and the direction understates the
+  gap, so the statement stands -- but **it is fatal for a purity-type quantity**,
+  whose denominator is the region's perimeter. Registered as **T90**.
+  **L17 is registered, instrumented and stopped before its own arm (2026-10-25),
+  and the band check is paid.** The question is the user's: **take the words from
+  the lines adjacent to a fill area** -- the first route in this line that runs
+  **area -> line grouping** and therefore does not need a closed contour. Ground
+  truth is the author's own layer names (`線画 skin` 172, `線画 hair` 130, ...),
+  used as labels only and never for selection (L8's lesson). `purity(R) = max_L
+  |adj(R,4) and L| / |adj(R,4)|`, `n_lay90`, ink assigned to the frontmost layer
+  by `z_global`. Known cells **KC16-KC19 all PASS**, and the foundation
+  reproduced KC19 independently (**ako6 625 / ako7 938 / 1,563**, matching
+  `arm=real` in `l15_zorder_occ/per_region.csv`) and verified that **`purity`
+  appears nowhere in the known-cell log**, so L has not looked and still holds
+  the repair. **The foundation's ruling** (`outbox/band_check_l17_20261025.md`):
+  the procedure L asked for is granted -- L runs the **control arm only**, over
+  **5 seeds**, and reports the null -- **but the band is written in that reply as
+  a function of the null, before the null is seen**, because "report the null,
+  then the foundation picks a number" only moves the bar-fitting from L to the
+  foundation. **P34 is refused**, and the first ground is arithmetic: `purity <=
+  1.0`, so if the null exceeds 0.80 the companion clause `arm - control >= 0.20`
+  **cannot be satisfied at all** -- L16's unreachable 0.30 in a new dress, which
+  is what an additive bar does to a quantity with a ceiling. **P35 is refused as
+  written** because `n_lay90 >= 1` always and a ring touched by one layer scores
+  1 for free: **L's degeneracy check was one unit too high** (line layers per
+  *panel*, median 6, one-or-fewer 6/246 = 2.4%), while purity degenerates per
+  *region*. The band therefore reads only on **regions whose ring is touched by
+  two or more layers**, takes as primary the **share of regions above a purity
+  threshold** rather than the median (the deliverable is one word per region, and
+  a median hides the tail), requires the separation to exceed **3x the null's
+  seed-to-seed spread** before the run is readable at all, normalises against the
+  ceiling (**half the remaining headroom**) instead of an additive 0.20, and
+  fixes now where the reading goes **if the null itself saturates** (threshold to
+  0.98, then "undecidable"). **And a wording correction before the run**: purity
+  is a measure of **unambiguity, not of correctness** -- the label *is* the
+  argmax, so no region can have a wrong word, and "the fill area works as the
+  wand" is a claim discipline 6 reserves for the author (P37's disclosure). A
+  PASS may say only that **the ink adjacent to a fill area concentrates in one
+  layer per region**.
 - `../lineart-colour-manuscripts` (branch `colour-manuscripts`, **Track M**) --
   **active, opened 2026-10-24 by user approval**, worktree of this repo cut at
   `e9d680b`, briefing committed at `94c19cb`. **Nobody has worked in it yet.**
@@ -2289,10 +2385,18 @@ incident that actually happened here.
    result.** **Recorded here as adopted; how it is distributed to the tracks is
    the user's open decision as of 2026-10-24 night, pending Track L's measurement
    of the author's occlusion hypothesis** -- that measurement *is* a step of the
-   cleansing workstream, and its outcome can reshape 9-2's L-side example (the
+   cleansing workstream, and its outcome could reshape 9-2's L-side example (the
    789 pale layers). The rule itself rests on two independent witnesses, so the
    pending result bears on the example and not on the rule. The notice sits in
    the four trees' inboxes marked provisional.
+   **The result came back the same night and it confirms the example rather than
+   reshaping it**: with the real z-order, the gains the substitute barrier had
+   produced (**+0.468 / +0.551**) do not reproduce **at all** (+0.000 to +0.008),
+   so the gain *was* the borrowed constant's circularity. **The trigger the user
+   set is met, and the distribution decision is theirs to make** (recorded by the
+   foundation 2026-10-25). The same morning the discipline gained its first case
+   against a *control* -- **T90**, a control arm measured on a smaller population
+   than its arm -- which is 9-1 applied to the null.
    Added 2026-10-24 from the user's observation that *the instrument
    work goes fine and the data keeps betraying it*, and from **Track L and Track
    M arriving at the same failure independently, neither knowing the other's
@@ -2397,6 +2501,7 @@ withdrawal.
 - **T53** A negative control has to name one concrete error, not a direction.
 - **T57** An arm can beat its off-by-one control and still carry no location information at all -- what it is scoring is the *amount* of ink.
 - **T78** If an external standard arrives through a filter, what the filter dropped is not absent -- it is invisible.
+- **T90** A control arm that silently drops the cases it cannot place is measured on a different population from the arm -- and the drop is biased along size (found 2026-10-25 by the foundation in Track L's `l15_zorder_occ`: real 625/938 regions against shuffled 608/919, every region above 0.5 of its panel absent from the control, `>0.2` 20 -> 10 in ako7). Discipline 9-1 applies to the control, not only to the arm.
 
 ### 閾値・定義・単位
 
