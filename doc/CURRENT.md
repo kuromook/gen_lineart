@@ -1392,7 +1392,11 @@ work, and the stated expectation is that the pieces make each other easier.
   control reproducing the arm **must not be run on the real pages**, where it
   *is* the arm. The remaining 608 / 919 **agree to the digit with the count the
   foundation took from the old control**, so the same 17 / 19 were what the
-  earlier T90 gap consisted of. **The band, with the pre-registered formula's
+  earlier T90 gap consisted of. **[Marked 2026-10-26: the re-measure excludes
+  15, not 17, in ako6**, so this identification of the T90 gap no longer holds
+  as written. The placeable set changing between runs is the mechanism T97
+  predicted; what the two returning regions are, and whether 608 is still 608,
+  is asked of L and not yet answered.] **The band, with the pre-registered formula's
   arguments filled in: `q1 >= 0.5672` (ako6) / `q1 >= 0.5779` (ako7), both pools,
   and `k1 <= 2`**; the readability floor `q0 + 3 r0` (0.1860 / 0.3187) is the
   weaker clause. The saturation branch does not fire (`q0 < 0.50`;
@@ -1415,8 +1419,33 @@ work, and the stated expectation is that the pieces make each other easier.
   still cannot carry the bar; the unfiltered figure; the 17 / 19 excluded large
   regions measured in the real arm only; the strata and the d grid), and L
   weakened the registration's PASS wording before running, as asked.
-  **2026-10-25, L17 ran and the route is closed: `q1` = 0.2565 / 0.2933 against
-  a bar of 0.5672 / 0.5779.** Regions 269 / 358 at d=4px on the two-layer
+  **2026-10-26: L17 was re-measured on the fixed instrument (`31c4ef1`) and the
+  route stays closed, but one branch changed.** The bars rebuilt from this run's
+  own control are **0.5552 / 0.5750** (the withdrawn 0.5672 / 0.5779 came from
+  `q0` 0.1344 / 0.1558; close is not the same, and both moved run to run), the
+  arm is unchanged at **0.2565 / 0.2933**, and the foundation reproduced every
+  printed figure. **Read with the floor as a condition on superiority and not as
+  a verdict gate -- the reading this ledger fixed before the run -- the two pools
+  are one shape**: the arm misses the bar by **0.2988 = 5.28 `r0`** (ako6) and
+  **0.2817 = 4.99 `r0`** (ako7), far outside the luck of the draw, so **P34'
+  FAILs readably in both**; and separately **"the arm is above the control" is
+  not established**, at **+2.58 / +2.54 `r0`** against a 3 `r0` floor.
+  **What changed is ako6's branch, and `r0` is why**: 0.0172 -> **0.0565**, 3.3x,
+  the T97 signature (ako7 0.0543 -> 0.0564, flat), so ako6's earlier *readable*
+  FAIL (gap 0.1221 against 3 `r0` = 0.0516) is now in the pre-registered
+  "neither PASS nor FAIL" branch. **So the honest headline is not "the
+  conclusion did not change" but "the route is closed by the distance to the
+  bar, not by the floor"** -- and the floor's own clause is held open in both
+  pools. **One claim of L's is refused**: *more draws would settle it* does not
+  hold, because `r0` is max-min and therefore non-decreasing in the seed count,
+  so adding seeds raises the floor and (q1-q0)/`r0` does not converge upward.
+  Refusing to add seeds after seeing the result is right; the stronger reason is
+  that it could not answer. **P36's wall survives the fix** (d=4: 0.0919 /
+  0.0932 -- two pools, and the single "9.2%" is ako6's value standing for both).
+  **P35' PASSes and still cannot be quoted** (`k1` 2.0 against `k1 <= 2`, with
+  `k0` also 2.0).
+  **The superseded 2026-10-25 run, kept with its mark: the route is closed,
+  `q1` = 0.2565 / 0.2933 against a bar of 0.5672 / 0.5779.** Regions 269 / 358 at d=4px on the two-layer
   stratum, **1.91x / 1.88x the null**, median purity 0.7951 / 0.7730 against
   0.6498 / 0.6672, `k1` 2.0 / 2.0. **ako6 FAILs readably and ako7 is unreadable**
   (`q1 - q0` = 0.1375 against `3 r0` = 0.1629, the pre-registered "neither PASS
@@ -3210,7 +3239,7 @@ found at full resolution in the strict pass's tail.
 | **作者への問い 8件 (A-H)** | 通達 §4 に完全パスで一覧 | **出すのは基盤から、順番はユーザー**。A が 9塊で最も効く |
 | **`preview_dark` の出所照会** | 23:50 に抽出側へ push、着弾確認済み | 回答待ち。来るまで L は筆幅も z 順も回さない |
 | **L の45層の原寸切り出し** | `results/l28_preview_dark_crops/` に 45枚、質問文は L の `outbox/`。**送っていない** | **ユーザーの合図待ち**。作者の時間の列は4つ |
-| **L18 / L17** | **L18 完了 (`6e09517`): 4セルすべて A×B×C で FAIL、65頁・2h02m、KC30 PASS。L17 走行中** | 基盤が算術を検算、12判定すべて一致。**次は `--exclude-gapfill` 版 (両方を印字することが条件) と L17** |
+| **L18 / L17** | **両方完了。L18 (`6e09517`) は4セルすべて A×B×C で FAIL (KC30 PASS)、L17 (`31c4ef1`) は棒から約5 `r0` で FAIL、優越は未確立。`--exclude-gapfill` 版が走行中 (2時間)** | 基盤が両方の算術を検算、印字された数は全数一致。**L へ返した指摘5件** (ako6 の枝が変わった / 保留の主語 / 引きを増やしても決まらない / P35' の `k0` / 除外大面 17→15) |
 | **A/B/C の数え直し** | **止めてある** (`ink_px` はアルファ >= 128 で灰色の材料が重み0) | `ink_px` の `kind=raster` 行の定義回答待ち |
 | **ユーザーの判断2件** | 作者の時間の順 / E60 (3分・上界4.9%) か E240 (10-15分) か、どちらもやらない | 基盤の推しは E60 |
 
