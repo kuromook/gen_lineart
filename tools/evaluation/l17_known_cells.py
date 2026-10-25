@@ -9,7 +9,7 @@
 
 **帰無値も棒もここには無い。** ここは器具が壊れていないかだけを見る。
 """
-import csv, json, os, sys
+import csv, json, os, sys, zlib
 import numpy as np, cv2
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -89,7 +89,11 @@ def place(glab, gi, gstat, P, seed, pid, ci, tries=TRIES,
     if ww + 2 >= pw or hh + 2 >= ph:
         return None
     pn = int(patch.sum())
-    rng = np.random.default_rng([int(seed), abs(hash(pid)) % 100000, int(ci), int(gi)])
+    # **`hash(str)` は走行ごとに変わる**(PYTHONHASHSEED)。ここに使っていたので、
+    # **帰無値も面集合も走行ごとに別物になっていた**(2026-10-25 に発見)。
+    # crc32 は過程に依らないので、同じ引数なら必ず同じ位置に置かれる。
+    rng = np.random.default_rng([int(seed), zlib.crc32(pid.encode()) % 100000,
+                                 int(ci), int(gi)])
     for _ in range(tries):
         nx = int(rng.integers(1, pw - ww - 1)); ny = int(rng.integers(1, ph - hh - 1))
         if abs(nx - xx) + abs(ny - yy) < min_move * (pw + ph):

@@ -17,7 +17,7 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_known_cells import A
 from l15_known_cells import boundary
-from l17_known_cells import (D1, adj_sets, assign_top, gated_layers, jobs,
+from l17_known_cells import (place, D1, adj_sets, assign_top, gated_layers, jobs,
                              panels_and_regions, purity, ring, zmap)
 
 K8 = np.ones((3, 3), np.uint8)
@@ -204,8 +204,43 @@ def kc24():
     return ok
 
 
+def kc32():
+    """器具: **対照の置き場が、走行をまたいで同じか。**
+
+    2026-10-25: `place()` の乱数の種に `abs(hash(pid))` を使っていた。
+    **`hash(str)` は過程ごとに変わる**(PYTHONHASHSEED)ので、
+    **帰無値も、置けた面の集合も、走行ごとに別物になっていた。**
+    L18 の対照は 2回の走行で cov_honest 中央 0.0945 と 0.1178、
+    `r0` は 0.0213 と 0.0655 —— **3倍違った。**
+
+    ここは**記録した定数**と突き合わせる。過程に依る量が種に入れば即座に落ちる。
+    """
+    print('KC32 器具: 対照の置き場が走行をまたいで同じか (**記録した定数と照合**)')
+    import cv2 as _cv
+    g = np.zeros((400, 400), np.int32); g[100:160, 100:200] = 1
+    P = np.ones((400, 400), bool)
+    n, lab, st, _ = _cv.connectedComponentsWithStats((g > 0).astype(np.uint8), 8)
+    # **実測して記録した定数**(2026-10-25、crc32 に直した後)。手で書かない
+    want = {20261026: (2, 155), 20261027: (181, 40), 20261028: (67, 50),
+            20261029: (255, 175), 20261030: (98, 258)}
+    ok = True
+    for sd, exp in want.items():
+        R = place(lab, 1, st, P, sd, '018_2018_ako6_ako6_page0028', 1)
+        if R is None:
+            print(f'  seed {sd}: 置けなかった  FAIL'); ok = False; continue
+        ys, xs = np.nonzero(R)
+        got = (int(ys.min()), int(xs.min()))
+        good = got == exp
+        ok &= good
+        print(f'  seed {sd}: 置いた位置 {got}  記録 {exp}  {"ok" if good else "FAIL"}')
+    if not ok:
+        print('  **記録と違う。種に過程依存の量が入っていないか見ること**')
+    return ok
+
+
 def main():
-    res = [('KC21', kc21()), ('KC22', kc22()), ('KC23', kc23()), ('KC24', kc24())]
+    res = [('KC21', kc21()), ('KC22', kc22()), ('KC23', kc23()), ('KC24', kc24()),
+           ('KC32', kc32())]
     print('=' * 72)
     for k, v in res:
         print(f'{k}: {"PASS" if v else "FAIL"}')
