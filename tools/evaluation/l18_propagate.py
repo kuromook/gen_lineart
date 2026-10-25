@@ -28,6 +28,7 @@ from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate'
 EXCLUDE = None       # 事前登録の母集団定義 (--exclude-gapfill)
+LIMIT = 0            # --limit (煙試験。出力の名前に入れる)
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 ARMS = 'both'
 
@@ -235,20 +236,23 @@ def print_both_populations(res):
             print(f'  {"全面 (前の走行の記録)":<24}{w:<7}{f["arm"]:>9.4f}{f["ctl"]:>9.4f}'
                   f'{f["r0"]:>8.4f}†{f["floor"]:>13.4f}  '
                   f'{"床の上" if f["arm"] >= f["floor"] else "床の下"}')
-        a1 = res.get(('real', w, 'ch')); a0 = res.get(('shuffled', w, 'ch'))
-        if a1 and a0:
-            a1, a0 = a1[0], a0[0]
-            fl = a0['ch'] + 3 * a0['r0']
-            print(f'  {"隙間埋けを外した版 (この走行)":<21}{w:<7}{a1["ch"]:>9.4f}'
-                  f'{a0["ch"]:>9.4f}{a0["r0"]:>9.4f}{fl:>13.4f}  '
-                  f'{"床の上" if a1["ch"] >= fl else "床の下"}')
+        # `res[(arm, w, 'ch')]` は **(中央, 最大−最小, SD) の3つ組**(380行)。
+        # 2026-10-26: ここを dict だと思って `a0['ch']` と書いて煙試験で落ちた
+        t1 = res.get(('real', w, 'ch')); t0 = res.get(('shuffled', w, 'ch'))
+        if t1 and t0:
+            arm, ctl, r0c, sd0 = t1[0], t0[0], t0[1], t0[2]
+            fl = ctl + 3 * r0c
+            print(f'  {"隙間埋けを外した版 (この走行)":<21}{w:<7}{arm:>9.4f}'
+                  f'{ctl:>9.4f}{r0c:>9.4f}{fl:>13.4f}  '
+                  f'{"床の上" if arm >= fl else "床の下"}'
+                  f'   (併記・判定に使わない: 3SD = {3*sd0:.4f})')
         print()
     print('  † 前の走行の印字は `3r0` なので、この `r0` は3で割って得た**導出値**。'
           'この走行の `r0` は生の値')
 
 
 def main():
-    global ARMS, EXCLUDE
+    global ARMS, LIMIT, EXCLUDE
     ap = argparse.ArgumentParser()
     ap.add_argument('--arms', default='both',
                     choices=('both', 'real', 'control', 'degen'))
@@ -269,6 +273,7 @@ def main():
     else:
         print('母集団: **全面の版**(登録された一次)', flush=True)
     ARMS = a.arms
+    LIMIT = a.limit
     os.makedirs(OUT, exist_ok=True)
     zz = zmap(); fill, line = gated_layers()
     js = jobs(zz, fill, line)
@@ -296,16 +301,27 @@ def main():
         if EXCLUDE:
             print(f'  選別(規律9-1): 隙間埋けとして外した面 {len(EXCLUDE & got)} / '
                   f'指定 {len(EXCLUDE)}')
+    # **出力の名前に母集団と頁数を入れる**(2026-10-26)。
+    # それまでは `comps_both.csv` 固定で、
+    #   ・2頁の煙試験が **65頁の走行の CSV を上書きした**(実際に失った)
+    #   ・隙間埋けを外した版も、全面の版の CSV を上書きする形だった
+    # 走行の種類が違うものを同じ名前に書かない。
+    tag = ''
+    if EXCLUDE:
+        tag += '_nogapfill'
+    if LIMIT:
+        tag += f'_limit{LIMIT}'
     for nm, rows in (('comps', comps), ('regions', regs), ('panels', pans)):
         if not rows:
             continue
         keys = sorted({k for r in rows for k in r})
-        with open(f'{OUT}/{nm}_{ARMS}.csv', 'w', newline='', encoding='utf-8') as fh:
+        path = f'{OUT}/{nm}_{ARMS}{tag}.csv'
+        with open(path, 'w', newline='', encoding='utf-8') as fh:
             w = csv.DictWriter(fh, fieldnames=keys, extrasaction='ignore')
             w.writeheader()
             for r in rows:
                 w.writerow(r)
-        print(f'-> {OUT}/{nm}_{ARMS}.csv  行 {len(rows)}')
+        print(f'-> {path}  行 {len(rows)}')
 
     if ARMS == 'degen':
         print('\n' + '=' * 92)
