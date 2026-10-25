@@ -24,6 +24,7 @@ INV = K.INV
 BASE = '/home/sh1/deepl/lineart/data/incoming_manuscript'
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui'
 SEED = 20261025
+SEED2 = 20261026        # L27: 追加の無作為60層(**枠は L25 の E_random と同じ**)
 MAXSIDE, CTXSIDE = 1500, 1100
 # **事前登録の階級**(上から順に当てはめ、層は1つの階級にしか入れない)
 STRATA = [('A_preview_dark', 20), ('B_keep4', 20), ('C_bad_max', 20),
@@ -103,7 +104,20 @@ def render(job):
                 frac_of_page=round(n / (H * W), 5), cropped=int(sub.shape != ink.shape))
 
 
+def already_shown():
+    """L25 で既に見せた層。**追加の無作為はここを除いて引く**。"""
+    p = f'{OUT}/queue.json'
+    if not os.path.exists(p):
+        return set()
+    return {(r['pid'], str(r['lid'])) for r in json.load(open(p))['queue']}
+
+
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--extend-random', type=int, default=0,
+                    help='L27: 無作為を N 層だけ足す(**枠は L25 と同じ**)')
+    a = ap.parse_args()
     os.makedirs(f'{OUT}/crops', exist_ok=True)
     k4 = {(r['page_id'], r['layer_id']): r for r in csv.DictReader(open(K.KEEP4))}
     pool_rows = []
@@ -118,6 +132,43 @@ def main():
     for r, kk, s in pool_rows:
         by.setdefault(s, []).append((r, kk))
     print('母集団(階級ごと):', {k: len(v) for k, v in sorted(by.items())})
+    if a.extend_random:
+        shown = already_shown()
+        cand = [(r, kk) for r, kk, _ in sorted(
+            pool_rows, key=lambda t: (t[0]['page_id'], int(t[0]['layer_id'])))
+            if (r['page_id'], r['layer_id']) not in shown]
+        print(f'L27: 枠 {len(pool_rows)} 層 - 既出 {len(shown)} = 候補 {len(cand)}')
+        rng = np.random.default_rng(SEED2)
+        idx = rng.permutation(len(cand))[:a.extend_random]
+        picked = []
+        for i in idx:
+            r, _kk = cand[int(i)]
+            w = 'ako6' if '_ako6_' in r['page_id'] else 'ako7'
+            picked.append((r['page_id'], w, r['layer_id'], 'E_random2'))
+        print(f'  無作為 {len(picked)} 層を引いた (seed {SEED2})', flush=True)
+        rows = []
+        with Pool(4) as p:
+            for i, d in enumerate(p.imap_unordered(render, picked), 1):
+                if d is not None:
+                    rows.append(d)
+                if i % 20 == 0:
+                    print(f'  {i}/{len(picked)}', flush=True)
+        rows.sort(key=lambda r: (r['work'], r['pid'], r['lid']))
+        rng2 = np.random.default_rng(SEED2)
+        rep = [dict(rows[int(i)], why='E_random2_repeat')
+               for i in rng2.permutation(len(rows))[:REPEAT]]
+        rows2 = rows + rep
+        q2 = [rows2[int(i)] for i in rng2.permutation(len(rows2))]
+        old = json.load(open(f'{OUT}/queue.json'))
+        for i, r in enumerate(q2):
+            r.update(order=i, cands=[], word_share={}, top_word='', purity=0.0,
+                     n_lay=0, n_lay90=0, auto=0, comp=0, region=r['lid'])
+        old.update(n=len(q2), n_ask=len(q2), n_all=len(q2), queue=q2)
+        json.dump(old, open(f'{OUT}/queue_l27.json', 'w'), ensure_ascii=False)
+        import collections
+        print(f'-> {OUT}/queue_l27.json  行列 {len(q2)}  '
+              f'階級 {dict(collections.Counter(r["why"] for r in q2))}')
+        return
     rng = np.random.default_rng(SEED)
     picked, taken = [], set()
     allr = sorted(pool_rows, key=lambda t: (t[0]['page_id'], int(t[0]['layer_id'])))
