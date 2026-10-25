@@ -150,11 +150,23 @@ def main():
             # 最初に書いた版は辞書順だけで選んでいて、2016 対 2018 の完全同一の組で
             # **古い年を採っていた** = 作者の指示に反していた。
             best = sorted(group, key=lambda q: (-info[q]['year_num'], q))[0]
+            # **T94(基盤、2026-10-25): 指紋は内容の同一性で、ページの同一性ではない。**
+            # 年が同じで名幹に前方一致が無い組(`page0005 / page0009`、
+            # `SD / page0004`)は、**同じ絵が2つのページ枠に入っている**のであって
+            # 「置き換えられた版」ではない。測るぶんには代表1つで足りるが、
+            # **DB に `superseded` と書くと内容の主張がページの主張に化ける。**
+            # → 役割を `duplicate_content` にして区別する。母集団の数は変わらない。
+            st = sorted({info[q]['stem'] for q in group})
+            pref = any(a != b and (a.startswith(b) or b.startswith(a))
+                       for a in st for b in st)
+            samey = len({info[q]['year_num'] for q in group}) == 1
+            dupc = samey and len(st) > 1 and not pref
             kinds['R0'] += 1
             for q in group:
                 out[q] = dict(
                     dup_cluster_id=ci, cluster_kind=k,
-                    version_role='final' if q == best else 'superseded',
+                    version_role='final' if q == best else
+                    ('duplicate_content' if dupc else 'superseded'),
                     decided_by=('identical_metadata+year'
                                 if len({info[q2]['year_num'] for q2 in group}) > 1
                                 else 'identical_metadata'),
@@ -223,6 +235,8 @@ def main():
     role = collections.Counter(v['version_role'] for v in out.values())
     print(f'  役割: {dict(role)}')
     keep = role['single'] + role['final'] + role['sibling'] + role['undecided']
+    print(f'  **duplicate_content(内容は同じだが「置き換え」ではない。T94): '
+          f'{role["duplicate_content"]} ページ**')
     print(f'  → **腕の主値 = single + final + sibling + undecided = {keep} ページ**'
           f'(**年で置き換えが確定した superseded {role["superseded"]} だけ落とす**)')
     print(f'    undecided {role["undecided"]} ページは更新時刻が届いたら減る'
