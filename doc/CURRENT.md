@@ -3552,3 +3552,44 @@ item 8 -- adopted as item 12's mechanism, premature for the fills, not a track.
       that year's rate), and H's year table silently pools the `b`/`c`
       suffixes, which may be separate batches of one year (a generation is a
       pool).
+14. **Two authorisations given 2026-10-25 night, and the records that back them.**
+    - **Request 4 (the silhouette alphas) is ordered.** Three approval records
+      exist and they are **not the same kind**: `5d31507` (10-24, work_log line
+      551) is **Track M's own two three-way choices and the user picking the
+      recommended option -- not the author's words**; `46fd70f` (10-25) is the
+      author's **verbatim "ok"** to the question *may request 4 be placed*; and
+      the user told the foundation the same night **"出してよい (inside the
+      10-24 approval)"**. **The foundation declining to act on the first was
+      right**: a choice made from options someone else wrote is that person's
+      sentence, not the author's. M placed the order at 20:15 (letter plus two
+      lists, SHA256 matched both sides). **The numbers moved and both
+      directions are on one page**: layers **10,622 -> 8,076** (1,222 duplicate
+      folder-descendant rows removed, population 872 -> 786), pages **872 ->
+      786** (`superseded` 74 and `duplicate_content` 12 dropped), size **~1.7GB
+      -> ~2.0GB** because the previews were counted separately. The known cell
+      is the **first 8 pages / 303 layers byte-matched against the pilot, and
+      the rest is not read if they differ** -- the only place to stop before
+      reading 2GB.
+    - **The per-layer ground truth is approved** (the user: *already gave the
+      OK*), repurposing L19's UI so one truth calibrates `preview_dark`,
+      `keep4` and `bad_max`. **The foundation's condition is registration
+      before the author is asked**: strata on each of the three constants'
+      margins (kept side and dropped side), **plus one random stratum**, with
+      the counts fixed in advance, and a few of L19's unambiguous regions mixed
+      in to measure the human answer's own reproducibility (6 of 37 answers
+      changed on re-ask). **Asking only near one constant's boundary would let
+      that constant select the sample that corrects it.** L asks what a layer
+      is, M's known-cell 8 pages ask where a region is, so they do not overlap;
+      the order between them is the user's.
+    - **M's primary population is 777 / 779 and the foundation's 856/860 is
+      withdrawn**: that arithmetic ran on the set before duplicate resolution,
+      and a population is named after the resolution, not before. The standard
+      can be built on **507 / 509**.
+    - **P13's FAIL is characterised and it renames the standard.** The 306
+      chain-less pages against the 566 with a chain differ **2 against 22
+      colour-format layers, over tenfold** (style 1.4x, year 0.12-0.84), so the
+      standard built on the 566 is **the standard of pages that have a clip
+      chain -- pages with more layers and more colour layers -- and not the
+      standard of colour manuscripts**. **42 works are chain-less throughout**
+      (115 of the 306 pages), so the list of works that have no standard goes
+      beside it: a selection that removes whole works is felt later.
