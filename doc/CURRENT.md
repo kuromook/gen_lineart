@@ -1392,11 +1392,19 @@ work, and the stated expectation is that the pieces make each other easier.
   control reproducing the arm **must not be run on the real pages**, where it
   *is* the arm. The remaining 608 / 919 **agree to the digit with the count the
   foundation took from the old control**, so the same 17 / 19 were what the
-  earlier T90 gap consisted of. **[Marked 2026-10-26: the re-measure excludes
-  15, not 17, in ako6**, so this identification of the T90 gap no longer holds
-  as written. The placeable set changing between runs is the mechanism T97
-  predicted; what the two returning regions are, and whether 608 is still 608,
-  is asked of L and not yet answered.] **The band, with the pre-registered formula's
+  earlier T90 gap consisted of. **[Marked 2026-10-26, then resolved the same hour: the 17
+  stands and the foundation's mark was wrong.** L's run prints **15** because
+  `report_unplaced` filtered on `pur != ''`, which silently dropped the two
+  regions whose purity is undefined -- and they are **the pool's two largest**,
+  4,265,910 px each, twice the 2,015,180 px it printed as the maximum, with
+  `adj` = 0 at every distance, so no layer ink touches them at all. 625 - 608 =
+  17 and 938 - 919 = 19 both reconcile, ako7's 19 was never short, and the
+  disclosure built to stop regions being dropped silently was dropping them
+  silently (T104's shape: a filter removes the extremes). L prints the
+  undefined case as undefined now. **The two regions have identical area because
+  they are two versions of one page** (`ako6_page0030` and
+  `ako6_done8_ako6-39`), which puts a duplicate-version pair inside Track L's
+  own population and gives author question C a second consumer.] **The band, with the pre-registered formula's
   arguments filled in: `q1 >= 0.5672` (ako6) / `q1 >= 0.5779` (ako7), both pools,
   and `k1 <= 2`**; the readability floor `q0 + 3 r0` (0.1860 / 0.3187) is the
   weaker clause. The saturation branch does not fire (`q0 < 0.50`;
