@@ -323,6 +323,12 @@ DEAD_HASHES_OK = {
                "the raster's selection rule, quoted in T86",
     "4941c60": "also the extraction tool's repository -- the structure DB's "
                "documentation, quoted in the Track Ledger",
+    "96db0bc": "also the extraction tool's repository -- the first commit "
+               "(2026-06-06) of its `features.py`, where g<128 / g<230 / g<32 "
+               "were written; quoted by discipline 9-2's entry",
+    "de18f10": "also the extraction tool's repository -- the commit message "
+               "quoted for bad_max=0.98's circularity (coverage rewards added "
+               "ink, so contamination looked like improvement)",
 }
 
 HASH_IN_PROSE = re.compile(r"`([0-9a-f]{7,40})`")
