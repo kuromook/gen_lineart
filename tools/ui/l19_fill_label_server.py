@@ -194,6 +194,88 @@ def js_check():
     return True
 
 
+# **JS 側で「無ければ出さない」と書いてある鍵**だけをここに置く。
+# 置くことは「欠けても壊れない」の宣言であって、「欠けてよい」ではない ——
+# 欠けたら起動時に印字する。黙って 0 や「原寸」と出す形に書き換えたら、ここから外すこと
+OPTIONAL = frozenset(('area', 'scale', 'ctx_scale'))
+
+
+def key_check():
+    """**起動の門その3**: JS が読む `it.<鍵>` が、行列と `payload()` にあるか。
+
+    2026-10-26 (基盤の報告): M が行列を流用したとき `area` が `area_px` という名で
+    入っていた。**その1鍵の欠けで解答欄とキー割り当てが丸ごと消え**、
+    作者に渡してから発覚した。門その1(記録を組み立てられるか)と
+    門その2(JS の構文)は**どちらも通る**種類の欠陥だった ——
+    器具の流用の接点は**行列の鍵の名前**なので、点検はそこに当てる。
+    """
+    import re as _re
+    m = _re.search(r'<script>(.*?)</script>', PAGE, _re.S)
+    if not m:
+        return True
+    want = set(_re.findall(r'\bit\.([A-Za-z_][A-Za-z0-9_]*)', m.group(1)))
+    have = set(payload(0))
+    soft = sorted((want - have) & OPTIONAL)
+    miss = sorted(want - have - OPTIONAL)
+    print(f'  起動の門その3: JS が読む鍵 {len(want)} / 行列と payload にある鍵 '
+          f'{len(have)}  欠け {len(miss)}', flush=True)
+    for k in soft:
+        print(f'    (欠けを許した鍵) it.{k} が行列に無い —— '
+              f'**その数は画面に出ない**(0 や「原寸」と出さない)', flush=True)
+    if miss:
+        lines = []
+        for k in miss:
+            near = [h for h in sorted(have)
+                    if h.startswith(k[:3]) or k in h or h in k]
+            lines.append(f'  it.{k}  <- 行列に無い。近い名前: '
+                         f'{", ".join(near) if near else "無し"}')
+        raise SystemExit('**JS が読む鍵が行列に無い。起動しない**\n'
+                         + '\n'.join(lines)
+                         + '\n(名前が違うだけなら行列側を直すか、JS に鍵を足すこと。'
+                           '**出さない方がよい数は JS 側で欠けを許す形に書く**)')
+    return True
+
+
+def go_check():
+    """**起動の門その4**: `go()` を実際に走らせて、解答欄が出るかを見る。
+
+    門その1〜3 は**どれも go() を走らせていない。** 2026-10-26 の欠陥
+    (流用した行列に `area` が無く、解答欄とキー割り当てが丸ごと消えた)は
+    門その1・その2 を通り、HTTP も 200 を返していた。**作者に渡ってから発覚した。**
+    ここでは最小の DOM を当てて `go(0)` を走らせ、語ボタン・その他ボタン・
+    `keymap`・`okeys` が揃っているかを数える。
+    """
+    import re as _re, shutil, subprocess, tempfile, json as _j
+    node = shutil.which('node') or shutil.which('nodejs')
+    if node is None:
+        print('  (node が無いので go() の点検は飛ばす —— **渡す前に画面を見ること**)',
+              flush=True)
+        return True
+    smoke = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'l19_ui_smoke.js')
+    if not os.path.exists(smoke):
+        raise SystemExit(f'**{smoke} が無い。起動しない**(門を消して走らせない)')
+    m = _re.search(r'<script>(.*?)</script>', PAGE, _re.S)
+    if not m:
+        return True
+    n = len(S['q'])
+    # **行ごとに形が違う**(候補の無い面、語に当たらない面)。端と真ん中を見る
+    orders = sorted({0, n // 2, n - 1})
+    pl = {f'order={o}': payload(o) for o in orders}
+    d = tempfile.mkdtemp(prefix='l19_ui_smoke_')
+    pj, uj = os.path.join(d, 'payloads.json'), os.path.join(d, 'ui.js')
+    with open(pj, 'w', encoding='utf-8') as fh:
+        _j.dump(pl, fh, ensure_ascii=False, default=str)
+    with open(uj, 'w', encoding='utf-8') as fh:
+        fh.write(m.group(1))
+    r = subprocess.run([node, smoke, pj, uj], capture_output=True, text=True)
+    print(r.stdout.rstrip(), flush=True)
+    if r.returncode != 0:
+        raise SystemExit('**go() を走らせたら解答欄が出なかった。起動しない**\n'
+                         + (r.stderr[:800] or '(上の行を見ること)'))
+    return True
+
+
 def save(d, annotator):
     o = int(d['order'])
     rec = make_rec(o, d, annotator)
@@ -252,7 +334,12 @@ let cur=0, it=null, t0=0, ctx=false, keymap={}, okeys={};
 async function go(o){
   if(o<0) o=0;
   const r=await fetch('/api/item?o='+o); if(!r.ok) return;
-  it=await r.json(); cur=o; t0=performance.now(); ctx=false; showImg();
+  it=await r.json(); cur=o; t0=performance.now(); ctx=false;
+  // **解答欄を先に組む。** 2026-10-26 (基盤の報告): ここは `showImg()` が先頭にあり、
+  // 表示用の1鍵 (`area`) が行列に無いだけで info() が投げ、**解答欄と keymap/okeys が
+  // 丸ごと消えた** —— ボタンが出ないのとキーが死ぬのは同じ1つの例外だった。
+  // 器具の流用で2回目で、作者の時間に届いた。**表示が転んでも答えは入れられる順にする**
+  buildAnswers();
   if(it.ask) document.getElementById('ask').textContent=it.ask;
   if(it.help) document.getElementById('help').textContent=it.help;
   document.getElementById('pos').textContent=it.pos+' / '+it.n;
@@ -260,22 +347,27 @@ async function go(o){
     it.n_done+' 済み'+(it.n_flag?'   ⚑ 異常 '+it.n_flag+' 件':'');
   // 縁に接している層(色のヒント)
   const h=document.getElementById('hint'); h.innerHTML='';
-  it.cands.forEach((x,i)=>{
+  (it.cands||[]).forEach((x,i)=>{
     const d=document.createElement('span');
-    d.innerHTML='<span class="sw" style="background:'+it.cols[i]+'"></span> '+
+    d.innerHTML='<span class="sw" style="background:'+(it.cols||[])[i]+'"></span> '+
       (x.name||'')+(x.word?'':' <span class="k">(語に対応しない層)</span>')+
       ' <span class="k">'+(x.share*100).toFixed(0)+'%</span>';
     d.style.display='flex'; d.style.gap='6px'; d.style.alignItems='center';
     h.appendChild(d);
   });
-  // 解答欄 = 語。**並びは固定**(位置が毎回同じになるように。2026-10-25 作者の指摘)
-  const ws=it.words;
+  showImg();
+}
+// 解答欄 = 語。**並びは固定**(位置が毎回同じになるように。2026-10-25 作者の指摘)
+// **ここは go() の先頭で呼ぶ。** 表示用の鍵が欠けても答は入れられるようにするため
+function buildAnswers(){
+  const ws=it.words||[];
+  const shm=it.word_share||{}; const cands=it.cands||[]; const cols=it.cols||[];
   const w=document.getElementById('words'); w.innerHTML=''; keymap={};
   ws.forEach((word,i)=>{
-    const sh=it.word_share[word];
-    const ci=it.cands.findIndex(c=>c.word===word);
+    const sh=shm[word];
+    const ci=cands.findIndex(c=>c.word===word);
     const b=document.createElement('button');
-    b.innerHTML=(ci>=0?'<span class="sw" style="background:'+it.cols[ci]+'"></span>':'')+
+    b.innerHTML=(ci>=0?'<span class="sw" style="background:'+cols[ci]+'"></span>':'')+
       word+(sh?' <span class="k">'+(sh*100).toFixed(0)+'%</span>':'')+
       ' <span class="k">'+(i+1)+'</span>';
     if(sh) b.className='hit';
@@ -289,7 +381,6 @@ async function go(o){
     b.onclick=()=>act(k); o2.appendChild(b);
     okeys[key.toLowerCase()]=k;
   });
-  info();
 }
 function nxt(){ if(it) go(it.nav_next); }
 function prv(){ if(it) go(it.nav_prev); }
@@ -317,10 +408,14 @@ function showImg(){
 function info(){
   if(!it) return;
   const sc=ctx?it.ctx_scale:it.scale;
+  // **倍率が行列に無いとき、黙って「(原寸)」と出してはいけない。**
+  // 2026-10-26 の点検で見つけた2件目: `sc` が undefined だと `sc<1` が false になり、
+  // **縮小して出している絵を「原寸」と書く**ことになる(規律6 に直接触る)
   document.getElementById('info').textContent=
     (ctx?'[コマ全体] ':'[面の周り] ')+it.work+' '+it.pid+' コマ'+it.comp+' 面'+it.region+
-    '  面積 '+it.area.toLocaleString()+'px'+
-    (sc<1?'  (表示は '+(sc*100).toFixed(0)+'%)':'  (原寸)')+
+    // **欠けていたら数を出さない。** 0 と出すのは作者に嘘をつくことになる
+    (it.area==null?'':'  面積 '+it.area.toLocaleString()+'px')+
+    (sc==null?'  (表示倍率 不明)':sc<1?'  (表示は '+(sc*100).toFixed(0)+'%)':'  (原寸)')+
     (it.saved?'  ← 記録済み: '+(it.saved.word||it.saved.free||it.saved.choice):'')+
     (it.flagged?'   ⚑ 異常として報告済み: '+it.flagged.note:'');
 }
@@ -423,7 +518,8 @@ def main():
                None if a.extra is None else [w for w in a.extra.split(',') if w])
     m = S['meta']
     if S['only'] is None:
-        print(f"行列 {m['n']} (要判断 {m['n_ask']} + 自動の確認 {m['n_check']})  "
+        print(f"行列 {m['n']} (要判断 {m.get('n_ask','?')} + "
+              f"自動の確認 {m.get('n_check','?')})  "
               f"保存済み {len(S['done'])}  保存先 {S['save'].name}  "
               f"-> http://{a.host}:{a.port}", flush=True)
     else:
@@ -437,8 +533,11 @@ def main():
           f'  既報 {len(S["flag"])} 件', flush=True)
     self_check()
     js_check()
+    key_check()
+    go_check()
     print(f'  起動の門: 行列 {len(S["q"])} 行すべてで記録を組み立てられた / '
-          f'JS は構文検査を通った', flush=True)
+          f'JS は構文検査を通った / JS の読む鍵が揃っている / '
+          f'go() が解答欄を出した', flush=True)
     H.annotator = a.annotator
     ThreadingHTTPServer((a.host, a.port), H).serve_forever()
 
