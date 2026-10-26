@@ -31,11 +31,12 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import gated_layers
+from l14_known_cells import COV_MAX, gated_layers
 from l17_known_cells import zmap
 from pid_work import work_of
 
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
+KEEP4 = '/home/sh1/deepl/lineart-fill-region/results/l10_keep4_all_layers/keep4.csv'
 BASE = '/home/sh1/deepl/lineart/data/incoming_manuscript'
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l37_white_over_ink'
 LO, HI = 0.20, 0.80            # 登録の棒
@@ -75,16 +76,45 @@ def known_cells():
     print(f'KC50 z 順: 墨を白より上にすると {c:.4f} (==0)  '
           f'{"PASS" if c == 0.0 else "FAIL"}')
     ok &= (c == 0.0)
+
+    # KC52: **飽和の点検**(2026-10-26 に足した。最初の走行が全部 1.0 になったので)
+    # 画布の全面を覆う層を `below` に積むと、**どんな層でも ov = 1 になる。**
+    # **「空でないこと」ではなく「飽和していないこと」が要る点検だった。**
+    full = np.ones((H, W), bool)
+    d = _ov(beside, [full])
+    print(f'KC52 飽和: 全面の層を下に積むと、隣に置いた層でも {d:.4f} (==1) になる  '
+          f'{"PASS" if d == 1.0 else "FAIL"}')
+    print('     -> **だから全面の層 (被覆 >= 0.95) は `below` に積まない。**'
+          ' 本体は各対象の `below_frac` を印字する')
+    ok &= (d == 1.0)
     return bool(ok)
 
 
 # ---------------------------------------------------------------- 本体
 def one_page(job):
-    """1頁: z の昇順に積みながら、対象の層の `ov` を取る。**層は1回しか読まない。**"""
-    pid, work, layers = job          # layers = [(z, lid, path, name, in_fill)]
+    """1頁: z の昇順に積みながら、対象の層の `ov` を取る。**層は1回しか読まない。**
+
+    **2026-10-26 の直し**: 最初の走行は **80層すべてが ov = 1.0000** になった。
+    発見ではなく欠陥で、**`用紙` が画布の全面でアルファ 255** だからである
+    (65頁に1枚ずつ。`color` 12枚と全面トーン9枚も同じ)。
+    **下の墨の和集合が常に画布の全面になり、量が自明に 1 になっていた。**
+
+    **この罠は台帳に在った**(L23:「全層を z 順に塗れば原稿の見た目」は成り立たない、
+    `用紙` が全面アルファ255)。**持っていて当てなかった。**
+
+    直し: **`below` に積むのは `cov < 0.95` の層だけ**(`keep4.csv` の被覆)。
+    `l12` / `l15` が「用紙・全面トーンは遮蔽物にしない」で使っているのと同じ門で、
+    **新しい定数を引かない。**
+
+    **登録の定義は字面では「下に在る層の墨の和集合」だったが、
+    それは自明に 1 を出す量だった。** 消せるのは**描かれた墨**で、紙ではない ——
+    **登録が言い落としていた条件を書き足す**(棒は動かさない。数を読む前)。
+    """
+    pid, work, layers = job          # layers = [(z, lid, path, name, in_fill, wide)]
     rows, drops = [], collections.Counter()
     below = None
-    for z, lid, path, name, in_fill in sorted(layers, key=lambda t: t[0]):
+    n_wide = 0
+    for z, lid, path, name, in_fill, wide in sorted(layers, key=lambda t: t[0]):
         im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if im is None:
             drops['PNG が読めない'] += 1
@@ -103,8 +133,15 @@ def one_page(job):
                 rows.append(dict(pid=pid, work=work, lid=lid, name=name, z=z,
                                  in_fill=int(in_fill), ink_px=n,
                                  over_px=int((ink & below).sum()),
-                                 ov=round(int((ink & below).sum()) / n, 4)))
-        below |= ink                 # **自分も下に積む**(次の対象のために)
+                                 ov=round(int((ink & below).sum()) / n, 4),
+                                 # **飽和の点検**: この時点の `below` が画布の何割か。
+                                 # 1 に近ければ `ov` は自明で、量は意味を持たない
+                                 below_frac=round(float(below.mean()), 4),
+                                 n_wide=n_wide))
+        if wide:
+            n_wide += 1              # **全面の層は下に積まない**(用紙・全面トーン)
+        else:
+            below |= ink             # **自分も下に積む**(次の対象のために)
     return rows, drops
 
 
@@ -120,6 +157,12 @@ def main():
     zz = zmap()
     gfill, _gline = gated_layers()
     F = {(k, lid) for k, v in gfill.items() for lid, _ in v}
+    # **全面の層を `below` から外すための被覆**(`l12`/`l15` と同じ門。新しい定数を引かない)
+    cov = {(r['page_id'], r['layer_id']): float(r['cov'])
+           for r in csv.DictReader(open(KEEP4))}
+    n_wide_all = sum(1 for v in cov.values() if v >= COV_MAX)
+    print(f'`below` から外す全面の層 (被覆 >= {COV_MAX}): {n_wide_all} 層'
+          '  (**`用紙` 65 / `color` 12 / 全面トーン9。これを積むと ov が自明に 1 になる**)')
 
     per = collections.defaultdict(list)
     cut = collections.Counter()
@@ -143,7 +186,10 @@ def main():
             continue
         tgt = is_target(r['name'])
         n_target += tgt
-        per[(pid, w)].append((z, lid, p, r['name'], ((pid, w), int(lid)) in F))
+        cv = cov.get((pid, lid))
+        wide = (cv is not None and cv >= COV_MAX)
+        per[(pid, w)].append((z, lid, p, r['name'],
+                              ((pid, w), int(lid)) in F, wide))
 
     jobs = [(pid, w, v) for (pid, w), v in per.items()
             if any(is_target(x[3]) for x in v)]
@@ -168,7 +214,7 @@ def main():
 
     with open(f'{OUT}/over_ink.csv', 'w', newline='', encoding='utf-8') as fh:
         cols = ['pid', 'work', 'lid', 'name', 'z', 'in_fill', 'ink_px',
-                'over_px', 'ov']
+                'over_px', 'ov', 'below_frac', 'n_wide']
         wr = csv.DictWriter(fh, cols, extrasaction='ignore')
         wr.writeheader()
         for r in sorted(rows, key=lambda r: (-r['in_fill'], r['ov'])):
@@ -202,6 +248,7 @@ def main():
         for r in sorted(sel, key=lambda r: -r['ov'])[:20]:
             print(f'    ov {r["ov"]:.4f}  {band(r["ov"]):12s}  '
                   f'墨 {r["ink_px"]:>9,}  z {r["z"]:>5}  '
+                  f'下の墨が画布の {r["below_frac"]:.4f}  '
                   f'{r["pid"]} L{r["lid"]:>4}  "{r["name"]}"')
 
     infill = [r for r in rows if r['in_fill']]
