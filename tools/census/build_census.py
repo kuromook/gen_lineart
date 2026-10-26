@@ -776,6 +776,35 @@ def emit_front_position(outdir: str, path: str, drops):
     return written
 
 
+def emit_front_decile_kinds(outdir: str, path: str, drops):
+    """**軸の端を占めているのは何か。** 但し書きの文を、数に替える表。
+
+    **対照が保証するのは、比べた点の軸だけである**(基盤、2026-10-27)——
+    線画は**中央では帰無値どおり(0.508)**だが**前方1割では帰無値を下回る(0.048)。**
+    **だから前方1割に何が居るかを数える。**
+    """
+    pages, aux, n_rows = occluders.load_structure(path, drops)
+    if not pages:
+        return 0
+    rows, n_dec, n_all = occluders.front_decile_kinds(pages, drops)
+    note = (f"頁の中の前方割合。{occluders.FRONT_DECILE_RULE}。"
+            f"前方1割 {n_dec:,} 層 / 群に入った層 {n_all:,}"
+            f"({n_dec / n_all:.4f})")
+    out = [r + [note, "census track(依頼8 の `z_global` から数えた)", bc_today()]
+           for r in rows]
+    written = write_csv(
+        os.path.join(outdir, "front_decile_kinds.csv"),
+        ["v_layer_kind", "n_layers", "share_of_decile", "share_of_kind",
+         "share_of_all", "reading", "population_note", "measured_by", "as_of"], out)
+    print(f"  [前方1割を占めている種類] {occluders.FRONT_DECILE_RULE}")
+    for r in out:
+        print(f"      {r[0]:16s} {r[1]:>7} 前方1割の {r[2]} / その種類の {r[3]}"
+              f" / 全体では {r[4]}  {r[5]}")
+    print("    **境界の値は列名が運ばない** —— "
+          "基盤が `<= 0.1` で測って 529層ずれた。**母集団の欄に書いてある**")
+    return written
+
+
 def emit_folder_contents(outdir: str, path: str, drops):
     """**名前がフォルダーに付いている類**の中身(依頼8)。
 
@@ -1064,6 +1093,7 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
+              "share_of_decile", "share_of_kind", "share_of_all",
               # **割合の列。** 件数ではないので小数が正しい
               "median_front_share", "share_front_decile", "share_opacity_full",
               "share_visible_bit", "share_composite_normal")
@@ -1527,6 +1557,8 @@ def main() -> int:
         args.public_out, occluders.R8_DEFAULT, drops_dl)
     pub["occluder_folder_contents.csv"] = emit_folder_contents(
         args.public_out, occluders.R8_DEFAULT, drops_dl)
+    pub["front_decile_kinds.csv"] = emit_front_decile_kinds(
+        args.public_out, occluders.R8_DEFAULT, drops_dl)
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
         args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
@@ -1560,6 +1592,8 @@ def main() -> int:
     full["occluder_front_position.csv"] = emit_front_position(
         args.full_out, occluders.R8_DEFAULT, Drops())
     full["occluder_folder_contents.csv"] = emit_folder_contents(
+        args.full_out, occluders.R8_DEFAULT, Drops())
+    full["front_decile_kinds.csv"] = emit_front_decile_kinds(
         args.full_out, occluders.R8_DEFAULT, Drops())
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)

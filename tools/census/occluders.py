@@ -597,6 +597,17 @@ FRONT_CONTROLS = (
 SCOPES = (("page", "頁の中(フォルダー以外の層すべて)"),
           ("parent", "同じ親の中(兄弟が2つ以上の親だけ)"))
 
+# **「前方1割」の境界。**
+#
+# **これは列名が運んでいない量である** —— 基盤が同じ所を `<= 0.1` で測り、
+# **story_info 7,405 対 7,440・text 6,538 対 6,728 とずれた**(2026-10-27)。
+# **名前は同じで、境界だけが違った。** 差は 529層。
+#
+# **だから閾と向きを器具の中に名前付きで置き、母集団の欄に書く。**
+# **どちらが正しいかではない** —— **どちらで測ったかが書かれていないことが誤りだった。**
+FRONT_DECILE = 0.1
+FRONT_DECILE_RULE = f"前方割合 < {FRONT_DECILE}(**境界の値 {FRONT_DECILE} は含まない**)"
+
 
 _STRUCT_CACHE = {}
 
@@ -750,7 +761,7 @@ def front_position(pages, aux, drops):
         shares, skipped = _front_shares(groups[scope])
         base = [s for s, _, _ in shares]
         base_med = statistics.median(base)
-        base_dec = sum(1 for s in base if s < 0.1) / len(base)
+        base_dec = sum(1 for s in base if s < FRONT_DECILE) / len(base)
         rows.append([BASELINE_KEY, "**帰無値**(同じ群の層を1つ選んだとき)", "baseline",
                      scope, len(base), len(pages),
                      f"{base_med:.3f}", f"{base_dec:.3f}", "", "", "",
@@ -770,7 +781,7 @@ def front_position(pages, aux, drops):
                 v = [s for s, _, _ in sel]
                 n = len(v)
                 med = statistics.median(v)
-                dec = sum(1 for s in v if s < 0.1) / n
+                dec = sum(1 for s in v if s < FRONT_DECILE) / n
                 reading = (f"{_median_word(med, base_med)} / "
                            f"{_ratio_word(dec, base_dec)}")
                 rows.append([
@@ -782,6 +793,48 @@ def front_position(pages, aux, drops):
                     f"{sum(1 for _, _, x in sel if x[6] == '0') / n:.3f}",
                     reading])
     return rows
+
+
+def front_decile_kinds(pages, drops):
+    """**軸の端を、どの種類が占めているか。**
+
+    **なぜ要るか**(基盤、2026-10-27): 対照(線画)は**中央では帰無値どおり(0.508)**だが、
+    **前方1割では帰無値を下回る(0.048 対 0.112)。**
+    **対照が保証するのは、比べた点の軸だけである。**
+
+    **その理由をここで数にする** —— 前方1割を占めているのが何かを種類ごとに出す。
+    **物語情報と文字がそこに居るなら、絵の層は最前に出てこない。**
+
+    **この表が答えない**: **その層が何かを隠しているか**(手前であることは重なりではない)。
+    **種類が役割であること**(`story_info` はノンブルや作品情報で、紙面の主題ではない)。
+    """
+    import bisect
+    dec = collections.Counter()
+    allk = collections.Counter()
+    for ls in pages.values():
+        if len(ls) < 2:
+            drops.flag("群が1層で前方割合が定義できない(前方1割の表)")
+            continue
+        zs = sorted(x[0] for x in ls)
+        m = len(ls) - 1
+        for x in ls:
+            share = (len(zs) - bisect.bisect_right(zs, x[0])) / m
+            allk[x[7]] += 1
+            if share < FRONT_DECILE:
+                dec[x[7]] += 1
+    n_dec = sum(dec.values())
+    n_all = sum(allk.values())
+    rows = []
+    for kind, n in dec.most_common():
+        rows.append([kind, n, f"{n / n_dec:.3f}", f"{n / allk[kind]:.3f}",
+                     f"{allk[kind] / n_all:.3f}",
+                     "**この種類のほとんどが前方1割に在る**"
+                     if n / allk[kind] >= 0.5 else
+                     ("**前方1割に偏って多い**"
+                      if n / n_dec > allk[kind] / n_all * 1.5 else
+                      ("**前方1割では少ない**"
+                       if n / n_dec * 1.5 < allk[kind] / n_all else "偏りなし"))])
+    return rows, n_dec, n_all
 
 
 def folder_contents(aux):

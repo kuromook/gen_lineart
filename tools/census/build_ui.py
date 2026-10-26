@@ -91,6 +91,9 @@ COLUMN_CAVEATS = {
     "n_feature_only": ["フキダシの両面(仕組みから導いた素性)"],
     "n_name_only": ["フキダシの両面(仕組みから導いた素性)"],
     "matched_on": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_of_decile": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_of_kind": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_of_all": ["遮蔽物の重なり順(全数の構造の側)"],
     "scope": ["遮蔽物の重なり順(全数の構造の側)"],
     "median_front_share": ["遮蔽物の重なり順(全数の構造の側)"],
     "share_front_decile": ["遮蔽物の重なり順(全数の構造の側)"],
@@ -162,7 +165,7 @@ def main() -> int:
                           "occluder_classes", "req3_bound_classes",
                           "faint_alpha_gap", "occluder_balloon_two_sided",
                           "occluder_vocab_full", "occluder_front_position",
-                          "occluder_folder_contents")}
+                          "occluder_folder_contents", "front_decile_kinds")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

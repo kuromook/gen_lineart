@@ -239,6 +239,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede"><b>そして同じ層が、親の中では後ろ寄りである</b>(中央 0.750)—— <b>文字がその上に乗るから</b>で、どちらも正しい。<b>頁の中と親の中は別の量なので、同じ列名に入れない</b>(<code>scope</code> の列で分ける)。<b>2つの統計量が食い違うことも在る</b>:親の中では中央が後ろ寄りを言い、前方1割は帰無値どおり(1.04倍)。<b>片方だけ書くと、書いた側の話になる。</b><br><b>ホワイトは逆の形</b> —— 頁の中では前方1割が帰無値の 0.39倍(<b>手前に寄っていない</b>)が、親の中では 1.8倍。<b><code>rendering_*</code>(経路2)は頁の中で後ろ寄り(中央 0.721)</b> —— <b>背景のレンダリングで、線画を隠す側ではない。</b></p>
 <p class="lede"><b>帰無値には実測の形が付いている</b> —— 解析の 0.500 は<b>定義から出る数</b>で、定義が間違っていても 0.500 になる。<b>前後に寄る理由の無い名前</b>(線画 22,690層)を同じ軸で測ると<b>中央 0.508</b>で、<b>軸そのものが素直だと分かる</b>。<b>ただし同じ対照は前方1割では帰無値を下回る</b>(0.048 対 0.112)—— <b>頁の最前は特定の種類の層が占めている</b>。だから前方1割の比は<b>解析の帰無値に対する比として読み、対照に対する比としては読まない</b>。</p>
 <p class="lede"><b>語彙全体の数と、1名の数は別の量である</b> —— フキダシは<b>語彙9名で中央 0.152、<code>フキダシ</code> 1名で 0.143</b>。<b>正規化は同じで、違いは語彙の広さだった</b>(基盤が独立に再現して出た食い違い)。<b>どちらかを選ぶのではなく、両方を行に出している</b>(<code>matched_on</code>)。<br><b>そして早い年の分割形は後ろに居る</b>:1名以外の 268層は中央 0.247 で、<b>面と輪郭に分かれた2名は互いにほぼ同じ深さ(0.244 / 0.252)</b>—— <b>組として、後の単層形より後ろに在る。</b></p>
+<h3 class="sub">軸の端を占めているのは、絵ではない</h3>
+<p class="lede"><b>対照が保証するのは、比べた点の軸だけである</b> —— 線画は中央では帰無値どおりなのに、前方1割では下回る。<b>その理由を数にした</b>:前方1割 36,664層のうち <b><code>story_info</code> 7,405(その種類の <b>91.5%</b> が前方1割に在る)と <code>text</code> 6,538 で 13,943層</b>。この2種は全層の 8.6% しかない。<b>だから絵の層は最前に出てこない。</b></p>
+<p class="lede"><b>そして「前方1割」は、列名が境界を運んでいない</b> —— 基盤が <code>&lt;= 0.1</code> で、こちらが <code>&lt; 0.1</code> で測り、<b>529層ずれた</b>(<code>story_info</code> 7,405 対 7,440)。<b>どちらが正しいかではなく、どちらで測ったかが書かれていないことが誤りだった。</b>いまは母集団の欄に閾と向きが書いてある。<br><b>比の分母も書く</b>:<code>フキダシ / 帰無値 = 3.0倍</code> と <code>フキダシ / 対照 = 7.3倍</code> は<b>同じ所見の2つの見出しで、2.3倍違う。</b></p>
+<div class="scroller"><table id="t-decile"></table></div>
+
 <p class="lede"><b>この表が答えないのは「何を隠しているか」である</b> —— <b>手前に在ることは、重なっていることではない。</b>小さい層も透明な層も手前に在る。<b>画素の実測は保留中</b>(覆いの定義・帰無値・事前登録が先)。そして <b><code>opacity = 256</code> は層の設定で、画素のアルファではない。</b><b>向きは供給元の v2 の訂正に依っている</b>(v1 は <code>z_global</code> を逆に書き、CSV は正しかった)—— こちらでは兄弟の <code>order_in_parent</code> との一致でしか確かめていない。</p>
 <div class="scroller"><table id="t-occfront"></table></div>
 
@@ -407,6 +412,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     median_front_share: "前方割合の中央", share_front_decile: "前方1割に入る割合",
     share_opacity_full: "不透明度256", share_visible_bit: "可視",
     share_composite_normal: "通常合成",
+    share_of_decile: "前方1割の内訳", share_of_kind: "その種類のうち",
+    share_of_all: "全体では",
     n_names: "名前の異なり", n_folders: "フォルダー",
     n_pages_top_name: "最大の1名の頁", n_parent_names: "親の名前の異なり",
     kinds_of_layers: "種類の内訳",
@@ -491,6 +498,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                          "n_pages_top_name", "first_year_label", "last_year_label",
                          "n_parent_names", "kinds_of_layers", "reading"],
          D.occluder_vocab_full);
+  render($("t-decile"), ["v_layer_kind", "n_layers", "share_of_decile",
+                         "share_of_kind", "share_of_all", "reading"],
+         D.front_decile_kinds);
   render($("t-occfold"), ["occluder_class", "label", "n_folders",
                           "n_folders_with_layers", "n_folders_empty",
                           "n_child_layers", "n_pages", "reading"],
