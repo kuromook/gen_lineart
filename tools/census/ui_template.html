@@ -219,11 +219,25 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede">1層1行の納品なので、要約を引用せず行から数え直した。<code>raster_cover = 0.0</code> の 132層が <b>96(init 255)+ 36(init 0)</b> に分かれることは、ここで検算した数である。段 A では <code>set</code> 列の作品名を種類に畳んでいる(段 C では畳まない)。</p>
 <div class="scroller"><table id="t-ic"></table></div>
 
-<h2><span class="num">8 / 出所</span>材料と、値が動く予定の列</h2>
+<h2><span class="num">8 / 納品</span>届いたもの —— <b>枚数は層の数ではない</b></h2>
+<p class="lede"><code>data/incoming_manuscript/</code> の13の納品を歩いて数えた(段 A には納品フォルダーの名前を出さない)。<b>何が1枚かが納品ごとに違う</b> —— mask だけの納品、本体だけの納品、両方の納品が在る。優先65頁のトーンは mask 619 に対し<b>本体 683 で等しくない</b>。カラー原稿には<b>頁のプレビューが混ざる</b>(層ではない)。</p>
+<div class="controls">
+  <label class="ctl"><span>納品</span><select id="f-dgroup"></select></label>
+  <label class="ctl"><span>項目</span><select id="f-item"></select></label>
+  <label class="ctl"><span>mask か本体か</span><select id="f-mask"></select></label>
+  <span class="ctl" style="flex:1 1 20ch"><span>行 / 枚</span><span id="c-dl" class="num" style="font-family:var(--font-mono)"></span></span>
+</div>
+<div class="scroller"><table id="t-dl"></table></div>
+
+<h3 class="sub">同じ名前が2つの納品に在る 1,636枚 —— <b>うち 256枚は中身が違う</b></h3>
+<p class="lede">標本20枚の sha256 は「20/20 一致」と出た。<b>違うと分かっている組(壊れた初版の差し替え)を含んでいなかった。</b>全組を名指しで比べて出た数である。<b>どちらが現行かはここで決めない</b> —— 版の同定は名前や統計量では決まらない。</p>
+<div class="scroller"><table id="t-dup"></table></div>
+
+<h2><span class="num">9 / 出所</span>材料と、値が動く予定の列</h2>
 <p class="lede">受領 CSV の sha256 と、抽出側が読み手を直したら値が変わる列。動いたらこの集計の該当行は古くなる。</p>
 <div class="scroller"><table id="t-prov"></table></div>
 
-<h2><span class="num">9 / 段</span>手元で作品名まで見る</h2>
+<h2><span class="num">10 / 段</span>手元で作品名まで見る</h2>
 <p class="lede">この画面に埋まっているのは<b>段 A</b>(集計のみ・固有名なし)。同じ1枚で、手元の <code>data/census_full/</code> の CSV を読めば<b>段 C</b>(作品・頁まで)が出る。読み込んだものはこのページから出ない。</p>
 <div class="stage">
   <label class="ctl"><span>段 C の CSV を選ぶ</span>
@@ -280,6 +294,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 
   const NUMERIC = /^(n_|sum_|ext_)/;
   const PLAIN_NUM = new Set(["bit", "layer_type_and_2", "init"]);
+  const BADGE = { same: ["nomat", "同じ"], different: ["moving", "**違う**"] };
   const HEAD = {
     population: "母集団", year_label: "年", v_layer_kind: "種別", layer_type: "layer_type",
     bit: "ビット", meaning: "意味", confidence: "確かさ", evidence: "根拠",
@@ -287,6 +302,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     has_frame_line: "コマ枠", layer_type_and_2: "layer_type & 2", has_mask: "has_mask",
     content: "中身", direction: "食い違いの向き", detail: "内訳",
     kind: "種類", init: "InitColor", has_stored_blocks: "保存ブロック",
+    delivery_group: "納品", delivery_dir: "納品フォルダー", item: "項目",
+    is_mask: "mask", n_png_files: "PNG", n_distinct_page_keys: "頁の鍵の異なり",
+    delivery_group_a: "納品 A", delivery_group_b: "納品 B",
+    delivery_dir_a: "フォルダー A", delivery_dir_b: "フォルダー B",
+    content_match: "中身", n_png_names: "名前",
     rc_bucket: "raster_cover", alpha_max_zero: "alpha 最大が0", material_kind: "種類",
     n_pages: "頁", n_pages_without_work: "作品フォルダー無し", n_works: "作品",
     ext_clip: ".clip", ext_lip: ".lip",
@@ -316,6 +336,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
       else if (NUMERIC.test(c)) v = cell(c, r);
       else if (c === "sha256") v = '<span class="key" title="' + esc(r[c]) + '">' + esc(r[c]).slice(0, 12) + "…</span>";
       else if (c === "volatile") v = r[c] === "yes" ? '<span class="chip moving">動く予定</span>' : "";
+      else if (c === "content_match" && BADGE[r[c]])
+        v = '<span class="chip ' + BADGE[r[c]][0] + '">' + BADGE[r[c]][1].replace(/\*\*/g, "") + "</span>";
+      else if (c === "is_mask")
+        v = r[c] === "yes" ? '<span class="chip nomat">mask</span>' : '<span class="chip nomat">本体</span>';
       else if (c === "drawn_ratio_usable")
         v = r[c] === "no" ? '<span class="chip moving" title="' + esc(r.drawn_ratio_usable_why).replace(/"/g, "&quot;") + '">読まない</span>'
           : '<span class="chip nomat" title="' + esc(r.drawn_ratio_usable_why).replace(/"/g, "&quot;") + '">未確認</span>';
@@ -346,6 +370,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
          D.visibility_exceptions);
   render($("t-ic"), ["kind", "init", "layer_type", "has_stored_blocks", "rc_bucket",
                      "alpha_max_zero", "n_layers"], D.body_initcolor);
+  render($("t-dup"), ["delivery_group_a", "delivery_group_b", "content_match",
+                      "n_png_names"], D.delivery_duplicates);
   $("cavs").innerHTML = D.caveats.map((c) =>
     '<details class="cav"><summary><span class="col">' + esc(c.column) + "</span>"
     + (c.trap && c.trap !== "—" ? '<span class="trap">' + esc(c.trap) + "</span>" : "")
@@ -372,6 +398,17 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                         "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
                         "drawn_ratio_usable"]);
   }
+  function drawDelivery() {
+    const g = $("f-dgroup").value, it = $("f-item").value, mk = $("f-mask").value;
+    const rows = D.delivery_coverage.filter((r) => (!g || r.delivery_group === g)
+      && (!it || r.item === it) && (!mk || r.is_mask === mk));
+    $("c-dl").textContent = rows.length.toLocaleString("ja-JP") + " 行 / "
+      + rows.reduce((a, r) => a + Number(r.n_png_files || 0), 0).toLocaleString("ja-JP") + " 枚";
+    render($("t-dl"), ["delivery_group", "year_label", "item", "is_mask",
+                       "n_png_files", "n_distinct_page_keys"], rows);
+  }
+  ["f-dgroup", "f-item", "f-mask"].forEach((id) => $(id).addEventListener("change", drawDelivery));
+
   function drawPages() {
     const p = $("f-pop-pages").value, e = $("f-ext").value;
     let rows = pages.filter((r) => (!p || r.population === p));
@@ -397,7 +434,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     fill($("f-kind"), uniq(layers, "v_layer_kind"), "すべて");
     $("f-ext").innerHTML = '<option value="">両方</option><option value="clip">.clip</option><option value="lip">.lip(材料に無い)</option>';
     $("f-usable").innerHTML = '<option value="">すべて</option><option value="no">読まない列を含む行</option><option value="unverified">未確認の行</option>';
-    drawPages(); drawLayers();
+    fill($("f-dgroup"), uniq(D.delivery_coverage, "delivery_group"), "すべて");
+    fill($("f-item"), uniq(D.delivery_coverage, "item"), "すべて");
+    $("f-mask").innerHTML = '<option value="">両方</option><option value="yes">mask</option><option value="no">本体</option>';
+    drawPages(); drawLayers(); drawDelivery();
   }
   ["f-pop-pages", "f-ext"].forEach((id) => $(id).addEventListener("change", drawPages));
   ["f-pop-layers", "f-year", "f-kind", "f-usable"].forEach((id) => $(id).addEventListener("change", drawLayers));

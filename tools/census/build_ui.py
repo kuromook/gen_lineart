@@ -42,7 +42,8 @@ def main() -> int:
     prov = read_csv(os.path.join(args.census, "provenance.csv"))
     extra = {name: read_csv(os.path.join(args.census, name + ".csv"))
              for name in ("layer_type_values", "layer_type_bits", "mask_by_kind",
-                          "visibility_exceptions", "body_initcolor")}
+                          "visibility_exceptions", "body_initcolor",
+                          "delivery_coverage", "delivery_duplicates")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

@@ -28,6 +28,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from caveats import CAVEATS  # noqa: E402
+import delivery  # noqa: E402
 import full_population as fp  # noqa: E402
 import sources  # noqa: E402
 
@@ -50,13 +51,15 @@ POPULATION_METRICS = {
                           "ext_clip", "ext_lip",
                           "sum_n_layers_incl_folders", "sum_n_folders",
                           "sum_n_text_layers", "sum_n_image_material_layers",
-               "bit", "layer_type_and_2"),
+               "bit", "layer_type_and_2",
+               "n_png_files", "n_distinct_page_keys", "n_png_names"),
 }
 
 # 公開してよい次元の値(**白名簿。** 宣言外の値は点検が指摘する)
 ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "db_files", "db_distinct", "db_layers", "lip_files",
-                       "db_all_layers", "body_initcolor", "priority65")
+                       "db_all_layers", "body_initcolor", "priority65",
+                       "delivery_png")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d")
 
@@ -311,6 +314,19 @@ def emit_full_population(outdir: str):
     return written
 
 
+def emit_delivery(outdir: str, root: str, keep_private: bool, drops):
+    """納品の覆い(仕様 §3-4)。**`data/` を読んで数え、`census/` には札だけ出す。**"""
+    rows, collapsed = delivery.scan(root, drops)
+    written = {}
+    header, out = delivery.aggregate(rows, keep_private)
+    written["delivery_coverage.csv"] = write_csv(
+        os.path.join(outdir, "delivery_coverage.csv"), header, out)
+    header, out, n_names, n_dup = delivery.duplicate_pairs(root, rows, keep_private, drops)
+    written["delivery_duplicates.csv"] = write_csv(
+        os.path.join(outdir, "delivery_duplicates.csv"), header, out)
+    return written, rows, collapsed, n_names, n_dup
+
+
 def check_full_population_totals() -> int:
     """供給元の2つの表が、どちらも宣言した全数に合うか。
 
@@ -536,12 +552,15 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "ext_clip", "ext_lip",
                "sum_n_layers_incl_folders", "sum_n_folders",
                "sum_n_text_layers", "sum_n_image_material_layers",
-               "bit", "layer_type_and_2")
+               "bit", "layer_type_and_2",
+               "n_png_files", "n_distinct_page_keys", "n_png_names")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
-            "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence")
+            "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
+            "delivery_group", "delivery_group_a", "delivery_group_b", "item",
+            "is_mask", "content_match")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
@@ -585,6 +604,15 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "bits": {"bits", "—", ""},                  # `512+256+32` の形
         "confidence": {"confidence", "確か(全数で例外0)", "確か。**ただし1種類だけ外れる**",
                        "不明", ""},
+        "delivery_group": {"delivery_group",
+                           *{g for g, _ in delivery.GROUPS.values()}, ""},
+        "delivery_group_a": {"delivery_group_a",
+                             *{g for g, _ in delivery.GROUPS.values()}, ""},
+        "delivery_group_b": {"delivery_group_b",
+                             *{g for g, _ in delivery.GROUPS.values()}, ""},
+        "item": {"item", *delivery.ITEMS.values(), ""},
+        "is_mask": {"is_mask", "yes", "no", ""},
+        "content_match": {"content_match", "same", "different", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -675,6 +703,14 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                  "なし(`layer_type` のビットと値の表は受領済み)",
                  "**ここでは測れない**(DB が手元に無い)。"
                  "合うのは**こちらの転記と供給元の足し算**だけ"])
+    rows.append(["delivery_png",
+                 "`data/incoming_manuscript/` に届いた PNG(**13の納品**)",
+                 "", "", "",
+                 f"census track({as_of} に納品の木を歩いた)", as_of,
+                 "なし(`data/` は手元に在る)",
+                 "**単位は PNG の枚数で、層の数ではない。** "
+                 "何が1枚かが納品ごとに違う(mask だけ / 本体だけ / 両方)。"
+                 "**同名で中身が違う PNG が 256枚**在る"])
     rows.append(["body_initcolor",
                  "トーン・グラデ・ベタの本体の `InitColor`(1層1行)",
                  "", "", 2095, "census track(2026-10-26 に行から数え直した)",
@@ -758,6 +794,7 @@ def main() -> int:
     ap.add_argument("--req3", default=sources.by_key("req3_layer_kind")["path"])
     ap.add_argument("--added33", default=sources.by_key("added33_structure")["path"])
     ap.add_argument("--initcolor", default=sources.by_key("body_initcolor")["path"])
+    ap.add_argument("--delivery-root", default=delivery.ROOT_DEFAULT)
     args = ap.parse_args()
     as_of = today()
 
@@ -779,6 +816,9 @@ def main() -> int:
         print(f"  [段 A で畳んだ `set`] {len(collapsed)} 個 → 「{fp.FILL_LABEL}」1行"
               f"(作品名を含むため)。畳んだ層 {sum(collapsed.values())}")
         print("    **段 C では畳まない**(世代もプールである)")
+
+    drops_dl = Drops()
+    print(f"  {args.delivery_root}: 納品の木を歩く")
 
     overlap = req3_pages.keys() & {r["page_path"] for r in a33_rows}
     print(f"\n[母集団の重なり] 依頼3 ∩ added33 = {len(overlap)} 頁"
@@ -802,6 +842,13 @@ def main() -> int:
     print("\n[公開(段 A)を書く] —— 行は PUBLIC_DIMS だけを持つ鍵から組む")
     os.makedirs(args.public_out, exist_ok=True)
     pub = emit_tables(args.public_out, layer_cells, page_cells, False, n_works_by)
+    dl_pub, dl_rows, dl_collapsed, dl_names, dl_dup = emit_delivery(
+        args.public_out, args.delivery_root, False, drops_dl)
+    pub.update(dl_pub)
+    print(f"  [納品の覆い] PNG {len(dl_rows)} 枚 / 名前の異なり {dl_names} / "
+          f"**2つ以上の納品に同じ名前 {dl_dup}**")
+    print(f"    畳んだ納品フォルダー {len(dl_collapsed)} 個(作品名を含むため)")
+    drops_dl.report("納品の木")
     pub.update(emit_full_population(args.public_out))
     pub["body_initcolor.csv"] = emit_initcolor(args.public_out, ic_rows, False)
     pub["populations.csv"] = write_populations(args.public_out, req3_rows, req3_pages,
@@ -816,6 +863,7 @@ def main() -> int:
     print("\n[全量(段 C)を書く] —— 同じ集計から")
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
+    full.update(emit_delivery(args.full_out, args.delivery_root, True, Drops())[0])
     full.update(emit_full_population(args.full_out))
     full["body_initcolor.csv"] = emit_initcolor(args.full_out, ic_rows, True)
     full["caveats.csv"] = write_caveats(args.full_out)
