@@ -963,7 +963,27 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   should be expected of every coverage column computed by this reader, including
   `raster_cover` and `mask_cover`, whose non-zero values on partially-saved
   `255` layers would also be lower bounds** -- asked of the extraction side
-  2026-10-26, not assumed. **A column of lower bounds supports "at least this
+  2026-10-26, not assumed, **and answered the same night, narrowing it twice.**
+  **`raster_cover` can be a lower bound** (same reader) **but is not one in the
+  deliveries that exist**: across `grad_v2`'s 258 layers and `tone_v2`'s 619,
+  **no layer is a partially-saved `body_init 255`** -- the 96 at `255` are all
+  **saved nothing**, which is the "reads 0, is the full canvas" form, and the
+  other 162 are `init 0` and mean what they say. **The mechanism is real and the
+  instance count here is zero**, which is the outcome Track M had pre-committed
+  to writing as *理屈だけで実体が無い*. **`mask_cover` is not a lower bound at
+  all**: a different reader (`mask_coverage`) fills both unsaved blocks and
+  canvas overflow with **`InitColor`** rather than 0, and its CSV already carries
+  `init`, `blocks`, `stored` and the dimensions. **The columns that can be lower
+  bounds are exactly those the render reader computes** -- `drawn_ratio`,
+  `black_among_drawn`, `drawn_gray_mean`, `ink_px`, `preview_dark`,
+  `raster_cover`, `alpha >= 1` -- **and only on `body_init 255` layers that are
+  partially saved**, whose full count will come from the `alpha >= 1` table the
+  author ordered first. **`preview_dark` and `black_among_drawn` being on that
+  list reaches Track L's selections**, which used both as gates on 2026-10-26.
+  **And the extraction side volunteered an unmeasured one**: the mask reader
+  **does not add `LayerMaskOffset`**, so coverage may move on offset layers, and
+  **neither the magnitude nor the number of affected layers is measured** --
+  carried as open, not as small. **A column of lower bounds supports "at least this
   much" and nothing else: no mean, no ranking, no threshold in the direction of
   the bound.** The
   sibling failure in the same reply is the mirror image -- **a class defined by a
