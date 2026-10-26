@@ -280,9 +280,12 @@ def load_initcolor(path: str):
                 v = rec[key].strip()
                 return None if v == "" else float(v)
             stored = int(rec["stored"] or 0)
+            blocks = int(rec["blocks"] or 0)
             rc = num("raster_cover_in_manifest")
             amax = num("stored_alpha_max")
             rows.append(dict(kind=kind, init=rec["init"].strip(),
+                             bound_class=classify_bound(rec["init"].strip(),
+                                                        blocks, stored),
                              layer_type=rec["layer_type"].strip(),
                              has_stored_blocks="yes" if stored else "no",
                              rc_bucket=("manifest に無い" if rc is None
@@ -291,6 +294,53 @@ def load_initcolor(path: str):
                                              else "no" if amax is not None else ""),
                              ))
     return rows, drops, collapsed
+
+
+# **読み手は保存されていないブロックを 0 で埋める**(抽出側 2026-10-26)。
+# そのため **`body_init == 255` かつ一部保存の層では、被覆の値が下限になる。**
+# **0 は特別ではなく、下限が 0 まで下がった場合でしかない。**
+BOUND_CLASSES = (
+    ("255 + 保存0", "全面の可能性", ""),
+    ("0 + 保存0", "空", ""),
+    ("0 + 保存あり", "中身を見る(埋める 0 が InitColor と同じなので偏らない)", ""),
+    ("255 + 全部保存", "**値が値どおり**", ""),
+    ("255 + 一部保存", "**下限**", "平均を出さない / 順位を付けない / "
+                               "下限の向きに閾を置かない"),
+)
+
+
+def classify_bound(init: str, blocks: int, stored: int) -> str:
+    """被覆の値が、値か下限か、全面の可能性か。**5つに分ける**(抽出側の T60 拡張)。"""
+    if init == "255":
+        if stored == 0:
+            return "255 + 保存0"
+        if blocks and stored == blocks:
+            return "255 + 全部保存"
+        return "255 + 一部保存"
+    return "0 + 保存0" if stored == 0 else "0 + 保存あり"
+
+
+def emit_bound_classes(outdir: str, ic_rows, keep_private: bool):
+    """**値が下限である層が何層か。** ここで測れる範囲だけ。
+
+    **測れるのは本体の `InitColor` が届いた 2,095層だけ** ——
+    依頼3の 56,576層には `blocks`/`stored` が無いので、
+    **そちらの該当数は分からない**(0 ではなく、不明)。
+    """
+    key = ("kind", "bound_class")
+    agg = collections.Counter(tuple(r[k] for k in key) for r in ic_rows)
+    meaning = {c: m for c, m, _ in BOUND_CLASSES}
+    rule = {c: r for c, _, r in BOUND_CLASSES}
+    rows = []
+    for (kind, cls), n in sorted(agg.items()):
+        rows.append([kind, cls, meaning.get(cls, ""), n, rule.get(cls, "")])
+    # **出なかった分類も 0 で印字する** —— 無い行は「測っていない」と区別が付かない
+    seen = {c for _, c in agg}
+    for c, m, r in BOUND_CLASSES:
+        if c not in seen:
+            rows.append(["(どの種類にも無し)", c, m, 0, r])
+    return write_csv(os.path.join(outdir, "coverage_bound_classes.csv"),
+                     ["kind", "bound_class", "meaning", "n_layers", "rule"], rows)
 
 
 def emit_initcolor(outdir: str, rows, keep_private: bool):
@@ -631,13 +681,14 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
-            "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format")
+            "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format",
+            "bound_class")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
               "meaning", "evidence", "content", "direction", "material_kind", "why",
-              "label", "what", "not_what", "share", "category")
+              "label", "what", "not_what", "share", "category", "rule")
 
 
 def check_column_classes() -> None:
@@ -705,7 +756,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "alpha_max_zero": {"alpha_max_zero", "yes", "no", ""},
         "rc_bucket": {"rc_bucket", "0.0", ">0", "manifest に無い", ""},
         "init": {"init", ""},                       # 残りは数字として見る
-        "kind": {"kind", fp.FILL_LABEL, *fp.SET_LABELS.values()},
+        "kind": {"kind", fp.FILL_LABEL, *fp.SET_LABELS.values(),
+                 "(どの種類にも無し)"},
         "bits": {"bits", "—", ""},                  # `512+256+32` の形
         "confidence": {"confidence", "確か(全数で例外0)", "確か。**ただし1種類だけ外れる**",
                        "不明", ""},
@@ -722,6 +774,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "quantity": {"quantity", "n_files", "n_distinct", "excess",
                      "files_in_clusters", "clusters", ""},
         "format": {"format", "clip", "lip", "both", ""},
+        "bound_class": {"bound_class", *{c for c, _, _ in BOUND_CLASSES}, ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -1000,6 +1053,8 @@ def main() -> int:
           f"**2つ以上の納品に同じ名前 {dl_dup}**")
     print(f"    畳んだ納品フォルダー {len(dl_collapsed)} 個(作品名を含むため)")
     drops_dl.report("納品の木")
+    pub["coverage_bound_classes.csv"] = emit_bound_classes(
+        args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
     pub["canvas_declared.csv"] = emit_canvas(args.public_out, a33_rows)
     pub.update(emit_full_population(args.public_out))
@@ -1017,6 +1072,8 @@ def main() -> int:
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
     full.update(emit_delivery(args.full_out, args.delivery_root, True, Drops())[0])
+    full["coverage_bound_classes.csv"] = emit_bound_classes(
+        args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
     full["canvas_declared.csv"] = emit_canvas(args.full_out, a33_rows)
     full.update(emit_full_population(args.full_out))

@@ -246,6 +246,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <h3 class="sub">塊の大きさ</h3>
 <div class="scroller"><table id="t-cs"></table></div>
 
+<h3 class="sub">被覆の値は、値か下限か —— <b>機序は実在、この納品では該当 0層</b></h3>
+<p class="lede">描画用の読み手は<b>保存されていないブロックを 0 で埋める</b>ので、<code>body_init 255</code> で一部だけ保存された層では値が小さく出る。<b>0 は特別ではなく、下限が 0 まで下がった場合でしかない。</b>本体が届いた 2,095層を数えると <b><code>255 + 一部保存</code> は 0層</b> —— <b>列全体を下限扱いする必要はない。</b>ただし<b>依頼3の 56,576層には <code>blocks</code>/<code>stored</code> が無いので、そちらの該当数は未計数</b>(機序は確定、件数が無い)。</p>
+<div class="scroller"><table id="t-bound"></table></div>
+
 <h3 class="sub">グラデ v1/v2 を<b>層を鍵に</b>—— 名前を鍵にした 152 の正体</h3>
 <p class="lede">供給元の対応表(258層)から数え直した。<b>名前を鍵にすると 152枚が「違う」</b>と出るが、層を鍵にすると <b>131 は画素が同じで名前が違うだけ</b>で、<b>本当に画素が変わったのは 21層</b>(<code>mask_cover</code> が動いた層数と一致)。<b>103層は v2 で加わった層</b>で、これが採番を後ろにずらした原因である。</p>
 <div class="scroller"><table id="t-grad"></table></div>
@@ -347,6 +351,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     n_pixels_only_b: "B だけ",
     quantity: "量", label: "何の数か", n: "値", share: "割合",
     format: "形式", category: "分かれ方", note: "正体",
+    bound_class: "分類", meaning: "意味", rule: "できないこと",
     what: "これは", not_what: "**これではない**",
     cluster_size: "塊の大きさ", n_clusters: "塊",
     canvas_w: "canvas_w", canvas_h: "canvas_h", dpi: "dpi",
@@ -366,7 +371,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     work: "作品", subdir: "下位", page_path: "頁",
   };
   const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
-                         "label", "what", "not_what", "share", "category",
+                         "label", "what", "not_what", "share", "category", "rule",
                          "answers", "not_answers", "detail", "measured_by", "supplier",
                          "material_kind", "meaning", "evidence", "content", "direction",
                          "confidence"]);
@@ -434,6 +439,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                      "predicate", "measured_by"], D.duplicate_quantities);
   render($("t-cs"), ["format", "cluster_size", "n_clusters", "note", "measured_by"],
          D.cluster_sizes);
+  render($("t-bound"), ["kind", "bound_class", "meaning", "n_layers", "rule"],
+         D.coverage_bound_classes);
   render($("t-grad"), ["category", "n_layers", "measured_by"], D.grad_v1_v2_by_layer);
   render($("t-canvas"), ["canvas_w", "canvas_h", "dpi", "n_pages",
                          "canvas_unit_resolved"], D.canvas_declared);
