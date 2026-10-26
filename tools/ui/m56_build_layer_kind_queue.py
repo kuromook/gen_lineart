@@ -93,6 +93,7 @@ SEED = 20261026
 WIN = 1400              # 絵ぜんたいの長辺
 STRIP = 190             # 左端の帯の幅
 CELL_MAX = 240          # 帯の1枚の高さの上限
+MAXUP = 8               # 主の絵の拡大の上限(超えると何も足さない)
 PAD = 6
 WORDS = ['下絵・ラフ', '線画', '色・ベタ(塗り)', '仕上がった絵(統合済み)',
          '資料用の画像', 'セリフ・文字']
@@ -216,17 +217,21 @@ def compose(strip_imgs, main, mark):
     for t in tiles:
         left[y:y + t.shape[0], PAD:PAD + t.shape[1]] = t
         y += t.shape[0] + PAD
-    # **主の絵は窓いっぱいに余白を足さない。** 小さい層を 1400px の白地の中央に
-    # 置くと、絵が白に埋もれる(追補42 §C-3 の組版試験)。**拡大はしない**(層の PNG は
-    # 既に原寸なので、超えれば無い解像度の主張になる)。**横の余白を詰める。**
+    # **小さい層は拡大する。拡大したことは `interp` で画面に出す。**
+    # 13:25 の目視: ノンブル(箱 38x15)を 1:1 で出すと、組んだ絵が
+    # **1476x219 の細長い帯**になり、21枚の帯が 190px 幅に潰れた
+    # (`max-width:100%` なので、ブラウザは 219px のまま出す)。
+    # **拡大しないと版面が崩れ、拡大すると無い解像度を出す** ——
+    # **拡大して、倍率を画面に書く**ほうを採る(規則4: 既定値を主張にしない。
+    # **黙って原寸と書くのが禁じ手であって、拡大そのものではない**)。
     bh, bw = main.shape[:2]
-    sc = min(H / bh, WIN / bw, 1.0)
+    sc = min(H / bh, WIN / bw, MAXUP)
     big = over_checker(
         cv2.resize(main, (max(1, round(bw * sc)), max(1, round(bh * sc))),
                    interpolation=cv2.INTER_AREA if sc < 1 else cv2.INTER_NEAREST))
-    pane = np.full((H, big.shape[1], 3), 255, np.uint8)
-    y = (H - big.shape[0]) // 2
-    pane[y:y + big.shape[0]] = big
+    pane = np.full((H, WIN, 3), 255, np.uint8)
+    y, x = (H - big.shape[0]) // 2, (WIN - big.shape[1]) // 2
+    pane[y:y + big.shape[0], x:x + big.shape[1]] = big
     return np.hstack([left, pane]), round(sc, 5)
 
 
@@ -381,7 +386,8 @@ def main():
                       # **層は原寸、プレビューは 1/縮小率。比は画像ごとに掛ける**
                       'scale': round(s_l * x['ratios'][i], 5),
                       'ctx_scale': round(s_c / x['red'], 5),
-                      'interp': 1.0, 'box_px': x['boxes'][i],
+                      'interp': round(max(1.0, s_l), 3),
+                      'box_px': x['boxes'][i],
                       'white': x['whites'][i],
                       'cands': [], 'word_share': {},
                       'top_word': '', 'purity': 0.0, 'n_lay': len(x['rows']),

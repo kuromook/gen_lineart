@@ -36,6 +36,7 @@ NEW_INFO = """function info(){
   document.getElementById('info').textContent=
     (ctx?'[頁ぜんたい] ':'[いま聞いている層] ')+it.work+'   '+it.pid+
     (sc==null?'  (表示倍率 不明)':'  (元の原稿に対して '+(sc*100).toFixed(1)+'%)')+
+    (!ctx&&it.interp>1?'  ※'+it.interp.toFixed(1)+'倍に拡大しています(ぼけます)':'')+
     (it.saved?'  ← 記録済み: '+(it.saved.word||it.saved.free||it.saved.choice):'')+
     (it.flagged?'   ⚑ 異常として報告済み: '+it.flagged.note:'');
 }"""
