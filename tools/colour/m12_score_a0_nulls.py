@@ -250,9 +250,25 @@ def ic_m7(pred_small, s, grid, min_px):
     return r
 
 
+KC_PAGES = Path('results/alias/known_cell_pages.json')   # **追跡外**
+
+
+def known_cell_source(key):
+    """**既知セルの頁は `source`(= `page_path`)で引く。名前では引かない。**
+
+    追補76 §B: ここは `page` の末尾一致で選んでいた。**壊れてはいなかったが、
+    2つの改名が末尾に触らなかったからで、偶然である。** 既知セルを名前で選ぶのは、
+    規律2 の足場を名前の上に置くことになる。**道の表は追跡外**(追補73 §D)。
+    """
+    if not KC_PAGES.exists():
+        raise SystemExit(f'**既知セルの道の表が無い: {KC_PAGES}。走らせない**')
+    return json.loads(KC_PAGES.read_text(encoding='utf-8'))[key]
+
+
 def ic_m5(pages):
     """skimage の等値成分が m9 の floodFill 歩行と一致すること。"""
-    p = next(q for q in pages if q['page'].endswith('sunshine2_page0019'))
+    src = known_cell_source('m12_ic_m5')
+    p = next(q for q in pages if q['source'] == src)
     im = cv2.imread(str(D / p['preview']['file']), cv2.IMREAD_COLOR)
     n_px = im.shape[0] * im.shape[1]
     ok = True
