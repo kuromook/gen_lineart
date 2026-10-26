@@ -85,6 +85,29 @@ COLUMN_CAVEATS = {
     "dpi": ["canvas_w / canvas_h"],
     "canvas_unit_resolved": ["canvas_w / canvas_h"],
     "direction": ["visibility"],
+    "probe": ["フキダシの両面(仕組みから導いた素性)"],
+    "probe_what": ["フキダシの両面(仕組みから導いた素性)"],
+    "n_both_sides": ["フキダシの両面(仕組みから導いた素性)"],
+    "n_feature_only": ["フキダシの両面(仕組みから導いた素性)"],
+    "n_name_only": ["フキダシの両面(仕組みから導いた素性)"],
+    "matched_on": ["遮蔽物の重なり順(全数の構造の側)"],
+    "scope": ["遮蔽物の重なり順(全数の構造の側)"],
+    "median_front_share": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_front_decile": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_opacity_full": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_visible_bit": ["遮蔽物の重なり順(全数の構造の側)"],
+    "share_composite_normal": ["遮蔽物の重なり順(全数の構造の側)"],
+    "n_names": ["遮蔽物の名前(全数)"],
+    "n_folders": ["遮蔽物の名前(全数)"],
+    "n_pages_top_name": ["遮蔽物の名前(全数)"],
+    "n_parent_names": ["遮蔽物の名前(全数)"],
+    "kinds_of_layers": ["遮蔽物の名前(全数)"],
+    "first_year_label": ["遮蔽物の名前(全数)"],
+    "last_year_label": ["遮蔽物の名前(全数)"],
+    "n_folders_with_layers": ["遮蔽物の名前(全数)"],
+    "n_folders_empty": ["遮蔽物の名前(全数)"],
+    "n_child_layers": ["遮蔽物の名前(全数)"],
+    "reading": ["フキダシの両面(仕組みから導いた素性)", "遮蔽物の重なり順(全数の構造の側)", "遮蔽物の名前(全数)"],
     "sum_n_layers_incl_folders": ["層数(集計どうしの比較)"],
     "sum_n_folders": ["層数(集計どうしの比較)"],
 }
@@ -137,7 +160,9 @@ def main() -> int:
                           "duplicate_quantities", "cluster_sizes",
                           "grad_v1_v2_by_layer", "coverage_bound_classes",
                           "occluder_classes", "req3_bound_classes",
-                          "faint_alpha_gap")}
+                          "faint_alpha_gap", "occluder_balloon_two_sided",
+                          "occluder_vocab_full", "occluder_front_position",
+                          "occluder_folder_contents")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

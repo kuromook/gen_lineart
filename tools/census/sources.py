@@ -100,6 +100,29 @@ LOCAL_CSV = [
                "PNG の名前は頁の中の順番を encode している",
     ),
     dict(
+        key="layer_names_all",
+        path="inbox/census_r7_layer_names_20261027.csv",
+        predicate="**全数の層名**(16,241 の異なる名前 / 437,561層)。"
+                  "`is_folder`・年の範囲・種類の内訳・親の名前の異なり数つき",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**これで名前側が全数に届いた。** だが"
+               "**素性側(画素の分布)は8頁しか届かない** —— "
+               "**両面が一致したと言える範囲は8頁で、名前側の数は全数である。**"
+               "**同じ行に並べない。** そして**フォルダーの行を含む**"
+               "(`黒消し` は層では0件、フォルダーで 609)",
+    ),
+    dict(
+        key="layer_structure_all",
+        path="inbox/census_r8_layer_structure_20261027.csv",
+        predicate="**全数の層の構造**(437,561層の `parent_id`/`order_in_parent`/"
+                  "`ancestors`/`composite`/`clip`/`visibility`/`opacity`/`z_global`)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**`z_global` の向きは供給元が v2 で訂正した**(v1 は逆。CSV は正しかった)"
+               " —— **こちらでは兄弟の `order_in_parent` との一致でしか確かめていない。**"
+               "**画素は入っていない**ので、**何を隠しているかは測れない**"
+               "(手前に在ることは重なっていることではない)",
+    ),
+    dict(
         key="added33_structure",
         path="inbox/pages_added33_structure_20261026.csv",
         predicate="後から入った33頁の構造(層数・フォルダー数・画布・dpi)",
@@ -107,6 +130,55 @@ LOCAL_CSV = [
         caveat="**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)",
     ),
 ]
+
+# **届いているが、まだこの集計に入っていない便。**
+#
+# **これを書く理由**: 「数が無い」には2つ在る —— **材料が無い**のと
+# **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
+# **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
+ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/census_n1_pages_by_year_20261027.csv",
+         supplies="pages_by_year_all",
+         what="年ごとの頁数(全 9,653。22行)",
+         why_not_yet="**年の行を全数に広げる作業がまだ**。"
+                     "いまの `pages_by_year.csv` は依頼3の872頁と added33 の33頁だけ"),
+    dict(path="inbox/census_n2_layers_by_format_20261027.csv",
+         supplies="clip_only_layers",
+         what="形式ごとの層数(`.clip` 312,898 / `.lip` 124,663)",
+         why_not_yet="**`db_layers` の 312,898 を同じ走行の数に差し替える作業がまだ**"),
+    dict(path="inbox/census_n4_lip_layers_20261027.csv",
+         supplies="lip_layers",
+         what="`.lip` の層の表(124,663層・1,986頁)",
+         why_not_yet="**`.lip` を母集団に入れる決定がまだ** —— "
+                     "`rendered` は全行が空で、**「描けなかった」ではなく「描いていない」**"),
+    dict(path="inbox/census_n5_added33_canvas_20261027.csv",
+         supplies="canvas_px",
+         what="33頁の `canvas_unit`(mm 31頁 / px 2頁)と画素の画布",
+         why_not_yet="**`canvas_declared.csv` の単位の列を埋める作業がまだ**"),
+    dict(path="inbox/mask_cover_request3_20261026.csv",
+         supplies=None,
+         what="依頼3のマスクの被覆(16,273行・766頁)",
+         why_not_yet="**§3-4 の納品の覆いに入れる作業がまだ**。"
+                     "`mask_cover` は下限ではないが、**`LayerMaskOffset` を足していない**ので"
+                     "ずれた層では被覆が動く(幅と層数は未測定)"),
+]
+
+
+def audit_arrived() -> int:
+    """**宣言した便が実在するか。** 無い便を「届いている」と書いたら指摘。"""
+    import os
+    bad = []
+    print("  [届いているが未統合の便]")
+    for a in ARRIVED_NOT_INTEGRATED:
+        here = os.path.exists(a["path"])
+        if not here:
+            bad.append(a["path"])
+        print(f"    {os.path.basename(a['path']):46s} "
+              f"{'在る' if here else '**不在**'}  {a['what']}")
+    for path in bad:
+        print(f"    **{path} を「届いている」と書いたが、ファイルが無い**")
+    return 1 if bad else 0
+
 
 # **どの材料にも1件も入っていない母集団。** 「0件だった」ではなく「見ていない」
 ABSENT = [
@@ -181,7 +253,12 @@ def audit_needs() -> int:
         else:
             kind, key = cond
             satisfied = kind == "source" and key in have
-            state = f"{key} は{'在る' if satisfied else '未着'}"
+            # **「未着」と「届いているが未統合」を言い分ける** ——
+            # 同じ語にすると、**入れ忘れが依頼待ちに見える**
+            pending = any(a.get("supplies") == key for a in ARRIVED_NOT_INTEGRATED)
+            state = (f"{key} は在る" if satisfied else
+                     f"{key} は**届いているが未統合**" if pending else
+                     f"{key} は未着")
             ok = (not needs) if satisfied else bool(needs)
             if not ok:
                 bad.append((s["key"], state, needs))

@@ -609,7 +609,12 @@ def audit_inline_needs(outdir: str) -> int:
             ok = (not written) if filled else bool(written)
         else:
             arrived = cond[1] in have
-            state = f"材料 {cond[1]} は{'在る' if arrived else '未着'}"
+            # **「未着」と「届いているが未統合」を言い分ける**(`sources` と同じ語で)
+            pending = any(a.get("supplies") == cond[1]
+                          for a in sources.ARRIVED_NOT_INTEGRATED)
+            state = (f"材料 {cond[1]} は在る" if arrived else
+                     f"材料 {cond[1]} は**届いているが未統合**" if pending else
+                     f"材料 {cond[1]} は未着")
             ok = (not written) if arrived else bool(written)
         if not ok:
             bad.append((key, state, written))
@@ -648,6 +653,151 @@ def emit_occluders(outdir: str, root: str, drops):
         print(f"      {r[0]:22s} {r[3]:4d} / {r[6]:4d}  {r[7]}")
     print("    **選んだ素性は何も特徴づけていない** —— "
           "統計量側には画素の分布の列が要る(未測定)")
+    return written
+
+
+def emit_balloon_two_sided(outdir: str, root: str, drops):
+    """**フキダシの両面。** 作者の指示(2026-10-27)を、フキダシに当てて書き直した表。
+
+    > **名前で見つけて統計量で裏付ける・統計量で見つけて名前で裏付ける。**
+    > **どちらの順でもいいが、片面だけで済ませない方がよい。**
+
+    **上の `occluder_classes.csv` の素性は失敗した**(`layer_type`/`composite`/`clip`/
+    `has_mask` は何も特徴づけない)。**その失敗は残したまま、別の側をここに置く** ——
+    **画素の分布から、節ごとに「その層が物として何であるか」を書いて導いた素性。**
+
+    **母集団が2つ在る。混ぜない**:
+    - **名前側は全数**(437,561層。依頼7)→ `occluder_vocab_full.csv`
+    - **素性側は8頁**(画素の分布の列が在る範囲)→ この表
+    **だから「両面一致」と言える範囲は8頁である。**
+    """
+    pages = occluders.load_named_layers(root, drops)
+    rows = occluders.mechanism_two_sided(pages, drops)
+    n_pages = len(pages)
+    n_layers = sum(len(v) for v in pages.values())
+    n_feat = sum(1 for ls in pages.values() for L in ls
+                 if L.get("colours_q16") is not None)
+    n_feat_pages = len({pg for pg, ls in pages.items() for L in ls
+                        if L.get("colours_q16") is not None})
+    note = (f"素性の列(`colours_q16`/`top_colour_share`/`sat_mean`)が在るのは "
+            f"{n_feat_pages} 頁 / {n_feat} 層。層名が在るのは {n_pages} 頁 / "
+            f"{n_layers} 層。**全数ではない**")
+    out = [r + [note, "census track(納品の manifest の画素の分布から数えた)", bc_today()]
+           for r in rows]
+    written = write_csv(
+        os.path.join(outdir, "occluder_balloon_two_sided.csv"),
+        ["occluder_class", "label", "probe", "probe_what", "n_layers", "n_pages",
+         "n_both_sides", "n_feature_only", "n_name_only", "reading",
+         "population_note", "measured_by", "as_of"], out)
+    print(f"  [フキダシの両面] 素性の列が在る {n_feat_pages} 頁 / {n_feat} 層")
+    for r in out:
+        print(f"      {r[0]:8s} {r[2]:18s} n={r[4]:>5} 両面={str(r[6]):>4} "
+              f"素性だけ={str(r[7]):>4} 名前だけ={str(r[8]):>3} {r[9]}")
+    print("    **両面一致と言えるのはこの頁の範囲だけ。** "
+          "名前側の全数は `occluder_vocab_full.csv`")
+    return written
+
+
+def emit_vocab_full(outdir: str, path: str, drops):
+    """**全数の名前側**(依頼7、437,561層 / 16,241 の異なる名前)。
+
+    **層名は出さない** —— 出すのは**語彙に当たった名前の異なり数と、層・フォルダーの件数。**
+    **`top_parent_name`(最頻の親の名前)は作者の作業名なので出さない。**
+    異なり数 `n_parent_names` だけを出す。
+
+    **頁の和を書かない** —— 同じ頁に2つの名前が在りうるので、名前ごとの `n_pages` の
+    和は頁数ではない。**最大の1名の頁数だけを書く。**
+    """
+    rows = occluders.load_vocab_table(path, drops)
+    if not rows:
+        print("  [全数の名前側] **依頼7の表が無い。** この表は書かない")
+        return 0
+    # **年の札は白名簿に入れる前に形を強制する**(入れた語は点検から外れる)
+    years = occluders.vocab_year_labels(rows)
+    ALLOWED_PUBLIC_TOKENS.update(years)
+    out = occluders.vocab_full(rows, drops)
+    n_names = len(rows)
+    note = (f"全 {fp.N_LAYERS:,} 層 / 名前の異なり {n_names:,}(依頼7)。"
+            "**フォルダーの行を含む。** 素性側の裏付けは無い"
+            "(全数には画素の分布の列が無い)")
+    final = []
+    for r in out:
+        final.append([r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
+                      r[9], r[10] if len(r) > 10 else "", note,
+                      "抽出側(um350)が集計 / 語彙は census track が書いた", bc_today()])
+    written = write_csv(
+        os.path.join(outdir, "occluder_vocab_full.csv"),
+        ["occluder_class", "label", "n_names", "n_layers", "n_folders",
+         "n_pages_top_name", "first_year_label", "last_year_label",
+         "n_parent_names", "reading", "kinds_of_layers",
+         "population_note", "measured_by", "as_of"], final)
+    print(f"  [全数の名前側] 名前の異なり {n_names:,} / 年の札 {len(years)} を白名簿へ")
+    for r in final:
+        print(f"      {r[0]:24s} 名前 {str(r[2]):>4} / 層 {str(r[3]):>6} / "
+              f"フォルダー {str(r[4]):>4}  {r[6]}→{r[7]}")
+    print("    **名前で集めると年によって見つかる物が違う** —— "
+          "一様な取りこぼしではなく**世代と相関した**取りこぼし")
+    return written
+
+
+def emit_front_position(outdir: str, path: str, drops):
+    """**全数の構造の側**(依頼8、437,561層)。**遮蔽物は順序の性質である。**
+
+    **名前で集めた層が、本当に手前に居るか。** 棒の前に**帰無値**を出す(規律9)——
+    「手前に寄っている」は、**同じ群の層を1つ選んだときの前方割合**と比べて初めて言える。
+
+    **`scope` が2つ在るのは、2つが別の量だから**(T138)——
+    **フキダシは頁の中では手前寄りで、親の中では後ろ寄り**(文字がその上に乗る)。
+    **同じ列名に2つの量を入れない。**
+    """
+    pages, aux, n_rows = occluders.load_structure(path, drops)
+    if not pages:
+        print("  [全数の重なり順] **依頼8 の構造の表が無い。** この表は書かない")
+        return 0
+    rows = occluders.front_position(pages, aux, drops)
+    note = (f"全 {n_rows:,} 行のうち、**フォルダー以外で `z_global` を持つ層。** "
+            f"`z_global` が空で重なり順に入らない非フォルダー層 {aux['n_no_z']} は除いた"
+            "(供給元の言明: 木から辿れない層とその中の層)")
+    out = [r + [note, "census track(供給元の `z_global` から数えた。"
+                      "**向きは供給元の v2 の訂正に依る**)", bc_today()] for r in rows]
+    written = write_csv(
+        os.path.join(outdir, "occluder_front_position.csv"),
+        ["occluder_class", "label", "matched_on", "scope", "n_layers", "n_pages",
+         "median_front_share", "share_front_decile", "share_opacity_full",
+         "share_visible_bit", "share_composite_normal", "reading",
+         "population_note", "measured_by", "as_of"], out)
+    print(f"  [全数の重なり順] {n_rows:,} 行 / 頁 {len(pages):,}"
+          f" / 重なり順に入らない層 {aux['n_no_z']}")
+    for r in out:
+        print(f"      {r[0]:22s} {r[2]:10s} {r[3]:6s} n={r[4]:>6} "
+              f"中央={r[6]} 前方1割={r[7]}  {r[11]}")
+    print("    **手前に在ることは、重なっていることではない** —— "
+          "何を隠しているかは画素が要る(保留中)")
+    return written
+
+
+def emit_folder_contents(outdir: str, path: str, drops):
+    """**名前がフォルダーに付いている類**の中身(依頼8)。
+
+    **`黒消し` は層では0件、フォルダーで 609。** 遮蔽しているのは**その中の層**で、
+    **フォルダーの数を遮蔽物の数と呼べない。** 中が空のフォルダーも数える(規律9)。
+    """
+    pages, aux, n_rows = occluders.load_structure(path, drops)
+    if not pages:
+        return 0
+    rows = occluders.folder_contents(aux)
+    out = [r + [f"全 {n_rows:,} 行(フォルダーの行を含む)",
+                "census track(依頼8 の `parent_id` から数えた)", bc_today()]
+           for r in rows]
+    written = write_csv(
+        os.path.join(outdir, "occluder_folder_contents.csv"),
+        ["occluder_class", "label", "n_folders", "n_folders_with_layers",
+         "n_folders_empty", "n_child_layers", "n_pages", "reading",
+         "population_note", "measured_by", "as_of"], out)
+    print("  [フォルダーに付いた名前の中身]")
+    for r in out:
+        print(f"      {r[0]:22s} フォルダー {r[2]:>4} / 中に層が在る {r[3]:>4}"
+              f" / 空 {r[4]:>4} / 直下の層 {r[5]:>5}")
     return written
 
 
@@ -893,7 +1043,10 @@ class ProseMatcher:
 
 # 公開 CSV の列の種類。**どの列も、ここに宣言が無ければ指摘になる**
 # (宣言の無い列を黙って通すと、新しい列を足した日に点検が静かに緩む)
-METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_rendered",
+METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
+               "n_names", "n_folders", "n_pages_top_name", "n_parent_names",
+               "n_folders_with_layers", "n_folders_empty", "n_child_layers",
+               "n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_rendered",
                "n_drawn_gt0", "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
                "n_pages_without_work", "n_works", "n_rows",
                "ext_clip", "ext_lip",
@@ -910,7 +1063,10 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "n", "cluster_size", "n_clusters")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
-VALUE_COLS = ("canvas_w", "canvas_h", "dpi")
+VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
+              # **割合の列。** 件数ではないので小数が正しい
+              "median_front_share", "share_front_decile", "share_opacity_full",
+              "share_visible_bit", "share_composite_normal")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -919,14 +1075,18 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
             "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format",
             "bound_class", "calendar_year", "occluder_class", "found_by",
-            "is_drawing_layer", "gap_bucket")
+            "is_drawing_layer", "gap_bucket",
+            "probe", "first_year_label", "last_year_label",
+            "matched_on", "scope")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
               "meaning", "evidence", "content", "direction", "material_kind", "why",
               "label", "what", "not_what", "share", "category", "rule",
-              "population_note", "corroboration")
+              "probe_what",
+              "population_note", "corroboration",
+              "reading", "kinds_of_layers")
 
 
 def check_column_classes() -> None:
@@ -1014,11 +1174,17 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                      "files_in_clusters", "clusters", ""},
         "format": {"format", "clip", "lip", "both", ""},
         "bound_class": {"bound_class", *{c for c, _, _ in BOUND_CLASSES}, ""},
-        "occluder_class": {"occluder_class",
+        "occluder_class": {"occluder_class", occluders.BASELINE_KEY,
                            *{k for k, _, _, _ in occluders.CLASSES}, ""},
+        "matched_on": {"matched_on", "layer_name", "ancestors", "baseline", ""},
+        "scope": {"scope", *{k for k, _ in occluders.SCOPES}, ""},
         "found_by": {"found_by", "名前の規則(層名とフォルダーの鎖)", "種別", ""},
         "is_drawing_layer": {"is_drawing_layer", "yes", "no", ""},
         "gap_bucket": {"gap_bucket", *{b for _, b in faint.GAP_BUCKETS}, ""},
+        "probe": occluders.probe_tokens(),
+        # **年の札は `occluder_vocab_full.csv` を書くときに形を強制して入れる**
+        "first_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"first_year_label", ""},
+        "last_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"last_year_label", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -1198,6 +1364,13 @@ def write_provenance(outdir: str, as_of: str):
             n, digest = "", "(不在)"
         rows.append([os.path.basename(s["path"]), "受領 CSV", s["supplier"], s["as_of"],
                      n, digest, "", s["caveat"]])
+    for a in sources.ARRIVED_NOT_INTEGRATED:
+        rows.append([os.path.basename(a["path"]), "**届いているが未統合**",
+                     "抽出側(um350)", as_of,
+                     sum(1 for _ in open(a["path"], encoding="utf-8")) - 1
+                     if os.path.exists(a["path"]) else "",
+                     sha256_of(a["path"]) if os.path.exists(a["path"]) else "(不在)",
+                     "", f'{a["what"]} —— {a["why_not_yet"]}'])
     for v in sources.VOLATILE:
         rows.append([v["column"], "**値が動く予定の列**", "抽出側(um350)", as_of,
                      v["n_affected_in_req3"], "", "yes",
@@ -1344,6 +1517,14 @@ def main() -> int:
         args.public_out, faint_rows, req3_pages)
     pub["occluder_classes.csv"] = emit_occluders(
         args.public_out, args.delivery_root, drops_dl)
+    pub["occluder_balloon_two_sided.csv"] = emit_balloon_two_sided(
+        args.public_out, args.delivery_root, drops_dl)
+    pub["occluder_vocab_full.csv"] = emit_vocab_full(
+        args.public_out, occluders.R7_DEFAULT, drops_dl)
+    pub["occluder_front_position.csv"] = emit_front_position(
+        args.public_out, occluders.R8_DEFAULT, drops_dl)
+    pub["occluder_folder_contents.csv"] = emit_folder_contents(
+        args.public_out, occluders.R8_DEFAULT, drops_dl)
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
         args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
@@ -1370,6 +1551,14 @@ def main() -> int:
         args.full_out, faint_rows, req3_pages)
     full["occluder_classes.csv"] = emit_occluders(
         args.full_out, args.delivery_root, Drops())
+    full["occluder_balloon_two_sided.csv"] = emit_balloon_two_sided(
+        args.full_out, args.delivery_root, Drops())
+    full["occluder_vocab_full.csv"] = emit_vocab_full(
+        args.full_out, occluders.R7_DEFAULT, Drops())
+    full["occluder_front_position.csv"] = emit_front_position(
+        args.full_out, occluders.R8_DEFAULT, Drops())
+    full["occluder_folder_contents.csv"] = emit_folder_contents(
+        args.full_out, occluders.R8_DEFAULT, Drops())
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
@@ -1384,6 +1573,7 @@ def main() -> int:
 
     rc_cons |= check_full_population_totals()
     rc_cons |= sources.audit_needs()
+    rc_cons |= sources.audit_arrived()
     rc_cons |= audit_inline_needs(args.public_out)
     vocab = private_vocabulary(req3_pages, a33_rows)
     rc, _hits = audit_public(args.public_out, vocab)

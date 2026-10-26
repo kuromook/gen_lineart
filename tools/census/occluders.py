@@ -70,8 +70,12 @@ CLASSES = (
     ("balloon", "フキダシ(独立した層)", r"フキダシ|ふきだし|吹き出し|バルーン|balloon", None),
     ("black_erase", "黒消し", r"黒消|黒ケシ|くろけし|黒けし", None),
     # **経路2(blender)**: 名前の規則で分かる。**種別はラスタなので種別では出ない**
+    # **区切りを要求していたので 211層・13名を落としていた**(`rendering0001` の形)。
+    # **供給元の素の `rendering` が 5,383 で、こちらが 5,172 だったので見つかった** ——
+    # **供給元の数と自分の数を比べることが、ここでは点検になった。**
+    # 直した後の 5,383 は先方の数と一致するが、**それは独立な確認ではなく一致である**(T132)
     ("blender_render", "blender の取り込み(**経路2**。名前の規則で分かる)",
-     r"rendering[_\-]|blender", None),
+     r"rendering|blender", None),
     # **経路1 の候補**: クリスタの既定の時刻名。**取り込んだ画像一般の既定名でもありうる** ——
     # **3D と断定しない。候補として数える**
     ("default_timestamp_name",
@@ -231,4 +235,538 @@ def two_sided(pages, drops):
             state = (f"**名前が取りこぼしている可能性** 素性だけの層 {unnamed} "
                      f"対 名前側 {len(named)}")
         rows.append([key, label, len(named), len(sigs), unnamed, state])
+    return rows
+
+
+# ----------------------------------------------------------------- 仕組みの素性
+#
+# **上の `SIGNATURE_FIELDS` は失敗した** —— `layer_type`/`composite`/`clip`/`has_mask` は
+# 「普通の層」と言っているだけで、何も特徴づけていない(`white` の名前側10層に対し
+# 同じ素性が824層)。**失敗は上に残してある。**
+#
+# **ここはその代わりではなく、別の側である** —— 作者の言明:
+#
+# > **データも特徴的なので分布でわかる特性があるとおもわれる**(2026-10-27、3D について)
+#
+# **だから素性は画素の分布から取り、節ごとに「その層が物として何であるか」から導く。**
+# **節の理由を書けない節は入れない** —— 理由の無い節は、名前に合わせて足した節と
+# 区別が付かない(それが「片面を2回数える」ことになる)。
+#
+# **フキダシは何か**: **不透明な白い面と、その輪郭。** 下を隠すのはその白い面である。
+#   → 白が最頻 / 無彩色 / 色の段が2つ(白と輪郭) / 最頻色の占有が1未満(輪郭が在る)
+#   → 面は頁の一部(コマの中)
+#
+# **ホワイトは何か**: **白で消すだけの面。輪郭を持たない。**
+#   → 白が最頻 / 無彩色 / 色の段が1つ / 最頻色の占有が1(輪郭が無い)
+#
+# **この2つは同じ道具ではなく、同じ列で分かれる** —— **分けているのは占有の節である。**
+#
+# **見つけた順を列に書く**(作者の規則はどちらの順でもよいが、**順は記録する**):
+#   フキダシ = 名前で見つけて統計量で裏付けた
+#   ホワイト = **フキダシの試験の近傍を見て統計量側から見つけ、名前で裏付けた**
+#              (`white`・`断ち落とし枠(白)`・`bg base`・`high light` が同じ素性に並んだ)
+
+def _q16_white(L):
+    t = L.get("top_colour_q16")
+    return None if t is None else tuple(t) == (15, 15, 15)
+
+
+def _colours_le(n):
+    def f(L):
+        c = L.get("colours_q16")
+        return None if c is None else c <= n
+    return f
+
+
+def _colours_eq(n):
+    def f(L):
+        c = L.get("colours_q16")
+        return None if c is None else c == n
+    return f
+
+
+def _achromatic(L):
+    s = L.get("sat_mean")
+    return None if s is None else s == 0.0
+
+
+def _share_band(lo, hi):
+    def f(L):
+        s = L.get("top_colour_share")
+        return None if s is None else lo < s < hi
+    return f
+
+
+def _share_full(L):
+    s = L.get("top_colour_share")
+    return None if s is None else s >= 1.0
+
+
+def _drawn_lt(x):
+    def f(L):
+        d = L.get("drawn_ratio")
+        return None if d is None else d < x
+    return f
+
+
+# 節: (符号, 何を見るか, **なぜその節が在るか**(物の側の理由), 判定)
+MECHANISM = {
+    "balloon": (
+        "フキダシ(**不透明な白い面と輪郭**)",
+        "名前で見つけて統計量で裏付けた",
+        (("white_top", "白が最頻",
+          "下を隠すのは白い面なので、最も多い色は白である", _q16_white),
+         ("colours_le2", "色の段が2以下",
+          "面の白と輪郭の黒で、段は2つになる", _colours_le(2)),
+         ("achromatic", "彩度の平均が0",
+          "白と黒だけなら無彩色である", _achromatic),
+         ("share_band", "最頻色の占有が 0.5〜0.99",
+          "**輪郭が在るので白は全部ではない。** これがホワイトと分ける節",
+          _share_band(0.5, 0.99)),
+         ("local", "描画率が 0.25 未満",
+          "フキダシはコマの中の一部で、頁を覆わない", _drawn_lt(0.25))),
+    ),
+    "white": (
+        "ホワイト(**白で消す面。輪郭を持たない**)",
+        "**統計量側から見つけて名前で裏付けた**(フキダシの試験の近傍)",
+        (("white_top", "白が最頻",
+          "白で消す面なので最頻色は白である", _q16_white),
+         ("colours_eq1", "色の段が1つ",
+          "**輪郭を持たないので段は1つ。** これがフキダシと分ける節", _colours_eq(1)),
+         ("achromatic", "彩度の平均が0", "白だけなら無彩色である", _achromatic),
+         ("share_full", "最頻色の占有が 1.0",
+          "面が白一色であること。輪郭の黒が無い", _share_full)),
+    ),
+}
+
+PROBE_PREFIX = "drop_"
+
+
+def _name_hit(L, pat):
+    name = (L.get("name") or "").strip()
+    anc = str(L.get("ancestors") or "")
+    return bool(name and pat.search(name)) or bool(anc and pat.search(anc))
+
+
+def mechanism_two_sided(pages, drops):
+    """**仕組みから導いた素性で、両面を数える。**
+
+    返す行は1つの問いずつ:
+      `name_side`     名前の規則で当たった層
+      `feature_all`   全節を満たす層 ← **両面の判定はここ**
+      `drop_<節>`     その節だけを外したときに増える層 = **その節が落としているもの**
+      `undecidable`   素性の列が無くて判定できない層
+      `control_<他>`  **もう一方の類の名前側が、この素性に入るか**(入ったら分けていない)
+
+    **この表が答えない**:
+    - **全数。** 素性の列が在るのは納品の manifest が覆う頁の一部
+    - **閾の正しさ。** 節の**向き**は物の側から導いたが、
+      **`0.5` と `0.25` の値はこちらが置いた数で、どちらも何も落としていない**
+      (下の `drop_` の行がそれを印字する)
+    - **一致が同じものであること。** 一致は「この列では分けられない」であって同一ではない
+    """
+    pats = {k: re.compile(p, re.I) for k, _, p, _ in CLASSES if p}
+    layers = [(pg, L) for pg, ls in pages.items() for L in ls]
+    rows = []
+    for key, (label, order, clauses) in MECHANISM.items():
+        pat = pats[key]
+        name_side = {id(L) for _, L in layers if _name_hit(L, pat)}
+        decided, undecidable = [], 0
+        for pg, L in layers:
+            vals = [c[3](L) for c in clauses]
+            if any(v is None for v in vals):
+                undecidable += 1
+                continue
+            decided.append((pg, L, vals))
+        feat = {id(L) for _, L, v in decided if all(v)}
+        feat_pages = {pg for pg, L, v in decided if all(v)}
+        name_pages = {pg for pg, L in layers if id(L) in name_side}
+        both = len(name_side & feat)
+        f_only = len(feat - name_side)
+        n_only = len(name_side - feat)
+        rows.append([key, label, "name_side", f"名前の規則で当たった層({order})",
+                     len(name_side), len(name_pages), both, "", n_only,
+                     "**名前側が0件**" if not name_side else
+                     f"うち素性も当たる {both} / 素性が当たらない {n_only}"])
+        if not feat and not name_side:
+            continue
+        if f_only == 0 and n_only == 0:
+            state = "**両面一致**(この頁の範囲では、名前側と素性側が同じ集合)"
+        elif f_only > len(name_side):
+            state = (f"**名前が取りこぼしている可能性** 素性だけの層 {f_only} "
+                     f"対 名前側 {len(name_side)}")
+        else:
+            state = f"素性だけの層 {f_only} / 名前だけの層 {n_only}"
+        rows.append([key, label, "feature_all", "全節を満たす層(**両面の判定はここ**)",
+                     len(feat), len(feat_pages), both, f_only, n_only, state])
+        # **どの節が働いているか。** 1つ外して増えた分が、その節が落としているもの
+        for i, (code, what, why, _fn) in enumerate(clauses):
+            sel = [(pg, L) for pg, L, v in decided
+                   if all(c for j, c in enumerate(v) if j != i)]
+            got = {id(L) for _, L in sel}
+            added = len(got - feat)
+            rows.append([key, label, PROBE_PREFIX + code,
+                         f"「{what}」を外す —— {why}",
+                         len(sel), len({pg for pg, _ in sel}),
+                         len(got & name_side), len(got - name_side),
+                         len(name_side - got),
+                         f"**この節が落としている層 {added}**" if added else
+                         "**この節は何も落としていない**(働いていない)"])
+        rows.append([key, label, "undecidable", "素性の列が無くて判定できない層",
+                     undecidable, "", "", "", "",
+                     "**判定できない層は、素性側の母集団に入っていない**"])
+    # 負の対照: 一方の名前側が、他方の素性に入るか
+    for key, (label, _order, clauses) in MECHANISM.items():
+        for other in MECHANISM:
+            if other == key:
+                continue
+            pat = pats[other]
+            n = 0
+            for pg, L in layers:
+                if not _name_hit(L, pat):
+                    continue
+                vals = [c[3](L) for c in clauses]
+                if any(v is None for v in vals):
+                    continue
+                if all(vals):
+                    n += 1
+            rows.append([key, label, "control_" + other,
+                         f"**負の対照** —— {other} の名前側が、この素性に入るか",
+                         n, "", "", "", "",
+                         "**0。この2類は素性で分かれている**" if n == 0 else
+                         f"**{n} 層が入った。この素性は2類を分けていない**"])
+    return rows
+
+
+def probe_tokens():
+    """`probe` 列の白名簿。**器具の宣言から作る**(手で並べると片方が古くなる)。"""
+    out = {"probe", "name_side", "feature_all", "undecidable"}
+    for key, (_l, _o, clauses) in MECHANISM.items():
+        out |= {PROBE_PREFIX + c[0] for c in clauses}
+        out |= {"control_" + k for k in MECHANISM if k != key}
+    return out
+
+
+# ------------------------------------------------- 全数の層名(依頼7、2026-10-27 着)
+#
+# **名前側はこれで全数に届いた** —— 437,561層・16,241 の異なる名前。
+# **素性側は届いていない**(画素の分布の列が在るのは納品の manifest の8頁だけ)。
+# **だから両面が一致したと言える範囲は8頁で、名前側の数は全数である。**
+# **この2つを同じ行に並べない。**
+#
+# **供給元の言明**(添え状 §6):
+# - **フォルダーの行も入っている**(`is_folder`)。**`黒消し` はフォルダーで 609、層は 0** ——
+#   **黒消しは層ではなくフォルダーだった。** 遮蔽しているのはその中の層で、
+#   **どの層かは `ancestors` が要る**(依頼8)
+# - `ancestors` は層名ごとに1つに決まらないので入っていない。**親は `top_parent_name`
+#   (最頻の直接の親)と `n_parent_names`(親の名前の異なり)だけ**
+# - **`layer_name` が空の 9,652層**は頁の最上位フォルダー 9,649 と名無しの `other` 3
+#
+# **`top_parent_name` は作者の作業名なので `census/` には出さない。** 公開するのは
+# **`n_parent_names`(異なり数)だけ。**
+R7_DEFAULT = os.path.join("inbox", "census_r7_layer_names_20261027.csv")
+
+
+def load_vocab_table(path: str, drops):
+    """依頼7の層名の表。**行は読むが、名前は返さない関数を通して使う。**"""
+    import csv
+    if not os.path.exists(path):
+        drops.flag("全数の層名の表が無い(依頼7が未着)", path)
+        return []
+    with open(path, encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    need = {"layer_name", "is_folder", "n_layers", "n_pages",
+            "first_year_label", "last_year_label", "kinds", "n_parent_names"}
+    missing = need - set(rows[0] if rows else {})
+    if missing:
+        raise SystemExit(f"依頼7の表に宣言した列が無い: {sorted(missing)}")
+    return rows
+
+
+def _is_folder(row) -> bool:
+    return str(row.get("is_folder", "")).strip().lower() not in ("0", "false", "")
+
+
+def vocab_full(rows, drops):
+    """**全数の名前側。** 語彙に当たる名前を、層とフォルダーに分けて数える。
+
+    **この表が答えない**:
+    - **頁は足せない。** 同じ頁に2つの名前が在りうるので、名前ごとの `n_pages` の和は
+      頁数ではない(T96 の形)。**だから最大の名前の頁数だけを書き、和は書かない**
+    - **語彙が正しいか。** **どの名前が遮蔽物かは作者が選ぶ**(規律6)。
+      ここに在るのは**こちらが書いた正規表現が当たった数**である
+    - **素性側の裏付け。** 全数には画素の分布の列が無い —— **8頁でしか両面を見ていない**
+    - **名前が物を同定するか。** 語彙は台詞の中の語にも当たる
+      (`text` 種別の層が1つ入った)。**種別の内訳を同じ行に書いて、それを見せる**
+    """
+    out = []
+    for key, label, pat, want_kind in CLASSES:
+        if pat is None:
+            out.append([key, label, "", "", "", "", "", "", "",
+                        "**種別で見つける類なので、名前の表には出ない**"])
+            continue
+        p = re.compile(pat, re.I)
+        hit = [r for r in rows if p.search(r["layer_name"])]
+        layers = [r for r in hit if not _is_folder(r)]
+        folders = [r for r in hit if _is_folder(r)]
+        n_layers = sum(int(r["n_layers"]) for r in layers)
+        n_folders = sum(int(r["n_layers"]) for r in folders)
+        kinds = collections.Counter()
+        for r in layers:
+            for part in r["kinds"].split(";"):
+                if ":" in part:
+                    k, v = part.rsplit(":", 1)
+                    kinds[k] += int(v)
+        top = max(layers, key=lambda r: int(r["n_layers"]), default=None)
+        if top is None:
+            top_n_pages = top_first = top_last = top_parents = ""
+            reading = ("**名前側は層では0件**" if folders else "**名前側が0件**")
+            if folders:
+                reading += f" —— **フォルダーで {n_folders}。遮蔽しているのは中の層で、"\
+                           "どの層かは `ancestors` が要る(依頼8)**"
+        else:
+            top_n_pages = top["n_pages"]
+            top_first, top_last = top["first_year_label"], top["last_year_label"]
+            top_parents = top["n_parent_names"]
+            reading = (f"最大の1名で層 {top['n_layers']} / 頁 {top_n_pages}。"
+                       f"**頁は名前をまたいで足せない**(同じ頁に別の名前が在りうる)")
+            if n_folders:
+                reading += f" / フォルダーでも {n_folders}"
+        out.append([key, label, len(hit), n_layers, n_folders,
+                    top_n_pages, top_first, top_last, top_parents,
+                    reading, ";".join(f"{k}:{v}" for k, v in kinds.most_common())])
+    return out
+
+
+def vocab_year_labels(rows):
+    """**公開してよい年の札**を、依頼7の表から集める。
+
+    **年の札は段 A で公開する決定が在る**(作者、2026-10-26)。だが**この関数が
+    返した語はすべて白名簿に入る**ので、**年の形でない語が1つでも混ざれば
+    点検に穴が開く。** だから形を強制し、外れたら走行を落とす。
+    """
+    labels = set()
+    for r in rows:
+        for col in ("first_year_label", "last_year_label"):
+            v = (r.get(col) or "").strip()
+            if not v:
+                continue
+            if not re.fullmatch(r"\d{4}[a-z]?", v):
+                raise SystemExit(
+                    f"**年の札でない値が年の列に在る**: {col}={v!r}\n"
+                    "  **白名簿に入れない。** 年の列に別のものが入っている")
+            labels.add(v)
+    return labels
+
+
+# --------------------------------------- 全数の重なり順(依頼8 の構造の表、2026-10-27 着)
+#
+# **遮蔽物であることは、名前でも種別でもなく順序の性質である**(こちらが書いた言い方)。
+# 作者の言明に戻ると: **「手前側に何かがあると、その後ろ側のレイヤでは描かないで済ます」**
+# —— **手前側であることが効いている。** だから名前で集めた層が**本当に手前に居るか**を
+# 測る。これが**名前側(全数)に対する、もう一方の側**である。
+#
+# **素性側(画素の分布)は8頁しか届かない。** 構造の側は**全 437,561層に届く。**
+# **だから両面のうち全数で引けるのは構造の側である。**
+#
+# **供給元の言明**(添え状 §1 と v2 の訂正):
+# - `z_global` は**一番上のフォルダーを 0 とし、その下は下の層から数える。**
+#   **フォルダー以外の層どうしでは、数の大きいほうが手前。**
+#   v1 は向きを逆に書いていて、**v2 で文章だけを訂正した(CSV は正しかった)**
+# - **`z_global` が空の 39層は頁の重なり順に入らない**(木から辿れない24層とその中の15層)
+# - 隣の兄弟 335,454組すべてで `order_in_parent` と `z_global` の向きが一致(例外 0)
+#
+# **棒の前に帰無値を出す**(規律9)—— 「前方に寄っている」は、
+# **同じ頁の層を1つ選んだときの前方割合**と比べて初めて言える。
+R8_DEFAULT = os.path.join("inbox", "census_r8_layer_structure_20261027.csv")
+
+BASELINE_KEY = "baseline"
+SCOPES = (("page", "頁の中(フォルダー以外の層すべて)"),
+          ("parent", "同じ親の中(兄弟が2つ以上の親だけ)"))
+
+
+_STRUCT_CACHE = {}
+
+
+def load_structure(path: str, drops):
+    """構造の表を、**層名を持たない形に畳んで**読む。
+
+    **名前はここで落とす** —— 返すのは「どの類に当たったか」の印だけ。
+    **後ろの集計に名前を渡さないので、出力に名前が出る道が無い。**
+    """
+    import csv as _csv
+    if not os.path.exists(path):
+        drops.flag("全数の構造の表が無い(依頼8 が未着)", path)
+        return {}, {}, 0
+    # **52MB を段 A と段 C で2回読まない。** 同じ走行の同じファイルは同じ結果である
+    if path in _STRUCT_CACHE:
+        return _STRUCT_CACHE[path]
+    pats = {k: re.compile(p, re.I) for k, _, p, _ in CLASSES if p}
+    pages = collections.defaultdict(list)
+    folder_children = collections.Counter()
+    folder_rows = collections.defaultdict(list)
+    n_rows = n_no_z = 0
+    with open(path, encoding="utf-8", newline="") as fh:
+        rd = _csv.reader(fh)
+        head = next(rd)
+        ix = {c: i for i, c in enumerate(head)}
+        need = ("page_path", "layer_id", "layer_name", "v_layer_kind", "parent_id",
+                "ancestors", "composite", "clip", "visibility", "opacity",
+                "is_folder", "z_global")
+        missing = [c for c in need if c not in ix]
+        if missing:
+            raise SystemExit(f"依頼8 の表に宣言した列が無い: {missing}")
+        for row in rd:
+            n_rows += 1
+            name = row[ix["layer_name"]]
+            anc = row[ix["ancestors"]]
+            by_name = frozenset(k for k, p in pats.items() if name and p.search(name))
+            by_anc = frozenset(k for k, p in pats.items()
+                               if anc and p.search(anc)) - by_name
+            is_folder = row[ix["is_folder"]] == "True"
+            if is_folder:
+                for k in by_name:
+                    folder_rows[k].append((row[ix["page_path"]], row[ix["layer_id"]]))
+                continue
+            pid = row[ix["parent_id"]]
+            if pid:
+                folder_children[(row[ix["page_path"]], pid)] += 1
+            z = row[ix["z_global"]]
+            if not z:
+                n_no_z += 1
+                drops.flag("`z_global` が空(頁の重なり順に入らない層)")
+                continue
+            pages[row[ix["page_path"]]].append(
+                (int(z), pid, by_name, by_anc,
+                 int(row[ix["opacity"]] or 0), int(row[ix["visibility"]] or 0),
+                 row[ix["composite"]], row[ix["v_layer_kind"]]))
+    _STRUCT_CACHE[path] = (
+        pages, {"folder_rows": folder_rows, "folder_children": folder_children,
+                "n_no_z": n_no_z}, n_rows)
+    return _STRUCT_CACHE[path]
+
+
+def _front_shares(groups):
+    """各層の**前方割合** = 自分より手前に在る層の数 ÷ (その群の層数 − 1)。
+
+    **0 が最前、1 が最後。** 群が1層だけの親は**比が定義できないので入れない**
+    (落とした数は呼び出し側が印字する)。
+    """
+    import bisect
+    out = []
+    skipped = 0
+    for ls in groups:
+        if len(ls) < 2:
+            skipped += len(ls)
+            continue
+        zs = sorted(x[1][0] for x in ls)
+        m = len(ls) - 1
+        for pg, x in ls:
+            out.append(((len(zs) - bisect.bisect_right(zs, x[0])) / m, pg, x))
+    return out, skipped
+
+
+def _ratio_word(got: float, base: float) -> str:
+    """**文言を比から導く。** 「寄っている」と書いてから数を見ない。"""
+    if base == 0:
+        return "帰無値が 0 なので倍率を書けない"
+    r = got / base
+    if r >= 1.5:
+        return f"前方1割は**帰無値の {r:.1f} 倍**"
+    if r <= 1 / 1.5:
+        return f"前方1割は**帰無値の {r:.2f} 倍**"
+    return f"前方1割は帰無値の {r:.2f} 倍(**変わらない**)"
+
+
+def _median_word(med: float, base: float) -> str:
+    """中央の向き。**前方割合は 0 が最前なので、小さいほど手前である。**
+
+    **2つの統計量が食い違うことが在る**(フキダシの親の中: 中央は後ろ寄り、
+    前方1割は帰無値どおり)。**片方だけ書くと、書いた側の話になる。**
+    """
+    d = med - base
+    if d <= -0.1:
+        return f"中央 {med:.3f} < 帰無値 {base:.3f} —— **手前寄り**"
+    if d >= 0.1:
+        return f"中央 {med:.3f} > 帰無値 {base:.3f} —— **後ろ寄り**"
+    return f"中央 {med:.3f} ≒ 帰無値 {base:.3f} —— **寄りなし**"
+
+
+def front_position(pages, aux, drops):
+    """**全数の構造の側。** 名前で集めた層が、本当に手前に居るか。
+
+    **この表が答えない**:
+    - **何を隠しているか。** 手前に在ることは重なっていることではない
+      (**画素が要る。保留中**)。小さい層・透明な層も手前に在る
+    - **前方割合が1つの量であること。** **頁の中と親の中で別の量になる**
+      (フキダシは**頁では手前、親の中では後ろ** —— 文字がその上に乗るから)。
+      **同じ列名で2つを書かない**(T138)。`scope` の列で分ける
+    - **向き。** `z_global` の向きは**供給元の v2 の訂正に依っている。**
+      こちらでは兄弟の `order_in_parent` との一致でしか確かめていない
+    - **不透明度が遮蔽の強さであること。** `opacity = 256` は層の設定で、
+      **画素のアルファではない**(T87 の形: 設定は中身を含意しない)
+    """
+    import statistics
+    rows = []
+    by_page = [[(pg, x) for x in ls] for pg, ls in pages.items()]
+    by_parent = collections.defaultdict(list)
+    for pg, ls in pages.items():
+        for x in ls:
+            by_parent[(pg, x[1])].append((pg, x))
+    groups = {"page": by_page, "parent": list(by_parent.values())}
+    for scope, scope_label in SCOPES:
+        shares, skipped = _front_shares(groups[scope])
+        base = [s for s, _, _ in shares]
+        base_med = statistics.median(base)
+        base_dec = sum(1 for s in base if s < 0.1) / len(base)
+        rows.append([BASELINE_KEY, "**帰無値**(同じ群の層を1つ選んだとき)", "baseline",
+                     scope, len(base), len(pages),
+                     f"{base_med:.3f}", f"{base_dec:.3f}", "", "", "",
+                     f"{scope_label}。**比が定義できない群の層 {skipped} は"
+                     f"入れていない**(兄弟が自分だけの親)"])
+        for key, label, pat, want_kind in CLASSES:
+            if pat is None:
+                continue
+            for matched_on, idx in (("layer_name", 2), ("ancestors", 3)):
+                sel = [(s, pg, x) for s, pg, x in shares if key in x[idx]]
+                if not sel:
+                    continue
+                v = [s for s, _, _ in sel]
+                n = len(v)
+                med = statistics.median(v)
+                dec = sum(1 for s in v if s < 0.1) / n
+                reading = (f"{_median_word(med, base_med)} / "
+                           f"{_ratio_word(dec, base_dec)}")
+                rows.append([
+                    key, label, matched_on, scope, n,
+                    len({pg for _, pg, _ in sel}),
+                    f"{med:.3f}", f"{dec:.3f}",
+                    f"{sum(1 for _, _, x in sel if x[4] == 256) / n:.3f}",
+                    f"{sum(1 for _, _, x in sel if x[5] % 2 == 1) / n:.3f}",
+                    f"{sum(1 for _, _, x in sel if x[6] == '0') / n:.3f}",
+                    reading])
+    return rows
+
+
+def folder_contents(aux):
+    """**名前がフォルダーに付いている類**(黒消し)の中身。
+
+    **`黒消し` は層では 0件、フォルダーで 609。** だから**遮蔽しているのは
+    その中の層**で、**フォルダーの数を遮蔽物の数と呼べない。**
+    **中が空のフォルダーも数える**(規律9: 落としたものを理由別に印字する)。
+    """
+    rows = []
+    for key, label, pat, want_kind in CLASSES:
+        if pat is None:
+            continue
+        fr = aux["folder_rows"].get(key, [])
+        if not fr:
+            continue
+        kids = aux["folder_children"]
+        with_kids = sum(1 for pp, lid in fr if kids.get((pp, lid), 0))
+        n_kids = sum(kids.get((pp, lid), 0) for pp, lid in fr)
+        rows.append([key, label, len(fr), with_kids, len(fr) - with_kids, n_kids,
+                     len({pp for pp, _ in fr}),
+                     "**フォルダーの数を遮蔽物の層の数と呼べない** —— "
+                     f"直下の層 {n_kids}。中に層が無いフォルダーが {len(fr) - with_kids}"])
     return rows
