@@ -140,6 +140,44 @@ def one_layer(job):
     return rec
 
 
+def report_drops(recs, good):
+    """**落としたものを腕別に印字する。** 理由別の1行では
+    `beta 0 / line 173` が見えない —— **落としたものが腕の片側だけの母集団を変える**
+    のは T112 の形そのもの(基盤の指摘 2026-10-26)。"""
+    drops = collections.Counter(r['drop'] for r in recs if r['drop'])
+    print()
+    print('選別 (規律9。**理由別 かつ 腕別**)')
+    for k, v in drops.most_common():
+        byarm = collections.Counter(r['arm'] for r in recs if r['drop'] == k)
+        print(f'  落とした {v:5d}  {k}   '
+              f'(腕 beta {byarm["beta"]} / 腕 line {byarm["line"]})')
+    for arm in ('beta', 'line'):
+        tot = sum(1 for r in recs if r['arm'] == arm)
+        kept = sum(1 for r in good if r['arm'] == arm)
+        if not tot:
+            continue
+        print(f'  腕 {arm:5s} 登録の母集団 {tot:5d} -> 残った {kept:5d} '
+              f'= **{kept / tot:.4f}**'
+              + ('' if kept == tot else '  **← この腕の中央はこの上で計算される**'))
+    print('  (在庫表のどの列でも欠けた層と在る層を区別できない —— '
+          '**偏りの向きが分からない**。基盤が全列で突き合わせた)')
+    return drops
+
+
+def worst_case_line(recs, good, pick):
+    """**欠落が最も不利に働く読み**: 欠けた line 層の `form_keep` を **1** と置く。
+    **棒は動かさない**(T112)—— 判定が欠落に依存するかどうかだけを見る。"""
+    kept = sorted(x[f'keep{pick}'] for x in good if x['arm'] == 'line')
+    miss = sum(1 for r in recs if r['arm'] == 'line' and r['drop'])
+    if not kept or not miss:
+        return None
+    allv = kept + [1.0] * miss
+    allv.sort()
+    n = len(allv)
+    med = allv[n // 2] if n % 2 else (allv[n // 2 - 1] + allv[n // 2]) / 2
+    return len(kept), miss, float(np.median(kept)), med
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     print('L34 半径の引き直し  (既知セルを先に回す。1つでも落ちたら本体を回さない)')
@@ -159,13 +197,8 @@ def main():
             recs.append(rec)
             if i % 200 == 0:
                 print(f'  {i}/{len(jobs)} 層', flush=True)
-    drops = collections.Counter(r['drop'] for r in recs if r['drop'])
     good = [r for r in recs if not r['drop']]
-    print()
-    print('選別 (規律9)')
-    for k, v in drops.most_common():
-        print(f'  落とした {v:5d}  {k}')
-    print(f'  **残った {len(good)}**')
+    report_drops(recs, good)
 
     tag = f'_limit{lim}' if lim else ''
     cols = (['arm', 'pid', 'lid', 'w', 'name', 'ink_px', 'raw_comp']
@@ -215,6 +248,16 @@ def main():
             if b is not None and l is not None:
                 flag = 'OK' if (b >= BETA_MIN and l <= LINE_MAX) else '**この世代では棒を外す**'
                 print(f'       世代 {w}: beta {b:.4f} / line {l:.4f}  {flag}')
+        wc = worst_case_line(recs, good, pick)
+        if wc:
+            nk, nm, m_kept, m_worst = wc
+            print(f'       **欠落が最も不利に働く読み** (欠けた line {nm} 層の '
+                  f'`form_keep` を 1 と置く):')
+            print(f'         line 中央 {m_kept:.4f} ({nk} 層の上) -> '
+                  f'**{m_worst:.4f}** ({nk + nm} 層の上)  '
+                  f'棒 <= {LINE_MAX} を '
+                  f'**{"満たしたまま -> 判定は堅い" if m_worst <= LINE_MAX else "外す -> **判定保留**"}**')
+            print('         (**棒は動かしていない。** 判定が欠落に依存するかだけを見た)')
         if pick == 4:
             print('       (**借りた 4 がそのまま残った場合でも、'
                   'それは「引き直して同じだった」であって「未較正のまま」ではない**)')
