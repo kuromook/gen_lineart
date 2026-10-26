@@ -1141,6 +1141,46 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   is 曝露や母集団を広げるのも棒を動かすこと read backwards -- not widening a population to pass,
   but **describing a sideways move as a widening**, which claims a
   confirmation that was never computed.
+  **Fifth answer, 2026-10-27, and it closes the mechanism for line layers by
+  asking which class they are *not* in.** Track `census` counted the delivery
+  independently -- having fetched it from the supplier's own `outbox`, its
+  `inbox` copy not having arrived -- and **three parties now agree exactly**
+  on the 872-page subset: **11,499 / 3,193 / 40,636 / 736 / 512**, the 512 on
+  210 pages at `layer_type` 1584:109 + 4098:397 + 4096:6, `rendered` 218
+  against 294 blank. Reproduced here a third time from the CSV by removing the
+  33 inventory-hole pages. **Its finding is structural rather than numeric**:
+  layers whose `layer_type` has bit 0 set -- a raster body, the line layers --
+  **sit only in the `body_init == 0` classes**, and where init is 0 the render
+  reader's zero-fill **agrees with `InitColor`**, so no bias can arise.
+  Verified here over all 905 pages and it is stronger than stated: **41,220
+  such layers, 100% at `body_init == 0`, not one exception**, and conversely
+  `body_init == 255` carries **only** types 2, 1584, 4098, 0 and 4096 -- **no
+  odd type at all**. So **`drawn_ratio` on a line layer is neither a lower
+  bound nor a false zero**, and T60's remaining exposure is exactly
+  `layer_type == 2`, paper and the correction layers. census also took the
+  foundation's *the danger changed class* and confirmed its other half:
+  **class 1 is 11,499 layers and every `drawn_ratio` in it is 0** (13,265 and
+  all 0 over the full 905 here). **One distinction worth keeping, because the
+  two halves have different standing.** The conditional is mechanical -- init
+  0 means the fill and `InitColor` coincide -- but **the antecedent, that
+  raster bodies always carry init 0, is measured over 905 pages and is not a
+  format guarantee**. Calling the pair *原理的* merges a mechanism with a
+  regularity; the claim is as strong as it needs to be without that, and the
+  measured half is the half that could change on another corpus. **And a
+  sibling finding came out of the same file and does not behave as reported.**
+  The gap between `alpha_ge1_ratio` and `drawn_ratio` measures what
+  `drawn_ratio`'s threshold of 26 discards, and census reported **556 layers
+  losing 0.1 or more and 1,539 losing 0.01 to 0.1, all of them `layer_type &
+  1`** -- *thin lines are falling out of `drawn_ratio`*. The first band
+  reproduces exactly, **556, every one an odd type**. The second does not: it
+  comes out **1,544 here, of which 78 are even types -- 73 at `layer_type ==
+  2` and 5 at type 0** -- every one of the 78 in class 3, so `body_init == 0`,
+  genuinely measured, gaps 0.0100 to 0.0763 over 49 pages, and the band's
+  boundary convention does not account for it. **So thin-coverage loss is not
+  confined to line layers; it reaches fill and tone bodies**, which changes
+  which track the finding is addressed to. The direction is clean in every
+  row: **`alpha_ge1_ratio < drawn_ratio` occurs 0 times**, as the mechanism
+  requires.
 - **T61. A fill can be white, and an instrument that counts ink cannot see it.**
   Found 2026-10-23 by the extraction session while fixing the above. Its fill
   signature read `plane0`, which is **255 for a white fill exactly as it is for
