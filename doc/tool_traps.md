@@ -938,7 +938,34 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   instead of discarding them" was right for ベタ and wrong for トーン, where
   nothing was being discarded because nothing had been seen. **The check: when a
   class of content is expected and the measurement says zero, ask whether the
-  measurement can see that class at all before concluding it is absent.** The
+  measurement can see that class at all before concluding it is absent.**
+  **Widened 2026-10-26 by Track M, from the extraction side's third reply, and
+  the widening changes what kind of trap this is.** The reader **fills unsaved
+  blocks with 0**. So for a layer whose `body_init == 255` -- tone bodies, fill
+  bodies, paper -- that is **partially** saved (`0 < body_stored < body_blocks`),
+  the measured value is a **lower bound**, not a value. `drawn_ratio` goes
+  through the same reader, so every `drawn_ratio` on such a layer is a lower
+  bound too. **What looked like a question about the meaning of zero is a
+  question about the meaning of every value: zero is not special, it is the case
+  where the lower bound reached 0.** The partition is now five, not two:
+  `255` + nothing saved (**possibly the full canvas**) / `0` + nothing saved
+  (**empty**) / `0` + something saved (**the contents really are all 0**) /
+  `255` + **fully** saved (**the value means what it says**) / `255` +
+  **partially** saved (**a lower bound**). Where `body_init == 0` there is no
+  bias at all, the fill value being the same as `InitColor`. **M got the same
+  one-line caveat wrong twice in two days** -- first the direction of the
+  implication (`255` implies 0-fill, not the reverse), then the coarseness of the
+  condition (`body_stored > 0` lumping *fully* and *partially* saved together,
+  whose values mean different things) -- **both times from writing a rule about
+  how to read an instrument without knowing the instrument's innards**, hence the
+  practice it registered: **when you register a rule for reading someone else's
+  column, send that notice to whoever built the column.** **The same property
+  should be expected of every coverage column computed by this reader, including
+  `raster_cover` and `mask_cover`, whose non-zero values on partially-saved
+  `255` layers would also be lower bounds** -- asked of the extraction side
+  2026-10-26, not assumed. **A column of lower bounds supports "at least this
+  much" and nothing else: no mean, no ranking, no threshold in the direction of
+  the bound.** The
   sibling failure in the same reply is the mirror image -- **a class defined by a
   pixel statistic collects everything that shares the statistic**: page
   furniture (paper, MASK, トンボ, bleed and panel frames, 集中線) is 100% pure
