@@ -111,8 +111,12 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
   **送った後に `dir` で着弾確認**、**控えを `outbox/push_<topic>_<日付>.md` に残す**
   (末尾に配送記録1行。`reply_*` は track 宛なので名を分ける)。メッセージだけで渡すと
   **先方の記録にも残らない**。**ping は使えない**(ICMP を落とす。`ssh` で確かめる)
-- **原稿由来の納品物は `data/` 配下。`.gitignore` 済み、絶対にコミットしない**
-  (2026-10-23 に 99MB を public repo に上げた。force-push では消えない)
+- **原稿の画素を含む画像は、どのフォルダーであっても追跡しない。** 納品物の置き場は
+  `data/`(`.gitignore` 済み)だが、**規則はフォルダー名ではなく中身の種類で読む** ——
+  `results/` は `README.md` と `lessons/**` が明示的に un-ignore されており、
+  **そこを通って原寸の切り出し6枚が公開リモートに乗った**(2026-10-26 に Track L が発見、
+  ユーザーの裁定は「HEAD から消す。公開は維持」)。**`origin` は匿名で読める。**
+  2026-10-23 には 99MB を上げた。**force-push では消えない**
 - 結果が出たら `doc/work_log.md` に要約を戻す。状態や方向が変わるなら `doc/CURRENT.md` も
 
 ---
