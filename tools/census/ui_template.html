@@ -211,7 +211,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <h2><span class="num">6 / 遮蔽物</span>手前の層が、下の層の途切れを作る</h2>
 <p class="lede"><b>作者の言明(2026-10-26):「手前側に何かがあると、その後ろ側のレイヤでは描かないで済ますことが多い。遮蔽物レイヤがあるということがわからないと、なぜ下のレイヤで何かが途切れているかわからない」</b> —— <b>下の層の線の途切れは、描き手が省いたからで、欠陥ではない。</b>遮蔽物が分からないと、その途切れを「欠落」と読む。</p>
 <p class="lede"><b>作者の答(2026-10-27):「ラスタライズする。印については分からない」</b> —— だから <b>3D の層数は「3D を使った頁の数」ではなく、その下限</b>。ラスタライズされた 3D は種別が <code>raster</code> になる。<b>印が残るかは作者も知らない</b>(「残らない」ではなく「不明」)ので、形式を知る抽出側へ回した。<br><b>そしてラスタライズされても、その層は遮蔽物のままである</b> —— <b>名前と種別で見つかるのは遮蔽物の一部だけ</b>で、一般の判定は<b>順序と不透明度と重なり</b>で決まる(依頼8 がその材料)。</p>
+<p class="lede"><b>3D の経路は2つ</b>(作者、2026-10-27):<b>クリスタの 3D オブジェクト</b>(レンダリングして画像化して確定。印は不明)と、<b>blender でレンダリングした画像のインポート</b>(自動処理で取り込む)。<b>手元の15頁で経路2が見つかった</b> —— 層名 <code>rendering_&lt;pass&gt;_&lt;位置&gt;&lt;連番&gt;</code>(pass は base / shadow / lineart / render)。4層とも <code>layer_type = 1</code> の<b>ラスタで、種別では普通のラスタと見分けが付かない。</b>そして名前が出たのは<b>層名で、フォルダー名ではなかった</b>ので、両方見る。<b><code>rendering_lineart_*</code> という pass が在る</b> —— blender が線画を出している。</p>
 <p class="lede">作者が挙げた4種は <b>3D / フキダシ(独立した層)/ ホワイト / 黒消し</b>。<b>層名が手元に在る15頁で数えると、ホワイトとフキダシが実際に層名として在った</b> —— 名前で見つける道は通る。<b>ただし15頁では傾向が出ない</b>(全数の層名を依頼中)。そして<b>どの名前が遮蔽物かは作者が選ぶ</b> —— 作者自身が <code>white</code> について「多いと思う」と言っている。<b>層名はここには出さない</b>(件数だけ)。</p>
+<p class="lede"><b>作者の指示(2026-10-27):「名前で見つけて統計量で裏付ける・統計量で見つけて名前で裏付ける。どちらの順でもいいが、層の見極めは片面だけで済ませない方がよい」</b> —— <b>3D に限らない規則なので、表の構造に入れた。</b>どの種別にも<b>名前側 / 素性だけの層 / 判定</b>が付く。<br><b>そしていまはどの種別も裏付けられていない</b> —— 選んだ素性は<b>何も特徴づけていない</b>(<code>white</code> の名前側 10層に対し、同じ素性の層が 824)。<b>素性を名前に合うまで調整しない</b>:それは名前に素性を当てはめる作業で、両面の裏付けではなく<b>片面を2回数えること</b>になる。失敗を出したまま残している。</p>
 <div class="scroller"><table id="t-occ"></table></div>
 
 <h2><span class="num">7 / 全数</span>構造 DB の全数 437,561層</h2>
@@ -361,6 +363,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     format: "形式", category: "分かれ方", note: "正体",
     bound_class: "分類", meaning: "意味", rule: "できないこと",
     occluder_class: "遮蔽物", found_by: "見つけ方", population_note: "母集団",
+    n_signatures: "素性の種類", n_signature_only: "素性だけの層", corroboration: "両面の判定",
     what: "これは", not_what: "**これではない**",
     cluster_size: "塊の大きさ", n_clusters: "塊",
     canvas_w: "canvas_w", canvas_h: "canvas_h", dpi: "dpi",
@@ -381,7 +384,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   };
   const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
                          "label", "what", "not_what", "share", "category", "rule",
-                         "population_note",
+                         "population_note", "corroboration",
                          "answers", "not_answers", "detail", "measured_by", "supplier",
                          "material_kind", "meaning", "evidence", "content", "direction",
                          "confidence"]);
@@ -434,6 +437,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   render($("t-prov"), ["source", "material_kind", "supplier", "as_of", "n_rows",
                        "sha256", "volatile", "note"], D.provenance);
   render($("t-occ"), ["occluder_class", "label", "found_by", "n_layers", "n_pages",
+                      "n_signatures", "n_signature_only", "corroboration",
                       "population_note"], D.occluder_classes);
   render($("t-ltv"), ["layer_type", "bits", "is_folder", "n_layers", "content",
                       "measured_by"], D.layer_type_values);

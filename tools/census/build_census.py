@@ -112,7 +112,10 @@ SUPPRESSED = {
 # **これは語彙の穴を塞ぐだけで、知らない層名には届かない**(届く範囲を名前より狭く書く)
 # **作者が付けた層名。出さない。**
 AUTHOR_LAYER_NAMES = (
-    "線画", "肌グラデ", "乳首グラデ", "モザイク", "差分マスク", "正面",
+    # **`線画` 単独は入れない** —— このプロジェクトの題材そのものの語で、
+    # 一般名詞として散文に出る(2026-10-27 に自分の但し書きで鳴った)。
+    # 漏れるのは**複合した層名**なので、そちらを禁止する
+    "線画 hair", "肌グラデ", "乳首グラデ", "モザイク", "差分マスク", "正面",
 )
 # **アプリが付ける層名。出してよい** —— 作者の作業名ではなく、形式の部品の名前。
 # これを禁止すると `layer_type` のビットの根拠が書けなくなる(根拠の無い表は持てない)
@@ -137,6 +140,8 @@ PROSE_EXCEPTIONS = {
     "done": "英単語。同名のフォルダーが在るのは偶然",
     "color": "英単語・CSS の語。同名のフォルダーが在るのは偶然",
     "cover": "英単語・CSS の語。同名のフォルダーが在るのは偶然",
+    "線画": "**この題材そのものの一般名詞。** 禁止すると但し書きが書けなくなる。"
+            "漏れるのは `線画 hair` のような**複合した層名**なので、そちらを禁止する",
 }
 
 # `drawn_ratio` をその種別で読んでよいか。**読めない列を空欄で出し、0 にしない**
@@ -535,14 +540,25 @@ def emit_occluders(outdir: str, root: str, drops):
     """
     pages = occluders.load_named_layers(root, drops)
     rows, n_pages, n_layers, n_named = occluders.classify(pages, drops)
-    out = [r + [f"{n_pages} 頁 / {n_layers} 層(名前が在る層 {n_named})",
-                "census track(納品の manifest から数えた)", bc_today()]
-           for r in rows]
+    # **両面の裏付け**(作者の指示 2026-10-27: 片面だけで済ませない)
+    two = {r[0]: r for r in occluders.two_sided(pages, drops)}
+    out = []
+    for r in rows:
+        t2 = two.get(r[0], [None, None, 0, 0, 0, ""])
+        out.append(r + [t2[3], t2[4], t2[5],
+                        f"{n_pages} 頁 / {n_layers} 層(名前が在る層 {n_named})",
+                        "census track(納品の manifest から数えた)", bc_today()])
     written = write_csv(os.path.join(outdir, "occluder_classes.csv"),
                         ["occluder_class", "label", "found_by", "n_layers", "n_pages",
+                         "n_signatures", "n_signature_only", "corroboration",
                          "population_note", "measured_by", "as_of"], out)
     print(f"  [遮蔽物] 層名が在る頁 {n_pages} / 層 {n_layers} / 名前が在る層 {n_named}")
     print("    **全数の傾向はこの表では出ない** —— 依頼6・7が来てから引き直す")
+    print("    [両面の裏付け] 名前側 / 素性だけの層 / 判定")
+    for r in out:
+        print(f"      {r[0]:22s} {r[3]:4d} / {r[6]:4d}  {r[7]}")
+    print("    **選んだ素性は何も特徴づけていない** —— "
+          "統計量側には画素の分布の列が要る(未測定)")
     return written
 
 
@@ -782,6 +798,7 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "sum_n_text_layers", "sum_n_image_material_layers",
                "bit", "layer_type_and_2",
                "n_png_files", "n_distinct_page_keys", "n_png_names",
+               "n_signatures", "n_signature_only",
                "n_png_a", "n_png_b", "n_distinct_pixels_a", "n_distinct_pixels_b",
                "n_common_names", "n_common_names_bytes_differ",
                "n_pixels_in_both", "n_pixels_in_both_same_name",
@@ -804,7 +821,7 @@ PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "measured_by", "source", "supplier", "sha256",
               "meaning", "evidence", "content", "direction", "material_kind", "why",
               "label", "what", "not_what", "share", "category", "rule",
-              "population_note")
+              "population_note", "corroboration")
 
 
 def check_column_classes() -> None:
@@ -894,7 +911,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "bound_class": {"bound_class", *{c for c, _, _ in BOUND_CLASSES}, ""},
         "occluder_class": {"occluder_class",
                            *{k for k, _, _, _ in occluders.CLASSES}, ""},
-        "found_by": {"found_by", "名前の規則", "種別", ""},
+        "found_by": {"found_by", "名前の規則(層名とフォルダーの鎖)", "種別", ""},
     }
     hits = []
     n_cells = n_files = 0
