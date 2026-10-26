@@ -938,7 +938,54 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   instead of discarding them" was right for ベタ and wrong for トーン, where
   nothing was being discarded because nothing had been seen. **The check: when a
   class of content is expected and the measurement says zero, ask whether the
-  measurement can see that class at all before concluding it is absent.** The
+  measurement can see that class at all before concluding it is absent.**
+  **Widened 2026-10-26 by Track M, from the extraction side's third reply, and
+  the widening changes what kind of trap this is.** The reader **fills unsaved
+  blocks with 0**. So for a layer whose `body_init == 255` -- tone bodies, fill
+  bodies, paper -- that is **partially** saved (`0 < body_stored < body_blocks`),
+  the measured value is a **lower bound**, not a value. `drawn_ratio` goes
+  through the same reader, so every `drawn_ratio` on such a layer is a lower
+  bound too. **What looked like a question about the meaning of zero is a
+  question about the meaning of every value: zero is not special, it is the case
+  where the lower bound reached 0.** The partition is now five, not two:
+  `255` + nothing saved (**possibly the full canvas**) / `0` + nothing saved
+  (**empty**) / `0` + something saved (**the contents really are all 0**) /
+  `255` + **fully** saved (**the value means what it says**) / `255` +
+  **partially** saved (**a lower bound**). Where `body_init == 0` there is no
+  bias at all, the fill value being the same as `InitColor`. **M got the same
+  one-line caveat wrong twice in two days** -- first the direction of the
+  implication (`255` implies 0-fill, not the reverse), then the coarseness of the
+  condition (`body_stored > 0` lumping *fully* and *partially* saved together,
+  whose values mean different things) -- **both times from writing a rule about
+  how to read an instrument without knowing the instrument's innards**, hence the
+  practice it registered: **when you register a rule for reading someone else's
+  column, send that notice to whoever built the column.** **The same property
+  should be expected of every coverage column computed by this reader, including
+  `raster_cover` and `mask_cover`, whose non-zero values on partially-saved
+  `255` layers would also be lower bounds** -- asked of the extraction side
+  2026-10-26, not assumed, **and answered the same night, narrowing it twice.**
+  **`raster_cover` can be a lower bound** (same reader) **but is not one in the
+  deliveries that exist**: across `grad_v2`'s 258 layers and `tone_v2`'s 619,
+  **no layer is a partially-saved `body_init 255`** -- the 96 at `255` are all
+  **saved nothing**, which is the "reads 0, is the full canvas" form, and the
+  other 162 are `init 0` and mean what they say. **The mechanism is real and the
+  instance count here is zero**, which is the outcome Track M had pre-committed
+  to writing as *理屈だけで実体が無い*. **`mask_cover` is not a lower bound at
+  all**: a different reader (`mask_coverage`) fills both unsaved blocks and
+  canvas overflow with **`InitColor`** rather than 0, and its CSV already carries
+  `init`, `blocks`, `stored` and the dimensions. **The columns that can be lower
+  bounds are exactly those the render reader computes** -- `drawn_ratio`,
+  `black_among_drawn`, `drawn_gray_mean`, `ink_px`, `preview_dark`,
+  `raster_cover`, `alpha >= 1` -- **and only on `body_init 255` layers that are
+  partially saved**, whose full count will come from the `alpha >= 1` table the
+  author ordered first. **`preview_dark` and `black_among_drawn` being on that
+  list reaches Track L's selections**, which used both as gates on 2026-10-26.
+  **And the extraction side volunteered an unmeasured one**: the mask reader
+  **does not add `LayerMaskOffset`**, so coverage may move on offset layers, and
+  **neither the magnitude nor the number of affected layers is measured** --
+  carried as open, not as small. **A column of lower bounds supports "at least this
+  much" and nothing else: no mean, no ranking, no threshold in the direction of
+  the bound.** The
   sibling failure in the same reply is the mirror image -- **a class defined by a
   pixel statistic collects everything that shares the statistic**: page
   furniture (paper, MASK, トンボ, bleed and panel frames, 集中線) is 100% pure
