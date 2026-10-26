@@ -738,8 +738,13 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                     n_cells += 1
                     s = cell.strip()
                     colname = header[col] if col < len(header) else f"<列{col}>"
-                    if "\\" in s or s.lower().startswith("f:\\"):
-                        hits.append((name, lineno, colname, "パス区切りを含む", s[:70]))
+                    if "\\" in s:
+                        hits.append((name, lineno, colname,
+                                     "パス区切り(`\\`)を含む", s[:70]))
+                        continue
+                    if s.lower().startswith("f:"):
+                        hits.append((name, lineno, colname,
+                                     "ドライブ名(`F:`)で始まる", s[:70]))
                         continue
                     if colname in METRIC_COLS:
                         if s and not s.lstrip("-").isdigit():
@@ -899,15 +904,27 @@ def verify_conservation(outdir: str, expect_layers: int, expect_pages: int,
             i = header.index(col)
             return sum(int(r[i]) for r in reader if r[i].strip())
 
+    def verdict(expect, got):
+        """**文言を発火した条件から導く。**
+
+        以前はどちらに外れても「消えている」と名乗り、**増えているときに
+        「消えている: -1」と印字した**(2026-10-26)。
+        **誤った欠陥を名乗る文言は、正しい欠陥を名乗ったものとして読まれる。**
+        """
+        if got == expect:
+            return "一致"
+        if got < expect:
+            return f"**消えている: {expect - got}**(書き出しで落ちた)"
+        return f"**増えている: {got - expect}**(二重に数えた)"
+
     got_layers = total("layers_by_year_kind_type.csv", "n_layers")
     got_pages = total("pages_by_year.csv", "n_pages")
-    ok_l, ok_p = got_layers == expect_layers, got_pages == expect_pages
     print(f"  [総数の保存: {label}] 読み返して足す(在庫ではなく出力を数える)")
     print(f"    層  入力 {expect_layers} → 出力 {got_layers}  "
-          f"{'一致' if ok_l else '**消えている: ' + str(expect_layers - got_layers) + '**'}")
+          f"{verdict(expect_layers, got_layers)}")
     print(f"    頁  入力 {expect_pages} → 出力 {got_pages}  "
-          f"{'一致' if ok_p else '**消えている: ' + str(expect_pages - got_pages) + '**'}")
-    return 0 if (ok_l and ok_p) else 1
+          f"{verdict(expect_pages, got_pages)}")
+    return 0 if (got_layers == expect_layers and got_pages == expect_pages) else 1
 
 
 def main() -> int:

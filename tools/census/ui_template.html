@@ -113,6 +113,8 @@ td.prose { min-width: 22ch; max-width: 46ch; font-size: 13px; line-height: 1.65;
 .chip.moving { background: var(--moving-soft); color: var(--moving); border-color: var(--moving); }
 .chip.absent { background: var(--absent-soft); color: var(--absent); border-color: var(--absent); }
 .chip.nomat  { background: transparent; color: var(--ink-soft); border-color: var(--rule); }
+.chip.unknown { background: transparent; color: var(--ink-soft);
+  border-color: var(--ink-soft); border-style: dashed; }
 button.qmark {
   font-family: var(--font-mono); font-size: 10px; font-weight: 500;
   color: var(--moving); background: var(--moving-soft);
@@ -183,6 +185,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   <div><span class="chip moving">集計していない</span><span>直る予定のある列。いま入れると誤りが集計に固定される</span></div>
   <div><span class="chip absent">測っていない</span><span>その母集団の材料がその量を運んでいない</span></div>
   <div><span class="chip nomat">材料に無い</span><span>その形式のファイルが手元の材料に1件も入っていない</span></div>
+  <div><span class="chip unknown">理由が未宣言</span><span><b>器具の宣言に理由が無い空欄。</b>推測した理由を名乗らせない —— 推測は、確かめた理由として読まれる</span></div>
 </div>
 
 <h2><span class="num">4 / 頁</span>年ごとの頁数と作品数</h2>
@@ -293,27 +296,29 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     moving: { cls: "moving", label: "集計していない" },
     absent: { cls: "absent", label: "測っていない" },
     nomat:  { cls: "nomat",  label: "材料に無い" },
+    unknown: { cls: "unknown", label: "理由が未宣言" },
   };
-  const SUPPRESSED_COLS = new Set(["n_drawn_gt0", "n_drawn_zero", "n_drawn_blank"]);
-  const STRUCT_COLS = new Set(["sum_n_layers_incl_folders", "sum_n_folders",
-                               "sum_n_text_layers", "sum_n_image_material_layers"]);
-
-  function emptyKind(col, row) {
-    if (col === "ext_lip") return EMPTY.nomat;
-    if (SUPPRESSED_COLS.has(col)) return EMPTY.moving;
-    if (STRUCT_COLS.has(col) || col === "n_works") return EMPTY.absent;
-    return EMPTY.absent;
-  }
-  function reasonFor(col, row) {
-    if (col === "ext_lip") return D.reasons.lip;
-    if (SUPPRESSED_COLS.has(col)) return D.reasons.mask_fill;
-    return "この母集団の材料はこの量を運んでいない(" + esc(row.population) + ")";
+  // **空欄の札は、器具の宣言から引く。列名から推測しない。**
+  // 宣言が無い空欄には理由を名乗らせず、無いことを言わせる ——
+  // **推測した理由は、確かめた理由として読まれる**(T134 (h))
+  const ER = D.empty_reasons || { suppressed: {}, by_population: {}, absent: {} };
+  function emptyFor(col, row) {
+    if (ER.absent && ER.absent[col]) return [EMPTY.nomat, ER.absent[col]];
+    if (ER.suppressed && ER.suppressed[col])
+      return [EMPTY.moving, ER.suppressed[col]];
+    const supplied = ER.by_population && ER.by_population[row.population];
+    if (supplied && supplied.indexOf(col) === -1)
+      return [EMPTY.absent, "母集団 " + esc(row.population)
+        + " の材料はこの量を運んでいない(器具の宣言 POPULATION_METRICS による)"];
+    return [EMPTY.unknown, "**空欄の理由が宣言されていない。**"
+      + " 器具の宣言に無いので、ここでは理由を名乗らない"];
   }
   function cell(col, row) {
     const v = row[col];
     if (v === "" || v == null) {
-      const k = emptyKind(col, row);
-      return '<span class="chip ' + k.cls + '" title="' + esc(reasonFor(col, row)).replace(/"/g, "&quot;") + '">' + k.label + "</span>";
+      const [k, why] = emptyFor(col, row);
+      return '<span class="chip ' + k.cls + '" title="'
+        + esc(why).replace(/\*\*/g, "").replace(/"/g, "&quot;") + '">' + k.label + "</span>";
     }
     return fmt(v);
   }

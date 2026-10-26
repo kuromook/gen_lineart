@@ -39,7 +39,8 @@ COLUMN_CAVEATS = {
     "cluster_size": ["ファイル 9,653 と 異なり 7,418 の差"],
     "n_clusters": ["ファイル 9,653 と 異なり 7,418 の差"],
     "ext_clip": ["ファイル数 / 異なり数"],
-    "ext_lip": ["ファイル数 / 異なり数"],
+    "ext_lip": ["`ext_lip`(この集計に入っている `.lip` の頁数)",
+                "ファイル数 / 異なり数"],
     "n_layers": ["層数(集計どうしの比較)"],
     "layer_type": ["layer_type", "layer_type の2の位(コマ枠フォルダー)"],
     "layer_type_and_2": ["layer_type の2の位(コマ枠フォルダー)",
@@ -129,6 +130,18 @@ def main() -> int:
                     if r["v_layer_kind"] == "mask_fill" and r["n_layers"])
 
     col_cav, uncovered = column_caveats()
+    # **空欄の理由は、器具の宣言から渡す。** 列名から推測させない ——
+    # 推測した理由は、確かめた理由として読まれる(2026-10-26、T134 (h))
+    empty_reasons = {
+        "suppressed": {c: bc.SUPPRESSED[("drawn_ratio", "mask_fill")]
+                       for c in ("n_drawn_gt0", "n_drawn_zero", "n_drawn_blank")},
+        "by_population": {p: sorted(cols)
+                          for p, cols in bc.POPULATION_METRICS.items()},
+        # `ext_lip` は **0 が正しい**(その母集団に `.lip` の頁が無い)ので、
+        # 空欄の札ではなく**列見出しの但し書き**で扱う。
+        # 空欄でないものに空欄の理由を付けない
+        "absent": {},
+    }
     data = dict(
         column_caveats=col_cav,
         populations=pops, provenance=prov, pages=pages, layers=layers, **extra,
@@ -136,11 +149,13 @@ def main() -> int:
                       not_answers=c["not_answers"], trap=c["trap"],
                       by=c["by"], as_of=c["as_of"], detail=c["detail"])
                  for c in CAVEATS],
+        empty_reasons=empty_reasons,
         reasons={
             "lip": "手元の材料に `.lip` が1頁も入っていない。"
                    "0 は「数えて 0 だった」ではない(ファイルは 1,986 在る)",
-            "mask_fill": f"mask_fill {mask_fill:,}層。本体は InitColor 255 = 全面で、"
-                         "0 は空を意味しない。抽出側が読み手を直すと値が動くので集計に入れない",
+            "mask_fill": f"mask_fill {mask_fill:,}層({mask_fill:,} 層分)。"
+                         "本体は InitColor 255 = 全面で、0 は空を意味しない。"
+                         "抽出側が読み手を直すと値が動くので集計に入れない",
         },
         runline=[
             f"走行 {as_of}",
