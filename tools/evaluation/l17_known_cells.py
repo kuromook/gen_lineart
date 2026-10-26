@@ -143,10 +143,50 @@ def jobs(zz, fill, line):
     return out
 
 
-def panels_and_regions(job):
+def beta_fill_layers():
+    """**作者の納品 `beta_manifest.json` の層**を (pid, work) -> [(lid, path)] で返す。
+
+    L35(登録 2026-10-26 15:07、道1)のための標準の材料。
+    `gated_layers()` の fill 側は **こちらの分類**(`keep4 >= KEEP4_FILL`)だったが、
+    こちらは**作者が納品したベタ層そのもの**である。496層。
+
+    **落としたものを理由別に印字する**(規律9)—— `beta_manifest` に在るのに
+    層 PNG が無い行は、黙って消さずに数える。
+    """
+    out, cut = {}, {}
+    for work in ('ako6', 'ako7'):
+        man = json.load(open(f'{DEL}/{work}/fill/beta_manifest.json', encoding='utf-8'))
+        for p in man['pages']:
+            pid = p['page']
+            for b in p.get('beta') or []:
+                lid = str(b['layer_id'])
+                path = f'{DEL}/{work}/all_layers/{pid}_L{lid}.png'
+                if not os.path.exists(path):
+                    # **理由を正しく書く**: これは納品漏れではない。層 PNG は
+                    # **優先65頁しか発注されていない**ので、manifest の 1,180層のうち
+                    # **684層は65頁の外**である(突き合わせ済み: 中 496 / 外 684)。
+                    cut['優先65頁の外(層 PNG は65頁しか発注されていない)'] = \
+                        cut.get('優先65頁の外(層 PNG は65頁しか発注されていない)', 0) + 1
+                    continue
+                out.setdefault((pid, work), []).append((int(lid), path))
+    n = sum(len(v) for v in out.values())
+    print(f'標準の材料 = 納品 beta {n} 層 / {len(out)} 頁  (**こちらの分類ではない**)')
+    for k, v in cut.items():
+        print(f'  落とした {v}  {k}')
+    if not cut:
+        print('  落とした 0  (**この点検は空ではない**: 上の 496 を数えている)')
+    return out
+
+
+def panels_and_regions(job, solid='solid'):
     """(pid, work, コマ番号, P, glab, gids, gstat, 線層の (lid, ink, z)) を順に返す。
 
     母集団の定義は `l15_zorder_occlusion.py` と一字一句同じ。
+
+    `solid` は**標準の作り方**。既定の `'solid'` は `fill_mask(radius=4)` =
+    半径4の opening(L12〜L18 のすべての数値がこれ)。`'cover'` は**生の墨の和集合**で、
+    **`radius` が器具のどこにも残らない**(L35 = 道1。登録 2026-10-26 15:07)。
+    **既定を変えていないので、L18 の数値はこの変更後も再現する。**
     """
     pid, work, fz, lz, sel = job
     F = None
@@ -154,7 +194,7 @@ def panels_and_regions(job):
         ink = cv2.imread(path, cv2.IMREAD_GRAYSCALE) < 128
         if F is None:
             F = np.zeros(ink.shape, bool)
-        acc_add(F, None, ink, 'solid')
+        acc_add(F, None, ink, solid)
     if F is None:
         return
     H, W = F.shape

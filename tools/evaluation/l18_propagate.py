@@ -21,13 +21,16 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_known_cells import A
 from l15_known_cells import boundary
-from l17_known_cells import (D1, assign_top, gated_layers, jobs, panels_and_regions,
+from l17_known_cells import (D1, assign_top, beta_fill_layers, gated_layers, jobs,
+                             panels_and_regions,
                              place, SEEDS, TRIES, zmap)
 from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full,
                              seed_of)
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate'
 EXCLUDE = None       # 事前登録の母集団定義 (--exclude-gapfill)
+STANDARD = 'solid'   # 標準の作り方。'solid' = fill_mask(radius=4) / 'cover' = 生の墨
+                     # (L35 = 道1。登録 2026-10-26 15:07。**既定は変えない**)
 LIMIT = 0            # --limit (煙試験。出力の名前に入れる)
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 ARMS = 'both'
@@ -65,7 +68,7 @@ def one_page(job):
     comps, regs, pans = [], [], []
     k = 0                 # **L19 と同じ頁内の通し番号**。面の鍵は一意でないので名前で照合
     names_all = []
-    for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job):
+    for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job, STANDARD):
         if not sub:
             continue
         lab, keys = assign_top(sub, P.shape)
@@ -271,6 +274,10 @@ def main():
     ap.add_argument('--exclude-gapfill', action='store_true',
                     help='**事前登録**: 判定のある551面の中で見つかった隙間埋けだけを外す'
                          ' (残り635面は未知)')
+    ap.add_argument('--raw-beta-standard', action='store_true',
+                    help='**L35 = 道1**(登録 2026-10-26 15:07): 標準を '
+                         '`fill_mask` から外し、**納品 beta 496層の生の墨**から作る。'
+                         '`radius` が器具のどこにも残らない')
     a = ap.parse_args()
     if a.exclude_gapfill:
         # **起動の門**: 全面の版の記録が読めなければ、2時間走ってから気付かない
@@ -287,6 +294,37 @@ def main():
     LIMIT = a.limit
     os.makedirs(OUT, exist_ok=True)
     zz = zmap(); fill, line = gated_layers()
+    if a.raw_beta_standard:
+        global STANDARD
+        STANDARD = 'cover'
+        print('標準: **納品 beta 層の生の墨の8連結成分**(L35 = 道1)。'
+              '**`fill_mask` を通さない —— `radius` は器具のどこにも残らない**',
+              flush=True)
+        print('  **L18 の数値と引き算しない。標準が違うので別の量である**(T110)',
+              flush=True)
+        print('  **継承する不確かさ**: この496層は抽出側の門 '
+              '(`preview_dark >= 0.5` ほか) で選ばれていて、T116/T120 で '
+              '**その門は margin 未検証**。L33 の窓の上側14層は14層ともこの496に'
+              '入っている = **標準の境界に 14/496 = 2.8% の既知の不確かさ**。'
+              '**2.8% 未満の差は読まない**(登録 §5)', flush=True)
+        print('  **道1は道2の代わりにならない** —— これが答えるのは'
+              '「作者のベタ層はどんな形をしているか」で、'
+              '**「作者が面と呼ぶものは何か」には答えない**(登録 §6)', flush=True)
+        fill = beta_fill_layers()
+        # **漏れを塞ぐ**: 標準を作る層が腕の入力にも居ると、腕は**面を定義している
+        # その層から面を予測する**ことになる(2026-10-26 に KC41' が落ちて気付いた)。
+        # こちらの分類では **289層**が「作者の納品 beta なのに line 側」に居た ——
+        # 標準を納品 beta に替えると、その289層は**両側に居る**。
+        bset = {(k, lid) for k, v in fill.items() for lid, _ in v}
+        n_before = sum(len(v) for v in line.values())
+        line = {k: [(lid, pth) for lid, pth in v if (k, lid) not in bset]
+                for k, v in line.items()}
+        line = {k: v for k, v in line.items() if v}
+        n_after = sum(len(v) for v in line.values())
+        print(f'  **両側に居た層を腕から外した**: 語を出す層 {n_before} -> {n_after} '
+              f'(**{n_before - n_after} 層が標準の側に移った**)', flush=True)
+        print('  **だから L35 の腕は L18 の腕と同じものではない。'
+              '腕の母集団が変わっている** —— 登録の追補に書いた', flush=True)
     js = jobs(zz, fill, line)
     if a.limit:
         js = js[:a.limit]
@@ -317,7 +355,7 @@ def main():
     #   ・2頁の煙試験が **65頁の走行の CSV を上書きした**(実際に失った)
     #   ・隙間埋けを外した版も、全面の版の CSV を上書きする形だった
     # 走行の種類が違うものを同じ名前に書かない。
-    tag = ''
+    tag = '_rawbeta' if a.raw_beta_standard else ''
     if EXCLUDE:
         tag += '_nogapfill'
     if LIMIT:
