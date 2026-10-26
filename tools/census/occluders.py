@@ -581,6 +581,19 @@ def vocab_year_labels(rows):
 R8_DEFAULT = os.path.join("inbox", "census_r8_layer_structure_20261027.csv")
 
 BASELINE_KEY = "baseline"
+
+# **帰無値の実測の形**(基盤が 2026-10-27 に足した)。
+#
+# 解析の帰無値(同じ群の層を1つ選んだときの前方割合の中央 = 0.500)は**定義から出る数**で、
+# **定義が間違っていても 0.500 になる。** だから**同じ軸の上で、前後に寄る理由の無い名前**を
+# 1つ測って並べる —— **線画は紙面の主題で、手前にも後ろにも寄る理由が無い。**
+# **これが 0.500 付近に出れば、前方割合の軸そのものが素直だと分かる。**
+#
+# **これは遮蔽物ではない。** だから `CLASSES` に入れず、この表だけで使う
+# (`CLASSES` に入れると、名前の表と素性の表にも遮蔽物として並ぶ)。
+FRONT_CONTROLS = (
+    ("control_lineart", "線画(**対照。前後に寄る理由の無い名前**)", r"^線画$"),
+)
 SCOPES = (("page", "頁の中(フォルダー以外の層すべて)"),
           ("parent", "同じ親の中(兄弟が2つ以上の親だけ)"))
 
@@ -602,9 +615,14 @@ def load_structure(path: str, drops):
     if path in _STRUCT_CACHE:
         return _STRUCT_CACHE[path]
     pats = {k: re.compile(p, re.I) for k, _, p, _ in CLASSES if p}
+    pats.update({k: re.compile(p, re.I) for k, _, p in FRONT_CONTROLS})
     pages = collections.defaultdict(list)
     folder_children = collections.Counter()
     folder_rows = collections.defaultdict(list)
+    # **類ごとに、どの名前が何層か。** 名前はここから外に出さない ——
+    # **最頻の1名の印に畳んでから返す**(下)
+    names_per_class = collections.defaultdict(collections.Counter)
+    matched_at = []
     n_rows = n_no_z = 0
     with open(path, encoding="utf-8", newline="") as fh:
         rd = _csv.reader(fh)
@@ -636,10 +654,24 @@ def load_structure(path: str, drops):
                 n_no_z += 1
                 drops.flag("`z_global` が空(頁の重なり順に入らない層)")
                 continue
-            pages[row[ix["page_path"]]].append(
+            pg = row[ix["page_path"]]
+            pages[pg].append(
                 (int(z), pid, by_name, by_anc,
                  int(row[ix["opacity"]] or 0), int(row[ix["visibility"]] or 0),
-                 row[ix["composite"]], row[ix["v_layer_kind"]]))
+                 row[ix["composite"]], row[ix["v_layer_kind"]], frozenset()))
+            if by_name:
+                for k in by_name:
+                    names_per_class[k][name] += 1
+                matched_at.append((pg, len(pages[pg]) - 1, name, by_name))
+    # **語彙の中で最頻の1名だけを別に数えられるようにする** ——
+    # **語彙全体と1名は別の量**(2026-10-27 に基盤の再現で 0.152 対 0.143 として出た。
+    # **正規化は同じで、違いは語彙の広さだった**)。**だから両方を行に出す。**
+    top = {k: c.most_common(1)[0][0] for k, c in names_per_class.items() if c}
+    for pg, i, name, by_name in matched_at:
+        hit = frozenset(k for k in by_name if top.get(k) == name)
+        if hit:
+            x = pages[pg][i]
+            pages[pg][i] = x[:8] + (hit,)
     _STRUCT_CACHE[path] = (
         pages, {"folder_rows": folder_rows, "folder_children": folder_children,
                 "n_no_z": n_no_z}, n_rows)
@@ -724,11 +756,15 @@ def front_position(pages, aux, drops):
                      f"{base_med:.3f}", f"{base_dec:.3f}", "", "", "",
                      f"{scope_label}。**比が定義できない群の層 {skipped} は"
                      f"入れていない**(兄弟が自分だけの親)"])
-        for key, label, pat, want_kind in CLASSES:
-            if pat is None:
-                continue
-            for matched_on, idx in (("layer_name", 2), ("ancestors", 3)):
-                sel = [(s, pg, x) for s, pg, x in shares if key in x[idx]]
+        classes = [(k, l, p) for k, l, p, _w in CLASSES if p is not None]
+        classes += [(k, l, p) for k, l, p in FRONT_CONTROLS]
+        for key, label, pat in classes:
+            for matched_on, pick in (
+                    ("layer_name", lambda x: key in x[2]),
+                    ("top_name", lambda x: key in x[8]),
+                    ("other_names", lambda x: key in x[2] and key not in x[8]),
+                    ("ancestors", lambda x: key in x[3])):
+                sel = [(s, pg, x) for s, pg, x in shares if pick(x)]
                 if not sel:
                     continue
                 v = [s for s, _, _ in sel]
