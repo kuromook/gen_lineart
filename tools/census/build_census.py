@@ -786,10 +786,15 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
     pages, aux, n_rows = occluders.load_structure(path, drops)
     if not pages:
         return 0
-    rows, n_dec, n_all = occluders.front_decile_kinds(pages, drops)
+    rows, n_dec, n_all, comb = occluders.front_decile_kinds(pages, drops)
     note = (f"頁の中の前方割合。{occluders.FRONT_DECILE_RULE}。"
             f"前方1割 {n_dec:,} 層 / 群に入った層 {n_all:,}"
-            f"({n_dec / n_all:.4f})")
+            f"({n_dec / n_all:.4f})。"
+            f"**手で描いた線ではない2種**({'・'.join(comb['kinds'])})は"
+            f"前方1割の {comb['share_of_decile']:.4f} を占め、"
+            f"母集団では {comb['share_of_all']:.4f}"
+            f"({comb['n_in_all']:,} 層)—— **この2つは数から出した割合で、"
+            f"印字された列を足したものではない**")
     out = [r + [note, "census track(依頼8 の `z_global` から数えた)", bc_today()]
            for r in rows]
     written = write_csv(
@@ -800,8 +805,13 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
     for r in out:
         print(f"      {r[0]:16s} {r[1]:>7} 前方1割の {r[2]} / その種類の {r[3]}"
               f" / 全体では {r[4]}  {r[5]}")
+    print(f"      束ねた2種 {'・'.join(comb['kinds'])}: 前方1割の "
+          f"{comb['share_of_decile']:.4f} / 母集団の {comb['share_of_all']:.4f}"
+          f"({comb['n_in_all']:,} 層)")
     print("    **境界の値は列名が運ばない** —— "
           "基盤が `<= 0.1` で測って 529層ずれた。**母集団の欄に書いてある**")
+    print("    **束ねた割合は数から出す** —— "
+          "印字された小数3桁を足すと 0.086 になるが、数から出すと 0.0853")
     return written
 
 

@@ -605,6 +605,14 @@ SCOPES = (("page", "頁の中(フォルダー以外の層すべて)"),
 #
 # **だから閾と向きを器具の中に名前付きで置き、母集団の欄に書く。**
 # **どちらが正しいかではない** —— **どちらで測ったかが書かれていないことが誤りだった。**
+# **手で描いた線ではない種類。** `text` は CSP の文字オブジェクト、
+# `story_info` はノンブルや作品情報で、**どちらもアプリが置く役割の層**である。
+# **この2つを束ねた数は、器具が数から出す** ——
+# **印字された割合(小数3桁)を足して作らない。**
+# `0.025 + 0.061 = 0.086` と書いたが、**数から出すと 0.0853 である**
+# (2026-10-27、基盤が指摘。**丸めの和は、測った量ではない**)。
+NON_PICTURE_KINDS = ("story_info", "text")
+
 FRONT_DECILE = 0.1
 FRONT_DECILE_RULE = f"前方割合 < {FRONT_DECILE}(**境界の値 {FRONT_DECILE} は含まない**)"
 
@@ -824,6 +832,12 @@ def front_decile_kinds(pages, drops):
                 dec[x[7]] += 1
     n_dec = sum(dec.values())
     n_all = sum(allk.values())
+    # **束ねた数は数から出す**(上の `NON_PICTURE_KINDS` の注)
+    np_dec = sum(dec[k] for k in NON_PICTURE_KINDS)
+    np_all = sum(allk[k] for k in NON_PICTURE_KINDS)
+    combined = dict(kinds=NON_PICTURE_KINDS, n_in_decile=np_dec, n_in_all=np_all,
+                    share_of_decile=np_dec / n_dec if n_dec else 0.0,
+                    share_of_all=np_all / n_all if n_all else 0.0)
     rows = []
     for kind, n in dec.most_common():
         rows.append([kind, n, f"{n / n_dec:.3f}", f"{n / allk[kind]:.3f}",
@@ -834,7 +848,7 @@ def front_decile_kinds(pages, drops):
                       if n / n_dec > allk[kind] / n_all * 1.5 else
                       ("**前方1割では少ない**"
                        if n / n_dec * 1.5 < allk[kind] / n_all else "偏りなし"))])
-    return rows, n_dec, n_all
+    return rows, n_dec, n_all, combined
 
 
 def folder_contents(aux):
