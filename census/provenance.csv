@@ -2,6 +2,7 @@ source,material_kind,supplier,as_of,n_rows,sha256,volatile,note
 f_request3_layer_kind_rendered_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,56576,c520b827127e4d21cc04bf0c010f81d2347ecd7629b5d04c528c24ca75126302,,**フォルダー層は入っていない。** 層数を added33 の `n_layers` と比べない
 body_initcolor_delivered_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,2095,ac57841a99adbc3901d263bf2110dff0b92f0bf6bf54cde802dbb297ad9b83e1,,**1層1行なのでここで測れる。** `set` 列に作品名が入るので**段 A では種類に畳む**(畳んだ世代の数を印字する)
 request9_file_sha256_all_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,9653,edf114112a1a2b9a2b156bdf71aa5a662fc8c57938eaaec4f03f4f056f8c475a,,**これで異なり数と重複の3つの量がここで測れる。** ただし**ハッシュそのものは抽出側が計算した** —— 先方の読みが違えば同じく違う
+faint_alpha_905_20261027.csv,受領 CSV,抽出側(um350),2026-10-27,62105,8971aa5293ce1077209164dbdf40c9e6e4e2ee7a8f4b078175bab9635cb11d20,,**依頼3の3列がこれで埋まった** —— 下限の層が何層かを計数できる。**併せて `drawn_ratio` の閾 26 が落としている薄い画素が見える**
 grad_v1_v2_layer_map_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,258,6d81770c935a3be601d26bfd87ba9b583e8d3eb501fec8d2ada0d5a337baaa30,,**層を鍵にした突き合わせはこれが無いとできない** —— PNG の名前は頁の中の順番を encode している
 pages_added33_structure_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,33,1d4d8ba0e11c3364ffadecb88da4f888d1e835c9145f3db89a507037843a4db9,,**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)
 drawn_ratio,**値が動く予定の列**,抽出側(um350),2026-10-27,11455,,yes,`v_layer_kind` = `mask_fill` の層: 抽出側が読み手を直すと、いま 0 と読まれている値が 1 付近へ動く —— `mask_fill`(トーン・べた塗り)の本体は `InitColor 255` = 全面で、0 は「空」ではない。動かす前に一声もらう約束。**この集計の mask_fill 行は、その連絡で無効になる**

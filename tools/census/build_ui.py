@@ -51,7 +51,13 @@ COLUMN_CAVEATS = {
     "init": ["InitColor(本体のブロックの埋め値)", "マスクの向き(`InitColor`)"],
     "kind": ["InitColor(本体のブロックの埋め値)"],
     "rc_bucket": ["raster_cover"],
-    "bound_class": ["被覆の値が、値か下限か"],
+    "bound_class": ["被覆の値が、値か下限か", "被覆が下限の層の件数(**階級が移る**)"],
+    "n_layer_type_bit1": ["被覆が下限の層の件数(**階級が移る**)", "layer_type"],
+    "n_layer_type_eq2": ["被覆が下限の層の件数(**階級が移る**)", "layer_type"],
+    "n_rendered": ["drawn_ratio(空欄)"],
+    "n_not_rendered": ["drawn_ratio(空欄)"],
+    "gap_bucket": ["drawn_ratio"],
+    "is_drawing_layer": ["被覆が下限の層の件数(**階級が移る**)"],
     "occluder_class": ["遮蔽物の層(`occluder_classes.csv`)", "3D の層数",
                        "3D の経路(2種類)"],
     "found_by": ["遮蔽物の層(`occluder_classes.csv`)", "層の見極め(**片面で済ませない**)"],
@@ -130,7 +136,8 @@ def main() -> int:
                           "canvas_declared", "delivery_duplicates_by_content",
                           "duplicate_quantities", "cluster_sizes",
                           "grad_v1_v2_by_layer", "coverage_bound_classes",
-                          "occluder_classes")}
+                          "occluder_classes", "req3_bound_classes",
+                          "faint_alpha_gap")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

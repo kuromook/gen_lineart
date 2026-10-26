@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from caveats import CAVEATS  # noqa: E402
 import delivery  # noqa: E402
 import full_population as fp  # noqa: E402
+import faint  # noqa: E402
 import hashes  # noqa: E402
 import occluders  # noqa: E402
 import sources  # noqa: E402
@@ -340,6 +341,67 @@ def classify_bound(init: str, blocks: int, stored: int) -> str:
     return "0 + 保存0" if stored == 0 else "0 + 保存あり"
 
 
+def emit_req3_bound_classes(outdir: str, faint_rows, req3_pages):
+    """**依頼3の母集団(56,576層)で、被覆が下限の層を計数する。**
+
+    それまで「機序は確定・**件数は未計数**」と書いていた —— `blocks`/`stored` が
+    無かったため。**2026-10-27 の便で埋まった。**
+    """
+    cells, pages, types, rendered = faint.bound_classes(
+        faint_rows, classify_bound, set(req3_pages))
+    meaning = {c: m for c, m, _ in BOUND_CLASSES}
+    rows = []
+    for cls, _, _ in BOUND_CLASSES:
+        n = cells.get(cls, 0)
+        drawing = sum(v for k, v in types[cls].items()
+                      if k in faint.DRAWING_LAYER_TYPES)
+        fill = sum(v for k, v in types[cls].items()
+                   if k in faint.LAYER_TYPE_EQ2)
+        rows.append([cls, meaning.get(cls, ""), n, len(pages.get(cls, ())),
+                     rendered.get(cls, 0), n - rendered.get(cls, 0),
+                     drawing, fill, n - drawing - fill])  # 軸は layer_type
+    written = write_csv(os.path.join(outdir, "req3_bound_classes.csv"),
+                        ["bound_class", "meaning", "n_layers", "n_pages",
+                         "n_rendered", "n_not_rendered",
+                         # **軸を名前に持っていく**(基盤 2026-10-27 の第3の形:
+                         # 型で数えて種類の名前で印字した)。
+                         # `layer_type & 1` = 本体がラスタ / `layer_type == 2` =
+                         # **マスクのみでラスタ本体が無い層** —— これは
+                         # **`v_layer_kind = mask_fill` と同じ集合ではない**
+                         # (全数で型2が 119,619、うち塗り 118,370・画像素材 799・
+                         #  ベクター 437・テキスト 13)
+                         "n_layer_type_bit1", "n_layer_type_eq2",
+                         "n_layer_type_other"], rows)
+    print("  [被覆の分類: 依頼3の 56,576層] **件数が計数できた**(未計数が外れた)")
+    for r in rows:
+        print(f"      {r[0]:14s} 層 {r[2]:6d} / 頁 {r[3]:4d} / "
+              f"type&1 {r[6]:5d} / type==2 {r[7]:5d} / rendered {r[4]:6d}")
+    print("    **下限(分類5)は 512層だが、値が在るのは 218層。** "
+          "294層は `drawn_ratio` が空欄で**下限にすらならない**")
+    print("    **危険は消えたのではなく階級が移った** —— "
+          "**分類1(255 + 保存0 = 全面の可能性)が 11,499層**で、"
+          "**その `drawn_ratio` は全部 0。** "
+          "ほとんどが **`layer_type == 2`(マスクのみ・ラスタ本体なし)**")
+    return written
+
+
+def emit_faint_gap(outdir: str, faint_rows, req3_pages):
+    """**`drawn_ratio` の閾 26 が落としている薄い画素。**
+
+    `alpha_ge1_ratio` との差が、落ちている量。**描画の層で落ちているなら薄い線である。**
+    """
+    out, skipped = faint.faint_gap(faint_rows, set(req3_pages))
+    rows = [[d, b, n] for d, b, n in out]
+    written = write_csv(os.path.join(outdir, "faint_alpha_gap.csv"),
+                        ["is_drawing_layer", "gap_bucket", "n_layers"], rows)
+    print("  [薄い画素] `drawn_ratio`(アルファ≥26)が アルファ≥1 から落ちている量")
+    for d, b, n in out:
+        print(f"      描画層={d:3s} {b:16s} {n:6d}")
+    for why, n in skipped.items():
+        print(f"      飛ばした {n}: {why}")
+    return written
+
+
 def emit_bound_classes(outdir: str, ic_rows, keep_private: bool):
     """**値が下限である層が何層か。** ここで測れる範囲だけ。
 
@@ -474,9 +536,8 @@ INLINE_NEEDS = {
     # 2026-10-26 に `blocks`/`stored` を依頼したのに `needs` に行が無く、
     # **`canvas_unit` は `needs` に在るのに依頼に入れていなかった** ——
     # **依頼と表が両方向にずれた。** 表が依頼の正本である
-    "req3_layer_kind": ("`body_init` / `body_blocks` / `body_stored`"
-                        "(872頁の層。**被覆が下限の層が何層かを計数できる**)",
-                        ("source", "req3_body_blocks")),
+    # **満たされた**(2026-10-27 の便)—— 下限の層は 512層・210頁、全部 用紙 と 色調補正
+    "req3_layer_kind": ("", ("source", "req3_body_blocks")),
     "added33_structure": ("`canvas_unit` と `v_canvas_px_w/h`"
                           "(行ごとの単位が決められない。T126)",
                           ("source", "canvas_px")),
@@ -637,6 +698,20 @@ def project(cells, keep_private: bool):
 
 
 def write_csv(path: str, header, rows) -> int:
+    """**ヘッダーと行の幅が合わないまま書かせない。**
+
+    2026-10-27 に3度目を踏んだ —— `str.replace` は**既定で全件置換**なので、
+    同じ並びの列名を別の表でも使っていると、**意図した表の外側も書き換わる。**
+    (`METRIC_COLS` を直したら遮蔽物の表のヘッダーにも入り、**14 列のヘッダーに
+    11 列の行**という形になった。)点検は走行の最後に鳴るが、これは**書く所で落ちる。**
+    """
+    header = list(header)
+    for i, row in enumerate(rows):
+        if len(row) != len(header):
+            raise SystemExit(
+                f"{path}: **ヘッダー {len(header)} 列 対 行 {len(row)} 列**"
+                f"(行 {i + 2})\n  ヘッダー: {header}\n  行: {list(row)[:6]} ...\n"
+                "  **列を足したら、その表のヘッダーと行の両方を直すこと。**")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh)
@@ -799,6 +874,7 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "bit", "layer_type_and_2",
                "n_png_files", "n_distinct_page_keys", "n_png_names",
                "n_signatures", "n_signature_only",
+               "n_layer_type_bit1", "n_layer_type_eq2", "n_layer_type_other",
                "n_png_a", "n_png_b", "n_distinct_pixels_a", "n_distinct_pixels_b",
                "n_common_names", "n_common_names_bytes_differ",
                "n_pixels_in_both", "n_pixels_in_both_same_name",
@@ -814,7 +890,8 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
             "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format",
-            "bound_class", "calendar_year", "occluder_class", "found_by")
+            "bound_class", "calendar_year", "occluder_class", "found_by",
+            "is_drawing_layer", "gap_bucket")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
@@ -912,6 +989,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "occluder_class": {"occluder_class",
                            *{k for k, _, _, _ in occluders.CLASSES}, ""},
         "found_by": {"found_by", "名前の規則(層名とフォルダーの鎖)", "種別", ""},
+        "is_drawing_layer": {"is_drawing_layer", "yes", "no", ""},
+        "gap_bucket": {"gap_bucket", *{b for _, b in faint.GAP_BUCKETS}, ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -1147,6 +1226,7 @@ def main() -> int:
     ap.add_argument("--initcolor", default=sources.by_key("body_initcolor")["path"])
     ap.add_argument("--delivery-root", default=delivery.ROOT_DEFAULT)
     ap.add_argument("--sha256", default=sources.by_key("file_sha256")["path"])
+    ap.add_argument("--faint", default=sources.by_key("req3_body_blocks")["path"])
     ap.add_argument("--gradmap", default=sources.by_key("grad_v1_v2_map")["path"])
     args = ap.parse_args()
     as_of = today()
@@ -1178,6 +1258,11 @@ def main() -> int:
     grad = hashes.grad_layer_map(args.gradmap, drops_h)
     print(f"  {args.gradmap}: {grad[1]} 層 / mask_cover が両方在る {grad[2]} / "
           f"**値が動いた {grad[3]}**")
+
+    drops_f = Drops()
+    faint_rows = faint.load(args.faint, drops_f)
+    print(f"  {args.faint}: {len(faint_rows)} 層")
+    drops_f.report("薄い画素の便")
 
     drops_dl = Drops()
     print(f"  {args.delivery_root}: 納品の木を歩く")
@@ -1211,6 +1296,10 @@ def main() -> int:
           f"**2つ以上の納品に同じ名前 {dl_dup}**")
     print(f"    畳んだ納品フォルダー {len(dl_collapsed)} 個(作品名を含むため)")
     drops_dl.report("納品の木")
+    pub["req3_bound_classes.csv"] = emit_req3_bound_classes(
+        args.public_out, faint_rows, req3_pages)
+    pub["faint_alpha_gap.csv"] = emit_faint_gap(
+        args.public_out, faint_rows, req3_pages)
     pub["occluder_classes.csv"] = emit_occluders(
         args.public_out, args.delivery_root, drops_dl)
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
@@ -1233,6 +1322,10 @@ def main() -> int:
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
     full.update(emit_delivery(args.full_out, args.delivery_root, True, Drops())[0])
+    full["req3_bound_classes.csv"] = emit_req3_bound_classes(
+        args.full_out, faint_rows, req3_pages)
+    full["faint_alpha_gap.csv"] = emit_faint_gap(
+        args.full_out, faint_rows, req3_pages)
     full["occluder_classes.csv"] = emit_occluders(
         args.full_out, args.delivery_root, Drops())
     full["coverage_bound_classes.csv"] = emit_bound_classes(

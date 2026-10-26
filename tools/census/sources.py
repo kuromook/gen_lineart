@@ -83,6 +83,15 @@ LOCAL_CSV = [
                "**ハッシュそのものは抽出側が計算した** —— 先方の読みが違えば同じく違う",
     ),
     dict(
+        key="req3_body_blocks",
+        path="inbox/faint_alpha_905_20261027.csv",
+        predicate="905頁の `body_init` / `body_blocks` / `body_stored` と"
+                  "**アルファ≥1 の比**(62,105層。依頼3の 56,576層を全部含む)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**依頼3の3列がこれで埋まった** —— 下限の層が何層かを計数できる。"
+               "**併せて `drawn_ratio` の閾 26 が落としている薄い画素が見える**",
+    ),
+    dict(
         key="grad_v1_v2_map",
         path="inbox/grad_v1_v2_layer_map_20261026.csv",
         predicate="グラデ v1/v2 の**層ごとの対応**(258層)",
