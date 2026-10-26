@@ -1085,6 +1085,7 @@ def main() -> int:
                                    len(req3_pages) + len(a33_rows), "段 C")
 
     rc_cons |= check_full_population_totals()
+    rc_cons |= sources.audit_needs()
     vocab = private_vocabulary(req3_pages, a33_rows)
     rc, _hits = audit_public(args.public_out, vocab)
     if rc:

@@ -13,6 +13,7 @@ SUPPLIER_REPORTED = [
         n_pages=9653, n_layers=None,
         measured_by="抽出側(um350)", as_of="2026-10-26",
         needs="`pages` の年ごとの件数(いまは総数しか無い)",
+        satisfied_when=("source", "pages_by_year_all"),
         caveat="ファイル数。**異なり数とは別の量**(T96 の形)",
     ),
     dict(
@@ -21,7 +22,8 @@ SUPPLIER_REPORTED = [
         n_pages=7418, n_layers=None,
         measured_by="census track(2026-10-26 に全 9,653 行から数え直した)",
         as_of="2026-10-26",
-        needs="なし(`request9` の sha256 が来たので測れた)",
+        needs="",   # **満たされた。** `request9` の sha256 で測れた
+        satisfied_when=("source", "file_sha256"),
         caveat="**ファイル 9,653 と異なり 7,418 は同じ母集団の別の量。**並べて書く。"
                "**ハッシュは抽出側が計算した列**なので、先方の読みが違えば同じく違う",
     ),
@@ -32,7 +34,8 @@ SUPPLIER_REPORTED = [
         n_pages=7667, n_layers=None,
         measured_by="抽出側(um350)/ 重複は census track が数え直した",
         as_of="2026-10-26",
-        needs="なし",
+        needs="",
+        satisfied_when=None,
         caveat="**7,667 − 6,194 を「複製の数」と名乗らない** —— "
                "余り 1,473 / 双子を持つファイル 2,458 / 塊 985 は**3つの別の量**",
     ),
@@ -44,6 +47,7 @@ SUPPLIER_REPORTED = [
         needs="**`.clip` だけの層数を、437,561 と同じ走行で取り直したもの。** "
               "いまの 312,898 はそれより前の走行の数で、"
               "**同じ走行の数でないと `.clip` と `.lip` を比べられない**",
+        satisfied_when=("source", "clip_only_layers"),
         caveat="**全数の問いについては `db_all_layers`(437,561)が後継。** "
                "この行は `.clip` だけの数として残すが、**取り直していない。** "
                "**437,561 − 312,898 を『`.lip` の層数』と名乗らない** —— "
@@ -66,6 +70,7 @@ LOCAL_CSV = [
         path="inbox/body_initcolor_delivered_20261026.csv",
         predicate="トーン・グラデ・ベタの**本体の InitColor**(1層1行、2,095層)",
         supplier="抽出側(um350)", as_of="2026-10-26",
+        satisfies="body_initcolor",
         caveat="**1層1行なのでここで測れる。** `set` 列に作品名が入るので"
                "**段 A では種類に畳む**(畳んだ世代の数を印字する)",
     ),
@@ -103,6 +108,7 @@ ABSENT = [
         measured_by="抽出側(um350)",
         as_of="2026-10-26",
         needs="`.lip` を含む層の表。**いまは1件も手元に無い**",
+        satisfied_when=("source", "lip_layers"),
         caveat="**ここで読める2本の CSV には `.lip` が1頁も入っていない** —— "
                "`ext_lip = 0` は「`.lip` を数えて 0 だった」ではなく"
                "**「材料に `.lip` が無い」**。"
@@ -132,3 +138,50 @@ def by_key(key: str) -> dict:
         if s["key"] == key:
             return s
     raise KeyError(f"材料が宣言されていない: {key}")
+
+
+# **`needs` が古くなっていないかの点検。**
+# 2026-10-26 に `db_layers` の `needs` が「`.lip` 後の層数はまだ来ていない」と
+# 書いたままで、**`db_all_layers`(437,561)がその更新だった** ——
+# **同じ表の2行が食い違っていた。** 手で見つけたので、**次を器具が見つける形にする。**
+#
+# `satisfied_when = ("source", <鍵>)` は「その材料が `LOCAL_CSV` に在れば満たされた」。
+# **満たされているのに `needs` が空でない行**は指摘。
+# **満たされていないのに `needs` が空の行**も指摘(頼み忘れ)。
+
+
+def audit_needs() -> int:
+    """**この点検が届く範囲**(名前より狭く書く):
+
+    - **届く**: 宣言した材料が `LOCAL_CSV` に入ったのに `needs` が残っている /
+      入っていないのに `needs` が空(頼み忘れ)
+    - **届かない**: **`satisfied_when` を宣言していない行**(`clip_files` のように
+      条件なしの行は、何も点検されない)。そして**材料が届いても中身が
+      その問いに答えていない場合** —— 鍵が在ることと、答えが在ることは別
+    """
+    rows = SUPPLIER_REPORTED + ABSENT
+    have = {s["key"] for s in LOCAL_CSV}
+    bad = []
+    print("  [`needs` 欄の点検] 満たされた材料が来たのに `needs` が残っていないか")
+    for s in rows:
+        cond = s.get("satisfied_when")
+        needs = (s.get("needs") or "").strip()
+        if cond is None:
+            state = "条件なし"
+            ok = True
+        else:
+            kind, key = cond
+            satisfied = kind == "source" and key in have
+            state = f"{key} は{'在る' if satisfied else '未着'}"
+            ok = (not needs) if satisfied else bool(needs)
+            if not ok:
+                bad.append((s["key"], state, needs))
+        print(f"    {s['key']:16s} {state:28s} needs={'空' if not needs else '有り'}"
+              f"  {'' if ok else '**食い違い**'}")
+    if bad:
+        for key, state, needs in bad:
+            print(f"    **{key}: {state} なのに needs が"
+                  f"{'残っている' if needs else '空'}**")
+        return 1
+    print("    食い違いなし")
+    return 0
