@@ -77,6 +77,8 @@ PROSE_EXCEPTIONS = {
     "top":  "英単語。同名のフォルダーが在るのは偶然",
     "task": "英単語。同名のフォルダーが在るのは偶然",
     "done": "英単語。同名のフォルダーが在るのは偶然",
+    "color": "英単語・CSS の語。同名のフォルダーが在るのは偶然",
+    "cover": "英単語・CSS の語。同名のフォルダーが在るのは偶然",
 }
 
 # `drawn_ratio` をその種別で読んでよいか。**読めない列を空欄で出し、0 にしない**
@@ -561,6 +563,36 @@ def write_caveats(outdir: str):
     return write_csv(os.path.join(outdir, "caveats.csv"), header, rows)
 
 
+def verify_conservation(outdir: str, expect_layers: int, expect_pages: int,
+                        label: str) -> int:
+    """**書き出した CSV を読み返して、総数が保存しているか確かめる。**
+
+    抽出側の試走で、**層の ID だけを鍵にしたため別の頁の同じ ID が上書きされ、
+    254層が160ファイルになった** —— **37% が黙って消え、エラーは 0**(2026-10-26、
+    T109 の出力側の現れ)。**鍵が頁をまたいで一意でないと、出力が黙って減る。**
+
+    だから在庫を信じず**読み返して足す**。メモリの中の数を足すと、
+    書き出しで消えた分は見えない。
+    """
+    def total(fname, col):
+        path = os.path.join(outdir, fname)
+        with open(path, encoding="utf-8") as fh:
+            reader = csv.reader(fh)
+            header = next(reader)
+            i = header.index(col)
+            return sum(int(r[i]) for r in reader if r[i].strip())
+
+    got_layers = total("layers_by_year_kind_type.csv", "n_layers")
+    got_pages = total("pages_by_year.csv", "n_pages")
+    ok_l, ok_p = got_layers == expect_layers, got_pages == expect_pages
+    print(f"  [総数の保存: {label}] 読み返して足す(在庫ではなく出力を数える)")
+    print(f"    層  入力 {expect_layers} → 出力 {got_layers}  "
+          f"{'一致' if ok_l else '**消えている: ' + str(expect_layers - got_layers) + '**'}")
+    print(f"    頁  入力 {expect_pages} → 出力 {got_pages}  "
+          f"{'一致' if ok_p else '**消えている: ' + str(expect_pages - got_pages) + '**'}")
+    return 0 if (ok_l and ok_p) else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--public-out", default="census")
@@ -609,6 +641,8 @@ def main() -> int:
     pub["caveats.csv"] = write_caveats(args.public_out)
     for name, n in sorted(pub.items()):
         print(f"    {n:6d} 行  {name}")
+    rc_cons = verify_conservation(args.public_out, len(req3_rows),
+                                  len(req3_pages) + len(a33_rows), "段 A")
 
     print("\n[全量(段 C)を書く] —— 同じ集計から")
     os.makedirs(args.full_out, exist_ok=True)
@@ -616,12 +650,18 @@ def main() -> int:
     full["caveats.csv"] = write_caveats(args.full_out)
     for name, n in sorted(full.items()):
         print(f"    {n:6d} 行  {name}")
+    rc_cons |= verify_conservation(args.full_out, len(req3_rows),
+                                   len(req3_pages) + len(a33_rows), "段 C")
 
     vocab = private_vocabulary(req3_pages, a33_rows)
     rc, _hits = audit_public(args.public_out, vocab)
-    print("\n" + ("**指摘あり。この出力は commit しない**" if rc
-                  else "指摘なし(段 A に固有名は無い)"))
-    return rc
+    if rc:
+        print("\n**固有名の指摘あり。この出力は commit しない**")
+    elif rc_cons:
+        print("\n**総数が保存していない。この出力は commit しない**")
+    else:
+        print("\n指摘なし(段 A に固有名は無く、総数も保存している)")
+    return rc | rc_cons
 
 
 if __name__ == "__main__":

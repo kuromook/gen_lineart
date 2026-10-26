@@ -1,0 +1,407 @@
+<title>原稿の国勢調査</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* 台帳の一段組み。母集団 → 答えない問い → 数の表、の順に下る。
+   数の隣に但し書きが必ず在る形を、版面そのもので強制する */
+:root {
+  --bg: #f6f6f4;
+  --panel: #fffffe;
+  --ink: #1a1d22;
+  --ink-soft: #565d68;
+  --rule: #d8d8d2;
+  --accent: #1f4e79;          /* 墨に近い藍。見出しと鍵の列 */
+  --accent-soft: #e8eef4;
+  --moving: #8a5a00;          /* 値が動く予定 */
+  --moving-soft: #fbf2df;
+  --absent: #6b4a52;          /* 材料に無い・測っていない */
+  --absent-soft: #f3ebec;
+  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a; --panel: #1b1e24; --ink: #e8e9ec; --ink-soft: #a0a7b2;
+    --rule: #2f343c; --accent: #86b4e0; --accent-soft: #1d2a37;
+    --moving: #e8bb63; --moving-soft: #2d2512;
+    --absent: #d9aeb8; --absent-soft: #2e2227;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161a; --panel: #1b1e24; --ink: #e8e9ec; --ink-soft: #a0a7b2;
+  --rule: #2f343c; --accent: #86b4e0; --accent-soft: #1d2a37;
+  --moving: #e8bb63; --moving-soft: #2d2512;
+  --absent: #d9aeb8; --absent-soft: #2e2227;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.75;
+  margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+header.top { padding-block: 40px 0; border-bottom: 2px solid var(--ink); }
+h1 {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(28px, 5vw, 42px); line-height: 1.25;
+  margin: 0 0 8px; text-wrap: balance; letter-spacing: 0.01em;
+}
+.standfirst { font-size: 16px; color: var(--ink-soft); margin: 0 0 6px; max-width: 62ch; }
+.runline {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft);
+  display: flex; flex-wrap: wrap; gap: 4px 18px; padding-block: 12px;
+}
+.thesis {
+  border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: 16px 18px; margin-block: 28px; max-width: 70ch;
+  font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.7;
+}
+h2 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 22px; margin: 44px 0 4px; text-wrap: balance;
+}
+h2 .num {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); display: block; letter-spacing: 0.12em; margin-bottom: 2px;
+}
+.lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 64ch; font-size: 14px; }
+.controls {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
+  padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 3px; margin-bottom: 18px;
+}
+.ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ctl > span {
+  font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 700;
+}
+select, button.linklike {
+  font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: 5px 8px;
+}
+button.linklike { cursor: pointer; }
+button.linklike:hover { border-color: var(--accent); color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroller { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 7px 11px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th {
+  position: sticky; top: 0; background: var(--panel); z-index: 1;
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 700; white-space: nowrap;
+  border-bottom: 2px solid var(--ink);
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.key { font-family: var(--font-mono); font-size: 12.5px; white-space: nowrap; }
+td.pop { font-family: var(--font-mono); font-size: 12px; color: var(--accent); white-space: nowrap; }
+td.prose { min-width: 22ch; max-width: 46ch; font-size: 13px; line-height: 1.65; }
+.chip {
+  display: inline-block; font-family: var(--font-body); font-size: 10.5px;
+  font-weight: 700; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 2px;
+  white-space: nowrap; cursor: help; border: 1px solid transparent;
+}
+.chip.moving { background: var(--moving-soft); color: var(--moving); border-color: var(--moving); }
+.chip.absent { background: var(--absent-soft); color: var(--absent); border-color: var(--absent); }
+.chip.nomat  { background: transparent; color: var(--ink-soft); border-color: var(--rule); }
+.trap {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  color: var(--accent); background: var(--accent-soft);
+  padding: 1px 5px; border-radius: 2px; white-space: nowrap;
+}
+.cav { border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); margin-bottom: 8px; }
+.cav > summary {
+  cursor: pointer; padding: 10px 14px; display: flex; flex-wrap: wrap;
+  gap: 4px 12px; align-items: baseline; list-style: none;
+}
+.cav > summary::-webkit-details-marker { display: none; }
+.cav > summary::before { content: "▸"; color: var(--ink-soft); margin-right: 2px; }
+.cav[open] > summary::before { content: "▾"; }
+.cav .col { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.cav .na { color: var(--absent); font-size: 13px; flex: 1 1 24ch; min-width: 0; }
+.cav .body { padding: 0 14px 14px 30px; display: grid; gap: 8px; max-width: 78ch; }
+.cav .body div { font-size: 13.5px; }
+.cav .body b { font-family: var(--font-body); font-size: 10.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-soft); display: block; }
+.legend { display: grid; gap: 7px; margin-bottom: 18px; font-size: 13px; }
+.legend div { display: flex; gap: 9px; align-items: baseline; flex-wrap: wrap; }
+.note {
+  font-size: 13px; color: var(--ink-soft); border-left: 2px solid var(--rule);
+  padding-left: 12px; margin-block: 14px; max-width: 70ch;
+}
+.stage {
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+  padding: 12px 16px; border: 1px dashed var(--rule); border-radius: 3px;
+  font-size: 13px; color: var(--ink-soft); margin-top: 10px;
+}
+footer.foot {
+  margin-top: 52px; padding-top: 18px; border-top: 2px solid var(--ink);
+  font-size: 12.5px; color: var(--ink-soft);
+}
+code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accent-soft);
+  padding: 0 4px; border-radius: 2px; }
+@media (max-width: 560px) { td.prose { max-width: none; } .runline { font-size: 11px; } }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <h1>原稿の国勢調査</h1>
+  <p class="standfirst">原稿 9,653ファイルについて、毎回調べ直さなくて済む集計。公開するのは年・形式・種別ごとの件数と分布だけで、作品名・層名・頁のパスは入っていない。</p>
+  <div class="runline" id="runline"></div>
+</header>
+
+<p class="thesis">重かったのは数を取ることではなく、数に付く但し書きを毎回引き直すことだった。だからこれは「数の表」ではなく、<b>数と、その数が答えない問いの表</b>である。</p>
+
+<h2><span class="num">1 / 母集団</span>この数は、何の数か</h2>
+<p class="lede">先にここを読む。ファイル数と異なり数は別の量で、層の数はすべて <code>.clip</code> のものである。「測った者」の欄が空の行は無い。</p>
+<div class="scroller"><table id="t-pop"></table></div>
+
+<h2><span class="num">2 / 答えない問い</span>各列が答えないこと</h2>
+<p class="lede">この集計の本体。行のほとんどは、抽出側と基盤が 2026-10-26 に自己訂正した内容から来ている。<code>T&lt;n&gt;</code> は台帳の罠の番号。</p>
+<div id="cavs"></div>
+
+<h2><span class="num">3 / 空欄の読み方</span>空欄は 0 ではない</h2>
+<p class="lede">数の表には3種類の空欄が出る。どれも 0 ではなく、理由が別である。</p>
+<div class="legend">
+  <div><span class="chip moving">集計していない</span><span>直る予定のある列。いま入れると誤りが集計に固定される</span></div>
+  <div><span class="chip absent">測っていない</span><span>その母集団の材料がその量を運んでいない</span></div>
+  <div><span class="chip nomat">材料に無い</span><span>その形式のファイルが手元の材料に1件も入っていない</span></div>
+</div>
+
+<h2><span class="num">4 / 頁</span>年ごとの頁数と作品数</h2>
+<p class="lede">年は<b>フォルダーの名前</b>で、暦年ではない。<code>2022b</code> が暦年 2022 の続きかは作者に未確認なので畳んでいない。</p>
+<div class="controls">
+  <label class="ctl"><span>母集団</span><select id="f-pop-pages"></select></label>
+  <label class="ctl"><span>形式</span><select id="f-ext"></select></label>
+  <span class="ctl" style="flex:1 1 20ch"><span>行</span><span id="c-pages" class="num" style="font-family:var(--font-mono)"></span></span>
+</div>
+<div class="scroller"><table id="t-pages"></table></div>
+
+<h2><span class="num">5 / 層</span>年 × 種別 × <code>layer_type</code></h2>
+<p class="lede"><code>layer_type</code> はビット列。確かなのは 1(本体がラスタ)・2(層のマスクがある)・4096(色調補正)の3ビットだけで、16/32/256/512/1024 の位は意味が不明。等値比較で絞ると何かが黙って落ちる。</p>
+<div class="controls">
+  <label class="ctl"><span>母集団</span><select id="f-pop-layers"></select></label>
+  <label class="ctl"><span>年</span><select id="f-year"></select></label>
+  <label class="ctl"><span>種別</span><select id="f-kind"></select></label>
+  <label class="ctl"><span>drawn_ratio</span><select id="f-usable"></select></label>
+  <span class="ctl" style="flex:1 1 20ch"><span>行 / 層</span><span id="c-layers" class="num" style="font-family:var(--font-mono)"></span></span>
+</div>
+<div class="scroller"><table id="t-layers"></table></div>
+
+<h2><span class="num">6 / 出所</span>材料と、値が動く予定の列</h2>
+<p class="lede">受領 CSV の sha256 と、抽出側が読み手を直したら値が変わる列。動いたらこの集計の該当行は古くなる。</p>
+<div class="scroller"><table id="t-prov"></table></div>
+
+<h2><span class="num">7 / 段</span>手元で作品名まで見る</h2>
+<p class="lede">この画面に埋まっているのは<b>段 A</b>(集計のみ・固有名なし)。同じ1枚で、手元の <code>data/census_full/</code> の CSV を読めば<b>段 C</b>(作品・頁まで)が出る。読み込んだものはこのページから出ない。</p>
+<div class="stage">
+  <label class="ctl"><span>段 C の CSV を選ぶ</span>
+    <input type="file" id="full-files" multiple accept=".csv" style="font-size:13px">
+  </label>
+  <span id="stage-state">いまは段 A。<code>pages_by_year.csv</code> と <code>layers_by_year_kind_type.csv</code> を選ぶと段 C に切り替わる</span>
+  <button class="linklike" id="back-to-a" hidden>段 A に戻す</button>
+</div>
+
+<footer class="foot">
+  <p>器具 <code>tools/census/build_census.py</code> / 画面 <code>tools/census/build_ui.py</code>。走行ごとに段 A と段 C を同じ集計から出し、固有名の点検(C1〜C5)と総数の保存を印字する。印字が無い走行の出力は commit しない。</p>
+  <p id="foot-run"></p>
+</footer>
+</div>
+
+<script id="census-data" type="application/json">%%DATA%%</script>
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("census-data").textContent);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s);
+  const fmt = (v) => (v === "" || v == null) ? "" : Number(v).toLocaleString("ja-JP");
+
+  // 空欄の3種。**どれも 0 ではない**
+  const EMPTY = {
+    moving: { cls: "moving", label: "集計していない" },
+    absent: { cls: "absent", label: "測っていない" },
+    nomat:  { cls: "nomat",  label: "材料に無い" },
+  };
+  const SUPPRESSED_COLS = new Set(["n_drawn_gt0", "n_drawn_zero", "n_drawn_blank"]);
+  const STRUCT_COLS = new Set(["sum_n_layers_incl_folders", "sum_n_folders",
+                               "sum_n_text_layers", "sum_n_image_material_layers"]);
+
+  function emptyKind(col, row) {
+    if (col === "ext_lip") return EMPTY.nomat;
+    if (SUPPRESSED_COLS.has(col)) return EMPTY.moving;
+    if (STRUCT_COLS.has(col) || col === "n_works") return EMPTY.absent;
+    return EMPTY.absent;
+  }
+  function reasonFor(col, row) {
+    if (col === "ext_lip") return D.reasons.lip;
+    if (SUPPRESSED_COLS.has(col)) return D.reasons.mask_fill;
+    return "この母集団の材料はこの量を運んでいない(" + esc(row.population) + ")";
+  }
+  function cell(col, row) {
+    const v = row[col];
+    if (v === "" || v == null) {
+      const k = emptyKind(col, row);
+      return '<span class="chip ' + k.cls + '" title="' + esc(reasonFor(col, row)).replace(/"/g, "&quot;") + '">' + k.label + "</span>";
+    }
+    return fmt(v);
+  }
+
+  const NUMERIC = /^(n_|sum_|ext_)/;
+  const HEAD = {
+    population: "母集団", year_label: "年", v_layer_kind: "種別", layer_type: "layer_type",
+    n_pages: "頁", n_pages_without_work: "作品フォルダー無し", n_works: "作品",
+    ext_clip: ".clip", ext_lip: ".lip",
+    n_layers: "層", n_rendered: "描けた", n_not_rendered: "描けなかった",
+    n_drawn_gt0: "dr>0", n_drawn_zero: "dr=0", n_drawn_blank: "dr 空欄",
+    n_has_image_material: "画像素材あり",
+    sum_n_layers_incl_folders: "層(フォルダー込)", sum_n_folders: "フォルダー",
+    sum_n_text_layers: "テキスト層", sum_n_image_material_layers: "画像素材層",
+    drawn_ratio_usable: "dr を読める", predicate: "述語", measured_by: "測った者",
+    as_of: "時点", needs: "足りない材料", caveat: "但し書き",
+    n_distinct_pages: "異なり", source: "材料", kind: "種類", supplier: "供給元",
+    n_rows: "行", sha256: "sha256", volatile: "動く", note: "内容",
+    work: "作品", subdir: "下位", page_path: "頁",
+  };
+  const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
+                         "answers", "not_answers", "detail", "measured_by", "supplier", "kind"]);
+
+  function render(tableEl, cols, rows) {
+    const th = cols.map((c) => '<th class="' + (NUMERIC.test(c) ? "num" : "") + '">' + esc(HEAD[c] || c) + "</th>").join("");
+    const body = rows.map((r) => "<tr>" + cols.map((c) => {
+      let cls = NUMERIC.test(c) ? "num" : (PROSE.has(c) ? "prose" : (c === "population" ? "pop" : "key"));
+      let v;
+      if (NUMERIC.test(c)) v = cell(c, r);
+      else if (c === "sha256") v = '<span class="key" title="' + esc(r[c]) + '">' + esc(r[c]).slice(0, 12) + "…</span>";
+      else if (c === "volatile") v = r[c] === "yes" ? '<span class="chip moving">動く予定</span>' : "";
+      else if (c === "drawn_ratio_usable")
+        v = r[c] === "no" ? '<span class="chip moving" title="' + esc(r.drawn_ratio_usable_why).replace(/"/g, "&quot;") + '">読まない</span>'
+          : '<span class="chip nomat" title="' + esc(r.drawn_ratio_usable_why).replace(/"/g, "&quot;") + '">未確認</span>';
+      else v = esc(r[c]);
+      return '<td class="' + cls + '">' + v + "</td>";
+    }).join("") + "</tr>").join("");
+    tableEl.innerHTML = "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody>";
+  }
+
+  function fill(sel, vals, allLabel) {
+    sel.innerHTML = '<option value="">' + allLabel + "</option>"
+      + vals.map((v) => '<option value="' + esc(v) + '">' + esc(v) + "</option>").join("");
+  }
+  const uniq = (rows, k) => [...new Set(rows.map((r) => r[k]))].filter((v) => v !== "").sort();
+
+  // ---- 1 母集団 / 6 出所 / 2 答えない問い -------------------------------
+  render($("t-pop"), ["population", "predicate", "n_pages", "n_distinct_pages",
+                      "n_layers", "measured_by", "as_of", "needs", "caveat"], D.populations);
+  render($("t-prov"), ["source", "kind", "supplier", "as_of", "n_rows", "sha256",
+                       "volatile", "note"], D.provenance);
+  $("cavs").innerHTML = D.caveats.map((c) =>
+    '<details class="cav"><summary><span class="col">' + esc(c.column) + "</span>"
+    + (c.trap && c.trap !== "—" ? '<span class="trap">' + esc(c.trap) + "</span>" : "")
+    + '<span class="na">答えない: ' + esc(c.not_answers).replace(/\*\*/g, "") + "</span></summary>"
+    + '<div class="body"><div><b>答える</b>' + esc(c.answers).replace(/\*\*/g, "") + "</div>"
+    + '<div><b>答えない</b>' + esc(c.not_answers).replace(/\*\*/g, "") + "</div>"
+    + '<div><b>詳細</b>' + esc(c.detail).replace(/\*\*/g, "") + "</div>"
+    + '<div><b>言った者 / 時点</b>' + esc(c.by) + " / " + esc(c.as_of) + "</div></div></details>").join("");
+
+  // ---- 4 頁 / 5 層 ------------------------------------------------------
+  let pages = D.pages, layers = D.layers, stage = "A";
+
+  function pageCols() {
+    const base = ["population", "year_label"];
+    if (stage === "C") base.push("work", "subdir", "page_path");
+    return base.concat(["n_pages", "n_works", "n_pages_without_work", "ext_clip", "ext_lip",
+                        "sum_n_layers_incl_folders", "sum_n_folders", "sum_n_text_layers",
+                        "sum_n_image_material_layers"].filter((c) => c in (pages[0] || {})));
+  }
+  function layerCols() {
+    const base = ["population", "year_label", "v_layer_kind", "layer_type"];
+    if (stage === "C") base.push("work", "subdir", "page_path");
+    return base.concat(["n_layers", "n_rendered", "n_not_rendered", "n_drawn_gt0",
+                        "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
+                        "drawn_ratio_usable"]);
+  }
+  function drawPages() {
+    const p = $("f-pop-pages").value, e = $("f-ext").value;
+    let rows = pages.filter((r) => (!p || r.population === p));
+    if (e === "clip") rows = rows.filter((r) => Number(r.ext_clip || 0) > 0);
+    if (e === "lip") rows = rows.filter((r) => Number(r.ext_lip || 0) > 0);
+    $("c-pages").textContent = rows.length.toLocaleString("ja-JP") + " 行 / "
+      + rows.reduce((a, r) => a + Number(r.n_pages || 0), 0).toLocaleString("ja-JP") + " 頁";
+    render($("t-pages"), pageCols(), rows);
+  }
+  function drawLayers() {
+    const p = $("f-pop-layers").value, y = $("f-year").value,
+          k = $("f-kind").value, u = $("f-usable").value;
+    const rows = layers.filter((r) => (!p || r.population === p) && (!y || r.year_label === y)
+      && (!k || r.v_layer_kind === k) && (!u || r.drawn_ratio_usable === u));
+    $("c-layers").textContent = rows.length.toLocaleString("ja-JP") + " 行 / "
+      + rows.reduce((a, r) => a + Number(r.n_layers || 0), 0).toLocaleString("ja-JP") + " 層";
+    render($("t-layers"), layerCols(), rows);
+  }
+  function rebuildFilters() {
+    fill($("f-pop-pages"), uniq(pages, "population"), "すべて");
+    fill($("f-pop-layers"), uniq(layers, "population"), "すべて");
+    fill($("f-year"), uniq(layers, "year_label"), "すべて");
+    fill($("f-kind"), uniq(layers, "v_layer_kind"), "すべて");
+    $("f-ext").innerHTML = '<option value="">両方</option><option value="clip">.clip</option><option value="lip">.lip(材料に無い)</option>';
+    $("f-usable").innerHTML = '<option value="">すべて</option><option value="no">読まない列を含む行</option><option value="unverified">未確認の行</option>';
+    drawPages(); drawLayers();
+  }
+  ["f-pop-pages", "f-ext"].forEach((id) => $(id).addEventListener("change", drawPages));
+  ["f-pop-layers", "f-year", "f-kind", "f-usable"].forEach((id) => $(id).addEventListener("change", drawLayers));
+
+  // ---- 7 段 C を手元の CSV から読む(fetch しない。file:// でも動く) ----
+  function parseCSV(text) {
+    const rows = []; let row = [], cur = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') q = false;
+        else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { row.push(cur); cur = ""; }
+      else if (c === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+      else if (c !== "\r") cur += c;
+    }
+    if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+    const head = rows.shift() || [];
+    return rows.filter((r) => r.length === head.length)
+               .map((r) => Object.fromEntries(head.map((h, i) => [h, r[i]])));
+  }
+  $("full-files").addEventListener("change", async (ev) => {
+    const got = [];
+    for (const f of ev.target.files) {
+      const recs = parseCSV(await f.text());
+      if (!recs.length) continue;
+      if ("n_layers" in recs[0]) { layers = recs; got.push("層 " + recs.length); }
+      else if ("n_pages" in recs[0]) { pages = recs; got.push("頁 " + recs.length); }
+    }
+    if (!got.length) { $("stage-state").textContent = "読めた表がない。pages_by_year.csv か layers_by_year_kind_type.csv を選ぶ"; return; }
+    stage = "C";
+    $("stage-state").innerHTML = "<b>段 C</b>(作品・頁まで)。読み込んだ: " + got.join(" / ")
+      + "。この表はこのページから出ない";
+    $("back-to-a").hidden = false;
+    rebuildFilters();
+  });
+  $("back-to-a").addEventListener("click", () => {
+    pages = D.pages; layers = D.layers; stage = "A";
+    $("stage-state").textContent = "いまは段 A。固有名は1つも入っていない";
+    $("back-to-a").hidden = true;
+    $("full-files").value = "";
+    rebuildFilters();
+  });
+
+  // ---- 走行の一行 -------------------------------------------------------
+  $("runline").innerHTML = D.runline.map((s) => "<span>" + esc(s) + "</span>").join("");
+  $("foot-run").textContent = D.foot;
+  rebuildFilters();
+})();
+</script>
