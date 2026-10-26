@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""追跡されている画像が許可表に在るかを見る。
+"""追跡されている画像と重みが許可表に在るかを見る。
 
 CLAUDE.md §4 の器具。**木**を見る(差分ではない) —— 差分を見て「0件」と書くと、
 読み手は木について書いたと読む(2026-10-26、基盤が自分で踏んだ)。
 
-終了コード: 0 = 表と一致 / 1 = 表に無い追跡画像が在る / 2 = 器具自身が走れない
+終了コード: 0 = 表と一致 / 1 = 表に無い追跡画像か追跡重みが在る / 2 = 器具自身が走れない
 """
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ALLOWLIST = ROOT / "doc" / "public_images_allowlist.txt"
+ALLOWLIST = ROOT / "doc" / "public_artifacts_allowlist.txt"
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp", ".gif", ".psd", ".clip"}
+# 重みの公開はユーザーの承認が要る (2026-10-26)。表に無い追跡重みは終了コード1。
+WEIGHT_SUFFIXES = {".pth", ".pt", ".ckpt", ".safetensors", ".onnx", ".bin", ".h5", ".pb"}
 BIG_FILE_MB = 5.0
 
 
@@ -34,15 +36,19 @@ def main():
 
     tracked = [p for p in git("ls-files").splitlines() if p]
     images = sorted(p for p in tracked if Path(p).suffix.lower() in IMAGE_SUFFIXES)
+    weights = sorted(p for p in tracked if Path(p).suffix.lower() in WEIGHT_SUFFIXES)
+    watched = images + weights
 
-    print(f"追跡ファイル {len(tracked)} / うち画像 {len(images)} / 許可表 {len(allowed)} 行")
+    print(f"追跡ファイル {len(tracked)} / うち画像 {len(images)} / "
+          f"重み {len(weights)} / 許可表 {len(allowed)} 行")
 
-    unlisted = [p for p in images if p not in allowed]
-    stale = sorted(allowed - set(images))
+    unlisted = [p for p in watched if p not in allowed]
+    stale = sorted(allowed - set(watched))
 
-    # 落としたものを理由別に (規律9)
-    print(f"  許可表に在る: {len(images) - len(unlisted)}")
-    print(f"  **許可表に無い: {len(unlisted)}**")
+    # 落としたものを理由別に (規律9)。種類ごとに印字する —— 空でも 0 を出す (T134 l)
+    for label, group in (("画像", images), ("重み", weights)):
+        bad = [p for p in group if p not in allowed]
+        print(f"  {label}: 許可表に在る {len(group) - len(bad)} / **無い {len(bad)}**")
     print(f"  表に在るが追跡されていない(消えた行): {len(stale)}")
     for p in stale:
         print(f"      {p}")
@@ -61,7 +67,7 @@ def main():
     print(f"  計 {len(big)} 件 / {sum(mb for mb, _ in big):.1f} MB")
 
     if unlisted:
-        print("\n表に無い追跡画像:", file=sys.stderr)
+        print("\n表に無い追跡画像・追跡重み(公開にはユーザーの承認が要る):", file=sys.stderr)
         for p in unlisted:
             print(f"      {p}", file=sys.stderr)
         return 1
