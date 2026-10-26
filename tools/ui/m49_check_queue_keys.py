@@ -38,10 +38,35 @@ SERVER = Path('../lineart-fill-region/tools/ui/l19_fill_label_server.py')
 
 
 def main():
+    """`m49 <queue.json> [起動器のモジュール名] [絵の門: magenta|none]`
+
+    **第2引数**: 起動器が `PAGE` を差し替えるなら、そのモジュール名
+    (`m54_launch_page_kind`)。**差し替えた後の画面から鍵を拾う** ——
+    **点検は「実際に配られる画面」に当てなければ意味が無い。**
+    **第3引数**: 絵の門。`magenta` は m47 用(成分の輪郭を描く行列)。
+    **`none` は「この行列には当たらない」ことを明示して飛ばす**
+    (黙って呼ばないのが T110。**飛ばすときも理由を印字する**)。
+    """
     qp = Path(sys.argv[1] if len(sys.argv) > 1 else 'results/m47_ui/queue.json')
+    launcher = sys.argv[2] if len(sys.argv) > 2 else None
+    jssrc = None
+    pics = sys.argv[3] if len(sys.argv) > 3 else 'magenta'
     src = SERVER.read_text(encoding='utf-8')
-    # JS が読む鍵
-    js = sorted(set(re.findall(r'\bit\.([A-Za-z_][A-Za-z0-9_]*)', src)))
+    if launcher:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        mod = __import__(launcher)
+        if not hasattr(mod, 'patch'):
+            raise SystemExit(f'**{launcher} に `patch()` が無い。点検しない**')
+        import l19_fill_label_server as _l19
+        jssrc = mod.patch(_l19.PAGE)
+        print(f'**画面は {launcher} が差し替えた後のもので点検する**')
+        # **原文を置換してはいけない**: `PAGE` の中の `\n` は原文では `\\n` と
+        # 書かれているので、`src.replace(PAGE, page)` は**一致せず無言で何もしない**
+        # (11:59 に踏んだ。差し替えたつもりで元の鍵を点検していた)。
+        # **組み立てた文字列そのものを読む。**
+    # JS が読む鍵は**画面から**、`payload()` が足す鍵は**原文から**拾う
+    js = sorted(set(re.findall(r'\bit\.([A-Za-z_][A-Za-z0-9_]*)',
+                               jssrc if launcher else src)))
     # payload() が足す鍵(`r['x'] = ...` と `r['x'], r['y'] = ...`)
     body = src[src.index('def payload('):src.index('def flag(')]
     added = set()
@@ -79,6 +104,15 @@ def main():
                 bad += 1
                 print(f'  **{k} の型が数でない**: {t}({why})')
     # ---- 絵の点検(門(0)(1)(2) を、配る PNG に当て直す)----
+    if pics == 'none':
+        print('\n== 絵の点検: **飛ばす** ==')
+        print('  門(0) 窓が単色 / 門(1) 輪郭 10%超 / 門(2) 内側にマゼンタ無し は、')
+        print('  **成分の輪郭をマゼンタで描く行列のための門**である。')
+        print('  この行列は頁ぜんたいを出すのでマゼンタが無く、紙が大半なので単色に見える。')
+        print('  **当たらないので当てない。当てれば 44/44 が落ちる**'
+              '(11:58 に実際に当てて確かめた)。')
+        print(f'\n{"**FAIL** 配らない" if bad else "PASS"}  ({bad} 件)')
+        return 1 if bad else 0
     print(f'\n== 絵の点検({len(items)} 枚)==')
     crops = qp.parent / 'crops'
     print(f'{"crop":58s} {"色":>3} {"輪郭":>7} {"内側":>8}')
