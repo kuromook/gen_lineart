@@ -1,154 +1,154 @@
-population,year_label,v_layer_kind,layer_type,n_layers,n_rendered,n_not_rendered,n_drawn_gt0,n_drawn_zero,n_drawn_blank,n_has_image_material,drawn_ratio_usable,drawn_ratio_usable_why
-req3_layer_kind,2015,mask_fill,2,22,22,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2015,paper,1584,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2015,raster,1,54,54,0,52,2,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2015,text,0,14,14,0,14,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,filter,4098,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,gradation,0,90,90,0,0,90,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,image_material,0,10,10,0,6,4,0,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2016,image_material,2,1,1,0,0,1,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2016,mask_fill,2,1786,1786,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2016,other,3,29,29,0,27,2,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,other,513,7,7,0,5,2,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,paper,1584,69,69,0,69,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,raster,1,3486,3486,0,3121,365,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,story_info,800,51,51,0,51,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,text,0,81,81,0,81,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,vector,0,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2016,vector,2,17,17,0,17,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,filter,4098,40,40,0,30,10,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,gradation,0,27,27,0,0,27,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,image_material,0,704,704,0,551,153,0,704,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2017,image_material,2,1,1,0,1,0,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2017,mask_fill,2,6990,6981,9,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2017,other,3,718,718,0,716,2,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,paper,1584,204,203,1,203,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,raster,1,9156,9156,0,7513,1643,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,story_info,800,170,170,0,170,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,text,0,161,161,0,161,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,vector,0,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2017,vector,2,7,7,0,7,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,filter,4096,5,5,0,5,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,filter,4098,38,38,0,38,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,gradation,0,31,31,0,1,30,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,image_material,0,592,592,0,313,279,0,592,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2018,image_material,2,1,1,0,1,0,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2018,mask_fill,2,2587,2587,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2018,other,3,242,242,0,226,16,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,other,513,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,paper,1584,187,187,0,187,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,raster,1,9806,9806,0,8869,937,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,story_info,800,219,219,0,207,12,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,text,0,108,108,0,104,4,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,vector,0,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,vector,1,9,9,0,9,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,vector,2,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2018,vector,3,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,filter,4096,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,filter,4098,36,36,0,33,3,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,gradation,0,9,9,0,0,9,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,image_material,0,279,279,0,250,29,0,279,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2019,image_material,2,57,57,0,51,6,0,57,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2019,mask_fill,2,689,687,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2019,other,3,212,212,0,211,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,other,513,6,6,0,6,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,paper,1584,180,179,1,179,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,raster,1,8067,8067,0,7670,397,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,story_info,800,188,187,1,187,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,text,0,322,322,0,322,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,vector,0,7,7,0,0,7,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019,vector,1,18,18,0,17,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,filter,4096,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,filter,4098,20,20,0,18,2,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,image_material,0,64,64,0,50,14,0,64,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2019b,image_material,2,9,9,0,7,2,0,9,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2019b,mask_fill,2,210,210,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2019b,other,3,31,31,0,31,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,other,513,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,paper,1584,29,29,0,29,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,raster,1,1563,1563,0,1467,96,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,story_info,800,29,29,0,29,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,text,0,66,66,0,66,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2019b,vector,1,7,7,0,7,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020,image_material,0,10,10,0,4,6,0,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2020,mask_fill,2,18,18,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2020,paper,1584,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020,raster,1,253,253,0,242,11,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020,story_info,800,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020,text,0,28,28,0,28,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,filter,4096,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,filter,4098,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,image_material,0,9,9,0,8,1,0,9,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2020b,other,3,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,paper,1584,6,6,0,6,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,raster,1,104,104,0,103,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,story_info,800,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2020b,text,0,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,filter,4098,6,6,0,3,3,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,image_material,0,18,18,0,7,11,0,18,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2021,mask_fill,2,43,43,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2021,other,3,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,other,513,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,paper,1584,17,17,0,17,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,raster,1,470,470,0,457,13,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,story_info,800,14,14,0,14,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,text,0,34,34,0,34,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2021,vector,1,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,filter,4098,17,17,0,16,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,image_material,0,7,7,0,7,0,0,7,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2022,mask_fill,2,145,145,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2022,other,3,9,9,0,8,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,paper,1584,38,37,1,37,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,raster,1,390,390,0,383,7,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,story_info,800,27,26,1,26,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022,text,0,32,31,1,31,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,filter,4098,286,3,283,3,0,283,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,image_material,0,10,8,2,8,0,2,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2022b,mask_fill,2,51,3,48,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2022b,other,3,10,10,0,10,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,paper,1584,69,9,60,9,0,60,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,raster,1,3311,3311,0,3289,22,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,story_info,800,7,4,3,4,0,3,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,text,0,98,3,95,3,0,95,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2022b,vector,1,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,filter,4098,5,0,5,0,0,5,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,mask_fill,2,2,0,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2023,other,3,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,paper,1584,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,raster,1,84,84,0,80,4,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,story_info,800,4,0,4,0,0,4,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023,text,0,10,0,10,0,0,10,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023b,filter,4098,13,0,13,0,0,13,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023b,mask_fill,2,2,0,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2023b,paper,1584,9,0,9,0,0,9,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023b,raster,1,196,196,0,121,75,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023b,story_info,800,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2023b,text,0,12,0,12,0,0,12,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,filter,4098,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,image_material,0,10,0,10,0,0,10,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2024,mask_fill,2,18,0,18,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2024,other,3,3,3,0,2,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,paper,1584,15,0,15,0,0,15,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,raster,1,115,115,0,108,7,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,story_info,800,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024,text,0,16,0,16,0,0,16,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,3d,0,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,filter,4098,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,image_material,0,12,0,12,0,0,12,12,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2024b,mask_fill,2,5,0,5,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2024b,other,3,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,paper,1584,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,raster,1,157,157,0,156,1,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,text,0,4,0,4,0,0,4,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024b,vector,0,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,3d,0,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,filter,4098,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,image_material,0,25,0,25,0,0,25,25,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
-req3_layer_kind,2024c,mask_fill,2,13,0,13,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
-req3_layer_kind,2024c,other,3,10,10,0,10,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,other,513,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,paper,1584,21,1,20,1,0,20,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,raster,1,337,337,0,318,19,0,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,text,0,19,0,19,0,0,19,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,text,2,1,0,1,0,0,1,0,unverified,この種別については誰もまだ確かめていない
-req3_layer_kind,2024c,vector,0,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
+population,year_label,v_layer_kind,layer_type,calendar_year,n_layers,n_rendered,n_not_rendered,n_drawn_gt0,n_drawn_zero,n_drawn_blank,n_has_image_material,drawn_ratio_usable,drawn_ratio_usable_why
+req3_layer_kind,2015,mask_fill,2,2015,22,22,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2015,paper,1584,2015,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2015,raster,1,2015,54,54,0,52,2,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2015,text,0,2015,14,14,0,14,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,filter,4098,2016,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,gradation,0,2016,90,90,0,0,90,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,image_material,0,2016,10,10,0,6,4,0,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2016,image_material,2,2016,1,1,0,0,1,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2016,mask_fill,2,2016,1786,1786,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2016,other,3,2016,29,29,0,27,2,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,other,513,2016,7,7,0,5,2,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,paper,1584,2016,69,69,0,69,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,raster,1,2016,3486,3486,0,3121,365,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,story_info,800,2016,51,51,0,51,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,text,0,2016,81,81,0,81,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,vector,0,2016,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2016,vector,2,2016,17,17,0,17,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,filter,4098,2017,40,40,0,30,10,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,gradation,0,2017,27,27,0,0,27,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,image_material,0,2017,704,704,0,551,153,0,704,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2017,image_material,2,2017,1,1,0,1,0,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2017,mask_fill,2,2017,6990,6981,9,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2017,other,3,2017,718,718,0,716,2,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,paper,1584,2017,204,203,1,203,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,raster,1,2017,9156,9156,0,7513,1643,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,story_info,800,2017,170,170,0,170,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,text,0,2017,161,161,0,161,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,vector,0,2017,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2017,vector,2,2017,7,7,0,7,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,filter,4096,2018,5,5,0,5,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,filter,4098,2018,38,38,0,38,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,gradation,0,2018,31,31,0,1,30,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,image_material,0,2018,592,592,0,313,279,0,592,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2018,image_material,2,2018,1,1,0,1,0,0,1,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2018,mask_fill,2,2018,2587,2587,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2018,other,3,2018,242,242,0,226,16,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,other,513,2018,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,paper,1584,2018,187,187,0,187,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,raster,1,2018,9806,9806,0,8869,937,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,story_info,800,2018,219,219,0,207,12,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,text,0,2018,108,108,0,104,4,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,vector,0,2018,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,vector,1,2018,9,9,0,9,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,vector,2,2018,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2018,vector,3,2018,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,filter,4096,2019,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,filter,4098,2019,36,36,0,33,3,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,gradation,0,2019,9,9,0,0,9,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,image_material,0,2019,279,279,0,250,29,0,279,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2019,image_material,2,2019,57,57,0,51,6,0,57,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2019,mask_fill,2,2019,689,687,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2019,other,3,2019,212,212,0,211,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,other,513,2019,6,6,0,6,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,paper,1584,2019,180,179,1,179,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,raster,1,2019,8067,8067,0,7670,397,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,story_info,800,2019,188,187,1,187,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,text,0,2019,322,322,0,322,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,vector,0,2019,7,7,0,0,7,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019,vector,1,2019,18,18,0,17,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,filter,4096,2019,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,filter,4098,2019,20,20,0,18,2,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,image_material,0,2019,64,64,0,50,14,0,64,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2019b,image_material,2,2019,9,9,0,7,2,0,9,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2019b,mask_fill,2,2019,210,210,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2019b,other,3,2019,31,31,0,31,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,other,513,2019,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,paper,1584,2019,29,29,0,29,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,raster,1,2019,1563,1563,0,1467,96,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,story_info,800,2019,29,29,0,29,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,text,0,2019,66,66,0,66,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2019b,vector,1,2019,7,7,0,7,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020,image_material,0,2020,10,10,0,4,6,0,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2020,mask_fill,2,2020,18,18,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2020,paper,1584,2020,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020,raster,1,2020,253,253,0,242,11,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020,story_info,800,2020,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020,text,0,2020,28,28,0,28,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,filter,4096,2020,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,filter,4098,2020,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,image_material,0,2020,9,9,0,8,1,0,9,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2020b,other,3,2020,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,paper,1584,2020,6,6,0,6,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,raster,1,2020,104,104,0,103,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,story_info,800,2020,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2020b,text,0,2020,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,filter,4098,2021,6,6,0,3,3,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,image_material,0,2021,18,18,0,7,11,0,18,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2021,mask_fill,2,2021,43,43,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2021,other,3,2021,3,3,0,3,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,other,513,2021,2,2,0,2,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,paper,1584,2021,17,17,0,17,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,raster,1,2021,470,470,0,457,13,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,story_info,800,2021,14,14,0,14,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,text,0,2021,34,34,0,34,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2021,vector,1,2021,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,filter,4098,2022,17,17,0,16,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,image_material,0,2022,7,7,0,7,0,0,7,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2022,mask_fill,2,2022,145,145,0,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2022,other,3,2022,9,9,0,8,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,paper,1584,2022,38,37,1,37,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,raster,1,2022,390,390,0,383,7,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,story_info,800,2022,27,26,1,26,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022,text,0,2022,32,31,1,31,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,filter,4098,2022,286,3,283,3,0,283,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,image_material,0,2022,10,8,2,8,0,2,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2022b,mask_fill,2,2022,51,3,48,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2022b,other,3,2022,10,10,0,10,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,paper,1584,2022,69,9,60,9,0,60,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,raster,1,2022,3311,3311,0,3289,22,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,story_info,800,2022,7,4,3,4,0,3,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,text,0,2022,98,3,95,3,0,95,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2022b,vector,1,2022,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,filter,4098,2023,5,0,5,0,0,5,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,mask_fill,2,2023,2,0,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2023,other,3,2023,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,paper,1584,2023,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,raster,1,2023,84,84,0,80,4,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,story_info,800,2023,4,0,4,0,0,4,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023,text,0,2023,10,0,10,0,0,10,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023b,filter,4098,2023,13,0,13,0,0,13,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023b,mask_fill,2,2023,2,0,2,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2023b,paper,1584,2023,9,0,9,0,0,9,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023b,raster,1,2023,196,196,0,121,75,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023b,story_info,800,2023,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2023b,text,0,2023,12,0,12,0,0,12,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,filter,4098,2024,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,image_material,0,2024,10,0,10,0,0,10,10,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2024,mask_fill,2,2024,18,0,18,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2024,other,3,2024,3,3,0,2,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,paper,1584,2024,15,0,15,0,0,15,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,raster,1,2024,115,115,0,108,7,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,story_info,800,2024,3,0,3,0,0,3,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024,text,0,2024,16,0,16,0,0,16,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,3d,0,2024,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,filter,4098,2024,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,image_material,0,2024,12,0,12,0,0,12,12,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2024b,mask_fill,2,2024,5,0,5,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2024b,other,3,2024,4,4,0,4,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,paper,1584,2024,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,raster,1,2024,157,157,0,156,1,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,text,0,2024,4,0,4,0,0,4,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024b,vector,0,2024,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,3d,0,2024,8,0,8,0,0,8,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,filter,4098,2024,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,image_material,0,2024,25,0,25,0,0,25,25,no,絵は ResizableOriginalMipmap。読み手は別の所を見ていた(T129)
+req3_layer_kind,2024c,mask_fill,2,2024,13,0,13,,,,0,no,本体は InitColor 255 = 全面。0 は空を意味しない(T129)。近日値が動く
+req3_layer_kind,2024c,other,3,2024,10,10,0,10,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,other,513,2024,1,1,0,1,0,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,paper,1584,2024,21,1,20,1,0,20,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,raster,1,2024,337,337,0,318,19,0,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,text,0,2024,19,0,19,0,0,19,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,text,2,2024,1,0,1,0,0,1,0,unverified,この種別については誰もまだ確かめていない
+req3_layer_kind,2024c,vector,0,2024,2,0,2,0,0,2,0,unverified,この種別については誰もまだ確かめていない

@@ -39,8 +39,22 @@ PUBLIC_DIMS = ("population", "year_label", "v_layer_kind", "layer_type")
 PRIVATE_DIMS = ("work", "subdir", "page_path")
 
 # 年の区画名は公開する(段 A は「年ごとの件数」を許す)。
-# **畳まない** —— `2022b` が暦年 2022 の続きかは作者に未確認(caveats)
+# **作者が答えた(2026-10-26): `2022b` は暦年 2022 の続きである。**
+# だから暦年は `calendar_year` の列で出す。**それでも行は畳まない** ——
+# 畳まない根拠は「暦年が分からないから」ではなく **世代もプールである**(別の折り返しは
+# 別のプール)。**作者の答は前者を解消したが、後者は変えない**
 ALLOWED_PUBLIC_TOKENS = set()
+
+
+def calendar_year(year_label: str) -> str:
+    """フォルダー名から暦年を取る。`2022b` → `2022`。
+
+    **作者の言明**(2026-10-26): **`2022b` は `2022` の続き。**
+    **`2019b` `2020b` `2023b` `2024b` `2024c` にも同じ綴りの規則を当てている** ——
+    **そこは作者に未確認**(規律6: 作者の判断が正本)。
+    """
+    head = year_label[:4]
+    return head if head.isdigit() else ""
 
 # **母集団ごとに、その材料が実際に運んでいる量。**
 # ここに無い量は **0 ではなく空欄**で出す —— 「測っていない」を 0 と書くと、
@@ -618,10 +632,13 @@ def emit_tables(outdir: str, layer_cells, page_cells, keep_private: bool, n_work
                 vals.append(c[m])
         if reason:
             suppressed_layers[f"drawn_ratio / {kind}: {reason}"] += c["n_layers"]
-        rows.append(list(key) + vals + [usable, why])
+        rows.append(list(key)
+                    + [calendar_year(key[ldims.index("year_label")])]
+                    + vals + [usable, why])
     written["layers_by_year_kind_type.csv"] = write_csv(
         os.path.join(outdir, "layers_by_year_kind_type.csv"),
-        list(ldims) + metrics_l + ["drawn_ratio_usable", "drawn_ratio_usable_why"], rows)
+        list(ldims) + ["calendar_year"] + metrics_l
+        + ["drawn_ratio_usable", "drawn_ratio_usable_why"], rows)
     print("  [集計しなかった列(直る予定があるため)]")
     if suppressed_layers:
         for reason, n in suppressed_layers.most_common():
@@ -645,6 +662,7 @@ def emit_tables(outdir: str, layer_cells, page_cells, keep_private: bool, n_work
         pop = key[0]
         supplied = POPULATION_METRICS[pop]
         row = [key[i] for i in page_idx]
+        row.append(calendar_year(key[1]))
         for m in metrics_p:
             if m in supplied:
                 row.append(c[m])
@@ -655,7 +673,8 @@ def emit_tables(outdir: str, layer_cells, page_cells, keep_private: bool, n_work
             row.append(n_works_by[(pop, key[1])]["n_works"]
                        if "n_works" in supplied else "")
         rows.append(row)
-    header = page_dims + metrics_p + ([] if keep_private else ["n_works"])
+    header = (page_dims + ["calendar_year"] + metrics_p
+              + ([] if keep_private else ["n_works"]))
     print("  [その母集団では測っていない量(**空欄で出す。0 にしない**)]")
     if not_measured:
         for what, n in sorted(not_measured.items()):
@@ -754,7 +773,7 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
             "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format",
-            "bound_class")
+            "bound_class", "calendar_year")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
@@ -817,6 +836,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
     allow = {
         "population": set(ALLOWED_POPULATIONS) | {"population"},
         "year_label": set(ALLOWED_PUBLIC_TOKENS) | {"year_label", ""},
+        "calendar_year": {"calendar_year", ""},     # 残りは数字として見る
         "v_layer_kind": set(ALLOWED_LAYER_KINDS) | {"v_layer_kind", ""},
         "layer_type": {"layer_type", ""},          # 残りは数字として見る
         "drawn_ratio_usable": {"drawn_ratio_usable", "no", "yes", "unverified", ""},

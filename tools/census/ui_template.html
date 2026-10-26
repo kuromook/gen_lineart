@@ -189,7 +189,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 </div>
 
 <h2><span class="num">4 / 頁</span>年ごとの頁数と作品数</h2>
-<p class="lede">年は<b>フォルダーの名前</b>で、暦年ではない。<code>2022b</code> が暦年 2022 の続きかは作者に未確認なので畳んでいない。</p>
+<p class="lede"><code>year_label</code> は<b>フォルダーの名前</b>、<code>calendar_year</code> が暦年。<b>作者の言明(2026-10-26): 「<code>2022b</code> は <code>2022</code> の続き」</b> —— 暦年は分かっている。<b>それでも行は畳まない</b>:畳まない根拠は「暦年が分からないから」ではなく<b>世代もプールである</b>(同じ暦年の別の折り返しは別のプール)。暦年ごとの合計が要るときは <code>calendar_year</code> で足せる。<br><code>2019b</code> <code>2020b</code> <code>2023b</code> <code>2024b</code> <code>2024c</code> にも同じ綴りの規則を当てているが、<b>そこは作者に未確認</b>。</p>
 <div class="controls">
   <label class="ctl"><span>母集団</span><select id="f-pop-pages"></select></label>
   <label class="ctl"><span>形式</span><select id="f-ext"></select></label>
@@ -329,10 +329,12 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 
   const NUMERIC = /^(n_|sum_|ext_)/;
   const PLAIN_NUM = new Set(["bit", "layer_type_and_2", "init",
-                             "canvas_w", "canvas_h", "dpi", "cluster_size"]);
+                             "canvas_w", "canvas_h", "dpi", "cluster_size",
+                             "calendar_year"]);
   const BADGE = { same: ["nomat", "同じ"], different: ["moving", "**違う**"] };
   const HEAD = {
-    population: "母集団", year_label: "年", v_layer_kind: "種別", layer_type: "layer_type",
+    population: "母集団", year_label: "フォルダー", calendar_year: "暦年",
+    v_layer_kind: "種別", layer_type: "layer_type",
     bit: "ビット", meaning: "意味", confidence: "確かさ", evidence: "根拠",
     not_answers: "答えない", bits: "2進の位", is_folder: "フォルダー",
     has_frame_line: "コマ枠", layer_type_and_2: "layer_type & 2", has_mask: "has_mask",
@@ -462,14 +464,15 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   let pages = D.pages, layers = D.layers, stage = "A";
 
   function pageCols() {
-    const base = ["population", "year_label"];
+    const base = ["population", "year_label", "calendar_year"];
     if (stage === "C") base.push("work", "subdir", "page_path");
     return base.concat(["n_pages", "n_works", "n_pages_without_work", "ext_clip", "ext_lip",
                         "sum_n_layers_incl_folders", "sum_n_folders", "sum_n_text_layers",
                         "sum_n_image_material_layers"].filter((c) => c in (pages[0] || {})));
   }
   function layerCols() {
-    const base = ["population", "year_label", "v_layer_kind", "layer_type"];
+    const base = ["population", "year_label", "calendar_year",
+                  "v_layer_kind", "layer_type"];
     if (stage === "C") base.push("work", "subdir", "page_path");
     return base.concat(["n_layers", "n_rendered", "n_not_rendered", "n_drawn_gt0",
                         "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
