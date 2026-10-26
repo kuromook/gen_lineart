@@ -68,11 +68,17 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 
 ## 3. 数値の規律
 
-一般規則は `moat` skill(user scope に install 済み。本体 `moat` と `moat-register` /
-`moat-controls` / `moat-audit` / `moat-retract`。読み元は `/home/sh1/deepl/moat` の
-**作業木**なので、その checkout が効いている規則)。全文と出所は
-`doc/CURRENT.md § Working Discipline`。**番号は台帳のもの。** ここに残すのはこの題材と
-この器具にしか無い事実だけ:
+一般規則は `moat` skill(本体 `moat` と `moat-register` / `moat-controls` /
+`moat-audit` / `moat-retract`)。**効いている実体は install 済みの凍結コピー**
+(`~/.claude/plugins/cache/moat/moat/0.1.0/skills/`、2026-10-25 に作られた普通のコピー)。
+**`/home/sh1/deepl/moat` の作業木ではない** —— 作業木を編集しても効く規則は動かず、
+作業木の branch を切り替えても動かない(2026-10-26 に確認)。全文と出所は
+`doc/CURRENT.md § Working Discipline`。**番号は台帳のもの。**
+
+**`moat` が覆っていない規律が在る。** 下の3つは**install 済みの moat のどこにも無く、
+この箇条書きが唯一の実体**である(2026-10-26 に grep で確認):
+**規律9 の全体** / **判定保留は正直な結論** / **曝露や母集団を広げるのも棒を動かすこと**。
+ここに残すのはこの題材とこの器具にしか無い事実と、この3つ:
 
 - **規律1 の付帯** —— 「構成」には実験設定だけでなく**その出力自身の性質**が含まれる
   (f1 の床は定数ではなく出力ごとに違う)。moat 6 は設定までしか言わない
@@ -88,6 +94,10 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
 
 加えて、この題材でだけ言えること:
 
+- **判定保留は正直な結論である。** 棒に届かなかったことと、判定できなかったことは別。
+  どちらも結論として書く。**moat には無い**
+- **曝露や母集団を広げるのも棒を動かすことである。** `moat-audit` 6 は登録と書き上げの
+  **criterion を文字で比べる**だけなので、母集団を広げた形は映らない(T112 で踏んだ)
 - **評価のベースラインは常に前処理器(`LineartDetector`)の素の出力。** 他のモデルではない。
   学習したどのモデルも前処理器単体に勝てていない。条件画像自身の score を隣に置く
 - **世代もプールである**(制作工程は年で移り変わる。`ako6` と `ako7` を1行にしない)。
@@ -121,8 +131,9 @@ CURRENT.md の主要な節: `Track Ledger` / `Lessons` / `Working Discipline` /
   - **`.gitignore` は門ではない。** `results/**` は 2026-07-11 から ignore されているのに
     **原寸の切り出し2枚が 2026-10-23 に入った** —— ignore は**既に追跡されたもの**も
     **`git add -f`** も止めない(2026-10-26 に Track L が発見・除去)
-  - 納品物の置き場は `data/`(`.gitignore` 済み)。**規則はフォルダー名ではなく中身の種類で
-    読む** —— `results/` は `README.md` と `lessons/**` が明示的に un-ignore されている
+  - **原稿由来の納品物は `data/` 配下。`.gitignore` 済み、絶対にコミットしない**
+    (ユーザーから直接受けた常設の制約。2026-10-26 の書き換えで命令形が落ちていたのを戻した)。
+    **規則はフォルダー名ではなく中身の種類で読む** —— `results/` は `README.md` と `lessons/**` が明示的に un-ignore されている
   - **`origin` は匿名で読める。** 2026-10-23 には 99MB を上げた。**force-push では消えない**
 - 結果が出たら `doc/work_log.md` に要約を戻す。状態や方向が変わるなら `doc/CURRENT.md` も
 
