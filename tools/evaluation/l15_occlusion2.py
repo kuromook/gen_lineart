@@ -17,6 +17,9 @@ sys.path.insert(0, HERE)
 from l14_known_cells import comps, gated_layers, A, DARK_MIN, COV_MAX, topf, DROP_TOP
 from l14_arms import acc_add
 from l15_known_cells import boundary, endpoints, SUP_PX, END_PX, K8
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from pid_work import work_of  # **既定値に落とさない**(罠 T104 の族)
 
 KOMA = '/home/sh1/deepl/lineart/dataset/regions_clip_pairs_v3_koma_panels_20260826'
 L12  = '/home/sh1/deepl/lineart-fill-region/results/l12_panel_regions/per_panel.csv'
@@ -54,7 +57,7 @@ def excluded_layers():
         if reason is None:
             continue
         pid = r['page_id']
-        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        w = work_of(pid, r.get('page_path'))
         out[(pid, w)].append((int(r['layer_id']),
                               f'{BASE}/{w}/all_layers/{pid}_L{r["layer_id"]}.png',
                               r['name'], reason))

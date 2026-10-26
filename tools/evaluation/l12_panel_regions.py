@@ -23,6 +23,9 @@ import numpy as np, cv2
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 from fill_mask import fill_mask, ink_of
 from region_metrics import match, MIN_REGION_PX, MATCH_IOU
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from pid_work import work_of  # **既定値に落とさない**(罠 T104 の族)
 
 INV   = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 KEEP4 = '/home/sh1/deepl/lineart-fill-region/results/l10_keep4_all_layers/keep4.csv'
@@ -136,7 +139,7 @@ def stage1():
             cut['keep4.csv に無い'] += 1; continue
         if c >= COV_MAX:
             cut[f'被覆 >= 画布の{COV_MAX:.0%} (用紙・全面トーン)'] += 1; continue
-        work = 'ako6' if '_ako6_' in pid else 'ako7'
+        work = work_of(pid, r.get('page_path'))
         path = f'{BASE}/{work}/all_layers/{pid}_L{lid}.png'
         tf = top_folder(r['ancestors'])
         if tf in DROP_TOP:

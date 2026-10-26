@@ -12,6 +12,9 @@
 import csv, collections, os, re, sys, statistics as st
 from multiprocessing import Pool
 import numpy as np, cv2
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from pid_work import work_of  # **既定値に落とさない**(罠 T104 の族)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 INV  = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
@@ -101,7 +104,7 @@ def main():
         km = koma_of(r['ancestors'])
         if km is None:
             skip['コマフォルダー配下でない'] += 1; continue
-        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        w = work_of(pid, r.get('page_path'))
         per_page[(pid, w)].append((int(r['layer_id']),
                                    f'{BASE}/{w}/all_layers/{pid}_L{r["layer_id"]}.png', km))
     print('層の選別 (落としたものを理由別に印字。規律 D-1)')

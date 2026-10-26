@@ -20,6 +20,9 @@
 """
 import csv, os, sys
 import numpy as np, cv2
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from pid_work import work_of  # **既定値に落とさない**(罠 T104 の族)
 
 HERE = '/home/sh1/deepl/lineart-fill-region'
 INV = f'{HERE}/inbox/page_layers_priority65.csv'
@@ -92,7 +95,7 @@ def main():
     man = []
     for i, (r, ink_px) in enumerate(rows, 1):
         pid, lid = r['page_id'], r['layer_id']
-        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        w = work_of(pid, r.get('page_path'))
         p = f'{BASE}/{w}/all_layers/{pid}_L{lid}.png'
         g = cv2.imread(p, cv2.IMREAD_GRAYSCALE)
         if g is None:

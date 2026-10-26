@@ -20,6 +20,9 @@ import numpy as np, cv2
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 from fill_mask import fill_mask
 from region_metrics import match as rm_match
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from pid_work import work_of  # **既定値に落とさない**(罠 T104 の族)
 
 MINREG, IOU = 500, 0.5
 A = cv2.CC_STAT_AREA
@@ -150,7 +153,7 @@ def gated_layers():
         if topf(r['ancestors']) in DROP_TOP:
             continue
         pid = r['page_id']
-        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        w = work_of(pid, r.get('page_path'))
         p = f'{BASE}/{w}/all_layers/{pid}_L{r["layer_id"]}.png'
         d = fill if float(kk['keep4']) >= KEEP4_FILL else line
         d.setdefault((pid, w), []).append((int(r['layer_id']), p))
@@ -274,7 +277,7 @@ def kc34(n=30, seed=20261025):
     agree, off, skip = 0, [], 0
     for r in pick:
         pid, lid = r['page_id'], r['layer_id']
-        w = 'ako6' if '_ako6_' in pid else 'ako7'
+        w = work_of(pid, r.get('page_path'))
         path = f'{BASE}/{w}/all_layers/{pid}_L{lid}.png'
         g = cv2.imread(path, cv2.IMREAD_GRAYSCALE) if os.path.exists(path) else None
         if g is None:
