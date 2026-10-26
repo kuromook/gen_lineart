@@ -369,20 +369,39 @@ def private_vocabulary(req3_pages, a33_rows):
     return long_words, short_words
 
 
-def name_in_prose(word: str, text: str) -> bool:
-    """散文に固有名が出ているか。
+class ProseMatcher:
+    """散文に固有名が出ているか。**640語を1本の正規表現に束ねる。**
+
+    1語ずつ `re.search` を回すと公開物 1枚の点検で 36.7 秒かかり、対照5腕で3分を超えた
+    (2026-10-26 に実測)。**遅すぎて回されない点検は、回されない点検**なので束ねる。
 
     **ASCII の名前は語境界を要求する** —— `add` という名のフォルダーが実在し、
-    素の部分一致では自分で書いた「added33」に当たって全行が鳴る(2026-10-26 に実際そうなった)。
+    素の部分一致では自分で書いた「added33」に当たって全行が鳴る(同日に実際そうなった)。
     日本語の名前には語境界が無いので素の部分一致で見る。
 
     **届かないもの**: ASCII の名前が英数字や `_` に直接挟まれている形
     (`x_<名前>_y`)。語境界が立たないので見えない。
     """
-    if word.isascii():
-        return re.search(r"(?<![0-9A-Za-z_])" + re.escape(word)
-                         + r"(?![0-9A-Za-z_])", text) is not None
-    return word in text
+
+    def __init__(self, words):
+        ascii_words = sorted((w for w in words if w.isascii()), key=len, reverse=True)
+        self.other = [w for w in words if not w.isascii()]
+        self.pat = None
+        if ascii_words:
+            self.pat = re.compile(r"(?<![0-9A-Za-z_])(?:"
+                                  + "|".join(re.escape(w) for w in ascii_words)
+                                  + r")(?![0-9A-Za-z_])")
+
+    def find(self, text: str):
+        """当たった語を返す。当たらなければ None。"""
+        if self.pat is not None:
+            m = self.pat.search(text)
+            if m:
+                return m.group(0)
+        for w in self.other:
+            if w in text:
+                return w
+        return None
 
 
 # 公開 CSV の列の種類。**どの列も、ここに宣言が無ければ指摘になる**
@@ -419,6 +438,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
     対照が printf を読むと、印字を20件で切った日に対照が黙る。
     """
     long_words, short_words = vocab
+    matcher = ProseMatcher(long_words)
     allow = {
         "population": set(ALLOWED_POPULATIONS) | {"population"},
         "year_label": set(ALLOWED_PUBLIC_TOKENS) | {"year_label", ""},
@@ -454,11 +474,10 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                             hits.append((name, lineno, colname,
                                          "次元の列に宣言外の値(白名簿にない)", s[:70]))
                     elif colname in PROSE_COLS:
-                        for w in long_words:
-                            if name_in_prose(w, s):
-                                hits.append((name, lineno, colname,
-                                             f"散文に固有名({len(w)}文字)", s[:70]))
-                                break
+                        w = matcher.find(s)
+                        if w is not None:
+                            hits.append((name, lineno, colname,
+                                         f"散文に固有名({len(w)}文字)", s[:70]))
                     else:
                         hits.append((name, lineno, colname,
                                      "**種類が宣言されていない列**", s[:70]))
