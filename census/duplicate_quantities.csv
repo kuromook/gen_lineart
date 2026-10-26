@@ -1,0 +1,4 @@
+quantity,label,n,population,share,what,not_what,measured_by,as_of
+excess,余り(ファイル − 異なり),1473,clip_files,,**手続きの結果。** 畳んだときに消える数,**複製されたファイルの数ではない**,Track M(全数),2026-10-26
+files_in_clusters,双子を持つファイルの数,2458,clip_files,"7,667 の 32.1%",**バイト同一の相手が1つ以上在るファイル**,余りでも、塊の数でもない,Track M(全数),2026-10-26
+clusters,塊の数,985,clip_files,,**バイト同一のファイルの集まりの数**,ファイルの数ではない(1塊に2〜6ファイル),Track M(全数),2026-10-26

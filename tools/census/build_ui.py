@@ -31,7 +31,10 @@ COLUMN_CAVEATS = {
     "n_works": ["作品(`page_path` の第2区画)"],
     "n_pages_without_work": ["作品(`page_path` の第2区画)"],
     "n_pages": ["ファイル数 / 異なり数"],
-    "n_distinct_pages": ["ファイル数 / 異なり数"],
+    "n_distinct_pages": ["ファイル数 / 異なり数", "ファイル 9,653 と 異なり 7,418 の差"],
+    "n": ["ファイル 9,653 と 異なり 7,418 の差"],
+    "cluster_size": ["ファイル 9,653 と 異なり 7,418 の差"],
+    "n_clusters": ["ファイル 9,653 と 異なり 7,418 の差"],
     "ext_clip": ["ファイル数 / 異なり数"],
     "ext_lip": ["ファイル数 / 異なり数"],
     "n_layers": ["層数(集計どうしの比較)"],
@@ -51,6 +54,14 @@ COLUMN_CAVEATS = {
     "is_mask": ["納品の PNG の枚数", "層 PNG"],
     "n_png_names": ["納品をまたいだ同じ名前"],
     "content_match": ["納品をまたいだ同じ名前"],
+    "n_common_names_bytes_differ": ["納品をまたいだ同じ名前"],
+    "n_pixels_in_both_renamed": ["同じ画素が別の名前で在る数",
+                                 "どちらの納品が現行か"],
+    "n_pixels_in_both": ["同じ画素が別の名前で在る数"],
+    "n_distinct_pixels_a": ["同じ画素が別の名前で在る数"],
+    "n_distinct_pixels_b": ["同じ画素が別の名前で在る数"],
+    "n_pixels_only_a": ["どちらの納品が現行か"],
+    "n_pixels_only_b": ["どちらの納品が現行か"],
     "measured_by": ["この集計と供給元の集計が一致すること"],
     "canvas_w": ["canvas_w / canvas_h"],
     "canvas_h": ["canvas_w / canvas_h"],
@@ -105,7 +116,8 @@ def main() -> int:
              for name in ("layer_type_values", "layer_type_bits", "mask_by_kind",
                           "visibility_exceptions", "body_initcolor",
                           "delivery_coverage", "delivery_duplicates",
-                          "canvas_declared")}
+                          "canvas_declared", "delivery_duplicates_by_content",
+                          "duplicate_quantities", "cluster_sizes")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

@@ -157,3 +157,75 @@ def duplicate_pairs(root: str, rows, keep_private: bool, drops):
             else ["delivery_group_a", "delivery_group_b"]) + ["content_match"]
     out = [list(k) + [n] for k, n in sorted(cells.items())]
     return dims + ["n_png_names"], out, n_names, n_dup
+
+
+def duplicate_by_content(root: str, keep_private: bool, drops):
+    """**画素(sha256)を鍵にして納品どうしを比べる。**
+
+    名前を鍵にすると **152枚が「違う」と出る**が、`_grad{N}` の `N` は
+    **頁の中の順番**なので、v2 で層が加わると後ろにずれる —— **採番のやり直しが
+    「変更」として報告される**(抽出側、2026-10-26。台帳の T109 の3つ目の形)。
+
+    > **名前に順番が埋まっているものは、納品の版をまたぐ識別子ではない。**
+
+    だから画素で突き合わせる。**ただしこれも「層」を鍵にしていない** ——
+    同じ画素の PNG が同じ納品の中に複数在る(グラデ v1 は 155枚で 121画素しかない)。
+    **層を鍵にした数は供給元の対応表が要る**(未着)。
+
+    **この表が答える**: 同じ画素が別の名前で在るか。
+    **答えない**: どの層が変わったか / **どちらの版が現行か**(供給元の言明)。
+    """
+    import hashlib
+
+    digests = collections.defaultdict(dict)   # 納品 → {名前: sha256}
+    for d in sorted(GROUPS):
+        base = os.path.join(root, d)
+        if not os.path.isdir(base):
+            continue
+        for dirpath, _, fns in os.walk(base):
+            for fn in fns:
+                if not fn.lower().endswith(".png"):
+                    continue
+                h = hashlib.sha256()
+                with open(os.path.join(dirpath, fn), "rb") as fh:
+                    for chunk in iter(lambda: fh.read(1 << 20), b""):
+                        h.update(chunk)
+                digests[d][fn] = h.hexdigest()
+
+    dirs = sorted(digests)
+    rows = []
+    for i, a in enumerate(dirs):
+        for b in dirs[i + 1:]:
+            na, nb = digests[a], digests[b]
+            if not (set(na) & set(nb)):
+                continue                       # 名前の重なりが無い組は飛ばす
+            ha = collections.defaultdict(set)
+            hb = collections.defaultdict(set)
+            for n, h in na.items():
+                ha[h].add(n)
+            for n, h in nb.items():
+                hb[h].add(n)
+            both = set(ha) & set(hb)
+            same_name = sum(1 for h in both if ha[h] & hb[h])
+            key = ((a, b) if keep_private
+                   else tuple(sorted((GROUPS[a][0], GROUPS[b][0]))))
+            common_names = set(na) & set(nb)
+            rows.append(list(key) + [
+                len(na), len(nb), len(ha), len(hb),
+                len(common_names),
+                sum(1 for n in common_names if na[n] != nb[n]),
+                len(both), same_name, len(both) - same_name,
+                len(set(ha) - set(hb)), len(set(hb) - set(ha)),
+            ])
+            if len(na) != len(ha):
+                drops.flag(f"同じ画素の PNG が1つの納品の中に複数在る: "
+                           f"{len(na)}枚 → {len(ha)}画素", a)
+    dims = (["delivery_dir_a", "delivery_dir_b"] if keep_private
+            else ["delivery_group_a", "delivery_group_b"])
+    header = dims + [
+        "n_png_a", "n_png_b", "n_distinct_pixels_a", "n_distinct_pixels_b",
+        "n_common_names", "n_common_names_bytes_differ",
+        "n_pixels_in_both", "n_pixels_in_both_same_name",
+        "n_pixels_in_both_renamed", "n_pixels_only_a", "n_pixels_only_b",
+    ]
+    return header, rows

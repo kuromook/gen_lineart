@@ -24,6 +24,16 @@ SUPPLIER_REPORTED = [
         caveat="**ファイル 9,653 と異なり 7,418 は同じ母集団の別の量。**並べて書く",
     ),
     dict(
+        key="clip_files",
+        predicate="`.clip` ファイルのみ 7,667(異なり 6,194)。"
+                  "**重複の3つの量はこの母集団の数**",
+        n_pages=7667, n_layers=None,
+        measured_by="抽出側(um350)/ 重複は Track M", as_of="2026-10-26",
+        needs="なし(重複は Track M が全数で組み直した)",
+        caveat="**7,667 − 6,194 を「複製の数」と名乗らない** —— "
+               "余り 1,473 / 双子を持つファイル 2,458 / 塊 985 は**3つの別の量**",
+    ),
+    dict(
         key="db_layers",
         predicate="構造 DB の `layers` 行(**`.lip` を入れる前**の数)",
         n_pages=None, n_layers=312898,

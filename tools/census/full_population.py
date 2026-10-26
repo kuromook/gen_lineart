@@ -111,3 +111,34 @@ SET_LABELS = {
 }
 FILL_PREFIX = "fill_"
 FILL_LABEL = "ベタ"
+
+
+# **重複は3つの別の量である**(2026-10-26、Track M が全数で組み直した)。
+# **`7,667 − 6,194 = 1,473` を「複製の数」と書くと、2,458 を 1,473 と報告する。**
+# `A − B` は量ではなく**手続き**で、引き算で作った数は引き算の意味を名前に持たない。
+DUPLICATE_QUANTITIES = [
+    dict(quantity="excess", label="余り(ファイル − 異なり)",
+         n=1473, population="clip_files", share="",
+         what="**手続きの結果。** 畳んだときに消える数",
+         not_what="**複製されたファイルの数ではない**",
+         measured_by="Track M(全数)", as_of="2026-10-26"),
+    dict(quantity="files_in_clusters", label="双子を持つファイルの数",
+         n=2458, population="clip_files", share="7,667 の 32.1%",
+         what="**バイト同一の相手が1つ以上在るファイル**",
+         not_what="余りでも、塊の数でもない",
+         measured_by="Track M(全数)", as_of="2026-10-26"),
+    dict(quantity="clusters", label="塊の数",
+         n=985, population="clip_files", share="",
+         what="**バイト同一のファイルの集まりの数**",
+         not_what="ファイルの数ではない(1塊に2〜6ファイル)",
+         measured_by="Track M(全数)", as_of="2026-10-26"),
+]
+
+# 塊の大きさの分布(Track M、全数)
+CLUSTER_SIZES = [
+    dict(cluster_size=2, n_clusters=612),
+    dict(cluster_size=3, n_clusters=260),
+    dict(cluster_size=4, n_clusters=112),
+    dict(cluster_size=5, n_clusters=0),
+    dict(cluster_size=6, n_clusters=1),
+]

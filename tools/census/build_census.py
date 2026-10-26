@@ -57,7 +57,7 @@ POPULATION_METRICS = {
 ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "db_files", "db_distinct", "db_layers", "lip_files",
                        "db_all_layers", "body_initcolor", "priority65",
-                       "delivery_png")
+                       "delivery_png", "clip_files")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d")
 
@@ -321,6 +321,18 @@ def emit_full_population(outdir: str):
         [[m["is_folder"], m["has_frame_line"], m["layer_type_and_2"], m["has_mask"],
           m["n_layers"], "db_all_layers", fp.SUPPLIER, fp.AS_OF]
          for m in fp.MASK_BY_KIND])
+    written["duplicate_quantities.csv"] = write_csv(
+        os.path.join(outdir, "duplicate_quantities.csv"),
+        ["quantity", "label", "n", "population", "share", "what", "not_what",
+         "measured_by", "as_of"],
+        [[d["quantity"], d["label"], d["n"], d["population"], d["share"], d["what"],
+          d["not_what"], d["measured_by"], d["as_of"]]
+         for d in fp.DUPLICATE_QUANTITIES])
+    written["cluster_sizes.csv"] = write_csv(
+        os.path.join(outdir, "cluster_sizes.csv"),
+        ["cluster_size", "n_clusters", "population", "measured_by", "as_of"],
+        [[c["cluster_size"], c["n_clusters"], "clip_files",
+          "Track M(全数)", fp.AS_OF] for c in fp.CLUSTER_SIZES])
     written["visibility_exceptions.csv"] = write_csv(
         os.path.join(outdir, "visibility_exceptions.csv"),
         ["population", "direction", "n_layers", "detail", "measured_by", "as_of"],
@@ -339,6 +351,9 @@ def emit_delivery(outdir: str, root: str, keep_private: bool, drops):
     header, out, n_names, n_dup = delivery.duplicate_pairs(root, rows, keep_private, drops)
     written["delivery_duplicates.csv"] = write_csv(
         os.path.join(outdir, "delivery_duplicates.csv"), header, out)
+    header, out = delivery.duplicate_by_content(root, keep_private, drops)
+    written["delivery_duplicates_by_content.csv"] = write_csv(
+        os.path.join(outdir, "delivery_duplicates_by_content.csv"), header, out)
     return written, rows, collapsed, n_names, n_dup
 
 
@@ -568,7 +583,12 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "sum_n_layers_incl_folders", "sum_n_folders",
                "sum_n_text_layers", "sum_n_image_material_layers",
                "bit", "layer_type_and_2",
-               "n_png_files", "n_distinct_page_keys", "n_png_names")
+               "n_png_files", "n_distinct_page_keys", "n_png_names",
+               "n_png_a", "n_png_b", "n_distinct_pixels_a", "n_distinct_pixels_b",
+               "n_common_names", "n_common_names_bytes_differ",
+               "n_pixels_in_both", "n_pixels_in_both_same_name",
+               "n_pixels_in_both_renamed", "n_pixels_only_a", "n_pixels_only_b",
+               "n", "cluster_size", "n_clusters")
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
@@ -577,12 +597,13 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
-            "is_mask", "content_match", "canvas_unit_resolved")
+            "is_mask", "content_match", "canvas_unit_resolved", "quantity")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
-              "meaning", "evidence", "content", "direction", "material_kind", "why")
+              "meaning", "evidence", "content", "direction", "material_kind", "why",
+              "label", "what", "not_what", "share")
 
 
 def audit_public(outdir: str, vocab, verbose: bool = True):
@@ -631,6 +652,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "is_mask": {"is_mask", "yes", "no", ""},
         "content_match": {"content_match", "same", "different", ""},
         "canvas_unit_resolved": {"canvas_unit_resolved", "no", "yes", ""},
+        "quantity": {"quantity", *{d["quantity"] for d in fp.DUPLICATE_QUANTITIES}, ""},
     }
     hits = []
     n_cells = n_files = 0
