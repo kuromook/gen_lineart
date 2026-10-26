@@ -38,7 +38,13 @@ S = {}
 
 def load_state(save_path, reask=None, queue=None, extra=None):
     S['save'] = save_path
-    S['flagfile'] = LAB / 'fill_anomaly.jsonl'
+    # **保存先ごとに異常の報告先を分ける**(2026-10-26)。
+    # それまで `labels/fill_anomaly.jsonl` 固定で、**`--save` を無視していた** ——
+    # M がこのサーバーを別の行列で再利用すると、**M の異常の報告が L のファイルに入る。**
+    # いまの `labels/fill_anomaly.jsonl` 15行は**全部 L の面**だった
+    # (`crop` が L の名前の形)ので**実害は出ていない。潜在していただけ**。
+    # **既存のファイルは触らない**(行の出所を後から振り分けない)。
+    S['flagfile'] = save_path.with_name(save_path.stem + '_anomaly.jsonl')
     S['flag'] = {}
     d = json.load(open(queue or (UI / 'queue.json')))
     S['q'] = d['queue']

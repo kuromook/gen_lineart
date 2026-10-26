@@ -596,6 +596,61 @@ def main():
                     print(f'      成分 {lab2:10} {len(t):6d}  share>=0.90 '
                           f'{sum(1 for x in pu2 if x>=0.90)/len(pu2):.4f}  '
                           f'画素重み {sum(r["pur"]*r["area"] for r in t)/aw:.4f}')
+    # ---- 対応のある読み (L36。登録 2026-10-26 15:23 §3。**棒ではない。副値**)
+    if PAIRED:
+        print('\n' + '=' * 92)
+        print('**対応のある読み**(L36 の副値。**棒ではない。主値を置き換えない**)')
+        print('  seed ごとに「本来の腕が採点した面 ∩ その seed の対照が採点した面」の上で')
+        print('  両腕を計算し直したもの。**本来の腕の値も seed ごとに変わる**(交差が違うから)')
+        for w in ('ako6', 'ako7'):
+            rows = [r for r in pans if r['work'] == w
+                    and str(r.get('arm', '')).endswith('_paired')]
+            if not rows:
+                continue
+            print(f'\n  プール {w}')
+            per_r, per_s = [], []
+            for sd in sorted({r['seed'] for r in rows}):
+                out = {}
+                for arm in ('real_paired', 'shuffled_paired'):
+                    t = [r for r in rows if r['seed'] == sd and r['arm'] == arm]
+                    if not t:
+                        continue
+                    ink = sum(r['ink'] for r in t)
+                    if not ink:
+                        continue
+                    out[arm] = (sum(r['honest'] for r in t) / ink,
+                                sum(r['honest'] for r in t) /
+                                max(sum(r['cov'] for r in t), 1),
+                                sum(r['conflict_px'] for r in t) / ink)
+                ni = sum(r.get('n_inter', 0) for r in rows
+                         if r['seed'] == sd and r['arm'] == 'real_paired')
+                nr = sum(r.get('n_real', 0) for r in rows
+                         if r['seed'] == sd and r['arm'] == 'real_paired')
+                if 'real_paired' in out and 'shuffled_paired' in out:
+                    per_r.append(out['real_paired'][0])
+                    per_s.append(out['shuffled_paired'][0])
+                    print(f'    seed {sd}: 交差 {ni}/{nr} = '
+                          f'{ni/nr if nr else 0:.4f}   '
+                          f'本来 cov_honest {out["real_paired"][0]:.4f} '
+                          f'(rate {out["real_paired"][1]:.4f}, '
+                          f'競合 {out["real_paired"][2]:.4f})   '
+                          f'対照 {out["shuffled_paired"][0]:.4f} '
+                          f'(rate {out["shuffled_paired"][1]:.4f}, '
+                          f'競合 {out["shuffled_paired"][2]:.4f})')
+            if per_r and per_s:
+                r0p = max(per_s) - min(per_s)
+                ch1 = sum(per_r) / len(per_r)      # seed ごとの交差が違うので平均
+                ch0 = med(per_s)
+                floor = ch0 + 3 * r0p
+                print(f'    **対応のある読み**: 本来 平均 {ch1:.4f} '
+                      f'(seed ごとに母集団が違うので中央でなく平均)  '
+                      f'対照 中央 {ch0:.4f}  r0 {r0p:.4f}  床 {floor:.4f}')
+                print(f'      A {ch1:.4f} >= 0.30 -> '
+                      f'{"PASS" if ch1 >= 0.30 else "FAIL"}   '
+                      f'B {"床の上" if ch1 >= floor else "床の下"}')
+                print('      **これは棒ではない。登録 §4 の帰結を読むための副値である**')
+                print('      (交差が本来の腕の5割未満なら「対応のある読みは成立しない」'
+                      '= 登録 §4 の3行目)')
     if ('real', 'ako6', 'ch') in res and ('shuffled', 'ako6', 'ch') in res:
         print('\n' + '=' * 92)
         print('A / B / C (基盤 band_form_l18_20261025.md §2。式は動かさない)')
