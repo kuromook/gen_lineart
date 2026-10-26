@@ -25,15 +25,23 @@ import sys
 
 BASE = pathlib.Path('doc/public_names_baseline.json')
 PATH = re.compile(r'[A-Z]:\\\\?manuscripts\\\\?[^\s`|)]*')
-# **作品名は列挙するしかない**(名前の形に規則が無い)。**増えたらここに足す**
-WORKS = re.compile(
-    r'\b(tomoe_dl|tomoe[0-9-]*|akogare[A-Za-z0-9-]*|ako[0-9-]+[A-Za-z]*|illust20171?0?2?|'
-    r'koakuma|skima1[01]|skima12[A-Za-z]*|toramusume[12]|reitaisai|aljanne2|PhantomThief|'
-    r'ntrlaw|gakusai[0-9A-Za-z-]*|hitoduma|udonge|ruriomake|mayer|nanpa|kacho|gran|'
-    r'dlgran2?|phantom|poolside|subbcubussBK|maruchan|stoptime)\b')
+# 一覧は追跡外(上の NAMES)。**増えたらそちらに足す**
+# **作品名の一覧は追跡外に置く。**
+# **探す名前を列挙する点検は、その名前を公開する** ——
+# 2026-10-26、この点検の初回の発火が、この点検自身だった。
+NAMES = pathlib.Path('results/alias/work_name_patterns.txt')
+
+
+def works_re():
+    if not NAMES.exists():
+        raise SystemExit(f'**作品名の一覧が無い: {NAMES}。点検できない**')
+    pats = [x.strip() for x in NAMES.read_text(encoding='utf-8').splitlines()
+            if x.strip()]
+    return re.compile(r'\b(' + '|'.join(pats) + r')\b')
 
 
 def scan():
+    wre = works_re()
     files = subprocess.run(['git', 'ls-files'], capture_output=True,
                            text=True).stdout.split()
     hits, works, paths = collections.Counter(), collections.Counter(), set()
@@ -46,7 +54,9 @@ def scan():
             s = p.read_text(encoding='utf-8', errors='replace')
         except Exception:                                      # noqa: BLE001
             continue
-        pa, wo = PATH.findall(s), WORKS.findall(s)
+        # **伏字(`<年>` の形)は名前ではない。数えない**
+        pa = [x for x in PATH.findall(s) if '<' not in x]
+        wo = wre.findall(s)
         if pa or wo:
             hits[f] = len(pa) + len(wo)
         works.update(wo); paths.update(pa)
