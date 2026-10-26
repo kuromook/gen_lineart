@@ -68,10 +68,16 @@ def gapfill_crops():
 def one_page(job):
     comps, regs, pans = [], [], []
     k = 0                 # **L19 と同じ頁内の通し番号**。面の鍵は一意でないので名前で照合
+    pan = 0               # **枠をまたいだコマの通し番号**(2026-10-26、KC46 が見つけた):
+                          # `ci` は **koma_manifest の枠ごと**の成分番号なので、
+                          # 同じ頁の別の枠で**同じ ci が再出する**。
+                          # これが T109(鍵 `(pid, comp, region)` が一意でない)の機序。
+                          # **同定のための列で、腕・棒・標準は動かさない。**
     names_all = []
     for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job, STANDARD):
         if not sub:
             continue
+        pan += 1
         lab, keys = assign_top(sub, P.shape)
         ink, cl, st_, n = ink_components(lab, P)
         tot = int(ink.sum())
@@ -96,7 +102,7 @@ def one_page(job):
         # 落ちなければ**1つ前のコマに数を付けていた**。
         # `--exclude-gapfill` は一度も走ったことがなかった(T102 の族: 走らない経路)。
         areas = sorted((int(st_[i, A]) for i in range(1, n)), reverse=True)
-        pans.append(dict(pid=pid, work=work, comp=ci, ink=tot, n_comp=n - 1,
+        pans.append(dict(pid=pid, work=work, pan=pan, comp=ci, ink=tot, n_comp=n - 1,
                          top_share=round(areas[0] / tot, 4) if areas else 0,
                          med_comp=areas[len(areas) // 2] if areas else 0,
                          drop_gapfill=drop_gf))
@@ -104,7 +110,7 @@ def one_page(job):
             for i in range(1, n):
                 C = cl == i
                 nl, nraw = n_lay90_of(C, lab)
-                comps.append(dict(pid=pid, work=work, comp=ci, cid=i,
+                comps.append(dict(pid=pid, work=work, pan=pan, comp=ci, cid=i,
                                   area=int(st_[i, A]), share=round(st_[i, A] / tot, 5),
                                   n_lay90=nl, n_lay=nraw, arm='degen'))
             continue
@@ -150,7 +156,7 @@ def one_page(job):
                 scored.add(gi)
                 for x in ids:
                     owner.setdefault(int(x), []).append((gi, L, adj))
-                rrows.append(dict(pid=pid, work=work, comp=ci, region=gi, arm=arm,
+                rrows.append(dict(pid=pid, work=work, pan=pan, comp=ci, region=gi, arm=arm,
                                   seed=sd, adj=adj, prop=int(C.sum()),
                                   n_comp=int(len(ids)),
                                   name=cname.get(gi, '')))
@@ -170,11 +176,11 @@ def one_page(job):
                     conf_px += ar
                 elif pu >= 0.90:
                     honest += ar
-                crows.append(dict(pid=pid, work=work, comp=ci, cid=cid, arm=arm,
+                crows.append(dict(pid=pid, work=work, pan=pan, comp=ci, cid=cid, arm=arm,
                                   seed=sd, area=ar, share=round(ar / tot, 5),
                                   pur=round(pu, 4), n_lay90=nl, n_lay=nraw,
                                   conflict=cf, n_owner=len(lst)))
-            rec = dict(pid=pid, work=work, comp=ci, arm=arm, seed=sd, ink=tot,
+            rec = dict(pid=pid, work=work, pan=pan, comp=ci, arm=arm, seed=sd, ink=tot,
                        cov=int(acc.sum()), honest=honest, conflict_px=conf_px,
                        n_comp_owned=len(owner),
                        top_share=round(max((int(st_[i, A]) for i in range(1, n)),

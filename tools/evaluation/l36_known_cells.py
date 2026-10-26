@@ -66,10 +66,13 @@ def main():
     byreg = collections.defaultdict(set)
     for r in regs:
         if r['name']:
-            byreg[(r['pid'], r['comp'], r['region'])].add(r['name'])
+            byreg[(r['pid'], r['pan'], r['comp'], r['region'])].add(r['name'])
     multi = {k: v for k, v in byreg.items() if len(v) > 1}
-    print(f'KC46 同じ面 (pid, comp, region) の名前が腕で変わらないか: '
+    print(f'KC46 同じ面 (pid, **pan**, comp, region) の名前が腕で変わらないか: '
           f'{"PASS" if not multi else "FAIL"}')
+    print('     (**1回目は `pan` 抜きで回して FAIL した。** `ci` は koma_manifest の'
+          '**枠ごと**の成分番号なので、同じ頁の別の枠で同じ `ci` が再出する ——'
+          ' **これが T109 の機序**。`pan` を足して同定し直した)')
     if multi:
         for k, v in list(multi.items())[:3]:
             print(f'     FAIL {k}: {sorted(v)}')
@@ -80,7 +83,9 @@ def main():
 
     # ---- KC47 交差が空でないことの確認
     print('KC47 対応のある読みの交差:')
-    pp = [p for p in pans if str(p['arm']).endswith('_paired')]
+    # **pans には `arm` を持たない縮退の行も居る**(登録 §3 の縮退)。
+    # 1回目はここで KeyError になった —— **行の形が2種類ある**。
+    pp = [p for p in pans if str(p.get('arm', '')).endswith('_paired')]
     if not pp:
         print('     **対応のある読みの行が無い。この走行は成立しない**')
         ok = False
