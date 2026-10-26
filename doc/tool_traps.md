@@ -1031,8 +1031,8 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   all** -- the other 294 carry no value to be a bound of. Both of M's known
   cells PASS: class 1's 13,061 drawn layers are all `alpha_ge1_ratio` 0, class
   4's 721 all above 0. **But the column is still unusable for the layers it
-  was ordered for, through a different class.** Of the **14,759 `mask_fill`
-  bodies** on these pages, **12,937 -- 87.7% -- sit in class 1 (`255`, nothing
+  was ordered for, through a different class.** Of the **14,663 `mask_fill`
+  bodies** on these pages, **12,937 -- 88.2% -- sit in class 1 (`255`, nothing
   saved), which reads 0 and may be the entire canvas.** A fill body being a
   uniform colour is correct rather than defective, since its shape lives in
   the mask and its coverage in `mask_cover`. **So T60's hazard for fill layers
@@ -1060,6 +1060,30 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   about these pages. **Still unmeasured**, and the supplier said so without
   being asked: how much page area the 403 partially-saved correction layers
   actually affect, since they were not re-counted with `InitColor` filled in.
+  **And the foundation got the denominator of that very sentence wrong, by the
+  mistake this entry had just registered.** It published **14,759 and 87.7%**,
+  which is `layer_type == 2` counted off the CSV -- **not `v_layer_kind ==
+  mask_fill`**, the axis it named. The supplier's kind-side count is
+  **14,663** (88.2%), the difference is **96 layers**, and the foundation
+  **had seen the discrepancy while computing** (classes 2 and 3 came out 314
+  against 306 and 1,436 against 1,348), noted that the two axes were not
+  identical, and **then printed the type number under the kind's name
+  anyway**. The retracted figures are *~~14,759~~* and *~~87.7%~~*; the
+  conclusion is unchanged, because what it rests on is that the great majority
+  of fill bodies sit in class 1, which both axes say. **Where the two axes
+  diverge is itself structure**: classes 1 and 4 agree **exactly** (12,937 and
+  72), and all 96 of the disagreements sit in classes 2 and 3 -- the
+  `body_init == 0` classes -- so `v_layer_kind` is using something beyond
+  `layer_type` that moves type-2 layers out of `mask_fill` precisely where the
+  body has no `255` fill behind it. **Which 96 is the supplier's to say and
+  not the foundation's**, the CSV carrying no kind column at all. The lesson
+  is the narrow one and it is this trap from the inside: **a CSV that lacks
+  the column you want does not license the nearest column that correlates with
+  it**, and the tell was present and read and discarded --
+  *二つの軸が一致しないと気付いた上で、片方の数をもう片方の名前で印字した*. T127 is the count-agrees-set-differs
+  form, T138 the name-agrees-quantity-differs form, and this is the third:
+  **the axis was substituted knowingly and the substitution was not carried
+  into the label.**
 - **T61. A fill can be white, and an instrument that counts ink cannot see it.**
   Found 2026-10-23 by the extraction session while fixing the above. Its fill
   signature read `plane0`, which is **255 for a white fill exactly as it is for
