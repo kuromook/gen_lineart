@@ -31,6 +31,7 @@ from caveats import CAVEATS  # noqa: E402
 import delivery  # noqa: E402
 import full_population as fp  # noqa: E402
 import hashes  # noqa: E402
+import occluders  # noqa: E402
 import sources  # noqa: E402
 
 # 公開側の行が持てる次元。**ここに名前を足してはいけない**
@@ -526,6 +527,29 @@ def audit_inline_needs(outdir: str) -> int:
     return 1 if bad else 0
 
 
+def emit_occluders(outdir: str, root: str, drops):
+    """遮蔽物の層。**層名は出さない。種別ごとの件数だけ。**
+
+    **この表は全数の傾向を答えない** —— 層名が手元に在るのは納品の manifest が
+    覆う頁だけ。**依頼6・7が来てから全数で引き直す。**
+    """
+    pages = occluders.load_named_layers(root, drops)
+    rows, n_pages, n_layers, n_named = occluders.classify(pages, drops)
+    out = [r + [f"{n_pages} 頁 / {n_layers} 層(名前が在る層 {n_named})",
+                "census track(納品の manifest から数えた)", bc_today()]
+           for r in rows]
+    written = write_csv(os.path.join(outdir, "occluder_classes.csv"),
+                        ["occluder_class", "label", "found_by", "n_layers", "n_pages",
+                         "population_note", "measured_by", "as_of"], out)
+    print(f"  [遮蔽物] 層名が在る頁 {n_pages} / 層 {n_layers} / 名前が在る層 {n_named}")
+    print("    **全数の傾向はこの表では出ない** —— 依頼6・7が来てから引き直す")
+    return written
+
+
+def bc_today() -> str:
+    return today()
+
+
 def check_full_population_totals() -> int:
     """供給元の2つの表が、どちらも宣言した全数に合うか。
 
@@ -773,13 +797,14 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
             "is_mask", "content_match", "canvas_unit_resolved", "quantity", "format",
-            "bound_class", "calendar_year")
+            "bound_class", "calendar_year", "occluder_class", "found_by")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
               "meaning", "evidence", "content", "direction", "material_kind", "why",
-              "label", "what", "not_what", "share", "category", "rule")
+              "label", "what", "not_what", "share", "category", "rule",
+              "population_note")
 
 
 def check_column_classes() -> None:
@@ -867,6 +892,9 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                      "files_in_clusters", "clusters", ""},
         "format": {"format", "clip", "lip", "both", ""},
         "bound_class": {"bound_class", *{c for c, _, _ in BOUND_CLASSES}, ""},
+        "occluder_class": {"occluder_class",
+                           *{k for k, _, _, _ in occluders.CLASSES}, ""},
+        "found_by": {"found_by", "名前の規則", "種別", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -1166,6 +1194,8 @@ def main() -> int:
           f"**2つ以上の納品に同じ名前 {dl_dup}**")
     print(f"    畳んだ納品フォルダー {len(dl_collapsed)} 個(作品名を含むため)")
     drops_dl.report("納品の木")
+    pub["occluder_classes.csv"] = emit_occluders(
+        args.public_out, args.delivery_root, drops_dl)
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
         args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
@@ -1186,6 +1216,8 @@ def main() -> int:
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
     full.update(emit_delivery(args.full_out, args.delivery_root, True, Drops())[0])
+    full["occluder_classes.csv"] = emit_occluders(
+        args.full_out, args.delivery_root, Drops())
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))

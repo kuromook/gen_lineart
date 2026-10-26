@@ -52,6 +52,8 @@ COLUMN_CAVEATS = {
     "kind": ["InitColor(本体のブロックの埋め値)"],
     "rc_bucket": ["raster_cover"],
     "bound_class": ["被覆の値が、値か下限か"],
+    "occluder_class": ["遮蔽物の層(`occluder_classes.csv`)"],
+    "found_by": ["遮蔽物の層(`occluder_classes.csv`)"],
     "n_drawn_gt0": ["drawn_ratio", "被覆の値が、値か下限か"],
     "n_drawn_zero": ["drawn_ratio", "被覆の値が、値か下限か"],
     "n_png_files": ["納品の PNG の枚数", "納品の範囲"],
@@ -123,7 +125,8 @@ def main() -> int:
                           "delivery_coverage", "delivery_duplicates",
                           "canvas_declared", "delivery_duplicates_by_content",
                           "duplicate_quantities", "cluster_sizes",
-                          "grad_v1_v2_by_layer", "coverage_bound_classes")}
+                          "grad_v1_v2_by_layer", "coverage_bound_classes",
+                          "occluder_classes")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

@@ -208,7 +208,12 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 </div>
 <div class="scroller"><table id="t-layers"></table></div>
 
-<h2><span class="num">6 / 全数</span>構造 DB の全数 437,561層</h2>
+<h2><span class="num">6 / 遮蔽物</span>手前の層が、下の層の途切れを作る</h2>
+<p class="lede"><b>作者の言明(2026-10-26):「手前側に何かがあると、その後ろ側のレイヤでは描かないで済ますことが多い。遮蔽物レイヤがあるということがわからないと、なぜ下のレイヤで何かが途切れているかわからない」</b> —— <b>下の層の線の途切れは、描き手が省いたからで、欠陥ではない。</b>遮蔽物が分からないと、その途切れを「欠落」と読む。</p>
+<p class="lede">作者が挙げた4種は <b>3D / フキダシ(独立した層)/ ホワイト / 黒消し</b>。<b>層名が手元に在る15頁で数えると、ホワイトとフキダシが実際に層名として在った</b> —— 名前で見つける道は通る。<b>ただし15頁では傾向が出ない</b>(全数の層名を依頼中)。そして<b>どの名前が遮蔽物かは作者が選ぶ</b> —— 作者自身が <code>white</code> について「多いと思う」と言っている。<b>層名はここには出さない</b>(件数だけ)。</p>
+<div class="scroller"><table id="t-occ"></table></div>
+
+<h2><span class="num">7 / 全数</span>構造 DB の全数 437,561層</h2>
 <p class="lede"><b>この段だけは抽出側が測った。</b>ここでは DB を持っていないので測れない —— 合うのはこちらの転記と向こうの足し算だけで、DB が壊れていても合う。<code>.clip</code> と <code>.lip</code> で値の種類と振る舞いは同じ(抽出側の明記)。</p>
 
 <h3 class="sub">値は全11種。上の位の組は固定されている</h3>
@@ -226,11 +231,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede">優先65頁の 245 と全数の 119 は別の量。抽出側は一度「置き換えて」と書き、その後取り消した。</p>
 <div class="scroller"><table id="t-vis"></table></div>
 
-<h2><span class="num">7 / 本体</span>本体の <code>InitColor</code>(ここで測った)</h2>
+<h2><span class="num">8 / 本体</span>本体の <code>InitColor</code>(ここで測った)</h2>
 <p class="lede">1層1行の納品なので、要約を引用せず行から数え直した。<code>raster_cover = 0.0</code> の 132層が <b>96(init 255)+ 36(init 0)</b> に分かれることは、ここで検算した数である。段 A では <code>set</code> 列の作品名を種類に畳んでいる(段 C では畳まない)。</p>
 <div class="scroller"><table id="t-ic"></table></div>
 
-<h2><span class="num">8 / 納品</span>届いたもの —— <b>枚数は層の数ではない</b></h2>
+<h2><span class="num">9 / 納品</span>届いたもの —— <b>枚数は層の数ではない</b></h2>
 <p class="lede"><code>data/incoming_manuscript/</code> の13の納品を歩いて数えた(段 A には納品フォルダーの名前を出さない)。<b>何が1枚かが納品ごとに違う</b> —— mask だけの納品、本体だけの納品、両方の納品が在る。優先65頁のトーンは mask 619 に対し<b>本体 683 で等しくない</b>。カラー原稿には<b>頁のプレビューが混ざる</b>(層ではない)。</p>
 <div class="controls">
   <label class="ctl"><span>納品</span><select id="f-dgroup"></select></label>
@@ -266,11 +271,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede"><code>_grad{N}</code> の <code>N</code> は<b>頁の中の順番</b>で、v2 で層が加わると後ろにずれる。<b>名前を鍵にした差分は、採番のやり直しを「変更」として報告する。</b>画素(sha256)で突き合わせ直すと、グラデの重なり 104画素のうち <b>101 が別の名前で在った</b>。一方<b>ベタのマスクの差し替え46枚は画素の重なりが 0</b> —— 本当に全部変わっている。<b>層を鍵にした数は供給元の対応表が要る(未着)。どちらの版が現行かは、この集計では空けてある。</b></p>
 <div class="scroller"><table id="t-dupc"></table></div>
 
-<h2><span class="num">9 / 出所</span>材料と、値が動く予定の列</h2>
+<h2><span class="num">10 / 出所</span>材料と、値が動く予定の列</h2>
 <p class="lede">受領 CSV の sha256 と、抽出側が読み手を直したら値が変わる列。動いたらこの集計の該当行は古くなる。</p>
 <div class="scroller"><table id="t-prov"></table></div>
 
-<h2><span class="num">10 / 段</span>手元で作品名まで見る</h2>
+<h2><span class="num">11 / 段</span>手元で作品名まで見る</h2>
 <p class="lede">この画面に埋まっているのは<b>段 A</b>(集計のみ・固有名なし)。同じ1枚で、手元の <code>data/census_full/</code> の CSV を読めば<b>段 C</b>(作品・頁まで)が出る。読み込んだものはこのページから出ない。</p>
 <div class="stage">
   <label class="ctl"><span>段 C の CSV を選ぶ</span>
@@ -354,6 +359,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     quantity: "量", label: "何の数か", n: "値", share: "割合",
     format: "形式", category: "分かれ方", note: "正体",
     bound_class: "分類", meaning: "意味", rule: "できないこと",
+    occluder_class: "遮蔽物", found_by: "見つけ方", population_note: "母集団",
     what: "これは", not_what: "**これではない**",
     cluster_size: "塊の大きさ", n_clusters: "塊",
     canvas_w: "canvas_w", canvas_h: "canvas_h", dpi: "dpi",
@@ -374,6 +380,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   };
   const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
                          "label", "what", "not_what", "share", "category", "rule",
+                         "population_note",
                          "answers", "not_answers", "detail", "measured_by", "supplier",
                          "material_kind", "meaning", "evidence", "content", "direction",
                          "confidence"]);
@@ -425,6 +432,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                       "n_layers", "measured_by", "as_of", "needs", "caveat"], D.populations);
   render($("t-prov"), ["source", "material_kind", "supplier", "as_of", "n_rows",
                        "sha256", "volatile", "note"], D.provenance);
+  render($("t-occ"), ["occluder_class", "label", "found_by", "n_layers", "n_pages",
+                      "population_note"], D.occluder_classes);
   render($("t-ltv"), ["layer_type", "bits", "is_folder", "n_layers", "content",
                       "measured_by"], D.layer_type_values);
   render($("t-ltb"), ["bit", "meaning", "confidence", "evidence", "not_answers"],
