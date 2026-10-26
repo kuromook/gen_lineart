@@ -1,4 +1,16 @@
-quantity,label,n,population,share,what,not_what,measured_by,as_of
-excess,余り(ファイル − 異なり),1473,clip_files,,**手続きの結果。** 畳んだときに消える数,**複製されたファイルの数ではない**,Track M(全数),2026-10-26
-files_in_clusters,双子を持つファイルの数,2458,clip_files,"7,667 の 32.1%",**バイト同一の相手が1つ以上在るファイル**,余りでも、塊の数でもない,Track M(全数),2026-10-26
-clusters,塊の数,985,clip_files,,**バイト同一のファイルの集まりの数**,ファイルの数ではない(1塊に2〜6ファイル),Track M(全数),2026-10-26
+format,quantity,label,n,share,not_what,measured_by,as_of
+clip,n_files,ファイルの数,7667,,**異なり数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+clip,n_distinct,異なり(sha256),6194,,**ファイル数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+clip,excess,余り(ファイル − 異なり),1473,,**手続きの結果。複製されたファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26
+clip,files_in_clusters,双子を持つファイルの数,2458,7667 の 32.1%,**余りでも塊の数でもない**,census track(sha256 の列から数えた),2026-10-26
+clip,clusters,塊の数,985,,**ファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26
+lip,n_files,ファイルの数,1986,,**異なり数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+lip,n_distinct,異なり(sha256),1224,,**ファイル数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+lip,excess,余り(ファイル − 異なり),762,,**手続きの結果。複製されたファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26
+lip,files_in_clusters,双子を持つファイルの数,1346,1986 の 67.8%,**余りでも塊の数でもない**,census track(sha256 の列から数えた),2026-10-26
+lip,clusters,塊の数,584,,**ファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26
+both,n_files,ファイルの数,9653,,**異なり数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+both,n_distinct,異なり(sha256),7418,,**ファイル数とは別の量**,census track(sha256 の列から数えた),2026-10-26
+both,excess,余り(ファイル − 異なり),2235,,**手続きの結果。複製されたファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26
+both,files_in_clusters,双子を持つファイルの数,3804,9653 の 39.4%,**余りでも塊の数でもない**,census track(sha256 の列から数えた),2026-10-26
+both,clusters,塊の数,1569,,**ファイルの数ではない**,census track(sha256 の列から数えた),2026-10-26

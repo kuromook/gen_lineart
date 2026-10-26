@@ -19,17 +19,20 @@ SUPPLIER_REPORTED = [
         key="db_distinct",
         predicate="sha256 で重複を畳んだ異なり数(.clip 6,194 + .lip 1,224)",
         n_pages=7418, n_layers=None,
-        measured_by="抽出側(um350)", as_of="2026-10-26",
-        needs="`file_hashes`(全 9,653 の sha256)。これが来ればここで再測できる",
-        caveat="**ファイル 9,653 と異なり 7,418 は同じ母集団の別の量。**並べて書く",
+        measured_by="census track(2026-10-26 に全 9,653 行から数え直した)",
+        as_of="2026-10-26",
+        needs="なし(`request9` の sha256 が来たので測れた)",
+        caveat="**ファイル 9,653 と異なり 7,418 は同じ母集団の別の量。**並べて書く。"
+               "**ハッシュは抽出側が計算した列**なので、先方の読みが違えば同じく違う",
     ),
     dict(
         key="clip_files",
         predicate="`.clip` ファイルのみ 7,667(異なり 6,194)。"
                   "**重複の3つの量はこの母集団の数**",
         n_pages=7667, n_layers=None,
-        measured_by="抽出側(um350)/ 重複は Track M", as_of="2026-10-26",
-        needs="なし(重複は Track M が全数で組み直した)",
+        measured_by="抽出側(um350)/ 重複は census track が数え直した",
+        as_of="2026-10-26",
+        needs="なし",
         caveat="**7,667 − 6,194 を「複製の数」と名乗らない** —— "
                "余り 1,473 / 双子を持つファイル 2,458 / 塊 985 は**3つの別の量**",
     ),
@@ -60,6 +63,22 @@ LOCAL_CSV = [
         supplier="抽出側(um350)", as_of="2026-10-26",
         caveat="**1層1行なのでここで測れる。** `set` 列に作品名が入るので"
                "**段 A では種類に畳む**(畳んだ世代の数を印字する)",
+    ),
+    dict(
+        key="file_sha256",
+        path="inbox/request9_file_sha256_all_20261026.csv",
+        predicate="**全 9,653 ファイルの `page_path + sha256`**(1ファイル1行)",
+        supplier="抽出側(um350)", as_of="2026-10-26",
+        caveat="**これで異なり数と重複の3つの量がここで測れる。** ただし"
+               "**ハッシュそのものは抽出側が計算した** —— 先方の読みが違えば同じく違う",
+    ),
+    dict(
+        key="grad_v1_v2_map",
+        path="inbox/grad_v1_v2_layer_map_20261026.csv",
+        predicate="グラデ v1/v2 の**層ごとの対応**(258層)",
+        supplier="抽出側(um350)", as_of="2026-10-26",
+        caveat="**層を鍵にした突き合わせはこれが無いとできない** —— "
+               "PNG の名前は頁の中の順番を encode している",
     ),
     dict(
         key="added33_structure",

@@ -33,6 +33,7 @@ COLUMN_CAVEATS = {
     "n_pages": ["ファイル数 / 異なり数"],
     "n_distinct_pages": ["ファイル数 / 異なり数", "ファイル 9,653 と 異なり 7,418 の差"],
     "n": ["ファイル 9,653 と 異なり 7,418 の差"],
+    "category": ["納品をまたいだ同じ名前", "どちらの納品が現行か"],
     "cluster_size": ["ファイル 9,653 と 異なり 7,418 の差"],
     "n_clusters": ["ファイル 9,653 と 異なり 7,418 の差"],
     "ext_clip": ["ファイル数 / 異なり数"],
@@ -117,7 +118,8 @@ def main() -> int:
                           "visibility_exceptions", "body_initcolor",
                           "delivery_coverage", "delivery_duplicates",
                           "canvas_declared", "delivery_duplicates_by_content",
-                          "duplicate_quantities", "cluster_sizes")}
+                          "duplicate_quantities", "cluster_sizes",
+                          "grad_v1_v2_by_layer")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

@@ -238,10 +238,14 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <div class="scroller"><table id="t-dl"></table></div>
 
 <h3 class="sub">重複は3つの別の量 —— <b>引き算で作った数は、引き算の意味を名前に持たない</b></h3>
-<p class="lede"><code>7,667 − 6,194 = 1,473</code> を「複製の数」と書くと、<b>2,458 を 1,473 と報告する。</b><code>A − B</code> は量ではなく手続きである。<b>この集計はこの引き算をしない</b> —— 3つの量を別の行で持つ(<code>.clip</code> 7,667 について Track M が全数で組み直した数で、ここでは測っていない)。</p>
+<p class="lede"><code>7,667 − 6,194 = 1,473</code> を「複製の数」と書くと、<b>2,458 を 1,473 と報告する。</b><code>A − B</code> は量ではなく手続きである。<b>この集計はこの引き算をしない</b> —— 量ごとに行を持つ。全 9,653 行の sha256 が来たので、<b>ここで測った数である</b>(ハッシュ自体は抽出側が計算した列)。<br><b><code>.lip</code> の重複は <code>.clip</code> の2倍以上</b> —— 双子を持つファイルが 67.8% 対 32.1%、そして <b>63ファイルがバイト同一の塊が1つ</b>ある。</p>
 <div class="scroller"><table id="t-dq"></table></div>
 <h3 class="sub">塊の大きさ</h3>
 <div class="scroller"><table id="t-cs"></table></div>
+
+<h3 class="sub">グラデ v1/v2 を<b>層を鍵に</b>—— 名前を鍵にした 152 の正体</h3>
+<p class="lede">供給元の対応表(258層)から数え直した。<b>名前を鍵にすると 152枚が「違う」</b>と出るが、層を鍵にすると <b>131 は画素が同じで名前が違うだけ</b>で、<b>本当に画素が変わったのは 21層</b>(<code>mask_cover</code> が動いた層数と一致)。<b>103層は v2 で加わった層</b>で、これが採番を後ろにずらした原因である。</p>
+<div class="scroller"><table id="t-grad"></table></div>
 
 <h3 class="sub">画布の宣言値 —— <b>単位がこの材料では決まらない</b></h3>
 <p class="lede">33頁の材料には <code>canvas_unit</code> 列が無い。497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が同じ列に並ぶ。<b>どちらかをここで決めない</b> —— <code>v_canvas_px_w/h</code> を待つ。</p>
@@ -337,6 +341,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     n_pixels_in_both_renamed: "**別名で在る**", n_pixels_only_a: "A だけ",
     n_pixels_only_b: "B だけ",
     quantity: "量", label: "何の数か", n: "値", share: "割合",
+    format: "形式", category: "分かれ方",
     what: "これは", not_what: "**これではない**",
     cluster_size: "塊の大きさ", n_clusters: "塊",
     canvas_w: "canvas_w", canvas_h: "canvas_h", dpi: "dpi",
@@ -356,7 +361,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     work: "作品", subdir: "下位", page_path: "頁",
   };
   const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
-                         "label", "what", "not_what", "share",
+                         "label", "what", "not_what", "share", "category",
                          "answers", "not_answers", "detail", "measured_by", "supplier",
                          "material_kind", "meaning", "evidence", "content", "direction",
                          "confidence"]);
@@ -420,10 +425,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                      "alpha_max_zero", "n_layers"], D.body_initcolor);
   render($("t-dup"), ["delivery_group_a", "delivery_group_b", "content_match",
                       "n_png_names"], D.delivery_duplicates);
-  render($("t-dq"), ["quantity", "label", "n", "share", "population", "what",
-                     "not_what", "measured_by"], D.duplicate_quantities);
-  render($("t-cs"), ["cluster_size", "n_clusters", "population", "measured_by"],
+  render($("t-dq"), ["format", "quantity", "label", "n", "share", "not_what",
+                     "measured_by"], D.duplicate_quantities);
+  render($("t-cs"), ["format", "cluster_size", "n_clusters", "measured_by"],
          D.cluster_sizes);
+  render($("t-grad"), ["category", "n_layers", "measured_by"], D.grad_v1_v2_by_layer);
   render($("t-canvas"), ["canvas_w", "canvas_h", "dpi", "n_pages",
                          "canvas_unit_resolved"], D.canvas_declared);
   render($("t-dupc"), ["delivery_group_a", "delivery_group_b", "n_png_a", "n_png_b",

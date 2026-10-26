@@ -1,0 +1,6 @@
+category,n_layers,population,measured_by,as_of
+画素は同じ・名前が違う(見かけの差),131,grad_v1_v2,census track(供給元の対応表から数え直した),2026-10-26
+v2 にしか無い層(v1 に無い),103,grad_v1_v2,census track(供給元の対応表から数え直した),2026-10-26
+画素も名前も違う(本当の変更),18,grad_v1_v2,census track(供給元の対応表から数え直した),2026-10-26
+画素が違う・名前は同じ(本当の変更),3,grad_v1_v2,census track(供給元の対応表から数え直した),2026-10-26
+画素も名前も同じ,3,grad_v1_v2,census track(供給元の対応表から数え直した),2026-10-26
