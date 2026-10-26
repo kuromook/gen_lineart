@@ -1019,6 +1019,47 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   and a class defined by a name collects everything that shares the name.**
   Neither side is the safe one, and the only thing that held in either case was
   requiring the name **and** the signature to agree before a layer counts.
+  **Fourth answer, 2026-10-27, and the exposure moved class rather than
+  vanishing.** The 905-page `alpha >= 1` table arrived (62,105 layers,
+  `(page_path, layer_id)` duplicates **0**, missing pages **0**, errors **0**)
+  and carries the whole five-way partition. Partially-saved `255` -- the only
+  class that is a bound -- is **540 layers on 238 pages**, and **every one is
+  a correction layer (`layer_type` 4098/4096, 403) or paper (1584, 137):
+  `mask_fill`, tone, gradient and raster have 0.** Reproduced here from the
+  CSV without using the supplier's table: the five classes come out **13,265 /
+  3,934 / 43,625 / 741 / 540** exactly, and of the 540 only **246 rendered at
+  all** -- the other 294 carry no value to be a bound of. Both of M's known
+  cells PASS: class 1's 13,061 drawn layers are all `alpha_ge1_ratio` 0, class
+  4's 721 all above 0. **But the column is still unusable for the layers it
+  was ordered for, through a different class.** Of the **14,759 `mask_fill`
+  bodies** on these pages, **12,937 -- 87.7% -- sit in class 1 (`255`, nothing
+  saved), which reads 0 and may be the entire canvas.** A fill body being a
+  uniform colour is correct rather than defective, since its shape lives in
+  the mask and its coverage in `mask_cover`. **So T60's hazard for fill layers
+  was never the lower bound: it is that an honest zero and a full canvas print
+  the same character.** The fear was registered in class 5, the class-5 count
+  for fill is 0, and the reading of the column it was meant to protect is no
+  better than before -- *下限は消えたが、0 の読みは変わらない。* **And one column name was found
+  measuring two quantities across two tables.** `drawn_ratio` agrees with the
+  existing `layer_colour` on **55,671 of the 55,810** layers where both have
+  values; the **139 that disagree are all paper**, and the cause is a
+  definition difference rather than a reader difference -- `layer_colour`
+  repaints paper with the drawing colour over the whole canvas, this table
+  leaves the pixel data as stored. **For paper it is `layer_colour`'s 1.0 that
+  reaches the page.** Two tables, one column name, two quantities, and the
+  only reason it is visible is that the supplier joined them and printed the
+  mismatch count. It is the across-instrument form of T134 (g), where one
+  column name was being given two kinds inside one instrument and a startup
+  check could refuse it; **between two instruments there is no startup to
+  refuse at, so the join is the check.** **Scope, stated because it is not the
+  corpus.** The 905 pages are **872 (request 3) plus the 33 the inventory
+  never had** -- verified here against `pages_missing33_20261026.txt`, **all
+  33 present** -- so this is the first table in the project that **covers**
+  the inventory hole (T115) instead of carrying it. It is **905 of the 7,667
+  `.clip` on disk**, so *tone and fill have no lower bounds* is a statement
+  about these pages. **Still unmeasured**, and the supplier said so without
+  being asked: how much page area the 403 partially-saved correction layers
+  actually affect, since they were not re-counted with `InitColor` filled in.
 - **T61. A fill can be white, and an instrument that counts ink cannot see it.**
   Found 2026-10-23 by the extraction session while fixing the above. Its fill
   signature read `plane0`, which is **255 for a white fill exactly as it is for
