@@ -1084,6 +1084,46 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   form, T138 the name-agrees-quantity-differs form, and this is the third:
   **the axis was substituted knowingly and the substitution was not carried
   into the label.**
+  **Fourth instance of this exact shape, 2026-10-27, and Track M found it in a
+  rule it had written hours earlier.** Its addendum 88 registered an exclusion
+  predicate -- `alpha_ge1_ratio == 0` and `body_init == 0` and `body_stored ==
+  0` means *shown to be empty* -- and **applied to addendum 65's layer
+  (`slimeH1`) it is false**: the measurements really are 0/0/0 with `rendered`
+  true, and **the original-size mipmap holds a finished 7016x6543 picture at
+  alpha 255 across the whole canvas**. The column reads the render mipmap
+  only. **M had already registered, in addenda 80 and 82, that this layer's
+  judgement must not use this column** -- and did not apply its own
+  registration when writing the rule. **39 of the 229 candidate layers have
+  the same shape, every one `has_image_material`.** So the series runs T60 ->
+  addendum 84 (every value on a partially-saved `255` is a bound) -> addendum
+  88 (all three ordering conditions already retracted) -> **here: a column's
+  rule applied to layers it had itself placed outside that column's reach**,
+  which is the foundation's `layer_type`-for-`v_layer_kind` substitution in
+  the same week and the same family -- *射程の外だと自分で登録した層に、その列の規則を当てた*. **Two
+  method points travelled with it and both are better than the finding.**
+  First, **M turned the disagreement into a check rather than loosening the
+  tolerance.** Its import check fired T138 independently on the 315 delivered
+  layers: **13 disagreed, all paper, all class 5**, new table 0.51-0.99
+  against the delivery's 1.0, and **zero in the opposite direction** -- so
+  instead of widening the tolerance it added two assertions, *if it is a lower
+  bound then new <= delivered* and *the row must be class 5*, and paper aside
+  the match is **275 of 275 exact**. A disagreement whose direction is
+  predicted by the mechanism is evidence, and the right response to it is a
+  narrower check, not a wider one. Second, **a known cell can be a literal
+  whiff, and M wrote it as one.** Addendum 88's cell was *addendum 65's layer
+  appears in the new matrix*, and that page is already settled by the author's
+  own instruction, so it never enters the matrix: **the cell as written cannot
+  run.** M did not record it as PASS. It tested the diagnosis by **applying
+  the rule to that layer** and printing **old rule FAIL / new rule PASS** from
+  the instrument. *空振りを PASS と書かない* -- a cell that cannot fire is neither a
+  pass nor a fail, and calling it a pass is reading a result from a run that
+  did not happen (T132's family from the other side, and 判定保留 as a positive
+  act). The repair narrows only: `rendered` must be true, because **a 0 from a
+  layer that could not be drawn is not a measurement**, and the pixels must
+  have nowhere else to live. **The order went from 160 to 199 layers and not
+  one change loosened anything**, with coverage of the 488 non-folder layers
+  on 38 pages at **100%** (226 delivered / 199 ordered / 33 paper / 30 shown
+  empty / **0 uncovered**).
 - **T61. A fill can be white, and an instrument that counts ink cannot see it.**
   Found 2026-10-23 by the extraction session while fixing the above. Its fill
   signature read `plane0`, which is **255 for a white fill exactly as it is for
