@@ -23,6 +23,67 @@ import build_census as bc  # noqa: E402
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui_template.html")
 
 
+# **表の列 → その列の「答えない問い」**(`caveats.py` の `column` で引く)。
+# 仕様 §5: **各数の隣に答えない問いを出す。** 空欄だけでなく**値のある列にも**出す。
+# **対応の無い列はここに書かない** —— 書かないことで「但し書きが無い」と分かる
+COLUMN_CAVEATS = {
+    "year_label": ["年(`page_path` の第1区画)"],
+    "n_works": ["作品(`page_path` の第2区画)"],
+    "n_pages_without_work": ["作品(`page_path` の第2区画)"],
+    "n_pages": ["ファイル数 / 異なり数"],
+    "n_distinct_pages": ["ファイル数 / 異なり数"],
+    "ext_clip": ["ファイル数 / 異なり数"],
+    "ext_lip": ["ファイル数 / 異なり数"],
+    "n_layers": ["層数(集計どうしの比較)"],
+    "layer_type": ["layer_type", "layer_type の2の位(コマ枠フォルダー)"],
+    "layer_type_and_2": ["layer_type の2の位(コマ枠フォルダー)",
+                         "マスクの向き(`InitColor`)"],
+    "n_drawn_gt0": ["drawn_ratio"],
+    "n_drawn_zero": ["drawn_ratio"],
+    "n_drawn_blank": ["drawn_ratio(空欄)"],
+    "drawn_ratio_usable": ["drawn_ratio"],
+    "has_mask": ["has_mask"],
+    "init": ["InitColor(本体のブロックの埋め値)", "マスクの向き(`InitColor`)"],
+    "kind": ["InitColor(本体のブロックの埋め値)"],
+    "rc_bucket": ["raster_cover"],
+    "n_png_files": ["納品の PNG の枚数", "納品の範囲"],
+    "n_distinct_page_keys": ["納品の PNG の枚数"],
+    "is_mask": ["納品の PNG の枚数", "層 PNG"],
+    "n_png_names": ["納品をまたいだ同じ名前"],
+    "content_match": ["納品をまたいだ同じ名前"],
+    "measured_by": ["この集計と供給元の集計が一致すること"],
+    "canvas_w": ["canvas_w / canvas_h"],
+    "canvas_h": ["canvas_w / canvas_h"],
+    "dpi": ["canvas_w / canvas_h"],
+    "canvas_unit_resolved": ["canvas_w / canvas_h"],
+    "direction": ["visibility"],
+    "sum_n_layers_incl_folders": ["層数(集計どうしの比較)"],
+    "sum_n_folders": ["層数(集計どうしの比較)"],
+}
+
+
+def column_caveats():
+    """対応表を、但し書きの本文を添えた形に解く。**引けない名前は落とさず叫ぶ。**"""
+    by_col = {c["column"]: c for c in CAVEATS}
+    out, missing = {}, []
+    for col, names in COLUMN_CAVEATS.items():
+        got = []
+        for n in names:
+            if n not in by_col:
+                missing.append((col, n))
+                continue
+            c = by_col[n]
+            got.append(dict(column=c["column"], not_answers=c["not_answers"],
+                            trap=c["trap"]))
+        if got:
+            out[col] = got
+    if missing:
+        raise SystemExit(f"但し書きが引けない対応: {missing} —— "
+                         "**対応表か `caveats.py` のどちらかが古い**")
+    uncovered = sorted(set(by_col) - {n for ns in COLUMN_CAVEATS.values() for n in ns})
+    return out, uncovered
+
+
 def read_csv(path):
     with open(path, encoding="utf-8") as fh:
         return list(csv.DictReader(fh))
@@ -43,14 +104,17 @@ def main() -> int:
     extra = {name: read_csv(os.path.join(args.census, name + ".csv"))
              for name in ("layer_type_values", "layer_type_bits", "mask_by_kind",
                           "visibility_exceptions", "body_initcolor",
-                          "delivery_coverage", "delivery_duplicates")}
+                          "delivery_coverage", "delivery_duplicates",
+                          "canvas_declared")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])
     mask_fill = sum(int(r["n_layers"]) for r in layers
                     if r["v_layer_kind"] == "mask_fill" and r["n_layers"])
 
+    col_cav, uncovered = column_caveats()
     data = dict(
+        column_caveats=col_cav,
         populations=pops, provenance=prov, pages=pages, layers=layers, **extra,
         caveats=[dict(column=c["column"], answers=c["answers"],
                       not_answers=c["not_answers"], trap=c["trap"],
@@ -87,6 +151,9 @@ def main() -> int:
           f"頁 {len(pages)} / 層 {len(layers)} / 但し書き {len(CAVEATS)}")
     for name, recs in extra.items():
         print(f"    {len(recs):4d} 行  {name}")
+    print(f"  [列と但し書きの対応] {len(col_cav)} 列に対応あり")
+    print(f"    **どの列にも結び付いていない但し書き {len(uncovered)} 行**"
+          f"(表の列ではなく集計全体にかかるもの): " + " / ".join(uncovered))
 
     return audit_ui(args.out, payload)
 

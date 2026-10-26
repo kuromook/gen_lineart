@@ -113,6 +113,14 @@ td.prose { min-width: 22ch; max-width: 46ch; font-size: 13px; line-height: 1.65;
 .chip.moving { background: var(--moving-soft); color: var(--moving); border-color: var(--moving); }
 .chip.absent { background: var(--absent-soft); color: var(--absent); border-color: var(--absent); }
 .chip.nomat  { background: transparent; color: var(--ink-soft); border-color: var(--rule); }
+button.qmark {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  color: var(--moving); background: var(--moving-soft);
+  border: 1px solid var(--moving); border-radius: 50%;
+  width: 15px; height: 15px; line-height: 1; padding: 0; margin-left: 4px;
+  cursor: help; vertical-align: middle; flex: none;
+}
+button.qmark:hover { background: var(--moving); color: var(--panel); }
 .trap {
   font-family: var(--font-mono); font-size: 11px; font-weight: 500;
   color: var(--accent); background: var(--accent-soft);
@@ -229,6 +237,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 </div>
 <div class="scroller"><table id="t-dl"></table></div>
 
+<h3 class="sub">画布の宣言値 —— <b>単位がこの材料では決まらない</b></h3>
+<p class="lede">33頁の材料には <code>canvas_unit</code> 列が無い。497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が同じ列に並ぶ。<b>どちらかをここで決めない</b> —— <code>v_canvas_px_w/h</code> を待つ。</p>
+<div class="scroller"><table id="t-canvas"></table></div>
+
 <h3 class="sub">同じ名前が2つの納品に在る 1,636枚 —— <b>うち 256枚は中身が違う</b></h3>
 <p class="lede">標本20枚の sha256 は「20/20 一致」と出た。<b>違うと分かっている組(壊れた初版の差し替え)を含んでいなかった。</b>全組を名指しで比べて出た数である。<b>どちらが現行かはここで決めない</b> —— 版の同定は名前や統計量では決まらない。</p>
 <div class="scroller"><table id="t-dup"></table></div>
@@ -293,7 +305,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   }
 
   const NUMERIC = /^(n_|sum_|ext_)/;
-  const PLAIN_NUM = new Set(["bit", "layer_type_and_2", "init"]);
+  const PLAIN_NUM = new Set(["bit", "layer_type_and_2", "init",
+                             "canvas_w", "canvas_h", "dpi"]);
   const BADGE = { same: ["nomat", "同じ"], different: ["moving", "**違う**"] };
   const HEAD = {
     population: "母集団", year_label: "年", v_layer_kind: "種別", layer_type: "layer_type",
@@ -307,6 +320,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     delivery_group_a: "納品 A", delivery_group_b: "納品 B",
     delivery_dir_a: "フォルダー A", delivery_dir_b: "フォルダー B",
     content_match: "中身", n_png_names: "名前",
+    canvas_w: "canvas_w", canvas_h: "canvas_h", dpi: "dpi",
+    canvas_unit_resolved: "単位が決まる", why: "理由",
     rc_bucket: "raster_cover", alpha_max_zero: "alpha 最大が0", material_kind: "種類",
     n_pages: "頁", n_pages_without_work: "作品フォルダー無し", n_works: "作品",
     ext_clip: ".clip", ext_lip: ".lip",
@@ -326,8 +341,19 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                          "material_kind", "meaning", "evidence", "content", "direction",
                          "confidence"]);
 
+  // 仕様 §5: **各数の隣に答えない問いを出す。** 列見出しに印を付け、
+  // 触ると「この列が答えないこと」が出る。**印の無い列は但し書きが無い列**
+  function headMark(c) {
+    const cav = D.column_caveats[c];
+    if (!cav) return "";
+    const txt = cav.map((x) => "答えない: " + x.not_answers.replace(/\*\*/g, "")
+      + (x.trap && x.trap !== "—" ? "  [" + x.trap + "]" : "")).join("\n\n");
+    return '<button type="button" class="qmark" data-col="' + esc(c)
+      + '" title="' + esc(txt).replace(/"/g, "&quot;") + '">?</button>';
+  }
   function render(tableEl, cols, rows) {
-    const th = cols.map((c) => '<th class="' + (NUMERIC.test(c) ? "num" : "") + '">' + esc(HEAD[c] || c) + "</th>").join("");
+    const th = cols.map((c) => '<th class="' + (NUMERIC.test(c) ? "num" : "") + '">'
+      + esc(HEAD[c] || c) + headMark(c) + "</th>").join("");
     const body = rows.map((r) => "<tr>" + cols.map((c) => {
       let cls = (NUMERIC.test(c) || PLAIN_NUM.has(c)) ? "num"
         : (PROSE.has(c) ? "prose" : (c === "population" ? "pop" : "key"));
@@ -338,6 +364,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
       else if (c === "volatile") v = r[c] === "yes" ? '<span class="chip moving">動く予定</span>' : "";
       else if (c === "content_match" && BADGE[r[c]])
         v = '<span class="chip ' + BADGE[r[c]][0] + '">' + BADGE[r[c]][1].replace(/\*\*/g, "") + "</span>";
+      else if (c === "canvas_unit_resolved")
+        v = r[c] === "no" ? '<span class="chip moving">決まらない</span>' : "";
       else if (c === "is_mask")
         v = r[c] === "yes" ? '<span class="chip nomat">mask</span>' : '<span class="chip nomat">本体</span>';
       else if (c === "drawn_ratio_usable")
@@ -372,6 +400,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                      "alpha_max_zero", "n_layers"], D.body_initcolor);
   render($("t-dup"), ["delivery_group_a", "delivery_group_b", "content_match",
                       "n_png_names"], D.delivery_duplicates);
+  render($("t-canvas"), ["canvas_w", "canvas_h", "dpi", "n_pages",
+                         "canvas_unit_resolved"], D.canvas_declared);
   $("cavs").innerHTML = D.caveats.map((c) =>
     '<details class="cav"><summary><span class="col">' + esc(c.column) + "</span>"
     + (c.trap && c.trap !== "—" ? '<span class="trap">' + esc(c.trap) + "</span>" : "")
@@ -482,6 +512,22 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     $("back-to-a").hidden = true;
     $("full-files").value = "";
     rebuildFilters();
+  });
+
+  // 印を押したら、その列の但し書きを開いて飛ぶ
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button.qmark");
+    if (!b) return;
+    const cav = D.column_caveats[b.dataset.col];
+    if (!cav || !cav.length) return;
+    const want = cav[0].column;
+    for (const d of document.querySelectorAll("details.cav")) {
+      if (d.querySelector(".col") && d.querySelector(".col").textContent === want) {
+        d.open = true;
+        d.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+    }
   });
 
   // ---- 走行の一行 -------------------------------------------------------

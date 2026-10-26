@@ -50,9 +50,7 @@ POPULATION_METRICS = {
     "added33_structure": ("n_pages", "n_pages_without_work", "n_works",
                           "ext_clip", "ext_lip",
                           "sum_n_layers_incl_folders", "sum_n_folders",
-                          "sum_n_text_layers", "sum_n_image_material_layers",
-               "bit", "layer_type_and_2",
-               "n_png_files", "n_distinct_page_keys", "n_png_names"),
+                          "sum_n_text_layers", "sum_n_image_material_layers"),
 }
 
 # 公開してよい次元の値(**白名簿。** 宣言外の値は点検が指摘する)
@@ -282,6 +280,23 @@ def emit_initcolor(outdir: str, rows, keep_private: bool):
     out = [list(k) + [n] for k, n in sorted(agg.items())]
     return write_csv(os.path.join(outdir, "body_initcolor.csv"),
                      list(key) + ["n_layers"], out)
+
+
+def emit_canvas(outdir: str, a33_rows):
+    """画布の宣言値の分布。**単位は行ごとに決められない**(T126)。
+
+    `pages_added33_structure_20261026.csv` には **`canvas_unit` 列が無い** ので、
+    497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が
+    同じ列に並ぶ。**どちらかをここで決めない** —— `v_canvas_px_w/h` を待つ。
+    """
+    cells = collections.Counter(
+        (r["canvas_w"], r["canvas_h"], r["dpi"]) for r in a33_rows)
+    rows = [[w, h, d, n, "no",
+             "`canvas_unit` 列が無い。mm と読める行と px と読める行が同じ列に並ぶ(T126)"]
+            for (w, h, d), n in sorted(cells.items(), key=lambda x: -x[1])]
+    return write_csv(os.path.join(outdir, "canvas_declared.csv"),
+                     ["canvas_w", "canvas_h", "dpi", "n_pages",
+                      "canvas_unit_resolved", "why"], rows)
 
 
 def emit_full_population(outdir: str):
@@ -554,18 +569,20 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "sum_n_text_layers", "sum_n_image_material_layers",
                "bit", "layer_type_and_2",
                "n_png_files", "n_distinct_page_keys", "n_png_names")
+# **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
+VALUE_COLS = ("canvas_w", "canvas_h", "dpi")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
             "delivery_group", "delivery_group_a", "delivery_group_b", "item",
-            "is_mask", "content_match")
+            "is_mask", "content_match", "canvas_unit_resolved")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
-              "meaning", "evidence", "content", "direction", "material_kind")
+              "meaning", "evidence", "content", "direction", "material_kind", "why")
 
 
 def audit_public(outdir: str, vocab, verbose: bool = True):
@@ -613,6 +630,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "item": {"item", *delivery.ITEMS.values(), ""},
         "is_mask": {"is_mask", "yes", "no", ""},
         "content_match": {"content_match", "same", "different", ""},
+        "canvas_unit_resolved": {"canvas_unit_resolved", "no", "yes", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -636,6 +654,13 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                         if s and not s.lstrip("-").isdigit():
                             hits.append((name, lineno, colname,
                                          "件数の列に数字でない値", s[:70]))
+                    elif colname in VALUE_COLS:
+                        try:
+                            if s:
+                                float(s)
+                        except ValueError:
+                            hits.append((name, lineno, colname,
+                                         "実測値の列に数でない値", s[:70]))
                     elif colname in DIM_COLS:
                         if (s and s not in allow[colname]
                                 and not s.lstrip("-").isdigit()
@@ -665,8 +690,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
               f" 件数や生の値と見分けが付かないので見ていない。"
               f"ASCII の名前は語境界を要求するので `x_名前_y` の形も見えない")
         print(f"  検査: {n_files} ファイル / {n_cells} セル"
-              f" / 宣言した列の種類: 件数 {len(METRIC_COLS)}・次元 {len(DIM_COLS)}"
-              f"・散文 {len(PROSE_COLS)}")
+              f" / 宣言した列の種類: 件数 {len(METRIC_COLS)}・実測値 {len(VALUE_COLS)}"
+              f"・次元 {len(DIM_COLS)}・散文 {len(PROSE_COLS)}")
         print(f"  **指摘: {len(hits)}**")
         by_reason = collections.Counter(h[3] for h in hits)
         for reason, n in by_reason.most_common():
@@ -849,6 +874,7 @@ def main() -> int:
           f"**2つ以上の納品に同じ名前 {dl_dup}**")
     print(f"    畳んだ納品フォルダー {len(dl_collapsed)} 個(作品名を含むため)")
     drops_dl.report("納品の木")
+    pub["canvas_declared.csv"] = emit_canvas(args.public_out, a33_rows)
     pub.update(emit_full_population(args.public_out))
     pub["body_initcolor.csv"] = emit_initcolor(args.public_out, ic_rows, False)
     pub["populations.csv"] = write_populations(args.public_out, req3_rows, req3_pages,
@@ -864,6 +890,7 @@ def main() -> int:
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
     full.update(emit_delivery(args.full_out, args.delivery_root, True, Drops())[0])
+    full["canvas_declared.csv"] = emit_canvas(args.full_out, a33_rows)
     full.update(emit_full_population(args.full_out))
     full["body_initcolor.csv"] = emit_initcolor(args.full_out, ic_rows, True)
     full["caveats.csv"] = write_caveats(args.full_out)
