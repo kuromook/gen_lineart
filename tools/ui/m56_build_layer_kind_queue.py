@@ -95,51 +95,52 @@ STRIP = 190             # 左端の帯の幅
 CELL_MAX = 240          # 帯の1枚の高さの上限
 MAXUP = 8               # 主の絵の拡大の上限(超えると何も足さない)
 PAD = 6
+# **第2走で足した4語は、すべて第1走の自由記述に作者が書いた言葉そのもの**
+# (ノンブル 4 / トンボ 6 / 印刷用の枠 6 / メモ 6)。追補48。
+# **第1走と第2走は語の集合が違うのでプールを跨いで数えない。**
 WORDS = ['下絵・ラフ', '線画', '色・ベタ(塗り)', '仕上がった絵(統合済み)',
-         '資料用の画像', 'セリフ・文字']
+         '資料用の画像', 'セリフ・文字',
+         'ノンブル', 'トンボ', '印刷用の枠', 'メモ']
 OTHERS = [['free', 'その他(一言)', 'T'], ['unknown', 'わからない', 'S']]
 ASK = 'この層は何ですか。'
 HELP = ('**左端がこの頁の層を重なり順に並べたもので、いま聞いている層に枠が付いています。**'
-        '透明なところは白で出しています(紙と同じ)。'
+        '**C を押すと、その層が頁のどこに在るかを枠と十字線で示します。**'
+        '**透明なところは水色です**(その層に何も無いところ)。'
+        '**透明なところは水色で出しています。**'
         'C で頁ぜんたいの絵に切り替わります(左端の並びは動きません)。'
         '当てはまる言葉が無ければ T に一言、迷ったら S。B で前へ、N で次へ。')
 EXPECT_PAGES = 45
 EXPECT_LAYERS = 315
 
 
-def checker(h, w, cell=14, a=242, b=214):
-    """**透明の下地。白のインクを白で消さないため。**
+GROUND = (235, 205, 165)      # BGR = 薄い水色。**透明なところの下地**
 
-    追補43 §B: 透明を**白**で出していたところ、作者が 4件に
-    **「白紙」**と答えた。**その4層は 100% 純白のインク**(不透明 46,956 と
-    166,816 画素、BGR 全画素 255、アルファ 255)だった ——
-    **作者は見せられた絵を正しく読んでいた。消していたのはこちらである。**
-    **規則4(既定値を主張にしない)の最も痛い形**: 白い下地は「何も無い」という主張を、
-    何も測らずに出していた。
+
+def checker(h, w):
+    """**透明の下地。格子ではなく、べた塗りの水色。**
+
+    追補43 §B では**市松模様**にした(白のインクを白で消さないため)。
+    **それが新しい誤りを作った** —— 作者(追補48 §C2):
+    **「レイヤーの再構築が失敗していて断片化しているらしいレイヤーが散見された」。**
+    **市松模様は正方形の格子である。** **タイル単位で欠けた絵と見分けが付かない。**
+    抽出側の検査は**捨てたブロック 0 / 置き場所の食い違い 0 / 位置ずらしの読み替え 0**
+    で、**実体の断片化は無い**。**格子を描いていたのはこちらである。**
+
+    → **べた塗りにする。ただし白では白のインクが消える**(追補43 §B)。
+    **原稿のインクがとらない色**を選ぶ: **薄い水色**。
+    **白のインクは水色の上で見える / 濃いインクも見える / 格子に見えることが無い。**
+    **画面に「透明なところは水色」と書く**(規則4: 既定値を主張にしない)。
     """
-    y, x = np.mgrid[0:h, 0:w]
-    m = (((y // cell) + (x // cell)) % 2).astype(bool)
-    out = np.full((h, w, 3), a, np.uint8)
-    out[m] = b
-    return out
-
-
-def over_checker(img):
-    """RGBA なら市松模様に重ねて BGR にする。BGR はそのまま返す。"""
-    if img.ndim == 3 and img.shape[2] == 4:
-        al = img[..., 3:4].astype(np.float32) / 255.0
-        bgc = checker(img.shape[0], img.shape[1]).astype(np.float32)
-        return (img[..., :3].astype(np.float32) * al
-                + bgc * (1.0 - al)).round().astype(np.uint8)
-    return img
+    return np.full((h, w, 3), GROUND, np.uint8)
 
 
 def flatten(path, bg=255):
     """アルファ付き PNG を**墨の囲み箱で切って RGBA のまま**返す。
 
-    返すのは `(RGBA の絵, 不透明な画素数, 元の画布に対する比, 囲み箱)`。
-    **下地に重ねるのは最終の大きさになってから**(`over_checker`)——
-    先に重ねると、縮小で市松模様がつぶれる。
+    返すのは `(BGR の絵, 不透明な画素数, 元の画布に対する比, 囲み箱 [y, x, h, w])`。
+    **箱は位置も返す** —— 作者(追補48): **「位置がわからないと、使われたテキストなのか
+    ノンブルかは判断できない」**。
+    **下地はべた塗りなので、原寸で重ねてから縮めてよい**(格子ではないのでつぶれない)。
 
     **切らないと帯も主の絵もほぼ白になる**(追補42 §C-2 の組版試験で確認:
     22層の頁で、どの札も中身が見えず、主の絵も数本の線だけだった)。
@@ -167,12 +168,25 @@ def flatten(path, bg=255):
         pad = max(1, round(0.01 * max(y1 - y0, x1 - x0)))
         y0, x0 = max(0, y0 - pad), max(0, x0 - pad)
         y1, x1 = min(im.shape[0], y1 + pad), min(im.shape[1], x1 + pad)
-        out = im[y0:y1, x0:x1].copy()        # **RGBA のまま返す**
-        box = [int(y1 - y0), int(x1 - x0)]
+        sub = im[y0:y1, x0:x1]
+        box = [int(y0), int(x0), int(y1 - y0), int(x1 - x0)]
+        # **原寸で下地に重ねてから縮める。** RGBA のまま縮めると、
+        # **透明な画素の RGB が混ざる**(非プリマルチプライのまま面積平均するため)——
+        # 14:20 の比較で、墨らしい画素が 54.0% 対 39.9% になった(前者が汚れている側)。
+        # 帯ごとに処理して記憶を抑える(原寸 7016x6543 を float にすると 550MB)。
+        h, w = sub.shape[:2]
+        out = np.empty((h, w, 3), np.uint8)
+        for yy in range(0, h, 512):
+            ye = min(h, yy + 512)
+            al = sub[yy:ye, :, 3:4].astype(np.float32) / 255.0
+            out[yy:ye] = (sub[yy:ye, :, :3].astype(np.float32) * al
+                          + np.array(GROUND, np.float32) * (1.0 - al)
+                          ).round().astype(np.uint8)
+        del sub
     else:
-        out = im[..., :3]
+        out = im[..., :3].copy()
         opaque = int(im.shape[0] * im.shape[1])
-        box = [int(im.shape[0]), int(im.shape[1])]
+        box = [0, 0, int(im.shape[0]), int(im.shape[1])]
     del im
     h, w = out.shape[:2]
     r = min(1.0, WIN / max(h, w))
@@ -189,14 +203,13 @@ def fit(img, box):
     s = min(bh / h, bw / w, 1.0)
     im = cv2.resize(img, (max(1, round(w * s)), max(1, round(h * s))),
                     interpolation=cv2.INTER_AREA if s < 1 else cv2.INTER_NEAREST)
-    im = over_checker(im)
     canvas = np.full((bh, bw, 3), 255, np.uint8)
     y, x = (bh - im.shape[0]) // 2, (bw - im.shape[1]) // 2
     canvas[y:y + im.shape[0], x:x + im.shape[1]] = im
     return canvas, round(s, 5)
 
 
-def compose(strip_imgs, main, mark):
+def compose(strip_imgs, main, mark, rect=None, rect_scale=1.0):
     """返すのは `(絵, 主の絵の縮小比)`。**元の画布に対する比は呼ぶ側が掛ける。**"""
     """左端の帯 + 主の絵。**帯は両方の絵で同じ並び・同じ位置。**"""
     # **1枚あたりの高さに上限を置く。** 層が2枚しかない頁で窓を等分すると、
@@ -226,9 +239,21 @@ def compose(strip_imgs, main, mark):
     # **黙って原寸と書くのが禁じ手であって、拡大そのものではない**)。
     bh, bw = main.shape[:2]
     sc = min(H / bh, WIN / bw, MAXUP)
-    big = over_checker(
-        cv2.resize(main, (max(1, round(bw * sc)), max(1, round(bh * sc))),
-                   interpolation=cv2.INTER_AREA if sc < 1 else cv2.INTER_NEAREST))
+    big = cv2.resize(main, (max(1, round(bw * sc)), max(1, round(bh * sc))),
+                     interpolation=cv2.INTER_AREA if sc < 1 else cv2.INTER_NEAREST)
+    if rect is not None:
+        # **聞いている層が頁のどこに在るかを枠で描く**(作者の指摘。追補48)。
+        # `rect` は元の画布の座標 [y, x, h, w]、`rect_scale` は画布→この絵の比
+        ry, rx, rh, rw = [int(round(v * rect_scale * sc)) for v in rect]
+        th = max(2, round(0.004 * max(big.shape[:2])))
+        # **枠だけでは見落とす**: ノンブルは画布比で 4px の点にしかならない
+        # (追補48 §C3 の直しを目視して分かった)。
+        # **十字線を絵の端まで引く** —— **枠の大きさは真のまま**(大きく描くと
+        # 層の大きさについて嘘になる)。**見つけられることと、正しいことを両立させる。**
+        cy, cx = ry + rh // 2, rx + rw // 2
+        cv2.line(big, (cx, 0), (cx, big.shape[0]), (255, 0, 255), max(1, th // 2))
+        cv2.line(big, (0, cy), (big.shape[1], cy), (255, 0, 255), max(1, th // 2))
+        cv2.rectangle(big, (rx, ry), (rx + rw, ry + rh), (255, 0, 255), th)
     pane = np.full((H, WIN, 3), 255, np.uint8)
     y, x = (H - big.shape[0]) // 2, (WIN - big.shape[1]) // 2
     pane[y:y + big.shape[0], x:x + big.shape[1]] = big
@@ -373,7 +398,9 @@ def main():
             n = len(q)
             base = f'l{n:03d}_{x["page"]}_L{r["layer_id"]}'
             im_l, s_l = compose(x['imgs'], x['imgs'][i], i)
-            im_c, s_c = compose(x['imgs'], x['comp'], i)
+            im_c, s_c = compose(x['imgs'], x['comp'], i,
+                                rect=x['boxes'][i],
+                                rect_scale=1.0 / x['red'])
             if not a.dry:
                 cv2.imwrite(str(OUT / 'crops' / f'{base}_layer.png'), im_l)
                 cv2.imwrite(str(OUT / 'crops' / f'{base}_page.png'), im_c)
