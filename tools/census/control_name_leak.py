@@ -41,8 +41,8 @@ def main() -> int:
         print(__doc__)
         return 2
     src = sys.argv[1]
-    req3_rows, req3_pages, _ = bc.load_req3(bc.sources.LOCAL_CSV[0]["path"])
-    a33_rows, _ = bc.load_added33(bc.sources.LOCAL_CSV[1]["path"])
+    req3_rows, req3_pages, _ = bc.load_req3(bc.sources.by_key("req3_layer_kind")["path"])
+    a33_rows, _ = bc.load_added33(bc.sources.by_key("added33_structure")["path"])
     vocab = bc.private_vocabulary(req3_pages, a33_rows)
     long_words, short_words = vocab
     leak_name = max(long_words, key=len)

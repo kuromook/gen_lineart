@@ -44,7 +44,7 @@ def main() -> int:
         print(f"納品書が無い: {NOTICE} —— **この既知セルは回せない**")
         return 2
     supplier = parse_notice(NOTICE)
-    rows, pages, _ = bc.load_req3(bc.sources.LOCAL_CSV[0]["path"])
+    rows, pages, _ = bc.load_req3(bc.sources.by_key("req3_layer_kind")["path"])
 
     mine = {}
     for r in rows:

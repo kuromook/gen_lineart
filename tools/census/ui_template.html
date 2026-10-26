@@ -71,6 +71,8 @@ h2 .num {
   color: var(--accent); display: block; letter-spacing: 0.12em; margin-bottom: 2px;
 }
 .lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 64ch; font-size: 14px; }
+h3.sub { font-family: var(--font-body); font-size: 14px; font-weight: 700;
+  margin: 26px 0 4px; letter-spacing: 0.01em; }
 .controls {
   display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
   padding: 14px 16px; background: var(--panel);
@@ -195,11 +197,33 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 </div>
 <div class="scroller"><table id="t-layers"></table></div>
 
-<h2><span class="num">6 / 出所</span>材料と、値が動く予定の列</h2>
+<h2><span class="num">6 / 全数</span>構造 DB の全数 437,561層</h2>
+<p class="lede"><b>この段だけは抽出側が測った。</b>ここでは DB を持っていないので測れない —— 合うのはこちらの転記と向こうの足し算だけで、DB が壊れていても合う。<code>.clip</code> と <code>.lip</code> で値の種類と振る舞いは同じ(抽出側の明記)。</p>
+
+<h3 class="sub">値は全11種。上の位の組は固定されている</h3>
+<div class="scroller"><table id="t-ltv"></table></div>
+
+<h3 class="sub"><code>layer_type</code> のビットごとの意味</h3>
+<p class="lede">確かなのは 1・2・4096 の3ビットだけ。<b>16 / 32 / 256 / 512 / 1024 は「不明」のまま持つ</b> —— 抽出側は「特殊な層と呼びたくなるが確かめていない」と書いた。</p>
+<div class="scroller"><table id="t-ltb"></table></div>
+
+<h3 class="sub">2の位とマスク —— コマ枠フォルダーは別の行</h3>
+<p class="lede">混ぜると 8,734 が例外に見える。<b>ただしマスクの向きは層の種類からは決まらない</b> —— 普通のフォルダーにも <code>init 0</code> のマスクが在る(2026-10-26 の訂正)。</p>
+<div class="scroller"><table id="t-mask"></table></div>
+
+<h3 class="sub"><code>visibility</code> の食い違い —— どちらの数も母集団つきで持つ</h3>
+<p class="lede">優先65頁の 245 と全数の 119 は別の量。抽出側は一度「置き換えて」と書き、その後取り消した。</p>
+<div class="scroller"><table id="t-vis"></table></div>
+
+<h2><span class="num">7 / 本体</span>本体の <code>InitColor</code>(ここで測った)</h2>
+<p class="lede">1層1行の納品なので、要約を引用せず行から数え直した。<code>raster_cover = 0.0</code> の 132層が <b>96(init 255)+ 36(init 0)</b> に分かれることは、ここで検算した数である。段 A では <code>set</code> 列の作品名を種類に畳んでいる(段 C では畳まない)。</p>
+<div class="scroller"><table id="t-ic"></table></div>
+
+<h2><span class="num">8 / 出所</span>材料と、値が動く予定の列</h2>
 <p class="lede">受領 CSV の sha256 と、抽出側が読み手を直したら値が変わる列。動いたらこの集計の該当行は古くなる。</p>
 <div class="scroller"><table id="t-prov"></table></div>
 
-<h2><span class="num">7 / 段</span>手元で作品名まで見る</h2>
+<h2><span class="num">9 / 段</span>手元で作品名まで見る</h2>
 <p class="lede">この画面に埋まっているのは<b>段 A</b>(集計のみ・固有名なし)。同じ1枚で、手元の <code>data/census_full/</code> の CSV を読めば<b>段 C</b>(作品・頁まで)が出る。読み込んだものはこのページから出ない。</p>
 <div class="stage">
   <label class="ctl"><span>段 C の CSV を選ぶ</span>
@@ -255,8 +279,15 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   }
 
   const NUMERIC = /^(n_|sum_|ext_)/;
+  const PLAIN_NUM = new Set(["bit", "layer_type_and_2", "init"]);
   const HEAD = {
     population: "母集団", year_label: "年", v_layer_kind: "種別", layer_type: "layer_type",
+    bit: "ビット", meaning: "意味", confidence: "確かさ", evidence: "根拠",
+    not_answers: "答えない", bits: "2進の位", is_folder: "フォルダー",
+    has_frame_line: "コマ枠", layer_type_and_2: "layer_type & 2", has_mask: "has_mask",
+    content: "中身", direction: "食い違いの向き", detail: "内訳",
+    kind: "種類", init: "InitColor", has_stored_blocks: "保存ブロック",
+    rc_bucket: "raster_cover", alpha_max_zero: "alpha 最大が0", material_kind: "種類",
     n_pages: "頁", n_pages_without_work: "作品フォルダー無し", n_works: "作品",
     ext_clip: ".clip", ext_lip: ".lip",
     n_layers: "層", n_rendered: "描けた", n_not_rendered: "描けなかった",
@@ -271,14 +302,18 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     work: "作品", subdir: "下位", page_path: "頁",
   };
   const PROSE = new Set(["predicate", "needs", "caveat", "note", "drawn_ratio_usable_why",
-                         "answers", "not_answers", "detail", "measured_by", "supplier", "kind"]);
+                         "answers", "not_answers", "detail", "measured_by", "supplier",
+                         "material_kind", "meaning", "evidence", "content", "direction",
+                         "confidence"]);
 
   function render(tableEl, cols, rows) {
     const th = cols.map((c) => '<th class="' + (NUMERIC.test(c) ? "num" : "") + '">' + esc(HEAD[c] || c) + "</th>").join("");
     const body = rows.map((r) => "<tr>" + cols.map((c) => {
-      let cls = NUMERIC.test(c) ? "num" : (PROSE.has(c) ? "prose" : (c === "population" ? "pop" : "key"));
+      let cls = (NUMERIC.test(c) || PLAIN_NUM.has(c)) ? "num"
+        : (PROSE.has(c) ? "prose" : (c === "population" ? "pop" : "key"));
       let v;
-      if (NUMERIC.test(c)) v = cell(c, r);
+      if (PLAIN_NUM.has(c)) v = esc(r[c]);
+      else if (NUMERIC.test(c)) v = cell(c, r);
       else if (c === "sha256") v = '<span class="key" title="' + esc(r[c]) + '">' + esc(r[c]).slice(0, 12) + "…</span>";
       else if (c === "volatile") v = r[c] === "yes" ? '<span class="chip moving">動く予定</span>' : "";
       else if (c === "drawn_ratio_usable")
@@ -299,8 +334,18 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   // ---- 1 母集団 / 6 出所 / 2 答えない問い -------------------------------
   render($("t-pop"), ["population", "predicate", "n_pages", "n_distinct_pages",
                       "n_layers", "measured_by", "as_of", "needs", "caveat"], D.populations);
-  render($("t-prov"), ["source", "kind", "supplier", "as_of", "n_rows", "sha256",
-                       "volatile", "note"], D.provenance);
+  render($("t-prov"), ["source", "material_kind", "supplier", "as_of", "n_rows",
+                       "sha256", "volatile", "note"], D.provenance);
+  render($("t-ltv"), ["layer_type", "bits", "is_folder", "n_layers", "content",
+                      "measured_by"], D.layer_type_values);
+  render($("t-ltb"), ["bit", "meaning", "confidence", "evidence", "not_answers"],
+         D.layer_type_bits);
+  render($("t-mask"), ["is_folder", "has_frame_line", "layer_type_and_2", "has_mask",
+                       "n_layers"], D.mask_by_kind);
+  render($("t-vis"), ["population", "direction", "n_layers", "detail", "measured_by"],
+         D.visibility_exceptions);
+  render($("t-ic"), ["kind", "init", "layer_type", "has_stored_blocks", "rc_bucket",
+                     "alpha_max_zero", "n_layers"], D.body_initcolor);
   $("cavs").innerHTML = D.caveats.map((c) =>
     '<details class="cav"><summary><span class="col">' + esc(c.column) + "</span>"
     + (c.trap && c.trap !== "—" ? '<span class="trap">' + esc(c.trap) + "</span>" : "")

@@ -1,0 +1,4 @@
+population,direction,n_layers,detail,measured_by,as_of
+db_all_layers,マスクがあるのに `visibility & 2` が立たない,119,フォルダー以外 85 / フォルダー 34,抽出側(um350),2026-10-26
+priority65,`layer_type & 2` と `visibility & 2` が食い違うフォルダー,245,**全部コマ枠フォルダー**(名前で2群に分かれるが第3の種類ではない),抽出側 / Track L,2026-10-26
+db_all_layers,`layer_type & 2` だけ立つフォルダー,34,**作者が付けた層名は書かない**(段 A は層名を出さない),抽出側(um350),2026-10-26

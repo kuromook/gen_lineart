@@ -40,6 +40,9 @@ def main() -> int:
     layers = read_csv(os.path.join(args.census, "layers_by_year_kind_type.csv"))
     pops = read_csv(os.path.join(args.census, "populations.csv"))
     prov = read_csv(os.path.join(args.census, "provenance.csv"))
+    extra = {name: read_csv(os.path.join(args.census, name + ".csv"))
+             for name in ("layer_type_values", "layer_type_bits", "mask_by_kind",
+                          "visibility_exceptions", "body_initcolor")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])
@@ -47,7 +50,7 @@ def main() -> int:
                     if r["v_layer_kind"] == "mask_fill" and r["n_layers"])
 
     data = dict(
-        populations=pops, provenance=prov, pages=pages, layers=layers,
+        populations=pops, provenance=prov, pages=pages, layers=layers, **extra,
         caveats=[dict(column=c["column"], answers=c["answers"],
                       not_answers=c["not_answers"], trap=c["trap"],
                       by=c["by"], as_of=c["as_of"], detail=c["detail"])
@@ -81,6 +84,8 @@ def main() -> int:
     print(f"画面を書いた: {args.out}({size / 1024:.0f} KB)")
     print(f"  埋め込んだ: 母集団 {len(pops)} / 出所 {len(prov)} / "
           f"頁 {len(pages)} / 層 {len(layers)} / 但し書き {len(CAVEATS)}")
+    for name, recs in extra.items():
+        print(f"    {len(recs):4d} 行  {name}")
 
     return audit_ui(args.out, payload)
 
@@ -96,8 +101,8 @@ def audit_ui(path: str, payload: str) -> int:
     **届かないもの**: テンプレートの散文に手で書いた固有名(静的で、目で読んである)、
     2文字以下の名前、材料に出てこない名前。
     """
-    _, p3, _ = bc.load_req3(bc.sources.LOCAL_CSV[0]["path"])
-    a33, _ = bc.load_added33(bc.sources.LOCAL_CSV[1]["path"])
+    _, p3, _ = bc.load_req3(bc.sources.by_key("req3_layer_kind")["path"])
+    a33, _ = bc.load_added33(bc.sources.by_key("added33_structure")["path"])
     long_words, short_words = bc.private_vocabulary(p3, a33)
     matcher = bc.ProseMatcher(long_words)
 

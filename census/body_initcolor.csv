@@ -1,0 +1,11 @@
+kind,init,layer_type,has_stored_blocks,rc_bucket,alpha_max_zero,n_layers
+グラデーション,0,2,no,0.0,,28
+グラデーション,0,2,yes,0.0,no,1
+グラデーション,0,2,yes,0.0,yes,7
+グラデーション,0,2,yes,>0,no,126
+グラデーション,255,2,no,0.0,,96
+トーン,255,2,no,manifest に無い,,616
+トーン,255,2,yes,manifest に無い,no,3
+ベタ,0,0,yes,manifest に無い,no,6
+ベタ,0,1,yes,manifest に無い,no,1162
+ベタ,0,3,yes,manifest に無い,no,50

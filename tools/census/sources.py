@@ -44,6 +44,14 @@ LOCAL_CSV = [
         caveat="**フォルダー層は入っていない。** 層数を added33 の `n_layers` と比べない",
     ),
     dict(
+        key="body_initcolor",
+        path="inbox/body_initcolor_delivered_20261026.csv",
+        predicate="トーン・グラデ・ベタの**本体の InitColor**(1層1行、2,095層)",
+        supplier="抽出側(um350)", as_of="2026-10-26",
+        caveat="**1層1行なのでここで測れる。** `set` 列に作品名が入るので"
+               "**段 A では種類に畳む**(畳んだ世代の数を印字する)",
+    ),
+    dict(
         key="added33_structure",
         path="inbox/pages_added33_structure_20261026.csv",
         predicate="後から入った33頁の構造(層数・フォルダー数・画布・dpi)",
@@ -80,3 +88,13 @@ VOLATILE = [
         note="動かす前に一声もらう約束。**この集計の mask_fill 行は、その連絡で無効になる**",
     ),
 ]
+
+
+def by_key(key: str) -> dict:
+    """材料を**鍵で引く。** 添字で引くと、材料を1つ挿した日に別の CSV を読む
+    (2026-10-26 に実際そうなった: `LOCAL_CSV[1]` が added33 から InitColor に変わった)。
+    """
+    for s in LOCAL_CSV:
+        if s["key"] == key:
+            return s
+    raise KeyError(f"材料が宣言されていない: {key}")

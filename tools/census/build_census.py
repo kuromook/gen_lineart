@@ -28,6 +28,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from caveats import CAVEATS  # noqa: E402
+import full_population as fp  # noqa: E402
 import sources  # noqa: E402
 
 # 公開側の行が持てる次元。**ここに名前を足してはいけない**
@@ -48,12 +49,14 @@ POPULATION_METRICS = {
     "added33_structure": ("n_pages", "n_pages_without_work", "n_works",
                           "ext_clip", "ext_lip",
                           "sum_n_layers_incl_folders", "sum_n_folders",
-                          "sum_n_text_layers", "sum_n_image_material_layers"),
+                          "sum_n_text_layers", "sum_n_image_material_layers",
+               "bit", "layer_type_and_2"),
 }
 
 # 公開してよい次元の値(**白名簿。** 宣言外の値は点検が指摘する)
 ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
-                       "db_files", "db_distinct", "db_layers", "lip_files")
+                       "db_files", "db_distinct", "db_layers", "lip_files",
+                       "db_all_layers", "body_initcolor", "priority65")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d")
 
@@ -67,6 +70,24 @@ SUPPRESSED = {
         "grad の96層が 0.0 と出ているが InitColor どおりなら全面。"
         "抽出側が出し直す。**この列は集計に入れない**",
 }
+# **層の名前も段 A には出さない**(仕様 §2)。ところが禁止語彙は `page_path` から
+# 組むので、**層名を1つも見ていない。** 便で名前を知った分をここに宣言して塞ぐ。
+# **これは語彙の穴を塞ぐだけで、知らない層名には届かない**(届く範囲を名前より狭く書く)
+# **作者が付けた層名。出さない。**
+AUTHOR_LAYER_NAMES = (
+    "線画", "肌グラデ", "乳首グラデ", "モザイク", "差分マスク", "正面",
+)
+# **アプリが付ける層名。出してよい** —— 作者の作業名ではなく、形式の部品の名前。
+# これを禁止すると `layer_type` のビットの根拠が書けなくなる(根拠の無い表は持てない)
+SYSTEM_LAYER_NAMES = {
+    "ノンブル": "CLIP の頁番号層。アプリが付ける名前",
+    "作品情報": "CLIP の作品情報層。アプリが付ける名前",
+    "用紙": "CLIP の用紙層。1頁に1個。アプリが付ける名前",
+    "選択範囲": "CLIP の選択範囲層。アプリが付ける名前",
+    "コマ": "コマ枠。形式の部品の名前(作者の作業名と重なりうるが、"
+            "ここで出るのは枠の種類としての語)",
+}
+
 # 散文に出てよい語。**語ごとに理由を書く。** 理由の無い除外を作らない
 PROSE_EXCEPTIONS = {
     "clip": "ファイルの拡張子(`.clip`)。作品名ではない",
@@ -206,6 +227,105 @@ def load_added33(path: str):
                              canvas_w=rec["canvas_w"], canvas_h=rec["canvas_h"],
                              dpi=rec["dpi"]))
     return rows, drops
+
+
+def load_initcolor(path: str):
+    """本体の `InitColor` の納品(**1層1行**)。だから**ここで測れる** ——
+    要約を引用するのではなく、行から数え直す(T132 の避け方)。
+
+    `set` 列には **`fill_ako6` のように作品名が入る**ので、
+    **段 A では種類(トーン / グラデーション / ベタ)に畳む** ——
+    畳んだ世代の数を印字する(**畳んだ行は、畳んだと分かる形で出す**)。
+    """
+    drops = Drops()
+    rows = []
+    collapsed = collections.Counter()
+    with open(path, encoding="utf-8") as fh:
+        for rec in csv.DictReader(fh):
+            if rec["error"].strip():
+                drops.drop(f"抽出側が error を付けた行: {rec['error'][:40]}")
+                continue
+            raw_set = rec["set"]
+            if raw_set in fp.SET_LABELS:
+                kind = fp.SET_LABELS[raw_set]
+            elif raw_set.startswith(fp.FILL_PREFIX):
+                kind = fp.FILL_LABEL
+                collapsed[raw_set] += 1
+            else:
+                drops.drop(f"宣言していない set: {raw_set}")
+                continue
+            def num(key):
+                v = rec[key].strip()
+                return None if v == "" else float(v)
+            stored = int(rec["stored"] or 0)
+            rc = num("raster_cover_in_manifest")
+            amax = num("stored_alpha_max")
+            rows.append(dict(kind=kind, init=rec["init"].strip(),
+                             layer_type=rec["layer_type"].strip(),
+                             has_stored_blocks="yes" if stored else "no",
+                             rc_bucket=("manifest に無い" if rc is None
+                                        else "0.0" if rc == 0 else ">0"),
+                             alpha_max_zero=("yes" if (amax is not None and amax == 0)
+                                             else "no" if amax is not None else ""),
+                             ))
+    return rows, drops, collapsed
+
+
+def emit_initcolor(outdir: str, rows, keep_private: bool):
+    """種類 × `InitColor` × 保存ブロック × 被覆の桶。**段 A も段 C も同じ鍵**
+    (この表に頁の鍵は無い。`set` を畳んだだけが段の差)。"""
+    key = ("kind", "init", "layer_type", "has_stored_blocks", "rc_bucket", "alpha_max_zero")
+    agg = collections.Counter(tuple(r[k] for k in key) for r in rows)
+    out = [list(k) + [n] for k, n in sorted(agg.items())]
+    return write_csv(os.path.join(outdir, "body_initcolor.csv"),
+                     list(key) + ["n_layers"], out)
+
+
+def emit_full_population(outdir: str):
+    """全数 437,561層の表。**供給元が測った。ここでは測れない**(DB が手元に無い)。"""
+    written = {}
+    written["layer_type_bits.csv"] = write_csv(
+        os.path.join(outdir, "layer_type_bits.csv"),
+        ["bit", "meaning", "confidence", "evidence", "not_answers",
+         "population", "measured_by", "as_of"],
+        [[b["bit"], b["meaning"], b["confidence"], b["evidence"], b["not_answers"],
+          "db_all_layers", fp.SUPPLIER, fp.AS_OF] for b in fp.BITS])
+    written["layer_type_values.csv"] = write_csv(
+        os.path.join(outdir, "layer_type_values.csv"),
+        ["layer_type", "bits", "is_folder", "n_layers", "content",
+         "population", "measured_by", "as_of"],
+        [[v["layer_type"], v["bits"], v["is_folder"], v["n_layers"], v["content"],
+          "db_all_layers", fp.SUPPLIER, fp.AS_OF] for v in fp.VALUES])
+    written["mask_by_kind.csv"] = write_csv(
+        os.path.join(outdir, "mask_by_kind.csv"),
+        ["is_folder", "has_frame_line", "layer_type_and_2", "has_mask", "n_layers",
+         "population", "measured_by", "as_of"],
+        [[m["is_folder"], m["has_frame_line"], m["layer_type_and_2"], m["has_mask"],
+          m["n_layers"], "db_all_layers", fp.SUPPLIER, fp.AS_OF]
+         for m in fp.MASK_BY_KIND])
+    written["visibility_exceptions.csv"] = write_csv(
+        os.path.join(outdir, "visibility_exceptions.csv"),
+        ["population", "direction", "n_layers", "detail", "measured_by", "as_of"],
+        [[v["population"], v["direction"], v["n_layers"], v["detail"],
+          v["measured_by"], v["as_of"]] for v in fp.VISIBILITY_EXCEPTIONS])
+    return written
+
+
+def check_full_population_totals() -> int:
+    """供給元の2つの表が、どちらも宣言した全数に合うか。
+
+    **届く**: こちらの転記の誤り / 供給元の表の足し算の誤り。
+    **届かない**: DB そのものの誤り(こちらに DB は無い)。
+    """
+    a = sum(v["n_layers"] for v in fp.VALUES)
+    b = sum(m["n_layers"] for m in fp.MASK_BY_KIND)
+    print(f"  [全数の表の突き合わせ] 宣言 {fp.N_LAYERS:,} 層")
+    print(f"    layer_type の値 12行の合計 {a:,}  "
+          f"{'一致' if a == fp.N_LAYERS else '**食い違い**'}")
+    print(f"    マスクの種類 5行の合計   {b:,}  "
+          f"{'一致' if b == fp.N_LAYERS else '**食い違い**'}")
+    print("    **これはこちらの転記と供給元の足し算の点検で、DB の点検ではない**")
+    return 0 if (a == fp.N_LAYERS and b == fp.N_LAYERS) else 1
 
 
 # ---------------------------------------------------------------- 集計(1回だけ)
@@ -365,9 +485,11 @@ def private_vocabulary(req3_pages, a33_rows):
                 vocab.add(seg)
                 vocab.add(os.path.splitext(seg)[0])
     vocab.discard("")
+    vocab |= set(AUTHOR_LAYER_NAMES)
     vocab -= ALLOWED_PUBLIC_TOKENS
-    long_words = {v for v in vocab if len(v) >= 3} - set(PROSE_EXCEPTIONS)
-    short_words = vocab - long_words - set(PROSE_EXCEPTIONS)
+    allowed = set(PROSE_EXCEPTIONS) | set(SYSTEM_LAYER_NAMES)
+    long_words = ({v for v in vocab if len(v) >= 3} | set(AUTHOR_LAYER_NAMES)) - allowed
+    short_words = vocab - long_words - allowed
     return long_words, short_words
 
 
@@ -413,14 +535,18 @@ METRIC_COLS = ("n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_r
                "n_pages_without_work", "n_works", "n_rows",
                "ext_clip", "ext_lip",
                "sum_n_layers_incl_folders", "sum_n_folders",
-               "sum_n_text_layers", "sum_n_image_material_layers")
+               "sum_n_text_layers", "sum_n_image_material_layers",
+               "bit", "layer_type_and_2")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
-            "drawn_ratio_usable", "volatile")
+            "drawn_ratio_usable", "volatile",
+            "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
+            "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
-              "measured_by", "source", "kind", "supplier", "sha256")
+              "measured_by", "source", "supplier", "sha256",
+              "meaning", "evidence", "content", "direction", "material_kind")
 
 
 def audit_public(outdir: str, vocab, verbose: bool = True):
@@ -448,6 +574,17 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "layer_type": {"layer_type", ""},          # 残りは数字として見る
         "drawn_ratio_usable": {"drawn_ratio_usable", "no", "yes", "unverified", ""},
         "volatile": {"volatile", "yes", "no", ""},
+        "is_folder": {"is_folder", "yes", "no", ""},
+        "has_frame_line": {"has_frame_line", "yes", "no", ""},
+        "has_mask": {"has_mask", "yes", "no", ""},
+        "has_stored_blocks": {"has_stored_blocks", "yes", "no", ""},
+        "alpha_max_zero": {"alpha_max_zero", "yes", "no", ""},
+        "rc_bucket": {"rc_bucket", "0.0", ">0", "manifest に無い", ""},
+        "init": {"init", ""},                       # 残りは数字として見る
+        "kind": {"kind", fp.FILL_LABEL, *fp.SET_LABELS.values()},
+        "bits": {"bits", "—", ""},                  # `512+256+32` の形
+        "confidence": {"confidence", "確か(全数で例外0)", "確か。**ただし1種類だけ外れる**",
+                       "不明", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -472,7 +609,10 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                             hits.append((name, lineno, colname,
                                          "件数の列に数字でない値", s[:70]))
                     elif colname in DIM_COLS:
-                        if s and s not in allow[colname] and not s.lstrip("-").isdigit():
+                        if (s and s not in allow[colname]
+                                and not s.lstrip("-").isdigit()
+                                and not (colname == "bits"
+                                         and all(t.isdigit() for t in s.split("+")))):
                             hits.append((name, lineno, colname,
                                          "次元の列に宣言外の値(白名簿にない)", s[:70]))
                     elif colname in PROSE_COLS:
@@ -490,6 +630,9 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         print(f"  散文に出てよい語 {len(PROSE_EXCEPTIONS)} 語"
               f"(拡張子と英単語。**語ごとに理由を宣言済み**): "
               + " / ".join(sorted(PROSE_EXCEPTIONS)))
+        print(f"  出してよい層名 {len(SYSTEM_LAYER_NAMES)} 語"
+              f"(**アプリが付ける名前。作者の作業名は {len(AUTHOR_LAYER_NAMES)} 語を禁止**): "
+              + " / ".join(sorted(SYSTEM_LAYER_NAMES)))
         print(f"  **この点検の盲点: 2文字以下の固有名 {len(short_words)} 語** ——"
               f" 件数や生の値と見分けが付かないので見ていない。"
               f"ASCII の名前は語境界を要求するので `x_名前_y` の形も見えない")
@@ -525,6 +668,20 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                  f"census track({as_of} にこの CSV を数えた)", as_of,
                  "異なり数(`file_hashes` が無いので測れない)",
                  "**供給元の集計と一致しても独立な確認ではない**(同じ配列。T132)"])
+    rows.append(["db_all_layers",
+                 f"構造 DB の全数 —— {fp.N_PAGES} 頁 / {fp.N_LAYERS} 層"
+                 "(`.clip` + `.lip`。値の種類と振る舞いは同じ)",
+                 fp.N_PAGES, "", fp.N_LAYERS, fp.SUPPLIER, fp.AS_OF,
+                 "なし(`layer_type` のビットと値の表は受領済み)",
+                 "**ここでは測れない**(DB が手元に無い)。"
+                 "合うのは**こちらの転記と供給元の足し算**だけ"])
+    rows.append(["body_initcolor",
+                 "トーン・グラデ・ベタの本体の `InitColor`(1層1行)",
+                 "", "", 2095, "census track(2026-10-26 に行から数え直した)",
+                 fp.AS_OF,
+                 "なし",
+                 "**要約の転記ではない** —— `raster_cover = 0.0` の 132層が"
+                 "96(init 255)+ 36(init 0)に分かれることを行から数え直した"])
     for a in sources.ABSENT:
         rows.append([a["key"], a["predicate"], a["n_pages"], "", "",
                      a["measured_by"], a["as_of"], a["needs"], a["caveat"]])
@@ -538,7 +695,8 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
 
 
 def write_provenance(outdir: str, as_of: str):
-    header = ["source", "kind", "supplier", "as_of", "n_rows", "sha256", "volatile", "note"]
+    header = ["source", "material_kind", "supplier", "as_of", "n_rows", "sha256",
+              "volatile", "note"]
     rows = []
     for s in sources.LOCAL_CSV:
         if os.path.exists(s["path"]):
@@ -597,8 +755,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--public-out", default="census")
     ap.add_argument("--full-out", default="data/census_full")
-    ap.add_argument("--req3", default=sources.LOCAL_CSV[0]["path"])
-    ap.add_argument("--added33", default=sources.LOCAL_CSV[1]["path"])
+    ap.add_argument("--req3", default=sources.by_key("req3_layer_kind")["path"])
+    ap.add_argument("--added33", default=sources.by_key("added33_structure")["path"])
+    ap.add_argument("--initcolor", default=sources.by_key("body_initcolor")["path"])
     args = ap.parse_args()
     as_of = today()
 
@@ -612,6 +771,14 @@ def main() -> int:
     a33_rows, drops_a33 = load_added33(args.added33)
     print(f"  {args.added33}: {len(a33_rows)} 頁")
     drops_a33.report("added33")
+
+    ic_rows, drops_ic, collapsed = load_initcolor(args.initcolor)
+    print(f"  {args.initcolor}: {len(ic_rows)} 層")
+    drops_ic.report("本体の InitColor")
+    if collapsed:
+        print(f"  [段 A で畳んだ `set`] {len(collapsed)} 個 → 「{fp.FILL_LABEL}」1行"
+              f"(作品名を含むため)。畳んだ層 {sum(collapsed.values())}")
+        print("    **段 C では畳まない**(世代もプールである)")
 
     overlap = req3_pages.keys() & {r["page_path"] for r in a33_rows}
     print(f"\n[母集団の重なり] 依頼3 ∩ added33 = {len(overlap)} 頁"
@@ -635,6 +802,8 @@ def main() -> int:
     print("\n[公開(段 A)を書く] —— 行は PUBLIC_DIMS だけを持つ鍵から組む")
     os.makedirs(args.public_out, exist_ok=True)
     pub = emit_tables(args.public_out, layer_cells, page_cells, False, n_works_by)
+    pub.update(emit_full_population(args.public_out))
+    pub["body_initcolor.csv"] = emit_initcolor(args.public_out, ic_rows, False)
     pub["populations.csv"] = write_populations(args.public_out, req3_rows, req3_pages,
                                                a33_rows, as_of)
     pub["provenance.csv"] = write_provenance(args.public_out, as_of)
@@ -647,12 +816,15 @@ def main() -> int:
     print("\n[全量(段 C)を書く] —— 同じ集計から")
     os.makedirs(args.full_out, exist_ok=True)
     full = emit_tables(args.full_out, layer_cells, page_cells, True, n_works_by)
+    full.update(emit_full_population(args.full_out))
+    full["body_initcolor.csv"] = emit_initcolor(args.full_out, ic_rows, True)
     full["caveats.csv"] = write_caveats(args.full_out)
     for name, n in sorted(full.items()):
         print(f"    {n:6d} 行  {name}")
     rc_cons |= verify_conservation(args.full_out, len(req3_rows),
                                    len(req3_pages) + len(a33_rows), "段 C")
 
+    rc_cons |= check_full_population_totals()
     vocab = private_vocabulary(req3_pages, a33_rows)
     rc, _hits = audit_public(args.public_out, vocab)
     if rc:

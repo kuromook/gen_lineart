@@ -1,4 +1,5 @@
-source,kind,supplier,as_of,n_rows,sha256,volatile,note
+source,material_kind,supplier,as_of,n_rows,sha256,volatile,note
 f_request3_layer_kind_rendered_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,56576,c520b827127e4d21cc04bf0c010f81d2347ecd7629b5d04c528c24ca75126302,,**フォルダー層は入っていない。** 層数を added33 の `n_layers` と比べない
+body_initcolor_delivered_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,2095,ac57841a99adbc3901d263bf2110dff0b92f0bf6bf54cde802dbb297ad9b83e1,,**1層1行なのでここで測れる。** `set` 列に作品名が入るので**段 A では種類に畳む**(畳んだ世代の数を印字する)
 pages_added33_structure_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,33,1d4d8ba0e11c3364ffadecb88da4f888d1e835c9145f3db89a507037843a4db9,,**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)
 drawn_ratio,**値が動く予定の列**,抽出側(um350),2026-10-26,11455,,yes,`v_layer_kind` = `mask_fill` の層: 抽出側が読み手を直すと、いま 0 と読まれている値が 1 付近へ動く —— `mask_fill`(トーン・べた塗り)の本体は `InitColor 255` = 全面で、0 は「空」ではない。動かす前に一声もらう約束。**この集計の mask_fill 行は、その連絡で無効になる**
