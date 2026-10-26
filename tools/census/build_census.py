@@ -161,6 +161,34 @@ def sha256_of(path: str) -> str:
     return h.hexdigest()
 
 
+def instrument_version() -> dict:
+    """**この数を計算した器具の版。** 出力に刻む。
+
+    **器具を直したら、直す前に取った数を全部捨てる** —— だが
+    **出力は再生成されるが、文章は再生成されない**(2026-10-27 に踏んだ。T139)。
+    点検は全部通り、成果物も正しく、**報告だけが単独で誤っていられる** ——
+    走行の中に検出手段が無い。
+
+    **だから防げない。ただし「古い」と分かる形にはできる** ——
+    **報告に、その数を計算した器具の版を書く**(抽出側が納品通達で既にやっている作法)。
+    **作法のままにせず、走行が自分で刻む。**
+
+    **`dirty` が yes のときは、版が器具を同定しない** —— そう書く。
+    """
+    def git(*args):
+        try:
+            return subprocess.run(["git", *args], capture_output=True, text=True,
+                                  check=True).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            return ""
+    head = git("rev-parse", "--short", "HEAD")
+    # **器具のファイルだけを見る** —— 公開物の差分で dirty になっても版は同定できる
+    changed = git("status", "--porcelain", "--", "tools/census", "tools")
+    return dict(commit=head or "(git が読めない)",
+                dirty="yes" if changed else "no",
+                dirty_files=len([x for x in changed.splitlines() if x.strip()]))
+
+
 def today() -> str:
     """見出しの時刻は `date` から機械的に差し込む。推定で書かない。"""
     return subprocess.run(["date", "+%Y-%m-%d"], capture_output=True, text=True,
@@ -1152,6 +1180,15 @@ def write_provenance(outdir: str, as_of: str):
     header = ["source", "material_kind", "supplier", "as_of", "n_rows", "sha256",
               "volatile", "note"]
     rows = []
+    ver = instrument_version()
+    rows.append(["(この走行の器具)", "**器具の版**", "census track", as_of, "",
+                 ver["commit"], "",
+                 f"**この数を計算した器具の版。** 器具のファイルに未コミットの変更: "
+                 f"{ver['dirty']}"
+                 + (f"({ver['dirty_files']} ファイル)。"
+                    "**版が器具を同定しない**" if ver["dirty"] == "yes" else "。"
+                    "**版が器具を同定する**")
+                 + " —— **報告でこの数を引くときは版も引く**(T139)"])
     for s in sources.LOCAL_CSV:
         if os.path.exists(s["path"]):
             with open(s["path"], encoding="utf-8") as fh:
@@ -1232,7 +1269,12 @@ def main() -> int:
     as_of = today()
 
     check_column_classes()
-    print(f"原稿の国勢調査 —— 走行 {as_of}")
+    ver = instrument_version()
+    print(f"原稿の国勢調査 —— 走行 {as_of} / **器具の版 {ver['commit']}"
+          f"(未コミットの変更: {ver['dirty']})**")
+    if ver["dirty"] == "yes":
+        print("  **器具に未コミットの変更が在る。この走行の数は、版では同定できない**"
+              f"({ver['dirty_files']} ファイル)")
     print(f"  公開(段 A): {args.public_out}/   全量(段 C): {args.full_out}/")
 
     print("\n[材料を読む]")

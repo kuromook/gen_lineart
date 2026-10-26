@@ -174,12 +174,16 @@ def main() -> int:
         },
         runline=[
             f"走行 {as_of}",
+            f"器具の版 {bc.instrument_version()['commit']}"
+            + ("(未コミットの変更あり)"
+               if bc.instrument_version()["dirty"] == "yes" else ""),
             f"段 A: {len(pages)} 行 × 頁 / {len(layers)} 行 × 層",
             f"集計した頁 {n_pages:,} / 層 {n_layers:,}",
             f"但し書き {len(CAVEATS)} 行",
             "固有名: 0",
         ],
-        foot=f"走行 {as_of}。集計した頁 {n_pages:,}・層 {n_layers:,}(すべて .clip)。"
+        foot=f"走行 {as_of}(器具の版 "
+             f"{bc.instrument_version()['commit']})。集計した頁 {n_pages:,}・層 {n_layers:,}(すべて .clip)。"
              f"但し書き {len(CAVEATS)} 行。段 A に固有名は 0。",
     )
 
