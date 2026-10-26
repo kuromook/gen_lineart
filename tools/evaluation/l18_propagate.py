@@ -438,9 +438,15 @@ def main():
                 for x in nm:
                     fh.write(x + '\n')
             el = time.time() - t0
+            # **見積りは最初の数頁では使えない**(2026-10-26)。`Pool(4)` なので
+            # 4頁が同時に走っていて、`i=1` の時点の `el/i` は**並列を無視した値**。
+            # i が 4 の数倍になるまで**過大に出る**ので、そのときは印を付ける
+            # (付けないと、その数が引用される)。
+            warm = '  **見積りは温まっていない(並列4本、i<8)**' if i < 8 else ''
             print(f'  {i}/{len(js)} 頁  成分 {len(comps)}  '
                   f'経過 {el / 60:.1f}分  1頁 {el / i / 60:.2f}分  '
-                  f'残り見積り {(len(js) - i) * el / i / 60:.0f}分', flush=True)
+                  f'残り見積り {(len(js) - i) * el / i / 60:.0f}分{warm}',
+                  flush=True)
     for nm_, v in ck.items():
         v[0].close()
         print(f'-> {v[3]}  行 {v[4]}  (**checkpoint で頁ごとに追記済み**)')
