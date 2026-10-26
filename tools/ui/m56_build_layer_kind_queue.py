@@ -19,8 +19,9 @@
   `crop`(既定) = **帯 + 問われている層を大きく**
   `ctx`(`C`)   = **帯 + 頁の合成プレビューを大きく**
   **帯は両方の絵で同じ位置・同じ並び**(規則8: 位置を固定する。覚えた指が使える)
-  **透明は白で出す**(原稿の紙が白いので、頁に乗ったときの見え方に一致する)。
-  **画面にその旨を書く** —— 白い線だけの層は見えないことがありうる(規則4)。
+  **透明は市松模様で出す**(14:00 に直した。**白で出していたら、100% 純白の層4件が
+  消えて、作者が「白紙」と答えた** —— 消していたのはこちらだった)。
+  **白いインクの割合を印字する**(門ではない。読むときの但し書き)。
 
 問い: **「この層は何ですか」**(層を名指しする。**単位を画面に書く** = 追補41 §F)
 
@@ -104,10 +105,39 @@ HELP = ('**左端がこの頁の層を重なり順に並べたもので、いま
 EXPECT_ROWS = 307
 
 
-def flatten(path, bg=255):
-    """アルファ付き PNG を**墨の囲み箱で切り、白(紙)に重ねて**返す。
+def checker(h, w, cell=14, a=242, b=214):
+    """**透明の下地。白のインクを白で消さないため。**
 
-    返すのは `(絵, 不透明な画素数, 元の画布に対する比, 囲み箱)`。
+    2026-10-26 14:00: 透明を**白**で出していたところ、作者が 4件に
+    **「白紙」**と答えた。**その4層は 100% 純白のインク**(不透明 46,956 と
+    166,816 画素、BGR 全画素 255、アルファ 255)だった ——
+    **作者は見せられた絵を正しく読んでいた。消していたのはこちらである。**
+    **規則4(既定値を主張にしない)の最も痛い形**: 白い下地は「何も無い」という主張を、
+    何も測らずに出していた。
+    """
+    y, x = np.mgrid[0:h, 0:w]
+    m = (((y // cell) + (x // cell)) % 2).astype(bool)
+    out = np.full((h, w, 3), a, np.uint8)
+    out[m] = b
+    return out
+
+
+def over_checker(img):
+    """RGBA なら市松模様に重ねて BGR にする。BGR はそのまま返す。"""
+    if img.ndim == 3 and img.shape[2] == 4:
+        al = img[..., 3:4].astype(np.float32) / 255.0
+        bgc = checker(img.shape[0], img.shape[1]).astype(np.float32)
+        return (img[..., :3].astype(np.float32) * al
+                + bgc * (1.0 - al)).round().astype(np.uint8)
+    return img
+
+
+def flatten(path, bg=255):
+    """アルファ付き PNG を**墨の囲み箱で切って RGBA のまま**返す。
+
+    返すのは `(RGBA の絵, 不透明な画素数, 元の画布に対する比, 囲み箱)`。
+    **下地に重ねるのは最終の大きさになってから**(`over_checker`)——
+    先に重ねると、縮小で市松模様がつぶれる。
 
     **切らないと帯も主の絵もほぼ白になる**(13:40 の組版試験で確認:
     22層の頁で、どの札も中身が見えず、主の絵も数本の線だけだった)。
@@ -135,10 +165,7 @@ def flatten(path, bg=255):
         pad = max(1, round(0.01 * max(y1 - y0, x1 - x0)))
         y0, x0 = max(0, y0 - pad), max(0, x0 - pad)
         y1, x1 = min(im.shape[0], y1 + pad), min(im.shape[1], x1 + pad)
-        sub = im[y0:y1, x0:x1]
-        al = sub[..., 3:4].astype(np.float32) / 255.0
-        out = (sub[..., :3].astype(np.float32) * al
-               + bg * (1.0 - al)).round().astype(np.uint8)
+        out = im[y0:y1, x0:x1].copy()        # **RGBA のまま返す**
         box = [int(y1 - y0), int(x1 - x0)]
     else:
         out = im[..., :3]
@@ -160,6 +187,7 @@ def fit(img, box):
     s = min(bh / h, bw / w, 1.0)
     im = cv2.resize(img, (max(1, round(w * s)), max(1, round(h * s))),
                     interpolation=cv2.INTER_AREA if s < 1 else cv2.INTER_NEAREST)
+    im = over_checker(im)
     canvas = np.full((bh, bw, 3), 255, np.uint8)
     y, x = (bh - im.shape[0]) // 2, (bw - im.shape[1]) // 2
     canvas[y:y + im.shape[0], x:x + im.shape[1]] = im
@@ -192,8 +220,9 @@ def compose(strip_imgs, main, mark):
     # 既に原寸なので、超えれば無い解像度の主張になる)。**横の余白を詰める。**
     bh, bw = main.shape[:2]
     sc = min(H / bh, WIN / bw, 1.0)
-    big = cv2.resize(main, (max(1, round(bw * sc)), max(1, round(bh * sc))),
-                     interpolation=cv2.INTER_AREA if sc < 1 else cv2.INTER_NEAREST)
+    big = over_checker(
+        cv2.resize(main, (max(1, round(bw * sc)), max(1, round(bh * sc))),
+                   interpolation=cv2.INTER_AREA if sc < 1 else cv2.INTER_NEAREST))
     pane = np.full((H, big.shape[1], 3), 255, np.uint8)
     y = (H - big.shape[0]) // 2
     pane[y:y + big.shape[0]] = big
@@ -258,20 +287,23 @@ def main():
         got = [(r, f) for r, f in files if f is not None]
         if not got:
             skipped.append((src, '層が1つも無い')); continue
-        imgs, keep, ratios, boxes = [], [], [], []
+        imgs, keep, ratios, boxes, whites = [], [], [], [], []
         for r, f in got:
             im, opaque, ratio, box = flatten(f)
             if im is None and opaque == 0:
                 drop["門(0') 層の絵が空(不透明な画素が0)"] += 1; continue
             if im is None:
                 drop['門(3) 層の PNG が読めない'] += 1; continue
+            al = im[..., 3] > 0 if im.shape[2] == 4 else np.ones(im.shape[:2], bool)
+            near_white = float((im[..., :3][al] >= 240).all(axis=1).mean()) if al.any() else 0.0
             imgs.append(im); keep.append(r); ratios.append(ratio); boxes.append(box)
+            whites.append(round(near_white, 4))
         if not keep:
             skipped.append((src, 'すべて空')); continue
         tt, p = prev[src]
         comp = cv2.imread(str(tt / p['preview']['file']), cv2.IMREAD_COLOR)
         pages.append(dict(src=src, page=p['page'], rows=keep, imgs=imgs,
-                          ratios=ratios, boxes=boxes, comp=comp,
+                          ratios=ratios, boxes=boxes, whites=whites, comp=comp,
                           red=float(p['preview']['縮小率'])))
 
     print(f'\n  絵が組める頁 {len(pages)} / {len(bypage)}  '
@@ -305,12 +337,18 @@ def main():
                       'scale': round(s_l * x['ratios'][i], 5),
                       'ctx_scale': round(s_c / x['red'], 5),
                       'interp': 1.0, 'box_px': x['boxes'][i],
+                      'white': x['whites'][i],
                       'cands': [], 'word_share': {},
                       'top_word': '', 'purity': 0.0, 'n_lay': len(x['rows']),
                       'n_lay90': i + 1, 'auto': 0, 'comp': 0,
                       'region': int(r['layer_id']), 'lid': int(r['layer_id']),
                       'area': None, 'why': 'ask'})
 
+    nw = [it for it in q if it['white'] >= 0.99]
+    print(f'\n== ほぼ全部が白いインクの層 {len(nw)} / {len(q)}'
+          f'(**市松模様の下地で出す。白地なら消える**)==')
+    for it in nw:
+        print(f'  問{it["order"]:<4} 白 {it["white"]:.1%}  {it["work"]}')
     print(f'\n== 行列 ==\n  問 {len(q)}  頁 {len(pages)}  '
           f'1頁あたり中央 {int(np.median([len(x["rows"]) for x in pages]))} 層')
     print(f'  **宣言する時間: 36分**(307問。頁ごとにまとめるので短くなるはず。'
