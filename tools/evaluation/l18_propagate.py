@@ -29,6 +29,7 @@ from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l18_propagate'
 EXCLUDE = None       # 事前登録の母集団定義 (--exclude-gapfill)
+PAIRED = False       # L36: 対応のある読みを併記する (登録 2026-10-26 15:23)
 STANDARD = 'solid'   # 標準の作り方。'solid' = fill_mask(radius=4) / 'cover' = 生の墨
                      # (L35 = 道1。登録 2026-10-26 15:07。**既定は変えない**)
 LIMIT = 0            # --limit (煙試験。出力の名前に入れる)
@@ -108,79 +109,118 @@ def one_page(job):
                                   n_lay90=nl, n_lay=nraw, arm='degen'))
             continue
         # ---- 腕
-        for arm in (('real',) if ARMS in ('both', 'real') else ()) + \
-                   (('shuffled',) if ARMS in ('both', 'control') else ()):
-            seeds = SEEDS if arm == 'shuffled' else (0,)
-            for sd in seeds:
-                acc = np.zeros(P.shape, bool)
-                seedlab = np.zeros(P.shape, np.uint16)
-                owner = {}
-                for gi in gids:
-                    if EXCLUDE is not None and gi not in cname:
-                        continue
-                    if arm == 'real':
-                        R = glab == gi
-                        if place(glab, gi, gstat, P, SEEDS[0], pid, ci) is None:
-                            continue          # 両腕で同じ面集合 (L17 §5)
-                    else:
-                        R = place(glab, gi, gstat, P, sd, pid, ci)
-                        if R is None:
-                            continue
-                    s, L, adj = seed_of(R, lab, P)
-                    if adj == 0 or L == 0:
-                        continue
-                    C, ids = prop_full(s, cl)
-                    acc |= C
-                    seedlab[s & (seedlab == 0)] = gi
-                    for x in ids:
-                        owner.setdefault(int(x), []).append((gi, L, adj))
-                    regs.append(dict(pid=pid, work=work, comp=ci, region=gi, arm=arm,
-                                     seed=sd, adj=adj, prop=int(C.sum()),
-                                     n_comp=int(len(ids))))
-                # 成分ごとの正直さ -> cov_honest (基盤 band_form_l18 §1)
-                honest = 0; conf_px = 0; lab_of = {}
-                for cid, lst in owner.items():
-                    C = cl == cid
-                    lst.sort(key=lambda t: -t[2])
-                    L = lst[0][1]
-                    lab_of[cid] = L
-                    ar = int(st_[cid, A])
-                    cf = int(len({t[1] for t in lst}) > 1)
-                    pu = comp_pur(C, lab, L)
-                    nl, nraw = n_lay90_of(C, lab)
-                    # **競合した成分は cov1 に入れ cov_honest には入れない**
-                    if cf:
-                        conf_px += ar
-                    elif pu >= 0.90:
-                        honest += ar
-                    comps.append(dict(pid=pid, work=work, comp=ci, cid=cid, arm=arm,
-                                      seed=sd, area=ar, share=round(ar / tot, 5),
-                                      pur=round(pu, 4), n_lay90=nl, n_lay=nraw,
-                                      conflict=cf, n_owner=len(lst)))
-                rec = dict(pid=pid, work=work, comp=ci, arm=arm, seed=sd, ink=tot,
-                           cov=int(acc.sum()), honest=honest, conflict_px=conf_px,
-                           n_comp_owned=len(owner),
-                           top_share=round(max((int(st_[i, A]) for i in range(1, n)),
-                                               default=0) / tot, 4))
-                # 感度: 測地距離の打ち切り (判定に使わない。単位は成分のまま)
-                if seedlab.any():
-                    sn = geo_spread(seedlab, ink, GS)
-                    for g in GS:
-                        reach = sn[g] > 0
-                        rec[f'cov{g}'] = int(reach.sum())
-                        h = 0
-                        for cid, L in lab_of.items():
-                            Cg = (cl == cid) & reach
-                            kg = int(Cg.sum())   # **k は頁の通し番号。潰さない**
-                            if kg == 0 or len({t[1] for t in owner[cid]}) > 1:
-                                continue
-                            if int((Cg & (lab == L)).sum()) / kg >= 0.90:
-                                h += kg
-                        rec[f'honest{g}'] = h
+        # **L36**(登録 2026-10-26 15:23): `PAIRED` のとき
+        #   (1) **名前の無い面をどちらの腕も採点しない**。この門は前から在ったが
+        #       `EXCLUDE is not None` のときしか発火せず、全面の版では対照だけが
+        #       **名前の無い面**(本来の位置では線に接していない面)を採点していた。
+        #       これが朝に見つけた「対照だけ 229鍵」と同じ欠陥である
+        #   (2) **seed ごとに両腕の交差の上で計算し直す**(対応のある読み)。
+        #       **主値は置き換えない。併記である**
+        gate = (EXCLUDE is not None) or PAIRED
+
+        def run(arm, sd, allowed=None):
+            """1つの腕・1つの seed を採点する。`allowed` が在ればその面だけ。
+
+            返すのは (採点した面の gi の集合, regs 行, comps 行, pans 行)。
+            **この関数は `lab` / `cl` / `P` を読むだけで作り直さない** ——
+            両腕が同じ配列を見ることの保証がここに在る(基盤への答 2026-10-26 15:20)。
+            """
+            acc = np.zeros(P.shape, bool)
+            seedlab = np.zeros(P.shape, np.uint16)
+            owner, scored, rrows, crows = {}, set(), [], []
+            for gi in gids:
+                if gate and gi not in cname:
+                    continue
+                if allowed is not None and gi not in allowed:
+                    continue
+                if arm == 'real':
+                    R = glab == gi
+                    if place(glab, gi, gstat, P, SEEDS[0], pid, ci) is None:
+                        continue          # 両腕で同じ面集合 (L17 §5)
                 else:
-                    for g in GS:
-                        rec[f'cov{g}'] = 0; rec[f'honest{g}'] = 0
-                pans.append(rec)
+                    R = place(glab, gi, gstat, P, sd, pid, ci)
+                    if R is None:
+                        continue
+                s_, L, adj = seed_of(R, lab, P)
+                if adj == 0 or L == 0:
+                    continue
+                C, ids = prop_full(s_, cl)
+                acc |= C
+                seedlab[s_ & (seedlab == 0)] = gi
+                scored.add(gi)
+                for x in ids:
+                    owner.setdefault(int(x), []).append((gi, L, adj))
+                rrows.append(dict(pid=pid, work=work, comp=ci, region=gi, arm=arm,
+                                  seed=sd, adj=adj, prop=int(C.sum()),
+                                  n_comp=int(len(ids)),
+                                  name=cname.get(gi, '')))
+            # 成分ごとの正直さ -> cov_honest (基盤 band_form_l18 §1)
+            honest = 0; conf_px = 0; lab_of = {}
+            for cid, lst in owner.items():
+                C = cl == cid
+                lst.sort(key=lambda t: -t[2])
+                L = lst[0][1]
+                lab_of[cid] = L
+                ar = int(st_[cid, A])
+                cf = int(len({t[1] for t in lst}) > 1)
+                pu = comp_pur(C, lab, L)
+                nl, nraw = n_lay90_of(C, lab)
+                # **競合した成分は cov1 に入れ cov_honest には入れない**
+                if cf:
+                    conf_px += ar
+                elif pu >= 0.90:
+                    honest += ar
+                crows.append(dict(pid=pid, work=work, comp=ci, cid=cid, arm=arm,
+                                  seed=sd, area=ar, share=round(ar / tot, 5),
+                                  pur=round(pu, 4), n_lay90=nl, n_lay=nraw,
+                                  conflict=cf, n_owner=len(lst)))
+            rec = dict(pid=pid, work=work, comp=ci, arm=arm, seed=sd, ink=tot,
+                       cov=int(acc.sum()), honest=honest, conflict_px=conf_px,
+                       n_comp_owned=len(owner),
+                       top_share=round(max((int(st_[i, A]) for i in range(1, n)),
+                                           default=0) / tot, 4))
+            # 感度: 測地距離の打ち切り (判定に使わない。単位は成分のまま)
+            if seedlab.any():
+                sn = geo_spread(seedlab, ink, GS)
+                for g in GS:
+                    reach = sn[g] > 0
+                    rec[f'cov{g}'] = int(reach.sum())
+                    h = 0
+                    for cid, L in lab_of.items():
+                        Cg = (cl == cid) & reach
+                        kg = int(Cg.sum())   # **k は頁の通し番号。潰さない**
+                        if kg == 0 or len({t[1] for t in owner[cid]}) > 1:
+                            continue
+                        if int((Cg & (lab == L)).sum()) / kg >= 0.90:
+                            h += kg
+                    rec[f'honest{g}'] = h
+            else:
+                for g in GS:
+                    rec[f'cov{g}'] = 0; rec[f'honest{g}'] = 0
+            return scored, rrows, crows, rec
+
+        arms = (('real',) if ARMS in ('both', 'real') else ()) + \
+               (('shuffled',) if ARMS in ('both', 'control') else ())
+        got = {}
+        for arm in arms:
+            for sd in (SEEDS if arm == 'shuffled' else (0,)):
+                sc, rr, cr, rec = run(arm, sd)
+                got[(arm, sd)] = sc
+                regs += rr; comps += cr; pans.append(rec)
+        # ---- 対応のある読み (登録 §3。**主値を置き換えない。arm に印を付けて併記**)
+        if PAIRED and ARMS == 'both':
+            for sd in SEEDS:
+                inter = got.get(('real', 0), set()) & got.get(('shuffled', sd), set())
+                for arm in ('real', 'shuffled'):
+                    _sc, rr, cr, rec = run(arm, sd if arm == 'shuffled' else 0, inter)
+                    for row in rr:
+                        row['arm'] = f'{arm}_paired'; row['seed'] = sd
+                    for row in cr:
+                        row['arm'] = f'{arm}_paired'; row['seed'] = sd
+                    rec['arm'] = f'{arm}_paired'; rec['seed'] = sd
+                    rec['n_inter'] = len(inter)
+                    rec['n_real'] = len(got.get(('real', 0), set()))
+                    regs += rr; comps += cr; pans.append(rec)
     return comps, regs, pans, names_all
 
 
@@ -266,7 +306,7 @@ def print_both_populations(res):
 
 
 def main():
-    global ARMS, LIMIT, EXCLUDE
+    global ARMS, LIMIT, EXCLUDE, PAIRED
     ap = argparse.ArgumentParser()
     ap.add_argument('--arms', default='both',
                     choices=('both', 'real', 'control', 'degen'))
@@ -274,6 +314,10 @@ def main():
     ap.add_argument('--exclude-gapfill', action='store_true',
                     help='**事前登録**: 判定のある551面の中で見つかった隙間埋けだけを外す'
                          ' (残り635面は未知)')
+    ap.add_argument('--paired', action='store_true',
+                    help='**L36**(登録 2026-10-26 15:23): 名前の無い面をどちらの腕も'
+                         '採点しないようにし、**seed ごとに両腕の交差の上での '
+                         '`cov_honest` を併記**する。**主値・棒・床・標準は動かさない**')
     ap.add_argument('--raw-beta-standard', action='store_true',
                     help='**L35 = 道1**(登録 2026-10-26 15:07): 標準を '
                          '`fill_mask` から外し、**納品 beta 496層の生の墨**から作る。'
@@ -292,6 +336,13 @@ def main():
         print('母集団: **全面の版**(登録された一次)', flush=True)
     ARMS = a.arms
     LIMIT = a.limit
+    PAIRED = a.paired
+    if PAIRED:
+        print('**L36**: 名前の無い面は**どちらの腕も採点しない**(この門は前から'
+              '在ったが `--exclude-gapfill` のときしか発火しなかった)。'
+              'そして **seed ごとに両腕の交差の上で計算し直して併記**する', flush=True)
+        print('  **主値は登録のまま**(各腕の現在の面集合の上の `cov_honest`)。'
+              '**対応のある読みは棒ではない**(登録 §3)', flush=True)
     os.makedirs(OUT, exist_ok=True)
     zz = zmap(); fill, line = gated_layers()
     if a.raw_beta_standard:
@@ -356,6 +407,8 @@ def main():
     #   ・隙間埋けを外した版も、全面の版の CSV を上書きする形だった
     # 走行の種類が違うものを同じ名前に書かない。
     tag = '_rawbeta' if a.raw_beta_standard else ''
+    if a.paired:
+        tag += '_paired'
     if EXCLUDE:
         tag += '_nogapfill'
     if LIMIT:
