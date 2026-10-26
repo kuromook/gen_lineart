@@ -12,7 +12,8 @@
 絶対の定数(棒A 0.30 / 棒C 0.50)だけ。
   --arms control   対照(帰無値)だけ      --arms real  本来の腕   --arms both
 """
-import argparse, re, csv, os, statistics as st, sys
+import argparse
+import time, re, csv, os, statistics as st, sys
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -386,12 +387,63 @@ def main():
     if a.limit:
         js = js[:a.limit]
     print(f'腕 {ARMS}  頁 {len(js)}  (既知セル KC21-24 は別プロセスで PASS 済みであること)')
+
+    # **出力の名前に母集団と頁数を入れる**(2026-10-26)。
+    # それまでは `comps_both.csv` 固定で、
+    #   ・2頁の煙試験が **65頁の走行の CSV を上書きした**(実際に失った)
+    #   ・隙間埋けを外した版も、全面の版の CSV を上書きする形だった
+    # 走行の種類が違うものを同じ名前に書かない。
+    tag = '_rawbeta' if a.raw_beta_standard else ''
+    if a.paired:
+        tag += '_paired'
+    if EXCLUDE:
+        tag += '_nogapfill'
+    if LIMIT:
+        tag += f'_limit{LIMIT}'
+
+    # ---- checkpoint (2026-10-26)。**長い走行の最後に落ちて全部失わないため。**
+    # それまでは**最後に一度だけ**書いていた。29時間の走行ではこれは取れない。
+    # 頁が1つ終わるたびに追記する。**列は最初の頁で決まる**ので、
+    # 後の頁が新しい列を出したら**警告して落とす**(黙って欠けさせない)。
+    ck = {}
+
+    def checkpoint(nm, rows):
+        if not rows:
+            return
+        path = f'{OUT}/{nm}_{ARMS}{tag}.csv'
+        if nm not in ck:
+            keys = sorted({k for r in rows for k in r})
+            fh = open(path, 'w', newline='', encoding='utf-8')
+            w = csv.DictWriter(fh, fieldnames=keys, extrasaction='ignore')
+            w.writeheader()
+            ck[nm] = (fh, w, set(keys), path, 0)
+        fh, w, keys, path, n = ck[nm]
+        extra = {k for r in rows for k in r} - keys
+        if extra:
+            print(f'**止める**: {nm} の列が頁の途中で増えた {sorted(extra)} —— '
+                  '**最初の頁で決まった見出しに無い列は黙って落ちる**', flush=True)
+            raise SystemExit(3)
+        for r in rows:
+            w.writerow(r)
+        fh.flush()
+        ck[nm] = (fh, w, keys, path, n + len(rows))
+
     comps, regs, pans, names = [], [], [], []
+    t0 = time.time()
     with Pool(4) as pool:
         for i, (c, r, p, nm) in enumerate(pool.imap_unordered(one_page, js), 1):
             comps += c; regs += r; pans += p; names += nm
-            if i % 10 == 0:
-                print(f'  {i}/{len(js)} 頁  成分 {len(comps)}', flush=True)
+            checkpoint('comps', c); checkpoint('regions', r); checkpoint('panels', p)
+            with open(f'{OUT}/names_{ARMS}{tag}.txt', 'a', encoding='utf-8') as fh:
+                for x in nm:
+                    fh.write(x + '\n')
+            el = time.time() - t0
+            print(f'  {i}/{len(js)} 頁  成分 {len(comps)}  '
+                  f'経過 {el / 60:.1f}分  1頁 {el / i / 60:.2f}分  '
+                  f'残り見積り {(len(js) - i) * el / i / 60:.0f}分', flush=True)
+    for nm_, v in ck.items():
+        v[0].close()
+        print(f'-> {v[3]}  行 {v[4]}  (**checkpoint で頁ごとに追記済み**)')
     # ---- KC30 データ経路: 面の通し番号が L19 と同じか (**除外の鍵が正しいことの点検**)
     if not a.limit:
         import json as _j
@@ -412,24 +464,7 @@ def main():
     #   ・2頁の煙試験が **65頁の走行の CSV を上書きした**(実際に失った)
     #   ・隙間埋けを外した版も、全面の版の CSV を上書きする形だった
     # 走行の種類が違うものを同じ名前に書かない。
-    tag = '_rawbeta' if a.raw_beta_standard else ''
-    if a.paired:
-        tag += '_paired'
-    if EXCLUDE:
-        tag += '_nogapfill'
-    if LIMIT:
-        tag += f'_limit{LIMIT}'
-    for nm, rows in (('comps', comps), ('regions', regs), ('panels', pans)):
-        if not rows:
-            continue
-        keys = sorted({k for r in rows for k in r})
-        path = f'{OUT}/{nm}_{ARMS}{tag}.csv'
-        with open(path, 'w', newline='', encoding='utf-8') as fh:
-            w = csv.DictWriter(fh, fieldnames=keys, extrasaction='ignore')
-            w.writeheader()
-            for r in rows:
-                w.writerow(r)
-        print(f'-> {path}  行 {len(rows)}')
+    # (CSV は上の checkpoint で既に書かれている)
 
     if ARMS == 'degen':
         print('\n' + '=' * 92)
