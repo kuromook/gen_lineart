@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 IN = Path('../lineart/inbox/m_request6a_layer_fields_315.csv')
-ANS = Path('labels/layer_kind_round1.jsonl')
+ANS = Path('labels/layer_kind.jsonl')   # **最終(第2走が第1走を上書き)**
 QUEUE = Path('results/m56_ui/queue.json')
 OUT = Path('results/m60_axis'); OUT.mkdir(parents=True, exist_ok=True)
 TARGET = '資料用の画像'
