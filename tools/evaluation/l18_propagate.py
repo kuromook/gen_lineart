@@ -642,9 +642,20 @@ def main():
                 ch1 = sum(per_r) / len(per_r)      # seed ごとの交差が違うので平均
                 ch0 = med(per_s)
                 floor = ch0 + 3 * r0p
+                # **本来の腕にも seed 間のばらつきが在る**(2026-10-26 の煙試験で
+                # 0.1396〜0.5602 = 幅 0.42 が出た)。交差が seed ごとに違うので
+                # **本来の腕の母集団も seed ごとに違う**。
+                # **対照の r0 だけを印字すると、本来の腕が1点のように見える。**
+                r0r = max(per_r) - min(per_r)
                 print(f'    **対応のある読み**: 本来 平均 {ch1:.4f} '
                       f'(seed ごとに母集団が違うので中央でなく平均)  '
+                      f'**本来の腕の幅 {min(per_r):.4f}〜{max(per_r):.4f} '
+                      f'= r0 {r0r:.4f}**  '
                       f'対照 中央 {ch0:.4f}  r0 {r0p:.4f}  床 {floor:.4f}')
+                if r0r >= abs(ch1 - ch0):
+                    print(f'      **本来の腕のばらつき {r0r:.4f} が '
+                          f'腕と対照の差 {abs(ch1-ch0):.4f} 以上** —— '
+                          f'この読みでは腕と対照を分けられない')
                 print(f'      A {ch1:.4f} >= 0.30 -> '
                       f'{"PASS" if ch1 >= 0.30 else "FAIL"}   '
                       f'B {"床の上" if ch1 >= floor else "床の下"}')
