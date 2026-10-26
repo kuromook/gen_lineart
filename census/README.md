@@ -82,3 +82,13 @@
 ./venv/bin/python tools/census/known_cell_supplier_table.py # 供給元の手書きの表と突き合わせ
 ./venv/bin/python tools/census/build_ui.py                  # 画面(集計の後。これも点検つき)
 ```
+
+**push の前にもう1本**(公開の門。`CLAUDE.md` §4):
+
+```bash
+./venv/bin/python tools/check_public_artifacts.py   # 追跡されている画像と重みが許可表に在るか
+```
+
+**この門は差分ではなく木を見る。** `census` の木には**基点由来の画像4枚と重み3つ**が在り、
+**どちらも許可表に在る**(ユーザーが承認した公開)。
+**重みの公開はユーザーの承認が要る**(2026-10-26 の指示)。**許可表に Claude は自分で足さない。**
