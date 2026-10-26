@@ -1124,6 +1124,23 @@ that had no way to know, and several were hit twice. **Two are unfixed bugs**
   one change loosened anything**, with coverage of the 488 non-folder layers
   on 38 pages at **100%** (226 delivered / 199 ordered / 33 paper / 30 shown
   empty / **0 uncovered**).
+  **And the foundation called a different population a wider one,
+  2026-10-27.** Relaying the 905-page table to Track L it wrote *the 0 on the
+  65 priority pages held in a wider population too* -- and **the two tables
+  share 8 pages**: 12% of L's 65, **0.9% of the 905**, verified here by
+  intersecting the two page lists. They are very nearly disjoint, so **the
+  905-page raster result does not re-confirm the 65-page one**; what exists is
+  **a second independent piece of evidence, which is the stronger thing to
+  have** and must not be counted as one result confirmed twice, since two
+  independent legs survive one of them collapsing. L's own framing:
+  *1本を2本と数えないほうが強い*. On the 8 shared pages the row counts match exactly once
+  folder rows are accounted for (109/80 against 80, 8/8, and so on), with **0
+  disagreements** -- so the join is clean and the coverage is 8.2% of L's
+  table. **The rule is the cheap one**: before writing that a result holds in
+  a wider population, **intersect the page lists and print the overlap**. This
+  is 曝露や母集団を広げるのも棒を動かすこと read backwards -- not widening a population to pass,
+  but **describing a sideways move as a widening**, which claims a
+  confirmation that was never computed.
 - **T61. A fill can be white, and an instrument that counts ink cannot see it.**
   Found 2026-10-23 by the extraction session while fixing the above. Its fill
   signature read `plane0`, which is **255 for a white fill exactly as it is for
