@@ -1,14 +1,14 @@
-format,cluster_size,n_clusters,measured_by,as_of
-clip,2,612,census track(sha256 の列から数えた),2026-10-26
-clip,3,260,census track(sha256 の列から数えた),2026-10-26
-clip,4,112,census track(sha256 の列から数えた),2026-10-26
-clip,6,1,census track(sha256 の列から数えた),2026-10-26
-lip,2,467,census track(sha256 の列から数えた),2026-10-26
-lip,3,115,census track(sha256 の列から数えた),2026-10-26
-lip,4,1,census track(sha256 の列から数えた),2026-10-26
-lip,63,1,census track(sha256 の列から数えた),2026-10-26
-both,2,1079,census track(sha256 の列から数えた),2026-10-26
-both,3,375,census track(sha256 の列から数えた),2026-10-26
-both,4,113,census track(sha256 の列から数えた),2026-10-26
-both,6,1,census track(sha256 の列から数えた),2026-10-26
-both,63,1,census track(sha256 の列から数えた),2026-10-26
+format,cluster_size,n_clusters,note,measured_by,as_of
+clip,2,612,,census track(sha256 の列から数えた),2026-10-26
+clip,3,260,,census track(sha256 の列から数えた),2026-10-26
+clip,4,112,,census track(sha256 の列から数えた),2026-10-26
+clip,6,1,,census track(sha256 の列から数えた),2026-10-26
+lip,2,467,,census track(sha256 の列から数えた),2026-10-26
+lip,3,115,,census track(sha256 の列から数えた),2026-10-26
+lip,4,1,,census track(sha256 の列から数えた),2026-10-26
+lip,63,1,**21頁 × 3か所。** 中身は**白紙の見開き**(9921×7016)で、プレビューはトンボだけ・暗い画素は 0%。層の木は揃っており**型紙だけの頁と読める**(抽出側)。**画素を全部描いて確かめてはいない。** **どれが元でどれが写しかは未定**,census track(sha256 の列から数えた),2026-10-26
+both,2,1079,,census track(sha256 の列から数えた),2026-10-26
+both,3,375,,census track(sha256 の列から数えた),2026-10-26
+both,4,113,,census track(sha256 の列から数えた),2026-10-26
+both,6,1,,census track(sha256 の列から数えた),2026-10-26
+both,63,1,同上(`.lip` の塊),census track(sha256 の列から数えた),2026-10-26

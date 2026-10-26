@@ -31,8 +31,38 @@ def load(path: str, drops):
     return rows
 
 
+# **数のすぐ横に置く述語。** 索引に置くと、数だけが流通する(2026-10-26)。
+# **`.lip` の 67.8% は綴じ方についての数で、形式についての数ではない** ——
+# これを隣に書かないと `.lip` が「複製の多い形式」として読まれる。
+# **固有名は書かない**(段 A は作品名を出さない)
+SHARE_PREDICATE = {
+    "lip": "**形式の性質ではない。** 双子 1,346 のうち **1,294(96%)は、"
+           "同じ中身が別の年のフォルダーに在る組** —— "
+           "**作品フォルダーが丸ごと2〜3の年フォルダーに置かれている**"
+           "(3つの作品で確認)。"
+           "作者の言明と一致する(この時期は運用が安定せず作業途中のコピーが残った)。"
+           "**欠陥ではなく仕事の仕方。** 測ったのは抽出側",
+    "clip": "",
+    "both": "**`.lip` の割合が引き上げている。** 形式ごとの行を見ること",
+}
+
+# 塊の大きさに付ける註。**不穏に読める数の横に、平凡な正体を置く**
+CLUSTER_NOTE = {
+    ("lip", 63): "**21頁 × 3か所。** 中身は**白紙の見開き**(9921×7016)で、"
+                 "プレビューはトンボだけ・暗い画素は 0%。"
+                 "層の木は揃っており**型紙だけの頁と読める**(抽出側)。"
+                 "**画素を全部描いて確かめてはいない。** "
+                 "**どれが元でどれが写しかは未定**",
+    ("both", 63): "同上(`.lip` の塊)",
+}
+
+
 def quantities(rows):
-    """形式ごと・全体の、**3つの別の量**と塊の大きさの分布。"""
+    """形式ごと・全体の、**3つの別の量**と塊の大きさの分布。
+
+    **`share` の隣に `predicate` を置く** —— 割合が何についての数かを、
+    索引ではなく**同じ行に**書く。
+    """
     out_q, out_s = [], []
     groups = [("clip", [r for r in rows if r["fmt"] == "clip"]),
               ("lip", [r for r in rows if r["fmt"] == "lip"]),
@@ -45,20 +75,21 @@ def quantities(rows):
         n_files, n_distinct = len(sel), len(counts)
         in_clusters = sum(clusters.values())
         share = f"{len(sel)} の {in_clusters / n_files * 100:.1f}%"
+        pred = SHARE_PREDICATE.get(label, "")
         out_q += [
             [label, "n_files", "ファイルの数", n_files, "",
-             "**異なり数とは別の量**"],
+             "**異なり数とは別の量**", ""],
             [label, "n_distinct", "異なり(sha256)", n_distinct, "",
-             "**ファイル数とは別の量**"],
+             "**ファイル数とは別の量**", ""],
             [label, "excess", "余り(ファイル − 異なり)", n_files - n_distinct, "",
-             "**手続きの結果。複製されたファイルの数ではない**"],
+             "**手続きの結果。複製されたファイルの数ではない**", ""],
             [label, "files_in_clusters", "双子を持つファイルの数", in_clusters, share,
-             "**余りでも塊の数でもない**"],
+             "**余りでも塊の数でもない**", pred],
             [label, "clusters", "塊の数", len(clusters), "",
-             "**ファイルの数ではない**"],
+             "**ファイルの数ではない**", pred],
         ]
         for size, n in sorted(collections.Counter(clusters.values()).items()):
-            out_s.append([label, size, n])
+            out_s.append([label, size, n, CLUSTER_NOTE.get((label, size), "")])
     return out_q, out_s
 
 

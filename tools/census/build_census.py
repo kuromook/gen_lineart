@@ -62,6 +62,26 @@ ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d")
 
+
+def pop(key: str) -> str:
+    """`population` の列に書く値は、**必ずここを通す。**
+
+    **同じ誤りを3回したなら、それは不注意ではなく器具の形である**(2026-10-26)——
+    `population` の列に述語の散文を書くのを、1日に3回やった(全数の表 / 重複の量 /
+    グラデ)。3回とも点検が commit の前に止め、直し方も3回同じだった。
+
+    **止める器具が在ったので費用は各回1行で済んだが、止まるのは走行の最後である。**
+    だから**書けなくする** —— 宣言していない鍵は、ここで即座に落ちる。
+
+    **述語は `populations.csv` に置く。** `population` の列は鍵だけを運ぶ。
+    """
+    if key not in ALLOWED_POPULATIONS:
+        raise SystemExit(
+            f"`population` の列に宣言外の値: {key!r}\n"
+            f"  **鍵を書くこと。述語は `populations.csv` に置く。**\n"
+            f"  宣言済みの鍵: {', '.join(ALLOWED_POPULATIONS)}")
+    return key
+
 # **直る予定のある列は、集計に固定しない**(基盤 2026-10-26)。
 # 「いま測れる」と「いま持つべき」は別。抑えた行は**数えて印字し、空欄で出す**(0 にしない)
 SUPPRESSED = {
@@ -308,25 +328,25 @@ def emit_full_population(outdir: str):
         ["bit", "meaning", "confidence", "evidence", "not_answers",
          "population", "measured_by", "as_of"],
         [[b["bit"], b["meaning"], b["confidence"], b["evidence"], b["not_answers"],
-          "db_all_layers", fp.SUPPLIER, fp.AS_OF] for b in fp.BITS])
+          pop("db_all_layers"), fp.SUPPLIER, fp.AS_OF] for b in fp.BITS])
     written["layer_type_values.csv"] = write_csv(
         os.path.join(outdir, "layer_type_values.csv"),
         ["layer_type", "bits", "is_folder", "n_layers", "content",
          "population", "measured_by", "as_of"],
         [[v["layer_type"], v["bits"], v["is_folder"], v["n_layers"], v["content"],
-          "db_all_layers", fp.SUPPLIER, fp.AS_OF] for v in fp.VALUES])
+          pop("db_all_layers"), fp.SUPPLIER, fp.AS_OF] for v in fp.VALUES])
     written["mask_by_kind.csv"] = write_csv(
         os.path.join(outdir, "mask_by_kind.csv"),
         ["is_folder", "has_frame_line", "layer_type_and_2", "has_mask", "n_layers",
          "population", "measured_by", "as_of"],
         [[m["is_folder"], m["has_frame_line"], m["layer_type_and_2"], m["has_mask"],
-          m["n_layers"], "db_all_layers", fp.SUPPLIER, fp.AS_OF]
+          m["n_layers"], pop("db_all_layers"), fp.SUPPLIER, fp.AS_OF]
          for m in fp.MASK_BY_KIND])
 
     written["visibility_exceptions.csv"] = write_csv(
         os.path.join(outdir, "visibility_exceptions.csv"),
         ["population", "direction", "n_layers", "detail", "measured_by", "as_of"],
-        [[v["population"], v["direction"], v["n_layers"], v["detail"],
+        [[pop(v["population"]), v["direction"], v["n_layers"], v["detail"],
           v["measured_by"], v["as_of"]] for v in fp.VISIBILITY_EXCEPTIONS])
     return written
 
@@ -353,18 +373,18 @@ def emit_duplicates(outdir: str, hash_rows, grad):
     q, sizes = hashes.quantities(hash_rows)
     written["duplicate_quantities.csv"] = write_csv(
         os.path.join(outdir, "duplicate_quantities.csv"),
-        ["format", "quantity", "label", "n", "share", "not_what",
+        ["format", "quantity", "label", "n", "share", "not_what", "predicate",
          "measured_by", "as_of"],
         [r + ["census track(sha256 の列から数えた)", fp.AS_OF] for r in q])
     written["cluster_sizes.csv"] = write_csv(
         os.path.join(outdir, "cluster_sizes.csv"),
-        ["format", "cluster_size", "n_clusters", "measured_by", "as_of"],
+        ["format", "cluster_size", "n_clusters", "note", "measured_by", "as_of"],
         [r + ["census track(sha256 の列から数えた)", fp.AS_OF] for r in sizes])
     grad_rows, n_layers, both_cover, moved = grad
     written["grad_v1_v2_by_layer.csv"] = write_csv(
         os.path.join(outdir, "grad_v1_v2_by_layer.csv"),
         ["category", "n_layers", "population", "measured_by", "as_of"],
-        [r + ["grad_v1_v2",
+        [r + [pop("grad_v1_v2"),
               "census track(供給元の対応表から数え直した)", fp.AS_OF]
          for r in grad_rows])
     return written
@@ -620,6 +640,39 @@ PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "label", "what", "not_what", "share", "category")
 
 
+def check_column_classes() -> None:
+    """**1つの列名が2つの種類に宣言されていないか。走行の最初に落ちる。**
+
+    **同じ誤りを2回したなら、それは器具の形である**(2026-10-26)——
+    `kind` を「出所の種類」と「層の種類」に、`content` を「same/different」と
+    「中身の説明」に使い、**2回とも点検の最後で鳴った。**
+    どちらも直し方は同じ(片方を改名する)。
+
+    **列の種類ごとの点検は、1つの列名が1つの量を指すことに依っている。**
+    2つを指すと、片方の規則がもう片方に当たる。だから**宣言の段で落とす。**
+    """
+    classes = {"件数": METRIC_COLS, "実測値": VALUE_COLS,
+               "次元": DIM_COLS, "散文": PROSE_COLS}
+    seen = {}
+    clash, dup = [], []
+    for label, cols in classes.items():
+        for c in cols:
+            if c in seen:
+                (dup if seen[c] == label else clash).append((c, seen[c], label))
+            seen[c] = label
+    # **同じ種類に2回は衝突ではない**(無害な重複)。言い分けないと、
+    # 点検が自分の指摘の意味を取り違える(2026-10-26 に実際そうなった)
+    if dup:
+        print("  [列の宣言が重複] " + " / ".join(f"{c!r}(「{a}」に2回)"
+                                                 for c, a, _ in dup))
+    if clash:
+        lines = "\n".join(f"  列 {c!r} が「{a}」と「{b}」の両方に宣言されている"
+                           for c, a, b in clash)
+        raise SystemExit(
+            f"**列名が2つの種類に宣言されている**\n{lines}\n"
+            "  **片方を改名すること。** 1つの列名は1つの量を指す")
+
+
 def audit_public(outdir: str, vocab, verbose: bool = True):
     """`census/` の**全ファイルの全セル**を読み返し、固有名を含む数を印字する。
 
@@ -749,31 +802,31 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
               "measured_by", "as_of", "needs", "caveat"]
     rows = []
     for s in sources.SUPPLIER_REPORTED:
-        rows.append([s["key"], s["predicate"],
+        rows.append([pop(s["key"]), s["predicate"],
                      s["n_pages"] if s["n_pages"] is not None else "",
                      "", s["n_layers"] if s["n_layers"] is not None else "",
                      s["measured_by"], s["as_of"], s["needs"], s["caveat"]])
-    rows.append(["req3_layer_kind",
+    rows.append([pop("req3_layer_kind"),
                  "依頼3の872頁の**フォルダー以外の全層**",
                  len(req3_pages), "", len(req3_rows),
                  f"census track({as_of} にこの CSV を数えた)", as_of,
                  "異なり数(`file_hashes` が無いので測れない)",
                  "**供給元の集計と一致しても独立な確認ではない**(同じ配列。T132)"])
-    rows.append(["db_all_layers",
+    rows.append([pop("db_all_layers"),
                  f"構造 DB の全数 —— {fp.N_PAGES} 頁 / {fp.N_LAYERS} 層"
                  "(`.clip` + `.lip`。値の種類と振る舞いは同じ)",
                  fp.N_PAGES, "", fp.N_LAYERS, fp.SUPPLIER, fp.AS_OF,
                  "なし(`layer_type` のビットと値の表は受領済み)",
                  "**ここでは測れない**(DB が手元に無い)。"
                  "合うのは**こちらの転記と供給元の足し算**だけ"])
-    rows.append(["grad_v1_v2",
+    rows.append([pop("grad_v1_v2"),
                  "グラデの v1/v2 を**層を鍵に**突き合わせた 258層",
                  "", "", 258,
                  f"census track({as_of} に供給元の対応表から数え直した)", as_of,
                  "なし(対応表が来た)",
                  "**名前を鍵にすると 152枚が「違う」と出る** —— "
                  "`_grad{N}` の `N` は頁の中の順番で、v2 で103層が加わって後ろにずれた"])
-    rows.append(["delivery_png",
+    rows.append([pop("delivery_png"),
                  "`data/incoming_manuscript/` に届いた PNG(**13の納品**)",
                  "", "", "",
                  f"census track({as_of} に納品の木を歩いた)", as_of,
@@ -781,7 +834,7 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                  "**単位は PNG の枚数で、層の数ではない。** "
                  "何が1枚かが納品ごとに違う(mask だけ / 本体だけ / 両方)。"
                  "**同名で中身が違う PNG が 256枚**在る"])
-    rows.append(["body_initcolor",
+    rows.append([pop("body_initcolor"),
                  "トーン・グラデ・ベタの本体の `InitColor`(1層1行)",
                  "", "", 2095, "census track(2026-10-26 に行から数え直した)",
                  fp.AS_OF,
@@ -789,9 +842,9 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                  "**要約の転記ではない** —— `raster_cover = 0.0` の 132層が"
                  "96(init 255)+ 36(init 0)に分かれることを行から数え直した"])
     for a in sources.ABSENT:
-        rows.append([a["key"], a["predicate"], a["n_pages"], "", "",
+        rows.append([pop(a["key"]), a["predicate"], a["n_pages"], "", "",
                      a["measured_by"], a["as_of"], a["needs"], a["caveat"]])
-    rows.append(["added33_structure",
+    rows.append([pop("added33_structure"),
                  "後から入った33頁の構造。**層数はフォルダーを含む**",
                  len(a33_rows), "", "",
                  f"census track({as_of} にこの CSV を数えた)", as_of,
@@ -870,6 +923,7 @@ def main() -> int:
     args = ap.parse_args()
     as_of = today()
 
+    check_column_classes()
     print(f"原稿の国勢調査 —— 走行 {as_of}")
     print(f"  公開(段 A): {args.public_out}/   全量(段 C): {args.full_out}/")
 
