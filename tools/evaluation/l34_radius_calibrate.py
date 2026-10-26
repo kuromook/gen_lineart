@@ -12,7 +12,9 @@
 
   **R1(継承した役割)** 筆の線と塗った面を分ける。
       材料は **納品 beta 496層(作者の側のベタ)** 対
-      **`線画` を名前に持つ納品 beta 以外の層**。
+      **`線画` を名前に持ち、納品 beta でなく、`drawn_ratio > 0` の層 1,509層**
+      (`drawn_ratio > 0` は 2026-10-26 に**登録が言い落としていた条件**として書き足した。
+      棒は動かしていない —— 名前は材質を決めないし、**存在も決めない**)。
       量は `form_keep = |fill_mask(ink, r)| / |ink|`。
       **`keep4` による fill/line の分類は使わない** —— 半径4で定義されていて循環する
   **R2(L31 の (C) の役割)** opening が生の墨の連結を切らない。
@@ -95,9 +97,21 @@ def materials():
             cut['フォルダー行・未描画'] += 1
             continue
         k = (r['page_id'], r['layer_id'])
+        dr = r['drawn_ratio'].strip()
+        dr = float(dr) if dr else None
         if k in beta:
             arm = 'beta'
         elif '線画' in r['name']:
+            if dr is None or dr <= 0:
+                # **登録が言い落としていた条件**(2026-10-26、基盤の訂正)。
+                # 層 PNG の発注は**フォルダー以外の全層・`layer_type` を問わず**だが
+                # **`drawn_ratio = 0` の層は除く**(抽出側の答)。突き合わせは例外ゼロ:
+                # `drawn_ratio>0` 2,963行 PNG 無し0 / `=0` 2,581行 PNG 有り0。
+                # **つまり不在は納品の欠陥ではなく、発注の範囲である。**
+                # そして**この173行は墨を持たない** —— 抽出側の台帳の `ink_px` が
+                # 2,581行すべてで 0(例外0。点検は空でない)。
+                cut['腕 line: `drawn_ratio = 0`(発注の範囲外。墨を持たない)'] += 1
+                continue
             arm = 'line'
         else:
             cut['どちらの腕でもない'] += 1
@@ -159,23 +173,21 @@ def report_drops(recs, good):
         print(f'  腕 {arm:5s} 登録の母集団 {tot:5d} -> 残った {kept:5d} '
               f'= **{kept / tot:.4f}**'
               + ('' if kept == tot else '  **← この腕の中央はこの上で計算される**'))
-    print('  (在庫表のどの列でも欠けた層と在る層を区別できない —— '
-          '**偏りの向きが分からない**。基盤が全列で突き合わせた)')
+    print('  (**腕別に数えるのは、落としたものが腕の片側の母集団だけを変えるから**'
+          ' —— T112 の形。2026-10-26 に腕 line だけから173層が落ちていた)')
+    print('  (**その173層は在庫表自身の `drawn_ratio = 0` で見分けられる。**'
+          ' 最初は「在庫表のどの列でも区別できない」と書いたが、**それは誤り**'
+          ' —— 20列目がまさにその列で、いまは腕の定義に入っている)')
     return drops
 
 
-def worst_case_line(recs, good, pick):
-    """**欠落が最も不利に働く読み**: 欠けた line 層の `form_keep` を **1** と置く。
-    **棒は動かさない**(T112)—— 判定が欠落に依存するかどうかだけを見る。"""
-    kept = sorted(x[f'keep{pick}'] for x in good if x['arm'] == 'line')
-    miss = sum(1 for r in recs if r['arm'] == 'line' and r['drop'])
-    if not kept or not miss:
-        return None
-    allv = kept + [1.0] * miss
-    allv.sort()
-    n = len(allv)
-    med = allv[n // 2] if n % 2 else (allv[n // 2 - 1] + allv[n // 2]) / 2
-    return len(kept), miss, float(np.median(kept)), med
+# **撤回**: 「欠けた173層の `form_keep` を 1 と置く最も不利な読み」は
+# 2026-10-26 に基盤が出し、同日に基盤自身が撤回した。**墨の無い層に 1 を置くのは
+# 使える修理の中で最も間違っている** —— そして173行は `drawn_ratio = 0` で
+# **実際に墨を持たない**(抽出側の台帳の `ink_px` が 0、例外0)。
+# **腕の実効母集団は 173 が在っても無くても 1,509 で同じ**なので、
+# 最悪の読みは「在りえない事象の下での判定」になる。登録の母集団の定義を
+# 直すのが正しい修理で、それは上の `drawn_ratio > 0` である。
 
 
 def main():
@@ -248,16 +260,6 @@ def main():
             if b is not None and l is not None:
                 flag = 'OK' if (b >= BETA_MIN and l <= LINE_MAX) else '**この世代では棒を外す**'
                 print(f'       世代 {w}: beta {b:.4f} / line {l:.4f}  {flag}')
-        wc = worst_case_line(recs, good, pick)
-        if wc:
-            nk, nm, m_kept, m_worst = wc
-            print(f'       **欠落が最も不利に働く読み** (欠けた line {nm} 層の '
-                  f'`form_keep` を 1 と置く):')
-            print(f'         line 中央 {m_kept:.4f} ({nk} 層の上) -> '
-                  f'**{m_worst:.4f}** ({nk + nm} 層の上)  '
-                  f'棒 <= {LINE_MAX} を '
-                  f'**{"満たしたまま -> 判定は堅い" if m_worst <= LINE_MAX else "外す -> **判定保留**"}**')
-            print('         (**棒は動かしていない。** 判定が欠落に依存するかだけを見た)')
         if pick == 4:
             print('       (**借りた 4 がそのまま残った場合でも、'
                   'それは「引き直して同じだった」であって「未較正のまま」ではない**)')
