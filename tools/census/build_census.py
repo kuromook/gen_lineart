@@ -440,6 +440,78 @@ def emit_duplicates(outdir: str, hash_rows, grad):
     return written
 
 
+# **`populations.csv` に直に書く行の `needs` と、その満たされ方。**
+# **散文を語で当てない** —— 2026-10-26 に「`needs` に『層数』と在って `n_layers` が
+# 埋まっていれば古い」という当て方をして、**`db_layers` で偽陽性を出した**
+# (あの `needs` は「値が無い」ではなく「**同じ走行で取り直したい**」だった)。
+# **点検の文言は発火した条件から導く**(T134 (h))—— だから条件を宣言で持つ。
+#
+#   ("column", <列>)  その列が埋まれば満たされる
+#   ("source", <鍵>)  その材料が届けば満たされる
+#   None              **この行の needs は、値が埋まっても満たされない**(取り直しの依頼)
+INLINE_NEEDS = {
+    # **依頼した材料は、必ずここに行として在る** ——
+    # 2026-10-26 に `blocks`/`stored` を依頼したのに `needs` に行が無く、
+    # **`canvas_unit` は `needs` に在るのに依頼に入れていなかった** ——
+    # **依頼と表が両方向にずれた。** 表が依頼の正本である
+    "req3_layer_kind": ("`body_init` / `body_blocks` / `body_stored`"
+                        "(872頁の層。**被覆が下限の層が何層かを計数できる**)",
+                        ("source", "req3_body_blocks")),
+    "added33_structure": ("`canvas_unit` と `v_canvas_px_w/h`"
+                          "(行ごとの単位が決められない。T126)",
+                          ("source", "canvas_px")),
+    "db_all_layers": ("", None),
+    "grad_v1_v2": ("", None),
+    "delivery_png": ("", None),
+    "body_initcolor": ("", None),
+}
+
+
+def audit_inline_needs(outdir: str) -> int:
+    """**`populations.csv` に直に書いた行の `needs` も見る。**
+
+    `sources.audit_needs()` は宣言した行(`SUPPLIER_REPORTED` / `ABSENT`)しか見ない。
+    **`write_populations` が直に書く行は、その外に在った** ——
+    2026-10-26 に `req3_layer_kind` の `needs` が
+    「異なり数は `file_hashes` が無いので測れない」と残ったまま、
+    **その sha256 は既に届いていた。**
+    **点検の覆いが、守ると宣言した範囲より狭かった**(T134 (d) の再来)。
+
+    **届かないもの**: `INLINE_NEEDS` に宣言していない行 /
+    **材料が届いてもその問いに答えていない場合**(鍵が在ることと答えが在ることは別)。
+    """
+    have = {x["key"] for x in sources.LOCAL_CSV}
+    with open(os.path.join(outdir, "populations.csv"), encoding="utf-8") as fh:
+        rows = {r["population"]: r for r in csv.DictReader(fh)}
+    bad = []
+    print("  [`populations.csv` に直書きした行の `needs` の点検]")
+    for key, (needs, cond) in sorted(INLINE_NEEDS.items()):
+        r = rows.get(key)
+        if r is None:
+            bad.append((key, "行が無い", needs))
+            continue
+        written = r["needs"].strip()
+        if cond is None:
+            state = "満たされ方を宣言していない(取り直しの依頼など)"
+            ok = True
+        elif cond[0] == "column":
+            filled = bool(r[cond[1]].strip())
+            state = f"{cond[1]} は{'埋まっている' if filled else '空'}"
+            ok = (not written) if filled else bool(written)
+        else:
+            arrived = cond[1] in have
+            state = f"材料 {cond[1]} は{'在る' if arrived else '未着'}"
+            ok = (not written) if arrived else bool(written)
+        if not ok:
+            bad.append((key, state, written))
+        print(f"    {key:20s} {state:40s} needs={'空' if not written else '有り'}"
+              f"  {'' if ok else '**食い違い**'}")
+    for key, state, written in bad:
+        print(f"    **{key}: {state} なのに needs が"
+              f"{'残っている' if written else '空'}**")
+    return 1 if bad else 0
+
+
 def check_full_population_totals() -> int:
     """供給元の2つの表が、どちらも宣言した全数に合うか。
 
@@ -854,7 +926,19 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
 
 # ------------------------------------------------------------------ 据え置きの表
 
-def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
+def distinct_pages(pages, sha_by_path) -> tuple:
+    """その母集団の**異なり頁数**。**ファイル数とは別の量**(T96 の形)。
+
+    全 9,653 の sha256 が届いたので、**手元の母集団についても測れる** ——
+    それまで `n_distinct_pages` は全行空欄で、`needs` に「測れない」と書いてあった。
+    """
+    have = [p for p in pages if p in sha_by_path]
+    missing = len(pages) - len(have)
+    return len(set(sha_by_path[p] for p in have)), missing
+
+
+def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str,
+                      sha_by_path=None):
     """**数の隣に母集団(述語)を書く。** 測った者の名も書く(T132)。"""
     header = ["population", "predicate", "n_pages", "n_distinct_pages", "n_layers",
               "measured_by", "as_of", "needs", "caveat"]
@@ -864,39 +948,48 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                      s["n_pages"] if s["n_pages"] is not None else "",
                      "", s["n_layers"] if s["n_layers"] is not None else "",
                      s["measured_by"], s["as_of"], s["needs"], s["caveat"]])
+    sha_by_path = sha_by_path or {}
+    d_req3, miss_req3 = distinct_pages(list(req3_pages), sha_by_path)
+    d_a33, miss_a33 = distinct_pages([r["page_path"] for r in a33_rows], sha_by_path)
     rows.append([pop("req3_layer_kind"),
                  "依頼3の872頁の**フォルダー以外の全層**",
-                 len(req3_pages), "", len(req3_rows),
-                 f"census track({as_of} にこの CSV を数えた)", as_of,
-                 "異なり数(`file_hashes` が無いので測れない)",
-                 "**供給元の集計と一致しても独立な確認ではない**(同じ配列。T132)"])
+                 len(req3_pages), d_req3 or "", len(req3_rows),
+                 f"census track({as_of} にこの CSV を数えた"
+                 f"。異なりは sha256 の列から)", as_of,
+                 INLINE_NEEDS["req3_layer_kind"][0],
+                 "**供給元の集計と一致しても独立な確認ではない**(同じ配列。T132)。"
+                 f"**872頁のうち異なりは {d_req3}** —— "
+                 f"**{len(req3_pages) - d_req3}頁は同じ中身の重複**で、"
+                 "**層の数はファイル基準なのでその分膨らんでいる**"
+                 + (f"。**sha256 が無い頁 {miss_req3}**" if miss_req3 else "")])
     rows.append([pop("db_all_layers"),
                  f"構造 DB の全数 —— {fp.N_PAGES} 頁 / {fp.N_LAYERS} 層"
                  "(`.clip` + `.lip`。値の種類と振る舞いは同じ)",
                  fp.N_PAGES, "", fp.N_LAYERS, fp.SUPPLIER, fp.AS_OF,
-                 "なし(`layer_type` のビットと値の表は受領済み)",
+                 "",
+                 "`layer_type` のビットと値の表は受領済み。"
                  "**ここでは測れない**(DB が手元に無い)。"
                  "合うのは**こちらの転記と供給元の足し算**だけ"])
     rows.append([pop("grad_v1_v2"),
                  "グラデの v1/v2 を**層を鍵に**突き合わせた 258層",
                  "", "", 258,
                  f"census track({as_of} に供給元の対応表から数え直した)", as_of,
-                 "なし(対応表が来た)",
-                 "**名前を鍵にすると 152枚が「違う」と出る** —— "
+                 "",
+                 "対応表は受領済み。**名前を鍵にすると 152枚が「違う」と出る** —— "
                  "`_grad{N}` の `N` は頁の中の順番で、v2 で103層が加わって後ろにずれた"])
     rows.append([pop("delivery_png"),
                  "`data/incoming_manuscript/` に届いた PNG(**13の納品**)",
                  "", "", "",
                  f"census track({as_of} に納品の木を歩いた)", as_of,
-                 "なし(`data/` は手元に在る)",
-                 "**単位は PNG の枚数で、層の数ではない。** "
+                 "",
+                 "`data/` は手元に在る。**単位は PNG の枚数で、層の数ではない。** "
                  "何が1枚かが納品ごとに違う(mask だけ / 本体だけ / 両方)。"
                  "**同名で中身が違う PNG が 256枚**在る"])
     rows.append([pop("body_initcolor"),
                  "トーン・グラデ・ベタの本体の `InitColor`(1層1行)",
                  "", "", 2095, "census track(2026-10-26 に行から数え直した)",
                  fp.AS_OF,
-                 "なし",
+                 "",
                  "**要約の転記ではない** —— `raster_cover = 0.0` の 132層が"
                  "96(init 255)+ 36(init 0)に分かれることを行から数え直した"])
     for a in sources.ABSENT:
@@ -904,9 +997,9 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str):
                      a["measured_by"], a["as_of"], a["needs"], a["caveat"]])
     rows.append([pop("added33_structure"),
                  "後から入った33頁の構造。**層数はフォルダーを含む**",
-                 len(a33_rows), "", "",
+                 len(a33_rows), d_a33 or "", "",
                  f"census track({as_of} にこの CSV を数えた)", as_of,
-                 "`canvas_unit` と `v_canvas_px_w/h`(行ごとの単位が決められない。T126)",
+                 INLINE_NEEDS["added33_structure"][0],
                  "**依頼3の層数と比べない**(述語が違う)"])
     return write_csv(os.path.join(outdir, "populations.csv"), header, rows)
 
@@ -1059,8 +1152,9 @@ def main() -> int:
     pub["canvas_declared.csv"] = emit_canvas(args.public_out, a33_rows)
     pub.update(emit_full_population(args.public_out))
     pub["body_initcolor.csv"] = emit_initcolor(args.public_out, ic_rows, False)
+    sha_by_path = {r["page_path"]: r["sha"] for r in hash_rows}
     pub["populations.csv"] = write_populations(args.public_out, req3_rows, req3_pages,
-                                               a33_rows, as_of)
+                                               a33_rows, as_of, sha_by_path)
     pub["provenance.csv"] = write_provenance(args.public_out, as_of)
     pub["caveats.csv"] = write_caveats(args.public_out)
     for name, n in sorted(pub.items()):
@@ -1086,6 +1180,7 @@ def main() -> int:
 
     rc_cons |= check_full_population_totals()
     rc_cons |= sources.audit_needs()
+    rc_cons |= audit_inline_needs(args.public_out)
     vocab = private_vocabulary(req3_pages, a33_rows)
     rc, _hits = audit_public(args.public_out, vocab)
     if rc:
