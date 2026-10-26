@@ -22,7 +22,7 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_known_cells import A
 from l15_known_cells import boundary
-from l17_known_cells import (D1, assign_top, beta_fill_layers, gated_layers, jobs,
+from l17_known_cells import (D1, arms, assign_top, beta_fill_layers, gated_layers, jobs,
                              panels_and_regions,
                              place, SEEDS, TRIES, zmap)
 from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full,
@@ -351,7 +351,12 @@ def main():
         print('  **主値は登録のまま**(各腕の現在の面集合の上の `cov_honest`)。'
               '**対応のある読みは棒ではない**(登録 §3)', flush=True)
     os.makedirs(OUT, exist_ok=True)
-    zz = zmap(); fill, line = gated_layers()
+    # **T131**(2026-10-26): 腕と標準の決め方を `arms(kind)` 1か所に寄せた。
+    # それまでは `gated_layers()` が素の集合を返し、**289層の除去が下の
+    # `--raw-beta-standard` の枝の中に在った** —— **どの走行がどちらの集合を
+    # 使ったかが、呼び出し行を読まないと分からなかった**(同じ数を2度取り違えた)。
+    zz = zmap()
+    fill, line = arms('beta_standard' if a.raw_beta_standard else 'gated')
     if a.raw_beta_standard:
         global STANDARD
         STANDARD = 'cover'
@@ -368,21 +373,8 @@ def main():
         print('  **道1は道2の代わりにならない** —— これが答えるのは'
               '「作者のベタ層はどんな形をしているか」で、'
               '**「作者が面と呼ぶものは何か」には答えない**(登録 §6)', flush=True)
-        fill = beta_fill_layers()
-        # **漏れを塞ぐ**: 標準を作る層が腕の入力にも居ると、腕は**面を定義している
-        # その層から面を予測する**ことになる(2026-10-26 に KC41' が落ちて気付いた)。
-        # こちらの分類では **289層**が「作者の納品 beta なのに line 側」に居た ——
-        # 標準を納品 beta に替えると、その289層は**両側に居る**。
-        bset = {(k, lid) for k, v in fill.items() for lid, _ in v}
-        n_before = sum(len(v) for v in line.values())
-        line = {k: [(lid, pth) for lid, pth in v if (k, lid) not in bset]
-                for k, v in line.items()}
-        line = {k: v for k, v in line.items() if v}
-        n_after = sum(len(v) for v in line.values())
-        print(f'  **両側に居た層を腕から外した**: 語を出す層 {n_before} -> {n_after} '
-              f'(**{n_before - n_after} 層が標準の側に移った**)', flush=True)
-        print('  **だから L35 の腕は L18 の腕と同じものではない。'
-              '腕の母集団が変わっている** —— 登録の追補に書いた', flush=True)
+        # **標準の差し替えと289層の除去は `arms('beta_standard')` が済ませている**
+        # (T131。上の呼び出し行を見よ)。**ここで二度やらない。**
     js = jobs(zz, fill, line)
     if a.limit:
         js = js[:a.limit]
@@ -429,6 +421,12 @@ def main():
         ck[nm] = (fh, w, keys, path, n + len(rows))
 
     comps, regs, pans, names = [], [], [], []
+    # **走行の頭で切り詰める**(2026-10-26、T131 の再現確認で出た)。
+    # CSV は `checkpoint()` が最初の頁で `'w'` で開くので置き換わるのに、
+    # **名前のファイルだけ `'a'` で追記し続けていた** —— 同じ引数で2度走らせると
+    # **中身が静かに2倍になる**(CSV は正しいので気付かない)。
+    # **同じ走行の出力なのに、ファイルによって「1回ぶん」の意味が違っていた。**
+    open(f'{OUT}/names_{ARMS}{tag}.txt', 'w', encoding='utf-8').close()
     t0 = time.time()
     with Pool(4) as pool:
         for i, (c, r, p, nm) in enumerate(pool.imap_unordered(one_page, js), 1):

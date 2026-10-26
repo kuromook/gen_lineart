@@ -15,7 +15,9 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import comps, gated_layers, A
+from l14_known_cells import (BASE, COV_MAX, DARK_MIN, DROP_TOP, INV, KEEP4,
+                            KEEP4_FILL, comps, gated_layers, topf, A)
+from pid_work import work_of  # **既定値に落とさない**(T104 の族)
 from l14_arms import acc_add
 from l15_known_cells import boundary
 
@@ -389,3 +391,130 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# ---------------------------------------------------------------- T131
+def _select():
+    """`gated_layers()` と**同じ門**を、**落としを理由別に数えながら**通す。
+
+    **`gated_layers()` は書き換えない。** こちらは数えるためだけに在る複製で、
+    **両者が同じ集合を返すことを `kc_arms()` が画素ではなく鍵で確かめる。**
+
+    なぜ複製するか: `gated_layers()` は**何を落としたか印字しない。**
+    2026-10-26 に、**`cov >= 0.95` の門が 7,362行で1度も発火していない**ことを
+    手で数えて初めて見つけた —— **発火しない門は、守っているように見えて何も守らない**
+    (T134 (k))。**規律9 を器具の中の `continue` に当てる、の実装である。**
+    """
+    k4 = {(r['page_id'], r['layer_id']): r for r in csv.DictReader(open(KEEP4))}
+    fill, line = {}, {}
+    cut = {}
+
+    def drop(why):
+        cut[why] = cut.get(why, 0) + 1
+
+    for r in csv.DictReader(open(INV, encoding='utf-8-sig')):
+        if r['folder'] != 'False' or r['rendered'] != 'True':
+            drop('folder か rendered でない'); continue
+        try:
+            if float(r['drawn_ratio']) <= 0:
+                drop('drawn_ratio <= 0(= 層 PNG が無い。発注の範囲外)'); continue
+        except (TypeError, ValueError):
+            drop('drawn_ratio が読めない'); continue
+        pd = r['preview_dark'].strip()
+        if pd == '':
+            drop('preview_dark が空'); continue
+        if float(pd) < DARK_MIN:
+            # **下限の向きの閾**だが、2026-10-26 に曝露を測って **0**
+            # (`body_init 255 かつ一部保存` が優先65頁に 0層)
+            drop(f'preview_dark < {DARK_MIN}'); continue
+        kk = k4.get((r['page_id'], r['layer_id']))
+        if kk is None:
+            drop('keep4 に無い'); continue
+        if float(kk['cov']) >= COV_MAX:
+            drop(f'cov >= {COV_MAX}(全面)'); continue
+        if topf(r['ancestors']) in DROP_TOP:
+            drop(f'最上位フォルダーが {DROP_TOP}'); continue
+        pid = r['page_id']
+        w = work_of(pid, r.get('page_path'))
+        pth = f'{BASE}/{w}/all_layers/{pid}_L{r["layer_id"]}.png'
+        d = fill if float(kk['keep4']) >= KEEP4_FILL else line
+        d.setdefault((pid, w), []).append((int(r['layer_id']), pth))
+    return fill, line, cut
+
+
+def arms(kind):
+    """腕と標準を**1か所で**決める。**`kind` に既定値を置かない**(T104)。
+
+    2026-10-26 に同じ数を2度取り違えた。機序は**「腕」が2か所で定義されていた**こと:
+
+      `gated_layers()`          fill 300 / line 1,681            <- 器具の中
+      `l18_propagate.py:355`    `--raw-beta-standard` の枝の中で
+                                289層を腕から外す -> line 1,392   <- 呼ぶ側
+
+    **呼び出し行を読まないと、どの走行がどちらの集合を使ったか分からなかった。**
+
+    `kind`:
+      `'gated'`         門だけを通した集合。**既定の標準**(L18 / L36 / L37 …)。
+                        **fill と line は `keep4` の閾で二分するので交わらない。**
+                        **「漏れが無い」のはこの二分の性質で、「素である」ことの性質ではない。**
+      `'beta_standard'` 標準を**作者の納品 beta** に替える(L35 の道1)。
+                        **標準の層が腕の側にも居るので、両側の層を腕から外す。**
+
+    **名前は「どちらが正しいか」を含意させない** —— `'raw'` / `'scored'` は含意していた。
+    **何をしたかを名前にする。**
+    """
+    if kind not in ('gated', 'beta_standard'):
+        raise ValueError(f"kind は 'gated' か 'beta_standard'。既定値は置かない: {kind!r}")
+    fill, line, cut = _select()
+    nf, nl = sum(len(v) for v in fill.values()), sum(len(v) for v in line.values())
+    print(f'arms(kind={kind!r})  門を通した 標準 {nf} / 腕 {nl}')
+    for k, v in sorted(cut.items(), key=lambda t: -t[1]):
+        print(f'  落とした {v:5d}  {k}')
+    # **発火しなかった門も印字する**(T134 (k)。0 を黙らせない)
+    for why in (f'cov >= {COV_MAX}(全面)', f'preview_dark < {DARK_MIN}',
+                'preview_dark が空', 'keep4 に無い', f'最上位フォルダーが {DROP_TOP}'):
+        if why not in cut:
+            print(f'  落とした     0  {why}  (**この門は1度も発火していない**)')
+    if kind == 'gated':
+        both = {(k, lid) for k, v in fill.items() for lid, _ in v} &                {(k, lid) for k, v in line.items() for lid, _ in v}
+        print(f'  標準と腕の交差 {len(both)}  '
+              f'(**`keep4` の二分なので 0 のはず。0 でなければ読まない**)')
+        return fill, line
+    bfill = beta_fill_layers()
+    bset = {(k, lid) for k, v in bfill.items() for lid, _ in v}
+    n_before = sum(len(v) for v in line.values())
+    line = {k: [(lid, p) for lid, p in v if (k, lid) not in bset] for k, v in line.items()}
+    line = {k: v for k, v in line.items() if v}
+    n_after = sum(len(v) for v in line.values())
+    print(f'  **両側に居た層を腕から外した**: 腕 {n_before} -> {n_after} '
+          f'(**{n_before - n_after} 層が標準の側に移った**)')
+    print('  **だから beta_standard の腕は gated の腕と同じものではない。母集団が違う**')
+    return bfill, line
+
+
+def kc_arms():
+    """**KC57**: `arms('gated')` が `gated_layers()` と**鍵まで一致**すること。
+
+    **T131 の refactor の安全綱である** —— 置き換えが集合を変えていないことを、
+    **呼び手を1本も移す前に**確かめる(KC53 と同じ形を、関数の水準で)。
+    """
+    f1, l1 = gated_layers()
+    f2, l2 = arms('gated')
+
+    # **鍵だけでなくパスまで比べる**(2026-10-26 に強めた)。
+    # 鍵だけの比較では、**同じ層を違うファイルから読んでいても PASS する。**
+    # 呼び手は `(lid, path)` の組を使うので、**組ごと一致しなければ
+    # 「同じ集合を返す」とは言えない。**
+    def norm(d):
+        return {k: sorted(v) for k, v in d.items() if v}
+
+    ok = (norm(f1) == norm(f2)) and (norm(l1) == norm(l2))
+    n = lambda d: sum(len(v) for v in d.values())
+    print(f"KC57 arms('gated') == gated_layers() (**(層, パス) の組まで**):  "
+          f'標準 {n(f1)} vs {n(f2)}  腕 {n(l1)} vs {n(l2)}  '
+          f'{"PASS" if ok else "**FAIL**"}')
+    if not ok:
+        for nm, x, y in (('標準', f1, f2), ('腕', l1, l2)):
+            d = set(norm(x)) ^ set(norm(y))
+            if d:
+                print(f'  {nm}: 頁の差 {len(d)}  例 {sorted(d)[:3]}')
+    return ok
