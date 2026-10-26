@@ -102,7 +102,8 @@ HELP = ('**左端がこの頁の層を重なり順に並べたもので、いま
         '透明なところは白で出しています(紙と同じ)。'
         'C で頁ぜんたいの絵に切り替わります(左端の並びは動きません)。'
         '当てはまる言葉が無ければ T に一言、迷ったら S。B で前へ、N で次へ。')
-EXPECT_ROWS = 307
+EXPECT_PAGES = 45
+EXPECT_LAYERS = 315
 
 
 def checker(h, w, cell=14, a=242, b=214):
@@ -232,21 +233,65 @@ def compose(strip_imgs, main, mark):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--deliv', default='/home/sh1/deepl/lineart/data/'
-                    'incoming_manuscript/colour_request5_layers',
-                    help='依頼5 の納品。無ければ依頼4 の木から在るものだけで試す')
+                    'incoming_manuscript/colour_request5',
+                    help='依頼5 の納品')
     ap.add_argument('--dry', action='store_true')
     ap.add_argument('--partial', action='store_true',
                     help='**層が揃っている頁だけで組む(通しの試験用)。本番では使わない**')
     a = ap.parse_args()
 
-    rows = list(csv.DictReader(open(REQ, encoding='utf-8-sig')))
-    print(f'== 既知セル(母集団)==\n  請求した層 {len(rows)} / 期待 {EXPECT_ROWS}  '
-          f'{"PASS" if len(rows) == EXPECT_ROWS else "**FAIL**"}')
-    if len(rows) != EXPECT_ROWS:
+    # **行列の素は納品の manifest**(= 事前登録した規則の出力そのもの)。
+    # **台帳との結合は `source` + `layer_id`。ファイル名では結合しない**(m48 の教訓)。
+    deliv = Path(a.deliv)
+    man = deliv / 'colour_layers_pages.jsonl'
+    if not man.exists():
+        print(f'**納品が無い: {man}。行列を書かない**')
         return 1
+    dpages = [json.loads(l) for l in open(man, encoding='utf-8') if l.strip()]
+    led = collections.defaultdict(dict)
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'colour'))
+    import m19_version_resolution as m19                   # noqa: E402
+    for r in csv.DictReader(open(m19.CSV872, encoding='utf-8')):
+        led[r['page_path']][str(r['layer_id'])] = r
+    rows, paper = [], []
+    for p in dpages:
+        for l in p['layers']:
+            r = led[p['source']].get(str(l['layer_id']))
+            if r is None:
+                print(f'  **台帳に無い層**: {p["source"]} L{l["layer_id"]}')
+                continue
+            row = dict(page_path=p['source'], layer_id=str(l['layer_id']),
+                       name=(r.get('name') or ''), formats=(r.get('formats') or ''))
+            # **用紙層を外す(ユーザーの裁定)**: `formats = paper` かつ
+            # **全面・各ch 255 の純白** = **画布の紙であって、作者が描いた物ではない。**
+            # **名前(「用紙」)では決めていない** —— **ファイル形式の構造の値で決めている**
+            # (どの層がベースかを名前で決めない、という track の規律と同じ扱い)。
+            # **外した一覧は印字し、CSV にも書く**(異議があれば戻せるように)。
+            if row['formats'] == 'paper':
+                paper.append(row); continue
+            rows.append(row)
+    print(f'== 既知セル(母集団)==')
+    print(f'  納品の頁 {len(dpages)} / 期待 {EXPECT_PAGES}  '
+          f'{"PASS" if len(dpages) == EXPECT_PAGES else "**FAIL**"}')
+    print(f'  納品の層 {sum(len(p["layers"]) for p in dpages)} / 期待 {EXPECT_LAYERS}  '
+          f'{"PASS" if sum(len(p["layers"]) for p in dpages) == EXPECT_LAYERS else "**FAIL**"}')
+    if len(dpages) != EXPECT_PAGES or sum(len(p['layers']) for p in dpages) != EXPECT_LAYERS:
+        print('**納品が期待と合わない。行列を書かない。**')
+        return 1
+    print(f'\n== 母集団の差分(理由別。規律9)==')
+    print(f'  納品の層                         {EXPECT_LAYERS}')
+    print(f'  **用紙層を外した(ユーザーの裁定)**    -{len(paper)}'
+          f'  (`formats = paper` / 全面 / 各ch 255 の純白)')
+    print(f'  **聞く層**                        **{len(rows)}**')
+    with open(OUT / 'excluded_paper_layers.csv', 'w', newline='',
+              encoding='utf-8-sig') as f:
+        w = csv.DictWriter(f, fieldnames=['page_path', 'layer_id', 'name',
+                                          'formats'])
+        w.writeheader(); w.writerows(paper)
+    print(f'  外した一覧: {OUT / "excluded_paper_layers.csv"}')
 
     # 絵の在り処: 依頼5 の木 -> 無ければ依頼4(7頁12層が在る)
-    trees = [Path(a.deliv),
+    trees = [deliv,
              Path('/home/sh1/deepl/lineart/data/incoming_manuscript/'
                   'colour_request4_rest')]
     prev = {}
