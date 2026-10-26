@@ -1,5 +1,5 @@
 occluder_class,label,found_by,n_layers,n_pages,population_note,measured_by,as_of
-3d_kind,3D(種別で分かる。名前ではない),種別,0,0,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-26
-white,ホワイト(白で隠す),名前の規則,4,2,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-26
-balloon,フキダシ(独立した層),名前の規則,3,1,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-26
-black_erase,黒消し,名前の規則,0,0,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-26
+3d_kind,3D(種別で分かる。**使った頁の下限**),種別,0,0,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-27
+white,ホワイト(白で隠す),名前の規則,4,2,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-27
+balloon,フキダシ(独立した層),名前の規則,3,1,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-27
+black_erase,黒消し,名前の規則,0,0,15 頁 / 1013 層(名前が在る層 835),census track(納品の manifest から数えた),2026-10-27

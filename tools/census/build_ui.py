@@ -52,7 +52,7 @@ COLUMN_CAVEATS = {
     "kind": ["InitColor(本体のブロックの埋め値)"],
     "rc_bucket": ["raster_cover"],
     "bound_class": ["被覆の値が、値か下限か"],
-    "occluder_class": ["遮蔽物の層(`occluder_classes.csv`)"],
+    "occluder_class": ["遮蔽物の層(`occluder_classes.csv`)", "3D の層数"],
     "found_by": ["遮蔽物の層(`occluder_classes.csv`)"],
     "n_drawn_gt0": ["drawn_ratio", "被覆の値が、値か下限か"],
     "n_drawn_zero": ["drawn_ratio", "被覆の値が、値か下限か"],

@@ -4,4 +4,4 @@ body_initcolor_delivered_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,209
 request9_file_sha256_all_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,9653,edf114112a1a2b9a2b156bdf71aa5a662fc8c57938eaaec4f03f4f056f8c475a,,**これで異なり数と重複の3つの量がここで測れる。** ただし**ハッシュそのものは抽出側が計算した** —— 先方の読みが違えば同じく違う
 grad_v1_v2_layer_map_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,258,6d81770c935a3be601d26bfd87ba9b583e8d3eb501fec8d2ada0d5a337baaa30,,**層を鍵にした突き合わせはこれが無いとできない** —— PNG の名前は頁の中の順番を encode している
 pages_added33_structure_20261026.csv,受領 CSV,抽出側(um350),2026-10-26,33,1d4d8ba0e11c3364ffadecb88da4f888d1e835c9145f3db89a507037843a4db9,,**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)
-drawn_ratio,**値が動く予定の列**,抽出側(um350),2026-10-26,11455,,yes,`v_layer_kind` = `mask_fill` の層: 抽出側が読み手を直すと、いま 0 と読まれている値が 1 付近へ動く —— `mask_fill`(トーン・べた塗り)の本体は `InitColor 255` = 全面で、0 は「空」ではない。動かす前に一声もらう約束。**この集計の mask_fill 行は、その連絡で無効になる**
+drawn_ratio,**値が動く予定の列**,抽出側(um350),2026-10-27,11455,,yes,`v_layer_kind` = `mask_fill` の層: 抽出側が読み手を直すと、いま 0 と読まれている値が 1 付近へ動く —— `mask_fill`(トーン・べた塗り)の本体は `InitColor 255` = 全面で、0 は「空」ではない。動かす前に一声もらう約束。**この集計の mask_fill 行は、その連絡で無効になる**
