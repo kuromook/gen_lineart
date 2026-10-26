@@ -23,7 +23,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import COV_MAX
+from l14_known_cells import COV_MAX, gated_layers
 from l17_known_cells import zmap
 from pid_work import work_of
 
@@ -46,6 +46,7 @@ def main():
         return
 
     zz = zmap()
+    _gfill, line_arm = gated_layers()
     cov = {(r['page_id'], r['layer_id']): float(r['cov'])
            for r in csv.DictReader(open(KEEP4))}
 
@@ -74,6 +75,20 @@ def main():
         layers = sorted(per[pid], key=lambda t: t[0])
         want = {r['lid']: r for r in rows if r['pid'] == pid}
         below = None
+        lines = None
+        for k, v in line_arm.items():
+            if k[0] != pid:
+                continue
+            for lid_, path_ in v:
+                im_ = cv2.imread(path_, cv2.IMREAD_GRAYSCALE)
+                if im_ is None:
+                    continue
+                if lines is None:
+                    lines = np.zeros(im_.shape, bool)
+                if im_.shape == lines.shape:
+                    lines |= im_ < 128
+        print(f'  線の腕の層 {sum(len(v) for k, v in line_arm.items() if k[0] == pid)} '
+              f'(背景に使う。**0 ならその旨を書く**)')
         for z, lid, path, wide in layers:
             im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
             if im is None:
@@ -103,6 +118,20 @@ def main():
                 fn = (f'{pid}_L{lid}_{r["name"].replace(" ", "_")}'
                       f'_ov{float(r["ov"]):.4f}_{tag}_{x0}_{y0}_{x1 - x0}x{y1 - y0}.png')
                 cv2.imwrite(f'{OUT}/{fn}', img)
+                # **2枚目: 作者が「何が描いてあるか」を見られる窓**(規律6)。
+                # 1枚目の灰は `below` —— この頁では `color` / `over lay` の塊で、
+                # **線が1本も見えない。判定の材料にならない。**
+                # 背景は**器具自身の線の腕**(`gated_layers()` の line)にする。
+                # **名前で選ばない**(問い2で名前から材質は決まらないと作者が答えている)。
+                # 対象の層は**塗り潰さず輪郭だけ赤**にして、下の絵を隠さない。
+                img2 = np.full((y1 - y0, x1 - x0, 3), 255, np.uint8)
+                if lines is not None:
+                    img2[lines[y0:y1, x0:x1]] = (40, 40, 40)
+                ring = cv2.dilate(w_ink.astype(np.uint8), np.ones((9, 9), np.uint8))
+                img2[(ring > 0) & ~w_ink] = (0, 0, 220)
+                fn2 = fn[:-4] + '_line.png'
+                cv2.imwrite(f'{OUT}/{fn2}', img2)
+                print(f'    -> {OUT}/{fn2}  (**線の腕を背景に、対象は輪郭だけ**)')
                 print(f'  ov {float(r["ov"]):.4f}  墨 {int(r["ink_px"]):>9,}  '
                       f'外接 {bw}x{bh}  窓 {x1 - x0}x{y1 - y0} '
                       f'{"(**中心で切った。窓は層の全部ではない**)" if cropped else "(外接矩形の全部)"}')
