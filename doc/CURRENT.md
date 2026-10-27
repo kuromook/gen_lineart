@@ -557,6 +557,21 @@ readable, so a note about our own instrument would have published another projec
 work. **A peer's answer about itself is not ours to publish** -- record the rule, and
 keep the instance in the session that owns it.
 
+**Two further rules came out of that exchange, one of them at the foundation's expense.**
+**Which clone you read `origin` from changes the answer**, and this ledger says that worktrees
+and separate clones exist (above) without saying that each separate clone carries its own
+remote-tracking refs, so *the branch is at X* is only ever true of the clone that was asked.
+Written as a rule and not as an incident: **the concrete case the foundation relayed dissolved
+under checking** -- a peer reported that another clone's weekly cron was running against a stale
+`origin/foundation`, the foundation **passed it to the user as a pending decision without
+verifying it**, and the peer then corrected itself twice: its own fetch had already advanced that
+ref, and the cron reads `paper-scout`, whose head matches `origin` (`abf4dc5`, confirmed here with
+`git ls-remote`). **The stale ref was one nobody read.** So: **a peer's finding is information, not
+a verified fact, and relaying one to the user as a decision they must make lends it the
+foundation's credit** -- check what is checkable first, and when it cannot be checked without
+touching another project's files, say that instead of forwarding the conclusion. The instrument
+rule survives the example that died.
+
 The lineage forked in two on 2026-09-17, after Track D's diagnosis (lesson 8)
 closed the pixel-matching generative route:
 
