@@ -312,6 +312,121 @@ def print_both_populations(res):
           '**各版の判定は自分の走行の中で完結している**')
 
 
+def _num(v):
+    """CSV の文字列を**走行中と同じ型**に戻す。`int` を先に試す(`seed` は整数)。
+
+    空欄はそのまま空文字で返す —— コマの行には**2種類**あり
+    (縮退の行と、腕 x seed ごとに採点した行)、`DictWriter` が
+    片方に無い列を空で埋めている。**空を 0 に倒すと、無い量が 0 として読まれる。**
+    """
+    if v is None or v == '':
+        return v
+    for f in (int, float):
+        try:
+            return f(v)
+        except (TypeError, ValueError):
+            pass
+    return v
+
+
+def load_run(arms, tag):
+    """既に書かれた CSV から、走行の3つの表と面の名前を読み戻す。
+
+    **走行をやり直さずに報告だけを出し直すための経路**(2026-10-27)。
+    checkpoint が頁ごとに書いているので、**本走行の実測はファイルに全部在る** ——
+    足りなかったのは最後の集計だけだった。
+
+    **この経路自身の既知セル**: 前の走行の印字を再現できること。
+    `--report-from _rawbeta_limit6` が 2026-10-26 の 6頁の印字と一致し、
+    `--report-from _rawbeta_limit2` が同日の煙試験の印字と一致すること
+    (**集計の算術は走行と同じコードを通る。試されるのは読み戻しの方である**)。
+    """
+    out = []
+    for nm in ('comps', 'regions', 'panels'):
+        path = f'{OUT}/{nm}_{arms}{tag}.csv'
+        rows = [{k: _num(v) for k, v in r.items()}
+                for r in csv.DictReader(open(path, encoding='utf-8'))]
+        print(f'<- {path}  行 {len(rows)}')
+        out.append(rows)
+    npath = f'{OUT}/names_{arms}{tag}.txt'
+    names = [x.strip() for x in open(npath, encoding='utf-8') if x.strip()]
+    print(f'<- {npath}  面 {len(names)}')
+    return out[0], out[1], out[2], names
+
+
+def kc30(names, raw_beta, exclude, limit=0):
+    """KC30 データ経路の点検。**標準ごとに当たる水準が違う**(2026-10-27 に直した)。
+
+    もとは「L19 の 551面の名前が今回の名前に全部あるか」の1本だけだった。
+    **これは `fill_mask` の標準でしか通らない。** 面の名前は
+    `{work}_{pid}_c{ci}_r{gi}_{k:03d}.png` で、`r{gi}` は**標準の面番号**、
+    `k` は**頁内の通し番号** —— どちらも標準から出る量である。
+    L35(道1)は標準を納品 beta 層の生の墨に差し替えるので、
+    **名前は原理的に一致しない。**
+
+    2026-10-27 の本走行(65頁、2.81時間)が**この門で止まった**。実測:
+
+    ```
+    名前まるごと    一致  52 / 551     <- 止まったのはこの水準
+    k を外す        一致 223 / 491
+    r も外す(コマ) 一致 136 / 139
+    頁              一致  64 /  64     <- **データ経路は切れていない**
+    ```
+
+    > **通らない点検は、何も測らない点検と同じだけ悪い。**
+    > 前者は走行を止め、後者は黙って通す。**どちらも腕について何も言っていない。**
+
+    そして**煙試験はこの門を見られなかった** —— `if not a.limit` で囲まれていたので、
+    2頁の煙試験は門を飛ばして表まで印字する。**煙試験が構造的に盲だった門である。**
+
+    水準を下げたのではない。**名前の一致は道1では定義されない量**で、
+    道1で当たるのは頁の水準である。落ちた数は理由別に印字する(規律9)。
+    """
+    import json as _j
+    import re as _re
+    q = _j.load(open('/home/sh1/deepl/lineart-fill-region/results/l19_ui/queue.json'))
+    want = {r['crop'] for r in q['queue']}
+    got = set(names)
+    pg = lambda n: n.split('_c')[0]
+    km = lambda n: _re.sub(r'_r\d+_\d{3}\.png$', '', n)
+    if limit:
+        # **部分走行では門にしない。だが印字する**(T134 の族: 発火しない門は、
+        # 印字しなければ在ることが分からない)。L19 の 551面は 64頁に散っているので、
+        # **頁を切った走行では「全部ある」は原理的に満たせない** ——
+        # ここで止めると煙試験が常に落ちる。
+        # **煙試験が門を見られないのと、門が煙試験を落とすのは別の病で、どちらも直す。**
+        print(f'KC30 データ経路: **{limit}頁の部分走行なので門にしない**(印字のみ)')
+        print(f'  この走行の頁 {len({pg(n) for n in got})}  面 {len(got)}  '
+              f'L19 の面との名前の一致 {len(want & got)}/{len(want)}'
+              f'{"(道1 では名前は別の量。読まない)" if raw_beta else ""}')
+        return 0
+    if not raw_beta:
+        ok = want <= got
+        print(f'KC30 データ経路: L19 の 551 面の名前が今回の名前に全部あるか: '
+              f'{"ok" if ok else "FAIL"}  (面 {len(got)} / 欠け {len(want - got)})')
+        if not ok:
+            print('**除外の鍵が合っていない。止める**')
+            return 1
+        if exclude:
+            print(f'  選別(規律9-1): 隙間埋けとして外した面 {len(exclude & got)} / '
+                  f'指定 {len(exclude)}')
+        return 0
+    wp, gp = {pg(n) for n in want}, {pg(n) for n in got}
+    wk, gk = {km(n) for n in want}, {km(n) for n in got}
+    ok = wp <= gp
+    print(f'KC30(道1 の形): **名前の一致は道1では定義されない** —— '
+          f'標準が違うので `r{{gi}}` と `k` が別の量になる'
+          f'(名前での一致 {len(want & got)}/{len(want)} は**読まない**)')
+    print(f'  **頁の水準(これが門)**: L19 の {len(wp)}頁が今回の {len(gp)}頁に'
+          f'全部あるか: {"ok" if ok else "FAIL"}  欠けた頁 {len(wp - gp)}')
+    print(f'  コマの水準(参考。**棒ではない**): 一致 {len(wk & gk)} / L19 {len(wk)}  '
+          f'欠け {len(wk - gk)}  (標準が違えば1面も残らないコマが出る)')
+    if not ok:
+        print('**頁が欠けている。データ経路が切れている。止める**')
+        return 1
+    return 0
+
+
 def main():
     global ARMS, LIMIT, EXCLUDE, PAIRED
     ap = argparse.ArgumentParser()
@@ -325,11 +440,21 @@ def main():
                     help='**L36**(登録 2026-10-26 15:23): 名前の無い面をどちらの腕も'
                          '採点しないようにし、**seed ごとに両腕の交差の上での '
                          '`cov_honest` を併記**する。**主値・棒・床・標準は動かさない**')
+    ap.add_argument('--report-from', default='',
+                    help='**走行をやり直さず**、既に書かれた CSV から報告だけを'
+                         '出し直す。値は `comps_<arms><tag>.csv` の `<tag>`'
+                         '(例 `_rawbeta`、`_rawbeta_limit6`)。'
+                         '**前の走行の印字を再現できることが門**(`load_run`)')
     ap.add_argument('--raw-beta-standard', action='store_true',
                     help='**L35 = 道1**(登録 2026-10-26 15:07): 標準を '
                          '`fill_mask` から外し、**納品 beta 496層の生の墨**から作る。'
                          '`radius` が器具のどこにも残らない')
     a = ap.parse_args()
+    if a.exclude_gapfill and a.raw_beta_standard:
+        # **鍵は標準から出る**(KC30 の docstring)。道1 では1面も当たらないので、
+        # 黙って「0面を外した版」になる。**名前で結ぶ器具は、標準が変わると空振りする**
+        sys.exit('止める: `--exclude-gapfill` の鍵は `fill_mask` の標準での'
+                 '**面の名前**なので、道1(`--raw-beta-standard`)では1面も当たらない')
     if a.exclude_gapfill:
         # **起動の門**: 全面の版の記録が読めなければ、2時間走ってから気付かない
         if not os.path.exists(FULL_LOG) or 'A / B / C (' not in open(
@@ -392,6 +517,9 @@ def main():
         tag += '_nogapfill'
     if LIMIT:
         tag += f'_limit{LIMIT}'
+    if a.report_from:
+        tag = a.report_from
+        print(f'**報告のみ**: {tag} の CSV から読み戻す(走行はしない)', flush=True)
 
     # ---- checkpoint (2026-10-26)。**長い走行の最後に落ちて全部失わないため。**
     # それまでは**最後に一度だけ**書いていた。29時間の走行ではこれは取れない。
@@ -426,43 +554,35 @@ def main():
     # **名前のファイルだけ `'a'` で追記し続けていた** —— 同じ引数で2度走らせると
     # **中身が静かに2倍になる**(CSV は正しいので気付かない)。
     # **同じ走行の出力なのに、ファイルによって「1回ぶん」の意味が違っていた。**
-    open(f'{OUT}/names_{ARMS}{tag}.txt', 'w', encoding='utf-8').close()
-    t0 = time.time()
-    with Pool(4) as pool:
-        for i, (c, r, p, nm) in enumerate(pool.imap_unordered(one_page, js), 1):
-            comps += c; regs += r; pans += p; names += nm
-            checkpoint('comps', c); checkpoint('regions', r); checkpoint('panels', p)
-            with open(f'{OUT}/names_{ARMS}{tag}.txt', 'a', encoding='utf-8') as fh:
-                for x in nm:
-                    fh.write(x + '\n')
-            el = time.time() - t0
-            # **見積りは最初の数頁では使えない**(2026-10-26)。`Pool(4)` なので
-            # 4頁が同時に走っていて、`i=1` の時点の `el/i` は**並列を無視した値**。
-            # i が 4 の数倍になるまで**過大に出る**ので、そのときは印を付ける
-            # (付けないと、その数が引用される)。
-            warm = '  **見積りは温まっていない(並列4本、i<8)**' if i < 8 else ''
-            print(f'  {i}/{len(js)} 頁  成分 {len(comps)}  '
-                  f'経過 {el / 60:.1f}分  1頁 {el / i / 60:.2f}分  '
-                  f'残り見積り {(len(js) - i) * el / i / 60:.0f}分{warm}',
-                  flush=True)
+    if a.report_from:
+        comps, regs, pans, names = load_run(ARMS, tag)
+    else:
+        open(f'{OUT}/names_{ARMS}{tag}.txt', 'w', encoding='utf-8').close()
+        t0 = time.time()
+        with Pool(4) as pool:
+            for i, (c, r, p, nm) in enumerate(pool.imap_unordered(one_page, js), 1):
+                comps += c; regs += r; pans += p; names += nm
+                checkpoint('comps', c); checkpoint('regions', r); checkpoint('panels', p)
+                with open(f'{OUT}/names_{ARMS}{tag}.txt', 'a', encoding='utf-8') as fh:
+                    for x in nm:
+                        fh.write(x + '\n')
+                el = time.time() - t0
+                # **見積りは最初の数頁では使えない**(2026-10-26)。`Pool(4)` なので
+                # 4頁が同時に走っていて、`i=1` の時点の `el/i` は**並列を無視した値**。
+                # i が 4 の数倍になるまで**過大に出る**ので、そのときは印を付ける
+                # (付けないと、その数が引用される)。
+                warm = '  **見積りは温まっていない(並列4本、i<8)**' if i < 8 else ''
+                print(f'  {i}/{len(js)} 頁  成分 {len(comps)}  '
+                      f'経過 {el / 60:.1f}分  1頁 {el / i / 60:.2f}分  '
+                      f'残り見積り {(len(js) - i) * el / i / 60:.0f}分{warm}',
+                      flush=True)
     for nm_, v in ck.items():
         v[0].close()
         print(f'-> {v[3]}  行 {v[4]}  (**checkpoint で頁ごとに追記済み**)')
-    # ---- KC30 データ経路: 面の通し番号が L19 と同じか (**除外の鍵が正しいことの点検**)
-    if not a.limit:
-        import json as _j
-        q = _j.load(open('/home/sh1/deepl/lineart-fill-region/results/l19_ui/queue.json'))
-        want = {r['crop'] for r in q['queue']}
-        got = set(names)
-        ok = want <= got
-        print(f'KC30 データ経路: L19 の 551 面の名前が今回の名前に全部あるか: '
-              f'{"ok" if ok else "FAIL"}  (面 {len(got)} / 欠け {len(want - got)})')
-        if not ok:
-            print('**除外の鍵が合っていない。止める**')
-            return 1
-        if EXCLUDE:
-            print(f'  選別(規律9-1): 隙間埋けとして外した面 {len(EXCLUDE & got)} / '
-                  f'指定 {len(EXCLUDE)}')
+    # ---- KC30 データ経路(**標準ごとに当たる水準が違う**。2026-10-27 に直した)
+    # 煙試験が見られない門にしない: `--limit` でも回す。
+    if kc30(names, a.raw_beta_standard, EXCLUDE, LIMIT):
+        return 1
     # **出力の名前に母集団と頁数を入れる**(2026-10-26)。
     # それまでは `comps_both.csv` 固定で、
     #   ・2頁の煙試験が **65頁の走行の CSV を上書きした**(実際に失った)
