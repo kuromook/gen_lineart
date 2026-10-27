@@ -233,6 +233,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <h3 class="sub">6-2 / <code>黒消し</code> は層ではなくフォルダーだった</h3>
 <p class="lede"><b>層では 0件、フォルダーで 609。</b>だから<b>遮蔽しているのはその中の層</b>で、<b>609 を遮蔽物の数と呼べない</b> —— <b>中に層が在るフォルダーは 78、直下の層は 254、空のフォルダーが 531。</b></p>
 <p class="lede"><b>空の 531 については作者の判断が在る(2026-10-27):「空であればテンプレで作られて使用しなかったものだろう。一時期そういう工程だった。」</b> —— <b>これは測定ではない。</b>こちらが出したのは数だけで(規律6: どの名前が遮蔽物か・絵が何を描いているかは作者が決める)、<b>数の側から言えるのは空のフォルダーが在る年の札が限られていることだけである。それが「一時期」と一致して見えるのは一致であって確認ではない</b> —— 作者はもう答を持っているので、<b>裏付けの要る主張ではない。</b><br><b>そして 609 は全部 <code>.lip</code> である</b>(<code>.clip</code> は 0)—— <b>「2014〜2016 だけ」と書いていたものは、「<code>.lip</code> だけ」でもあった。</b>作者の「一時期」がどちらの軸かは<b>この表では決められない</b>(<code>.lip</code> が在る年の札は限られているので、年と形式が分離できない)。<br><b>まだ答えていないもの</b>:空でないフォルダーが使われたか / テンプレが何だったか。</p>
+<p class="lede"><b>そのうち1つが、別の罠を当てたときに数で出た(2026-10-27)</b> —— <b>フォルダー自身の表示を見ると、中身が在る 78 と、非表示の 78 はぴったり同じ集合である(どちら向きの食い違いも 0)。</b><b>つまり中身が在るものは、全部消してある</b> —— 納品の状態では、黒消しは1層も描かれていない。<b>これは「使われたか」への答ではない</b>:<b>消した理由も、一度使って後で消したのかも、この数は言わない</b>(規律6: 工程を決めるのは作者)。<b>ホワイトのフォルダーは同じ形になっていない</b> —— 中身が在る 61 に対し非表示は 6 で、<b>中身が在って表示のままのものが 57</b>。<b>だから「中身が在れば消してある」は黒消しの性質で、フォルダー一般の性質ではない。</b></p>
 <div class="scroller"><table id="t-occfold"></table></div>
 
 <h3 class="sub">6-3 / フキダシの両面 —— 仕組みから導いた素性</h3>
@@ -255,6 +256,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <div class="scroller"><table id="t-decile"></table></div>
 
 <p class="lede"><b>この表が答えないのは「何を隠しているか」である</b> —— <b>手前に在ることは、重なっていることではない。</b>小さい層も透明な層も手前に在る。<b>画素の実測は保留中</b>(覆いの定義・帰無値・事前登録が先)。そして <b><code>opacity = 256</code> は層の設定で、画素のアルファではない。</b><b>向きは供給元の v2 の訂正に依っている</b>(v1 は <code>z_global</code> を逆に書き、CSV は正しかった)—— こちらでは兄弟の <code>order_in_parent</code> との一致でしか確かめていない。</p>
+<p class="lede"><b>そして「可視」の列は、描かれていることを言っていない(2026-10-27、基盤が自分の点検で踏んで回送した罠)</b> —— <code>share_visible_bit</code> と <code>share_opacity_full</code> は<b>その層自身の値</b>で、<b>祖先のフォルダーが非表示なら、層が可視でもその層は描かれない</b>(クリスタの描画の事実)。<b>だから隣に <code>share_ancestor_hidden</code> を出した</b>:<b>帰無値 0.074</b> に対して、<b>既定の時刻名 0.497(可視の半分が描かれない)/ blender 0.063 / ホワイト 0.008、黒消しのフォルダーの中は 1.000。</b><b>1つの割合では代表できない。</b><br><b>この罠の一般形は点検の側にある</b>:<b>点検の値は定義から導く。表の1行で走査できる形で出すと、定義に従った実装の方が落ちる</b> —— そして<b>実装者が「点検に合わせるため」と書いた一文は警報である。</b>便利な走査と定義が<b>母集団の 91.6% で一致していた</b>のが、この誤りが点検を生き延びた幅だった。<br><b>当てた数は2つで、母集団が違う</b>(同じ列に並べない):<b>重なり順に入る非フォルダー層のうち祖先が非表示 24,232</b> / <b>遮蔽物の候補(表示 ∧ 不透明度&gt;0)に絞ると <code>.clip</code> 18,654・<code>.lip</code> 2,784</b> —— 後者は<b>基盤の数と一致した(独立の再現)</b>。</p>
 <div class="scroller"><table id="t-occfront"></table></div>
 
 <h2><span class="num">7 / 全数</span>構造 DB の全数 437,561層</h2>
@@ -420,7 +422,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     n_both_sides: "両面に当たる", n_feature_only: "素性だけ", n_name_only: "名前だけ",
     matched_on: "当たった側", scope: "範囲",
     median_front_share: "前方割合の中央", share_front_decile: "前方1割に入る割合",
-    share_opacity_full: "不透明度256", share_visible_bit: "可視",
+    share_opacity_full: "層自身の不透明度256", share_visible_bit: "層自身が可視",
+    share_ancestor_hidden: "祖先が非表示", n_folders_hidden: "非表示のフォルダー",
     share_composite_normal: "通常合成",
     share_of_decile: "前方1割の内訳", share_of_kind: "その種類のうち",
     share_of_all: "全体では",
@@ -515,7 +518,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
   render($("t-occfold"), ["occluder_class", "label", "n_folders",
                           "n_folders_clip", "n_folders_lip",
                           "n_folders_with_layers", "n_folders_empty",
-                          "n_child_layers", "n_pages", "author_reading", "reading"],
+                          "n_folders_hidden", "n_child_layers", "n_pages",
+                          "author_reading", "reading"],
          D.occluder_folder_contents);
   render($("t-popfmt"), ["grain", "year_label", "format", "n_pages", "n_read_error",
                          "n_pages_with_layers", "sum_n_layers_incl_folders",
@@ -527,7 +531,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                            "n_pages", "n_layers_clip", "n_layers_lip",
                            "median_front_share", "share_front_decile",
                            "share_opacity_full", "share_visible_bit",
-                           "share_composite_normal", "reading"],
+                           "share_composite_normal", "share_ancestor_hidden",
+                           "reading"],
          D.occluder_front_position);
   render($("t-occ"), ["occluder_class", "label", "found_by", "n_layers", "n_pages",
                       "n_signatures", "n_signature_only", "corroboration",

@@ -677,6 +677,7 @@ def load_structure(path: str, drops):
     pats = {k: re.compile(p, re.I) for k, _, p, _ in CLASSES if p}
     pats.update({k: re.compile(p, re.I) for k, _, p in FRONT_CONTROLS})
     pages = collections.defaultdict(list)
+    folder_state = {}
     folder_children = collections.Counter()
     folder_rows = collections.defaultdict(list)
     # **類ごとに、どの名前が何層か。** 名前はここから外に出さない ——
@@ -727,6 +728,10 @@ def load_structure(path: str, drops):
             if is_folder:
                 for k in by_name:
                     folder_rows[k].append((row[ix["page_path"]], row[ix["layer_id"]]))
+                # **祖先の表示を見るために、フォルダーの状態を覚える**(T143)
+                folder_state[(row[ix["page_path"]], row[ix["layer_id"]])] = (
+                    row[ix["parent_id"]], int(row[ix["visibility"]] or 0),
+                    int(row[ix["opacity"]] or 0))
                 continue
             pid = row[ix["parent_id"]]
             if pid:
@@ -740,7 +745,7 @@ def load_structure(path: str, drops):
             pages[pg].append(
                 (int(z), pid, by_name, by_anc,
                  int(row[ix["opacity"]] or 0), int(row[ix["visibility"]] or 0),
-                 row[ix["composite"]], row[ix["v_layer_kind"]], frozenset()))
+                 row[ix["composite"]], row[ix["v_layer_kind"]], frozenset(), False))
             if by_name:
                 for k in by_name:
                     names_per_class[k][name] += 1
@@ -753,14 +758,37 @@ def load_structure(path: str, drops):
         hit = frozenset(k for k in by_name if top.get(k) == name)
         if hit:
             x = pages[pg][i]
-            pages[pg][i] = x[:8] + (hit,)
+            pages[pg][i] = x[:8] + (hit,) + x[9:]
+    # **祖先のフォルダーが非表示・不透明度0なら、その中の層は描かれない**(T143)——
+    # **「層自身が可視」と「描かれる」は別の量である。** 作者の定義は「非表示レイヤーは
+    # 含めない」で、CSP では**非表示フォルダーの中身は描かれない**(描画の事実)。
+    # **層の1行だけで走査できる量を使うと、定義に従った実装の方が落ちる**
+    # (基盤が 2026-10-27 に自分の点検で踏んで回送した。**点検の値は定義から導く**)。
+    n_hidden_anc = 0
+    for pg, ls in pages.items():
+        for i, x in enumerate(ls):
+            hid = False
+            parent = x[1]
+            for _ in range(64):
+                st = folder_state.get((pg, parent))
+                if st is None:
+                    break
+                parent, pvis, pop = st
+                if pvis % 2 == 0 or pop == 0:
+                    hid = True
+                    break
+            if hid:
+                ls[i] = x[:9] + (True,)
+                n_hidden_anc += 1
     _STRUCT_CACHE[path] = (
         pages, {"folder_rows": folder_rows, "folder_children": folder_children,
                 "n_no_z": n_no_z,
                 "page_fmt": {pg: d[0] for pg, d in page_dims.items()},
                 "fmt_year": fmt_year,
                 "fmt_year_pages": {k: len(v) for k, v in fmt_year_pages.items()},
-                "n_bad_fmt": n_bad_fmt, "n_bad_year": n_bad_year}, n_rows)
+                "n_bad_fmt": n_bad_fmt, "n_bad_year": n_bad_year,
+                "n_hidden_ancestor": n_hidden_anc,
+                "folder_state": folder_state}, n_rows)
     return _STRUCT_CACHE[path]
 
 
@@ -965,6 +993,10 @@ def front_position(pages, aux, drops):
       こちらでは兄弟の `order_in_parent` との一致でしか確かめていない
     - **不透明度が遮蔽の強さであること。** `opacity = 256` は層の設定で、
       **画素のアルファではない**(T87 の形: 設定は中身を含意しない)
+    - **可視であることが、描かれていることであること。** `share_visible_bit` と
+      `share_opacity_full` は**層自身の値**で、**祖先のフォルダーが非表示なら
+      その層は描かれない**(T143)。**だから隣に `share_ancestor_hidden` を出す** ——
+      **可視の列だけを読むと、描かれない層を遮蔽物に数える**
     """
     import statistics
     rows = []
@@ -992,8 +1024,11 @@ def front_position(pages, aux, drops):
                      scope, len(base), len(pages),
                      *split([pg for _, pg, _ in shares]),
                      f"{base_med:.3f}", f"{base_dec:.3f}", "", "", "",
+                     f"{sum(1 for _, _, x in shares if x[9]) / len(base):.3f}",
                      f"{scope_label}。**比が定義できない群の層 {skipped} は"
-                     f"入れていない**(兄弟が自分だけの親)"])
+                     f"入れていない**(兄弟が自分だけの親)。"
+                     f"**自身の可視・不透明度の3列は群では別の量なので空にしてある** ——"
+                     f"**祖先が非表示の割合だけは、棒の前に出す帰無値である**"])
         classes = [(k, l, p) for k, l, p, _w in CLASSES if p is not None]
         classes += [(k, l, p) for k, l, p in FRONT_CONTROLS]
         for key, label, pat in classes:
@@ -1019,6 +1054,7 @@ def front_position(pages, aux, drops):
                     f"{sum(1 for _, _, x in sel if x[4] == 256) / n:.3f}",
                     f"{sum(1 for _, _, x in sel if x[5] % 2 == 1) / n:.3f}",
                     f"{sum(1 for _, _, x in sel if x[6] == '0') / n:.3f}",
+                    f"{sum(1 for _, _, x in sel if x[9]) / n:.3f}",
                     reading])
     return rows
 
@@ -1113,14 +1149,31 @@ def folder_contents(aux):
         with_kids = sum(1 for pp, lid in fr if kids.get((pp, lid), 0))
         n_kids = sum(kids.get((pp, lid), 0) for pp, lid in fr)
         fc = collections.Counter(pf.get(pp, "") for pp, _ in fr)
+        # **フォルダー自身が非表示なら、中の層は描かれない**(T143)。
+        # **「中身が在る」と「描かれる」は別の量である。**
+        st = aux.get("folder_state", {})
+        hidden = {(pp, lid) for pp, lid in fr
+                  if (lambda v: v is None or v[1] % 2 == 0 or v[2] == 0)(
+                      st.get((pp, lid)))}
+        nonempty = {(pp, lid) for pp, lid in fr if kids.get((pp, lid), 0)}
+        if hidden == nonempty:
+            vis_read = (f"**中身が在るフォルダー {len(nonempty)} と、"
+                        f"非表示のフォルダー {len(hidden)} は同じ集合である"
+                        f"(例外0)** —— **中身が在るものは、全部消してある。**"
+                        f" **答えないもの**: 消した理由 / 一度使って後で消したのか")
+        else:
+            vis_read = (f"非表示のフォルダー {len(hidden)} / 中身が在る {len(nonempty)}。"
+                        f"**中身が在って表示 {len(nonempty - hidden)} / "
+                        f"空で非表示 {len(hidden - nonempty)}**")
         years = sorted({py.get(pp, "") for pp, lid in fr
                         if not kids.get((pp, lid), 0)} - {""})
         rows.append([key, label, len(fr), fc["clip"], fc["lip"],
-                     with_kids, len(fr) - with_kids, n_kids,
+                     with_kids, len(fr) - with_kids, len(hidden), n_kids,
                      len({pp for pp, _ in fr}),
                      AUTHOR_READING.get(key, "")
                      + (f" 空のフォルダーが在る年の札: {'・'.join(years)}"
                         if years and key in AUTHOR_READING else ""),
                      "**フォルダーの数を遮蔽物の層の数と呼べない** —— "
-                     f"直下の層 {n_kids}。中に層が無いフォルダーが {len(fr) - with_kids}"])
+                     f"直下の層 {n_kids}。中に層が無いフォルダーが {len(fr) - with_kids}。"
+                     + vis_read])
     return rows

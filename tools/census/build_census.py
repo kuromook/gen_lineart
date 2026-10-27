@@ -770,16 +770,19 @@ def emit_front_position(outdir: str, path: str, drops):
         ["occluder_class", "label", "matched_on", "scope", "n_layers", "n_pages",
          "n_layers_clip", "n_layers_lip",
          "median_front_share", "share_front_decile", "share_opacity_full",
-         "share_visible_bit", "share_composite_normal", "reading",
-         "population_note", "measured_by", "as_of"], out)
+         "share_visible_bit", "share_composite_normal", "share_ancestor_hidden",
+         "reading", "population_note", "measured_by", "as_of"], out)
     print(f"  [全数の重なり順] {n_rows:,} 行 / 頁 {len(pages):,}"
           f" / 重なり順に入らない層 {aux['n_no_z']}")
     for r in out:
         print(f"      {r[0]:22s} {r[2]:10s} {r[3]:6s} n={r[4]:>6} "
               f"(clip {r[6]:>6} / lip {r[7]:>6}) "
-              f"中央={r[8]} 前方1割={r[9]}  {r[13]}")
+              f"中央={r[8]} 前方1割={r[9]} 祖先が非表示={r[13]}  {r[14]}")
     print("    **手前に在ることは、重なっていることではない** —— "
           "何を隠しているかは画素が要る(保留中)")
+    print(f"    **祖先のフォルダーが非表示の層 {aux['n_hidden_ancestor']:,}**(T143)"
+          " —— **層自身が可視でも、描かれない。** "
+          "**可視の列は層自身の値である**")
     return written
 
 
@@ -907,7 +910,7 @@ def emit_folder_contents(outdir: str, path: str, drops):
         os.path.join(outdir, "occluder_folder_contents.csv"),
         ["occluder_class", "label", "n_folders", "n_folders_clip", "n_folders_lip",
          "n_folders_with_layers",
-         "n_folders_empty", "n_child_layers", "n_pages",
+         "n_folders_empty", "n_folders_hidden", "n_child_layers", "n_pages",
          "author_reading", "reading",
          "population_note", "measured_by", "as_of"], out)
     print("  [フォルダーに付いた名前の中身]")
@@ -1164,7 +1167,8 @@ class ProseMatcher:
 # (宣言の無い列を黙って通すと、新しい列を足した日に点検が静かに緩む)
 METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_names", "n_folders", "n_pages_top_name", "n_parent_names",
-               "n_folders_with_layers", "n_folders_empty", "n_child_layers",
+               "n_folders_with_layers", "n_folders_empty", "n_folders_hidden",
+               "n_child_layers",
                "n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_rendered",
                # **形式ごとの内訳**(`.lip` を母集団に入れた。作者の決定 2026-10-27)
                "n_layers_clip", "n_layers_lip",
@@ -1190,7 +1194,8 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               "share_of_decile", "share_of_kind", "share_of_all",
               # **割合の列。** 件数ではないので小数が正しい
               "median_front_share", "share_front_decile", "share_opacity_full",
-              "share_visible_bit", "share_composite_normal")
+              "share_visible_bit", "share_composite_normal",
+              "share_ancestor_hidden")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
