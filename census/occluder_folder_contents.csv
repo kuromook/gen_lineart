@@ -1,4 +1,4 @@
-occluder_class,label,n_folders,n_folders_with_layers,n_folders_empty,n_child_layers,n_pages,reading,population_note,measured_by,as_of
-white,ホワイト(白で隠す),73,61,12,308,62,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 308。中に層が無いフォルダーが 12,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
-balloon,フキダシ(独立した層),1,1,0,3,1,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 3。中に層が無いフォルダーが 0,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
-black_erase,黒消し,609,78,531,254,534,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 254。中に層が無いフォルダーが 531,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
+occluder_class,label,n_folders,n_folders_clip,n_folders_lip,n_folders_with_layers,n_folders_empty,n_child_layers,n_pages,author_reading,reading,population_note,measured_by,as_of
+white,ホワイト(白で隠す),73,73,0,61,12,308,62,,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 308。中に層が無いフォルダーが 12,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
+balloon,フキダシ(独立した層),1,1,0,1,0,3,1,,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 3。中に層が無いフォルダーが 0,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
+black_erase,黒消し,609,0,609,78,531,254,534,**作者の判断(2026-10-27、測定ではない)**: **空であればテンプレで作られて使用しなかったものだろう。一時期そういう工程だった。** 空のフォルダーが在る年の札: 2014・2015・2016,**フォルダーの数を遮蔽物の層の数と呼べない** —— 直下の層 254。中に層が無いフォルダーが 531,"全 437,561 行(フォルダーの行を含む)",census track(依頼8 の `parent_id` から数えた),2026-10-27
