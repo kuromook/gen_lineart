@@ -3,6 +3,9 @@
 """**追補97 の材料 —— 基盤のクリップ下地規則を、色原稿872頁で独立に走らせる。**
 
 **測るだけ。腕も棒も無い**(基盤の規則の再現と、こちらの m8 の欠陥の大きさ)。
+**2026-10-27 19:2x に列を1つ足した(追補100)**: 下地の表示を**祖先まで**見た分け方を
+**併記する**。**層自身だけの分け方は残す**(数を書き換えると、何を測った数か分からなくなる)。
+
 規則(基盤 §1): 同じ親の中で `order_in_parent` 昇順(0 = 下)、
 **その層より下で最も近い `clip=0` の兄弟**を下地とする。**フォルダーも兄弟に数える。**
 """
@@ -44,11 +47,32 @@ def main():
                 return b
         return None
 
+    idx = collections.defaultdict(dict)
+    for r in rows:
+        idx[r['page_path']][r['layer_id']] = r
+
+    def anc_hidden(page, r):
+        """祖先のフォルダーに1つでも非表示(`visibility` の1の位が立たない)が在るか。
+
+        **1の位 = 表示。2の位はマスクの有効で、別の量**(基盤の T142)。
+        """
+        pid, seen = r['parent_id'], set()
+        while pid and pid not in seen:
+            seen.add(pid)
+            q = idx[page].get(pid)
+            if q is None:
+                return None
+            if not (int(q['visibility'] or 0) & 1):
+                return True
+            pid = q['parent_id']
+        return False
+
     cat = collections.Counter()
+    cat2 = collections.Counter()
     moved = collections.Counter()
     consec = 0
     kind = collections.Counter()
-    for group in sib.values():
+    for (page, _), group in sib.items():
         for i, r in enumerate(group):
             if truthy(r['folder']) or int(r['clip'] or 0) != 1:
                 continue
@@ -66,6 +90,18 @@ def main():
                 cat['下地が非表示'] += 1
             else:
                 cat['下地が在る(可視・非フォルダー)'] += 1
+            # **祖先まで見た分け方(併記)**
+            if b is None:
+                cat2['下地が無い'] += 1
+            elif truthy(b['folder']):
+                cat2['下地がフォルダー'] += 1
+            elif not (int(b['visibility'] or 0) & 1):
+                cat2['下地が非表示(自身)'] += 1
+            else:
+                ah = anc_hidden(page, b)
+                cat2['下地の親が表に無い' if ah is None else
+                     ('**下地が非表示(祖先)**' if ah else
+                      '下地が表示(祖先まで)')] += 1
             # m8 の形: フォルダーを兄弟から落とすと下地はどう動くか
             b2 = base_of(group, i, skip_folders=True)
             if (b is None) != (b2 is None):
@@ -83,6 +119,14 @@ def main():
 
     print(f'  連続クリップ(すぐ下の兄弟も `clip=1`) {consec}  {consec / n:.3%}'
           '  —— **上の4行と重なる。別の軸**')
+    print('\n== 祖先まで見た分け方(**併記**。追補100)==')
+    for k, v in cat2.most_common():
+        print(f'  {k:30s} {v:>7}  {v / n:.3%}')
+    h = cat2['下地が非表示(自身)'] + cat2['**下地が非表示(祖先)**']
+    print(f'  **下地が非表示(合計) {h}  {h / n:.3%}**'
+          '  —— 層自身だけで見ると 0.162%。**84倍**')
+    print('  **棒はどちらにも置かない。診断である**')
+
     print('\n== 下地の `layer_type`(行ごと)==')
     for k, v in kind.most_common():
         print(f'  {k:30s} {v:>7}')
