@@ -36,6 +36,10 @@ from pathlib import Path
 OUT = Path('results/m63_use_from_answers'); OUT.mkdir(parents=True, exist_ok=True)
 FIN = '仕上がった絵(統合済み)'
 ANCHORS = Path('results/alias/author_anchors.json')   # **追跡外**
+# **自由記入を語彙に写す表。写し方を決めるのは作者**(規律6)。
+# 2026-10-27 に作者が答えた: 「ほんの裏表紙」-> **印刷用の枠・レイアウト**。
+# **Claude は自分で足さない。** 足すときは日付と答を1行で書く
+FREE_MAP = {'ほんの裏表紙': '印刷用の枠'}   # 作者 2026-10-27
 ROUGH_ONLY = {'下絵・ラフ', 'ノンブル', 'トンボ', '印刷用の枠', 'メモ',
               'セリフ・文字', 'わからない', '添削', 'メモ 添削'}
 
@@ -79,14 +83,23 @@ def main(argv=()):
     print(f'== 材料({len(srcs)} 対)==')
     for qf, lf in srcs:
         print(f'  {qf}  +  {lf}')
-    bypage = collections.defaultdict(list)
+    bypage, mapped = collections.defaultdict(list), collections.Counter()
     for o, a in last.items():
         it = q.get(o)
         if it is None:
             drop['行列に無い order'] += 1; continue
         kind = (a['word'] if a['choice'] == 'word'
                 else (a['free'].strip() if a['choice'] == 'free' else 'わからない'))
+        if kind in FREE_MAP:
+            mapped[(kind, FREE_MAP[kind])] += 1
+            kind = FREE_MAP[kind]
         bypage[it['pid']].append(kind)
+
+    print('== 自由記入を語彙に写した層(作者の答)==')
+    for (a_, b_), n in mapped.most_common():
+        print(f'  「{a_}」 -> 「{b_}」  {n} 層')
+    if not mapped:
+        print('  なし')
 
     print('== 母集団の差分(理由別。規律9)==')
     print(f'  作者の答        {len(last)}')
