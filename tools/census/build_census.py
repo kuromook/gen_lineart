@@ -783,6 +783,13 @@ def emit_front_position(outdir: str, path: str, drops):
     print(f"    **祖先のフォルダーが非表示の層 {aux['n_hidden_ancestor']:,}**(T143)"
           " —— **層自身が可視でも、描かれない。** "
           "**可視の列は層自身の値である**")
+    pn, pd = aux["pred_n"], aux["pred_diff"]
+    agree = " / ".join(
+        f"{('全体' if k == '' else '.' + k)} {1 - pd[k] / pn[k]:.4f}"
+        for k in ("", "clip", "lip") if pn.get(k))
+    print(f"    **2つの述語(自身だけ / 祖先も見る)が一致する範囲: {agree}**"
+          " —— **9%前後の一致漏れは、点検でも正本でも通達でも査読を生き延びる。**"
+          "**借りた割合を散文に書かない**(母集団が違えば数が違う)")
     return written
 
 

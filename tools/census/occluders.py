@@ -772,7 +772,13 @@ def load_structure(path: str, drops):
     # **層の1行だけで走査できる量を使うと、定義に従った実装の方が落ちる**
     # (基盤が 2026-10-27 に自分の点検で踏んで回送した。**点検の値は定義から導く**)。
     n_hidden_anc = 0
+    # **2つの述語が一致する範囲を、走行が数える**(基盤の規則、2026-10-27)——
+    # 「表の1列で済む走査」(自身だけ見る)と定義(祖先も見る)が**どこまで同じ答を出すか。**
+    # **借りた割合を散文に書かない**: 母集団が違えば数が違う(先方は 90.8%、こちらは別)
+    pred_n = collections.Counter()
+    pred_diff = collections.Counter()
     for pg, ls in pages.items():
+        fmt_ = page_dims.get(pg, ("", ""))[0]
         for i, x in enumerate(ls):
             hid = False
             parent = x[1]
@@ -784,9 +790,15 @@ def load_structure(path: str, drops):
                 if pvis % 2 == 0 or pop == 0:
                     hid = True
                     break
+            pred_n[fmt_] += 1
+            pred_n[""] += 1
             if hid:
                 ls[i] = x[:9] + (True,)
                 n_hidden_anc += 1
+                # 自身は表示なのに祖先が非表示 = **2つの述語が違う答を出す層**
+                if x[5] % 2 == 1 and x[4] > 0:
+                    pred_diff[fmt_] += 1
+                    pred_diff[""] += 1
     _STRUCT_CACHE[path] = (
         pages, {"folder_rows": folder_rows, "folder_children": folder_children,
                 "n_no_z": n_no_z,
@@ -795,6 +807,7 @@ def load_structure(path: str, drops):
                 "fmt_year_pages": {k: len(v) for k, v in fmt_year_pages.items()},
                 "n_bad_fmt": n_bad_fmt, "n_bad_year": n_bad_year,
                 "n_hidden_ancestor": n_hidden_anc,
+                "pred_n": pred_n, "pred_diff": pred_diff,
                 "folder_state": folder_state,
                 "folder_child_rows": folder_child_rows}, n_rows)
     return _STRUCT_CACHE[path]
