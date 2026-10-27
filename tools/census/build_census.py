@@ -757,12 +757,18 @@ def emit_front_position(outdir: str, path: str, drops):
     rows = occluders.front_position(pages, aux, drops)
     note = (f"全 {n_rows:,} 行のうち、**フォルダー以外で `z_global` を持つ層。** "
             f"`z_global` が空で重なり順に入らない非フォルダー層 {aux['n_no_z']} は除いた"
-            "(供給元の言明: 木から辿れない層とその中の層)")
+            "(供給元の言明: 木から辿れない層とその中の層)。"
+            "**両形式を含む**(`.lip` を母集団に入れた。作者の決定 2026-10-27)—— "
+            "**形式ごとの内訳は `n_layers_clip` / `n_layers_lip` の列に在る。**"
+            "**`.lip` が在る年の札は限られている**ので"
+            "(どの札かは `population_by_format.csv`)、"
+            "**形式の内訳は世代の内訳でもある** —— この表では分離できない")
     out = [r + [note, "census track(供給元の `z_global` から数えた。"
                       "**向きは供給元の v2 の訂正に依る**)", bc_today()] for r in rows]
     written = write_csv(
         os.path.join(outdir, "occluder_front_position.csv"),
         ["occluder_class", "label", "matched_on", "scope", "n_layers", "n_pages",
+         "n_layers_clip", "n_layers_lip",
          "median_front_share", "share_front_decile", "share_opacity_full",
          "share_visible_bit", "share_composite_normal", "reading",
          "population_note", "measured_by", "as_of"], out)
@@ -770,7 +776,8 @@ def emit_front_position(outdir: str, path: str, drops):
           f" / 重なり順に入らない層 {aux['n_no_z']}")
     for r in out:
         print(f"      {r[0]:22s} {r[2]:10s} {r[3]:6s} n={r[4]:>6} "
-              f"中央={r[6]} 前方1割={r[7]}  {r[11]}")
+              f"(clip {r[6]:>6} / lip {r[7]:>6}) "
+              f"中央={r[8]} 前方1割={r[9]}  {r[13]}")
     print("    **手前に在ることは、重なっていることではない** —— "
           "何を隠しているかは画素が要る(保留中)")
     return written
@@ -786,7 +793,7 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
     pages, aux, n_rows = occluders.load_structure(path, drops)
     if not pages:
         return 0
-    rows, n_dec, n_all, comb = occluders.front_decile_kinds(pages, drops)
+    rows, n_dec, n_all, comb = occluders.front_decile_kinds(pages, aux, drops)
     note = (f"頁の中の前方割合。{occluders.FRONT_DECILE_RULE}。"
             f"前方1割 {n_dec:,} 層 / 群に入った層 {n_all:,}"
             f"({n_dec / n_all:.4f})。"
@@ -799,12 +806,14 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
            for r in rows]
     written = write_csv(
         os.path.join(outdir, "front_decile_kinds.csv"),
-        ["v_layer_kind", "n_layers", "share_of_decile", "share_of_kind",
+        ["v_layer_kind", "n_layers", "n_layers_clip", "n_layers_lip",
+         "share_of_decile", "share_of_kind",
          "share_of_all", "reading", "population_note", "measured_by", "as_of"], out)
     print(f"  [前方1割を占めている種類] {occluders.FRONT_DECILE_RULE}")
     for r in out:
-        print(f"      {r[0]:16s} {r[1]:>7} 前方1割の {r[2]} / その種類の {r[3]}"
-              f" / 全体では {r[4]}  {r[5]}")
+        print(f"      {r[0]:16s} {r[1]:>7} (clip {r[2]:>6} / lip {r[3]:>6}) "
+              f"前方1割の {r[4]} / その種類の {r[5]}"
+              f" / 全体では {r[6]}  {r[7]}")
     print(f"      束ねた2種 {'・'.join(comb['kinds'])}: 前方1割の "
           f"{comb['share_of_decile']:.4f} / 母集団の {comb['share_of_all']:.4f}"
           f"({comb['n_in_all']:,} 層)")
@@ -812,6 +821,72 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
           "基盤が `<= 0.1` で測って 529層ずれた。**母集団の欄に書いてある**")
     print("    **束ねた割合は数から出す** —— "
           "印字された小数3桁を足すと 0.086 になるが、数から出すと 0.0853")
+    return written
+
+
+def emit_population_by_format(outdir: str, path: str, n1_path: str, drops):
+    """**母集団を年 × 形式で出す表。** 作者の決定(2026-10-27): **`.lip` を入れる。**
+
+    **この表が在るまで、`.lip` は入っていながら書かれていなかった** ——
+    依頼7と依頼8 の「全数 437,561層」は **`.clip` 312,898 + `.lip` 124,663** の和で、
+    **公開した表のどこにも形式の列が無かった。**
+    **決定が変えたのは材料ではなく、書いてあることである**(T139)。
+
+    **頁の数と層の数は別の便から来る**(頁は便 n1、層とフォルダーは依頼8)——
+    依頼8 には**層の在る頁**しか無いので、**読めなかった4頁はそこに出てこない。**
+    だから `n_pages` と `n_pages_with_layers` を**別の列**にしてある(T138)。
+    """
+    pages, aux, n_rows = occluders.load_structure(path, drops)
+    if not pages:
+        print("  [母集団の形式ごとの内訳] **依頼8 の構造の表が無い。** この表は書かない")
+        return 0
+    n1 = occluders.load_pages_by_year(n1_path, drops)
+    if not n1:
+        print("  [母集団の形式ごとの内訳] **便 n1 が無い。** この表は書かない")
+        return 0
+    # **年の札は白名簿に入れる前に形を強制する**(`load_pages_by_year` と `path_year`
+    # の両方で `^\d{4}[a-z]?$` を強制してある)
+    ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in n1})
+    ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in aux["fmt_year"]})
+    rows = occluders.population_by_format(aux, n1, drops)
+    note = (f"頁の数は便 n1、層とフォルダーの数は依頼8 の表({n_rows:,} 行)。"
+            "**どちらも同じ DB の同じ走行**なので、**一致は一致であって"
+            "独立な確認ではない**(T132)。"
+            "**`.lip` の画素は1頁も無い** —— 便 n4 の `rendered` は全行が空で、"
+            "抽出側の言明は**「描けなかったのではなく、描いていない」。**"
+            "だから**素性の側(画素の分布)の `.lip` は 0 頁**で、"
+            "**0 と測ったのではなく材料が無い**(T126)。"
+            "**`sum_n_layers_incl_folders` はフォルダーの行を含む** —— "
+            "**同じ割合を非フォルダーの分母で出すと別の数になる**"
+            "(2026-10-27、基盤と 66.3% 対 70.0% でずれた。**どちらも正しく、"
+            "どちらも「層」と書いていた**)")
+    out = [r + [note, "抽出側(um350)が出した2便 / census track が年 × 形式に組んだ",
+                bc_today()] for r in rows]
+    written = write_csv(
+        os.path.join(outdir, "population_by_format.csv"),
+        ["grain", "year_label", "format", "n_pages", "n_read_error",
+         "n_pages_with_layers", "sum_n_layers_incl_folders", "sum_n_folders",
+         "reading", "population_note", "measured_by", "as_of"], out)
+    print(f"  [母集団の形式ごとの内訳] 年 × 形式 {sum(1 for r in rows if r[0] == 'year')} 行"
+          f" / 拡張子が2形式でない行 {aux['n_bad_fmt']}"
+          f" / 年の札の形でない行 {aux['n_bad_year']}")
+    for r in out:
+        if r[0] == "format_total":
+            print(f"      {r[2]:5s} 頁 {r[3]:>6}(層が在る {r[5]:>6})"
+                  f" / 層 {r[6]:>7} / フォルダー {r[7]:>7}  {r[8]}")
+    # **3便の突き合わせ。** 合わないまま公開しない
+    bad = 0
+    print("    [便どうしの突き合わせ]")
+    for what, mine, theirs in occluders.check_formats(
+            aux, occluders.N2_DEFAULT, occluders.N4_DEFAULT, drops):
+        ok = mine == theirs
+        bad += 0 if ok else 1
+        print(f"      {what}: こちら {mine:,} / 便 {theirs:,}  "
+              f"{'一致' if ok else '**食い違い**'}")
+    if bad:
+        print(f"      **{bad} 件 食い違っている。** 読み取りか便のどちらかが違う")
+    print("    **`.lip` が在る年の札は限られている** —— "
+          "**形式ごとの差を世代の差と読み分けられない**(この表では分離できない)")
     return written
 
 
@@ -830,13 +905,18 @@ def emit_folder_contents(outdir: str, path: str, drops):
            for r in rows]
     written = write_csv(
         os.path.join(outdir, "occluder_folder_contents.csv"),
-        ["occluder_class", "label", "n_folders", "n_folders_with_layers",
-         "n_folders_empty", "n_child_layers", "n_pages", "reading",
+        ["occluder_class", "label", "n_folders", "n_folders_clip", "n_folders_lip",
+         "n_folders_with_layers",
+         "n_folders_empty", "n_child_layers", "n_pages",
+         "author_reading", "reading",
          "population_note", "measured_by", "as_of"], out)
     print("  [フォルダーに付いた名前の中身]")
     for r in out:
-        print(f"      {r[0]:22s} フォルダー {r[2]:>4} / 中に層が在る {r[3]:>4}"
-              f" / 空 {r[4]:>4} / 直下の層 {r[5]:>5}")
+        print(f"      {r[0]:22s} フォルダー {r[2]:>4}"
+              f"(clip {r[3]:>4} / lip {r[4]:>4}) / 中に層が在る {r[5]:>4}"
+              f" / 空 {r[6]:>4} / 直下の層 {r[7]:>5}")
+        if r[9]:
+            print(f"        {r[9]}")
     return written
 
 
@@ -1086,6 +1166,10 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_names", "n_folders", "n_pages_top_name", "n_parent_names",
                "n_folders_with_layers", "n_folders_empty", "n_child_layers",
                "n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_rendered",
+               # **形式ごとの内訳**(`.lip` を母集団に入れた。作者の決定 2026-10-27)
+               "n_layers_clip", "n_layers_lip",
+               "n_folders_clip", "n_folders_lip",
+               "n_read_error", "n_pages_with_layers",
                "n_drawn_gt0", "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
                "n_pages_without_work", "n_works", "n_rows",
                "ext_clip", "ext_lip",
@@ -1117,7 +1201,9 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "bound_class", "calendar_year", "occluder_class", "found_by",
             "is_drawing_layer", "gap_bucket",
             "probe", "first_year_label", "last_year_label",
-            "matched_on", "scope")
+            # **`scope` と `grain` は別の列である** —— 同じ列名に2つの量を入れない(T138)。
+            # `scope` は前方割合を測った群(頁 / 親)、`grain` は母集団の表の行の粒度
+            "matched_on", "scope", "grain")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
@@ -1126,6 +1212,8 @@ PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
               "label", "what", "not_what", "share", "category", "rule",
               "probe_what",
               "population_note", "corroboration",
+              # **作者の判断を測定の列に混ぜない。** 別の列にして、散文として点検する
+              "author_reading",
               "reading", "kinds_of_layers")
 
 
@@ -1220,6 +1308,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "matched_on": {"matched_on", "layer_name", "top_name", "other_names",
                        "ancestors", "baseline", ""},
         "scope": {"scope", *{k for k, _ in occluders.SCOPES}, ""},
+        "grain": {"grain", "year", "format_total", ""},
         "found_by": {"found_by", "名前の規則(層名とフォルダーの鎖)", "種別", ""},
         "is_drawing_layer": {"is_drawing_layer", "yes", "no", ""},
         "gap_bucket": {"gap_bucket", *{b for _, b in faint.GAP_BUCKETS}, ""},
@@ -1565,6 +1654,8 @@ def main() -> int:
         args.public_out, occluders.R7_DEFAULT, drops_dl)
     pub["occluder_front_position.csv"] = emit_front_position(
         args.public_out, occluders.R8_DEFAULT, drops_dl)
+    pub["population_by_format.csv"] = emit_population_by_format(
+        args.public_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, drops_dl)
     pub["occluder_folder_contents.csv"] = emit_folder_contents(
         args.public_out, occluders.R8_DEFAULT, drops_dl)
     pub["front_decile_kinds.csv"] = emit_front_decile_kinds(
@@ -1601,6 +1692,8 @@ def main() -> int:
         args.full_out, occluders.R7_DEFAULT, Drops())
     full["occluder_front_position.csv"] = emit_front_position(
         args.full_out, occluders.R8_DEFAULT, Drops())
+    full["population_by_format.csv"] = emit_population_by_format(
+        args.full_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, Drops())
     full["occluder_folder_contents.csv"] = emit_folder_contents(
         args.full_out, occluders.R8_DEFAULT, Drops())
     full["front_decile_kinds.csv"] = emit_front_decile_kinds(

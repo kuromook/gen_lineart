@@ -111,8 +111,18 @@ COLUMN_CAVEATS = {
     "n_folders_empty": ["遮蔽物の名前(全数)"],
     "n_child_layers": ["遮蔽物の名前(全数)"],
     "reading": ["フキダシの両面(仕組みから導いた素性)", "遮蔽物の重なり順(全数の構造の側)", "遮蔽物の名前(全数)"],
-    "sum_n_layers_incl_folders": ["層数(集計どうしの比較)"],
+    "sum_n_layers_incl_folders": ["層数(集計どうしの比較)",
+                                  "`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
     "sum_n_folders": ["層数(集計どうしの比較)"],
+    "grain": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "n_read_error": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "n_pages_with_layers": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "n_layers_clip": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "n_layers_lip": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)",
+                     "`ext_lip`(この集計に入っている `.lip` の頁数)"],
+    "n_folders_clip": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "n_folders_lip": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "author_reading": ["空の `黒消し` フォルダー 531/609(**作者の判断 2026-10-27**)"],
 }
 
 
@@ -165,7 +175,8 @@ def main() -> int:
                           "occluder_classes", "req3_bound_classes",
                           "faint_alpha_gap", "occluder_balloon_two_sided",
                           "occluder_vocab_full", "occluder_front_position",
-                          "occluder_folder_contents", "front_decile_kinds")}
+                          "occluder_folder_contents", "front_decile_kinds",
+                          "population_by_format")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])
@@ -194,8 +205,11 @@ def main() -> int:
                  for c in CAVEATS],
         empty_reasons=empty_reasons,
         reasons={
-            "lip": "手元の材料に `.lip` が1頁も入っていない。"
-                   "0 は「数えて 0 だった」ではない(ファイルは 1,986 在る)",
+            "lip": "**この母集団の材料に `.lip` が1頁も入っていない**(0 は"
+                   "「数えて 0 だった」ではない)。**`.lip` は母集団に入っている** ——"
+                   "1,986頁 / 124,663層(作者の決定 2026-10-27)。"
+                   "**画素だけが1頁も無い**(抽出側: 「描いていない」)。"
+                   "形式ごとの行は `population_by_format.csv`",
             "mask_fill": f"mask_fill {mask_fill:,}層({mask_fill:,} 層分)。"
                          "本体は InitColor 255 = 全面で、0 は空を意味しない。"
                          "抽出側が読み手を直すと値が動くので集計に入れない",
@@ -211,7 +225,8 @@ def main() -> int:
             "固有名: 0",
         ],
         foot=f"走行 {as_of}(器具の版 "
-             f"{bc.instrument_version()['commit']})。集計した頁 {n_pages:,}・層 {n_layers:,}(すべて .clip)。"
+             f"{bc.instrument_version()['commit']})。頁と層の表に集計した頁 {n_pages:,}・層 {n_layers:,}"
+             f"(**画素を持つ材料なので .clip だけ**。母集団は 9,653頁 / 437,561層で .lip を含む)。"
              f"但し書き {len(CAVEATS)} 行。段 A に固有名は 0。",
     )
 

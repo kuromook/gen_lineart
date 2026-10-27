@@ -172,8 +172,15 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="thesis">重かったのは数を取ることではなく、数に付く但し書きを毎回引き直すことだった。だからこれは「数の表」ではなく、<b>数と、その数が答えない問いの表</b>である。</p>
 
 <h2><span class="num">1 / 母集団</span>この数は、何の数か</h2>
-<p class="lede">先にここを読む。ファイル数と異なり数は別の量で、層の数はすべて <code>.clip</code> のものである。「測った者」の欄が空の行は無い。</p>
+<p class="lede">先にここを読む。ファイル数と異なり数は別の量である。「測った者」の欄が空の行は無い。</p>
 <div class="scroller"><table id="t-pop"></table></div>
+
+<h3 class="sub">1-1 / <code>.lip</code> も母集団に入っている —— ただし画素は1頁も無い</h3>
+<p class="lede"><b>作者の決定(2026-10-27):「入れる」</b> —— <b>母集団は 9,653頁 / 437,561層で、<code>.lip</code> 1,986頁 / 124,663層を含む</b>(<code>.clip</code> は 7,667頁 / 312,898層)。<b>だが「母集団に入っている」と「全部の表に入っている」は別である。</b></p>
+<p class="lede"><b><code>.lip</code> に画素は1頁も無い</b> —— 抽出側の言明は<b>「描けなかったのではなく、描いていない」</b>(便 n4 の <code>rendered</code> は全 124,663行が空。走行のたびに数えて確かめている)。<b>だから素性の側(画素の分布)の <code>.lip</code> は 0 頁で、0 と測ったのではなく材料が無い</b>(T126)。</p>
+<p class="lede"><b>そして決定の前から、名前の側(依頼7)と構造の側(依頼8)には <code>.lip</code> が入っていた</b> —— 「全数 437,561層」はその時すでに <b>312,898 + 124,663</b> の和で、<b>公開した表のどこにも形式の列が無かった。決定が変えたのは材料ではなく、書いてあることである</b>(T139: 出力は作り直されるが、文は作り直されない)。<br><b>どの表がどの形式か</b>:両形式 = この表・6-1・6-2・6-4・軸の端の表。<b><code>.clip</code> だけ</b>(画素を持つ材料から出た表)= 4(頁)・5(層)・6-3(フキダシの両面)。</p>
+<p class="lede"><b><code>.lip</code> が在る年の札は限られている</b>(行の <code>reading</code> に札を印字してある)—— <b>だから形式ごとの差を世代の差と読み分けられない。</b>形式を次元として出したが、<b>この表では分離できない。</b><br><b>頁の数と「層が在る頁」の数は別の列である</b>:層の表には<b>層の在る頁</b>しか無いので、<b>読めなかった4頁がそこには出てこない</b>(9,653 対 9,649)。</p>
+<div class="scroller"><table id="t-popfmt"></table></div>
 
 <h2><span class="num">2 / 答えない問い</span>各列が答えないこと</h2>
 <p class="lede">この集計の本体。行のほとんどは、抽出側と基盤が 2026-10-26 に自己訂正した内容から来ている。<code>T&lt;n&gt;</code> は台帳の罠の番号。</p>
@@ -220,10 +227,12 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <h3 class="sub">6-1 / 名前側は全数に届いた —— ただし年によって見つかる物が違う</h3>
 <p class="lede"><b>依頼7(2026-10-27 着)で層名が全数になった</b> —— 16,241 の異なる名前 / 437,561層。<b>フォルダーの行も入っている。</b>そしてそれで分かったのは、<b>名前で集めると年によって見つかる遮蔽物が違う</b>ということである:<b>黒消しは 2014〜2016 だけ、ホワイトの変種は 2012〜2020、<code>white</code> のフォルダーは 2016〜2018 だけ、フキダシだけが通年(2014→2024c)。</b><b>一様な取りこぼしではなく、世代と相関した取りこぼしである</b> —— 「世代もプールである」が、集める側の濾過器に当たった形。</p>
 <p class="lede"><b>頁は足せない</b>(同じ頁に2つの名前が在りうる)ので、<b>最大の1名の頁数だけを書いている</b>。<b>語彙は物を同定しない</b> —— フキダシの語彙に <code>text</code> 種別の層が1つ入った(台詞の中の語に当たった)。<b>こちらの語彙は 211層・13名を落としていた</b>(<code>rendering0001</code> の形)—— <b>供給元の素の <code>rendering</code> 5,383 と自分の 5,172 を比べて見つかった。</b></p>
+<p class="lede"><b>そして形式を列にしたら、「世代と相関した取りこぼし」の正体が見えた(2026-10-27)</b> —— <b>同じ物に付いている名前が形式で違う。</b><code>white</code> という名そのものは <b><code>.clip</code> 2,565層に対し <code>.lip</code> 1層</b>、日本語の変種は逆に <b><code>.clip</code> 8層に対し <code>.lip</code> 3,244層</b>。<b>黒消しのフォルダー 609 は全部 <code>.lip</code>(<code>.clip</code> は 0)。</b>フキダシの早い年の分割形 254層も <code>.lip</code> 側である。<br><b>だから「年ごとに見つかる物が違う」は、「形式ごとに名前が違う」とほぼ同じことを言っていた</b> —— <b>そして形式と年は分離できない</b>(<code>.lip</code> が在る年の札は限られている)。<b>どちらが効いているかは、この表では決められない。</b></p>
 <div class="scroller"><table id="t-occvoc"></table></div>
 
 <h3 class="sub">6-2 / <code>黒消し</code> は層ではなくフォルダーだった</h3>
 <p class="lede"><b>層では 0件、フォルダーで 609。</b>だから<b>遮蔽しているのはその中の層</b>で、<b>609 を遮蔽物の数と呼べない</b> —— <b>中に層が在るフォルダーは 78、直下の層は 254、空のフォルダーが 531。</b></p>
+<p class="lede"><b>空の 531 については作者の判断が在る(2026-10-27):「空であればテンプレで作られて使用しなかったものだろう。一時期そういう工程だった。」</b> —— <b>これは測定ではない。</b>こちらが出したのは数だけで(規律6: どの名前が遮蔽物か・絵が何を描いているかは作者が決める)、<b>数の側から言えるのは空のフォルダーが在る年の札が限られていることだけである。それが「一時期」と一致して見えるのは一致であって確認ではない</b> —— 作者はもう答を持っているので、<b>裏付けの要る主張ではない。</b><br><b>そして 609 は全部 <code>.lip</code> である</b>(<code>.clip</code> は 0)—— <b>「2014〜2016 だけ」と書いていたものは、「<code>.lip</code> だけ」でもあった。</b>作者の「一時期」がどちらの軸かは<b>この表では決められない</b>(<code>.lip</code> が在る年の札は限られているので、年と形式が分離できない)。<br><b>まだ答えていないもの</b>:空でないフォルダーが使われたか / テンプレが何だったか。</p>
 <div class="scroller"><table id="t-occfold"></table></div>
 
 <h3 class="sub">6-3 / フキダシの両面 —— 仕組みから導いた素性</h3>
@@ -238,6 +247,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede"><b>棒の前に帰無値を出す</b> —— 「手前に寄っている」は、<b>同じ群の層を1つ選んだときの前方割合</b>と比べて初めて言える。<b>フキダシは頁の中で中央 0.152(帰無値 0.500)、前方1割に 33.9%(帰無値 11.2% の 3.0倍)。99.7% が不透明度 256・99.6% が可視・99.8% が通常合成。</b></p>
 <p class="lede"><b>そして同じ層が、親の中では後ろ寄りである</b>(中央 0.750)—— <b>文字がその上に乗るから</b>で、どちらも正しい。<b>頁の中と親の中は別の量なので、同じ列名に入れない</b>(<code>scope</code> の列で分ける)。<b>2つの統計量が食い違うことも在る</b>:親の中では中央が後ろ寄りを言い、前方1割は帰無値どおり(1.04倍)。<b>片方だけ書くと、書いた側の話になる。</b><br><b>ホワイトは逆の形</b> —— 頁の中では前方1割が帰無値の 0.39倍(<b>手前に寄っていない</b>)が、親の中では 1.8倍。<b><code>rendering_*</code>(経路2)は頁の中で後ろ寄り(中央 0.721)</b> —— <b>背景のレンダリングで、線画を隠す側ではない。</b></p>
 <p class="lede"><b>帰無値には実測の形が付いている</b> —— 解析の 0.500 は<b>定義から出る数</b>で、定義が間違っていても 0.500 になる。<b>前後に寄る理由の無い名前</b>(線画 22,690層)を同じ軸で測ると<b>中央 0.508</b>で、<b>軸そのものが素直だと分かる</b>。<b>ただし同じ対照は前方1割では帰無値を下回る</b>(0.048 対 0.112)—— <b>頁の最前は特定の種類の層が占めている</b>。だから前方1割の比は<b>解析の帰無値に対する比として読み、対照に対する比としては読まない</b>。</p>
+<p class="lede"><b>形式を列にすると、1行が2つの母集団を束ねていたと分かる</b>(2026-10-27)—— <b>ホワイトの <code>layer_name</code> 行(5,818層・中央 0.397)は、<code>white</code> という名の <code>.clip</code> 2,573層(中央 0.473 = 寄りなし)と、日本語の変種の <code>.lip</code> 3,245層(中央 0.361 = 手前寄り)を1行にしていた。</b><b>「世代もプールである」が、ここでは形式のプールとして出た。</b><br>対照も同じ形で読む必要がある:<b>線画 22,690層のうち <code>.lip</code> は 1,053層</b>なので、<b>この対照は実質 <code>.clip</code> の対照である。</b><b>どの行も <code>n_layers_clip</code> / <code>n_layers_lip</code> の列を持っているので、束ねている行が見える。</b></p>
 <p class="lede"><b>語彙全体の数と、1名の数は別の量である</b> —— フキダシは<b>語彙9名で中央 0.152、<code>フキダシ</code> 1名で 0.143</b>。<b>正規化は同じで、違いは語彙の広さだった</b>(基盤が独立に再現して出た食い違い)。<b>どちらかを選ぶのではなく、両方を行に出している</b>(<code>matched_on</code>)。<br><b>そして早い年の分割形は後ろに居る</b>:1名以外の 268層は中央 0.247 で、<b>面と輪郭に分かれた2名は互いにほぼ同じ深さ(0.244 / 0.252)</b>—— <b>組として、後の単層形より後ろに在る。</b></p>
 <h3 class="sub">軸の端を占めているのは、絵ではない</h3>
 <p class="lede"><b>対照が保証するのは、比べた点の軸だけである</b> —— 線画は中央では帰無値どおりなのに、前方1割では下回る。<b>その理由を数にした</b>:前方1割 36,664層のうち <b><code>story_info</code> 7,405(その種類の <b>91.5%</b> が前方1割に在る)と <code>text</code> 6,538 で 13,943層</b>(前方1割の 38.0%)。<b>この2種は母集団の 8.53%(28,016層)しかない。</b><b>だから絵の層は最前に出てこない。</b><br><b>この 8.53% は数から出した割合である</b> —— 先に <b>8.6%</b> と書いたのは<b>印字された小数3桁を足した数</b>(0.025 + 0.061)で、<b>丸めの和は測った量ではない</b>。器具が束ねた割合を数から出して母集団の欄に印字する。</p>
@@ -498,18 +508,24 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
                          "n_pages_top_name", "first_year_label", "last_year_label",
                          "n_parent_names", "kinds_of_layers", "reading"],
          D.occluder_vocab_full);
-  render($("t-decile"), ["v_layer_kind", "n_layers", "share_of_decile",
+  render($("t-decile"), ["v_layer_kind", "n_layers", "n_layers_clip", "n_layers_lip",
+                         "share_of_decile",
                          "share_of_kind", "share_of_all", "reading"],
          D.front_decile_kinds);
   render($("t-occfold"), ["occluder_class", "label", "n_folders",
+                          "n_folders_clip", "n_folders_lip",
                           "n_folders_with_layers", "n_folders_empty",
-                          "n_child_layers", "n_pages", "reading"],
+                          "n_child_layers", "n_pages", "author_reading", "reading"],
          D.occluder_folder_contents);
+  render($("t-popfmt"), ["grain", "year_label", "format", "n_pages", "n_read_error",
+                         "n_pages_with_layers", "sum_n_layers_incl_folders",
+                         "sum_n_folders", "reading"], D.population_by_format);
   render($("t-occbal"), ["occluder_class", "probe", "probe_what", "n_layers",
                          "n_pages", "n_both_sides", "n_feature_only", "n_name_only",
                          "reading"], D.occluder_balloon_two_sided);
   render($("t-occfront"), ["occluder_class", "matched_on", "scope", "n_layers",
-                           "n_pages", "median_front_share", "share_front_decile",
+                           "n_pages", "n_layers_clip", "n_layers_lip",
+                           "median_front_share", "share_front_decile",
                            "share_opacity_full", "share_visible_bit",
                            "share_composite_normal", "reading"],
          D.occluder_front_position);

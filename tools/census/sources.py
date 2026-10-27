@@ -12,9 +12,12 @@ SUPPLIER_REPORTED = [
         predicate="構造 DB の `pages` 行 = 原稿ファイル(.clip 7,667 + .lip 1,986)",
         n_pages=9653, n_layers=None,
         measured_by="抽出側(um350)", as_of="2026-10-26",
-        needs="`pages` の年ごとの件数(いまは総数しか無い)",
+        needs="",   # **満たされた**(便 n1 が年 × 形式の頁数を持ってきた)
         satisfied_when=("source", "pages_by_year_all"),
-        caveat="ファイル数。**異なり数とは別の量**(T96 の形)",
+        caveat="ファイル数。**異なり数とは別の量**(T96 の形)。"
+               "**年 × 形式の行は `population_by_format.csv`** —— "
+               "**`.lip` 1,986頁もこの 9,653 に入っている**"
+               "(作者の決定 2026-10-27)",
     ),
     dict(
         key="db_distinct",
@@ -41,17 +44,19 @@ SUPPLIER_REPORTED = [
     ),
     dict(
         key="db_layers",
-        predicate="構造 DB の `layers` 行、**`.clip` だけ・`.lip` を入れる前**の数",
+        predicate="構造 DB の `layers` 行のうち **`.clip` の分**。"
+                  "**437,561 と同じ走行の数**(便 n2、2026-10-27)",
         n_pages=None, n_layers=312898,
-        measured_by="抽出側(um350)", as_of="2026-10-24 以前",
-        needs="**`.clip` だけの層数を、437,561 と同じ走行で取り直したもの。** "
-              "いまの 312,898 はそれより前の走行の数で、"
-              "**同じ走行の数でないと `.clip` と `.lip` を比べられない**",
+        measured_by="抽出側(um350)/ census track が依頼8 の表から数え直した",
+        as_of="2026-10-27",
+        needs="",   # **満たされた。** 便 n2 が同じ走行の形式ごとの数を持ってきた
         satisfied_when=("source", "clip_only_layers"),
-        caveat="**全数の問いについては `db_all_layers`(437,561)が後継。** "
-               "この行は `.clip` だけの数として残すが、**取り直していない。** "
-               "**437,561 − 312,898 を『`.lip` の層数』と名乗らない** —— "
-               "別の走行の数の引き算で、`A − B` は量ではなく手続きである",
+        caveat="**数は前の走行と同じ 312,898 だが、同じ数であることは同じ走行であることでは"
+               "ない** —— 便 n2 で**同じ走行の数として取り直した**(抽出側の言明: "
+               "この DB を作り直したとき `.clip` の層の数は変わっていない)。"
+               "**これで `437,561 − 312,898` を使わずに `.lip` の 124,663 が言える** —— "
+               "`A − B` は量ではなく手続きなので、**同じ走行の形式ごとの数として来るまで"
+               "待った。** 形式ごとの行は `population_by_format.csv`",
     ),
 ]
 
@@ -123,6 +128,38 @@ LOCAL_CSV = [
                "(手前に在ることは重なっていることではない)",
     ),
     dict(
+        key="pages_by_year_all",
+        path="inbox/census_n1_pages_by_year_20261027.csv",
+        predicate="**全数の年 × 形式の頁数**(9,653頁 = `.clip` 7,667 + `.lip` 1,986。22行)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**頁の数はこの便だけが持っている** —— 依頼8 の表は**層の在る頁**しか"
+               "持たないので、**読めなかった 4頁(`.clip`)がそこには出てこない。**"
+               "`n_pages` と `n_pages_with_layers` は**別の列**にしてある(T138)",
+    ),
+    dict(
+        key="clip_only_layers",
+        path="inbox/census_n2_layers_by_format_20261027.csv",
+        predicate="**同じ走行の形式ごとの層数**(`.clip` 312,898 / `.lip` 124,663。"
+                  "どちらもフォルダーを含む)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**行はここから出していない** —— 年の次元が無いので、"
+               "`population_by_format.csv` の行は依頼8 の表から数えて、"
+               "**この便とは突き合わせだけをする。** "
+               "**同じ DB の同じ走行なので、一致は一致であって独立な確認ではない**(T132)",
+    ),
+    dict(
+        key="lip_layers",
+        path="inbox/census_n4_lip_layers_20261027.csv",
+        predicate="**`.lip` の層の表**(124,663層 / 1,986頁。"
+                  "`v_layer_kind`・`layer_type`・`rendered`)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**`rendered` は全行が空** —— 抽出側の言明は"
+               "**「描けなかったのではなく、描いていない」。**"
+               "**走行のたびに全行を数えて確かめている**(言明と中身の突き合わせ)。"
+               "**この便の層の属性は依頼8 の表にも在る**ので、"
+               "**行はこの便から出さず、突き合わせに使う**(T132)",
+    ),
+    dict(
         key="added33_structure",
         path="inbox/pages_added33_structure_20261026.csv",
         predicate="後から入った33頁の構造(層数・フォルダー数・画布・dpi)",
@@ -137,20 +174,6 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
-    dict(path="inbox/census_n1_pages_by_year_20261027.csv",
-         supplies="pages_by_year_all",
-         what="年ごとの頁数(全 9,653。22行)",
-         why_not_yet="**年の行を全数に広げる作業がまだ**。"
-                     "いまの `pages_by_year.csv` は依頼3の872頁と added33 の33頁だけ"),
-    dict(path="inbox/census_n2_layers_by_format_20261027.csv",
-         supplies="clip_only_layers",
-         what="形式ごとの層数(`.clip` 312,898 / `.lip` 124,663)",
-         why_not_yet="**`db_layers` の 312,898 を同じ走行の数に差し替える作業がまだ**"),
-    dict(path="inbox/census_n4_lip_layers_20261027.csv",
-         supplies="lip_layers",
-         what="`.lip` の層の表(124,663層・1,986頁)",
-         why_not_yet="**`.lip` を母集団に入れる決定がまだ** —— "
-                     "`rendered` は全行が空で、**「描けなかった」ではなく「描いていない」**"),
     dict(path="inbox/census_n5_added33_canvas_20261027.csv",
          supplies="canvas_px",
          what="33頁の `canvas_unit`(mm 31頁 / px 2頁)と画素の画布",
@@ -184,17 +207,23 @@ def audit_arrived() -> int:
 ABSENT = [
     dict(
         key="lip_files",
-        predicate="`.lip` ファイル 1,986(異なり 1,224)",
+        predicate="`.lip` ファイル 1,986(異なり 1,224)/ 124,663層。"
+                  "**母集団に入っている**(作者の決定 2026-10-27: 「入れる」)。"
+                  "**ただし画素は1頁も無い**",
         n_pages=1986,
         measured_by="抽出側(um350)",
-        as_of="2026-10-26",
-        needs="`.lip` を含む層の表。**いまは1件も手元に無い**",
-        satisfied_when=("source", "lip_layers"),
-        caveat="**ここで読める2本の CSV には `.lip` が1頁も入っていない** —— "
-               "`ext_lip = 0` は「`.lip` を数えて 0 だった」ではなく"
-               "**「材料に `.lip` が無い」**。"
-               "この集計の層の数は**すべて `.clip` のもの**(T126 の形: "
-               "母集団の境界が読み手の対応形式から来ていて、誰も登録しなかった)",
+        as_of="2026-10-27",
+        needs="**`.lip` の画素。** 便 n4 の `rendered` は**全行が空**で、"
+              "抽出側の言明は**「描けなかったのではなく、描いていない」。** "
+              "**描く発注を出すかどうかは、まだ誰も決めていない**",
+        satisfied_when=("source", "lip_rendered"),
+        caveat="**「母集団に入っている」と「全部の表に入っている」は別である** —— "
+               "**名前の側(依頼7)と構造の側(依頼8)には前から入っていた**"
+               "(437,561 = `.clip` 312,898 + `.lip` 124,663)。"
+               "**素性の側(画素の分布)には 0 頁。** "
+               "`ext_lip = 0` の行は「`.lip` を数えて 0 だった」ではなく"
+               "**「その材料に `.lip` が無い」**(T126)。"
+               "**形式ごとの行は `population_by_format.csv`**",
     ),
 ]
 

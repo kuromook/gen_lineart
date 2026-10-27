@@ -580,6 +580,13 @@ def vocab_year_labels(rows):
 # **同じ頁の層を1つ選んだときの前方割合**と比べて初めて言える。
 R8_DEFAULT = os.path.join("inbox", "census_r8_layer_structure_20261027.csv")
 
+# 便 n1(年 × 形式の頁数)と便 n2(形式ごとの層数)。
+# **n2 は突き合わせにしか使わない** —— 行は依頼8 から出す(年の次元が在る)。
+# **同じ DB の同じ走行なので、一致は一致であって独立の確認ではない**(T132)
+N1_DEFAULT = os.path.join("inbox", "census_n1_pages_by_year_20261027.csv")
+N2_DEFAULT = os.path.join("inbox", "census_n2_layers_by_format_20261027.csv")
+N4_DEFAULT = os.path.join("inbox", "census_n4_lip_layers_20261027.csv")
+
 BASELINE_KEY = "baseline"
 
 # **帰無値の実測の形**(基盤が 2026-10-27 に足した)。
@@ -620,6 +627,40 @@ FRONT_DECILE_RULE = f"前方割合 < {FRONT_DECILE}(**境界の値 {FRONT_DECILE
 _STRUCT_CACHE = {}
 
 
+# --------------------------------------- 頁のパスから取れる2つの次元(**名前は取らない**)
+#
+# **ここは遮蔽物の話ではない。** 構造の表を読む器具がここに在るので、ここに置いた。
+#
+# **`.lip` を母集団に入れる決定は作者のもの**(2026-10-27、作者: 「入れる」)。
+# **決定の前から、依頼7と依頼8 の表には `.lip` が入っていた** ——
+# 312,898(`.clip`)+ 124,663(`.lip`)= 437,561 で、**「全数」と書いた数は両形式の和だった。**
+# **決定が変えたのは材料ではなく、書いてあることである**(T139 の形: 出力は作り直されるが
+# 文は作り直されない)。だから**形式を次元として出す。**
+PAGE_FORMATS = ("clip", "lip")
+YEAR_SEGMENT = 2          # `F:\manuscripts\<年>\...` の3つめ。**外れたら数えて落とす**
+
+
+def path_format(page_path: str) -> str:
+    """頁のパスの拡張子。**宣言した2つ以外は空で返す**(呼び出し側が数えて印字する)。"""
+    ext = page_path.rsplit(".", 1)[-1].lower() if "." in page_path else ""
+    return ext if ext in PAGE_FORMATS else ""
+
+
+def path_year(page_path: str) -> str:
+    """頁のパスの年の区画。**位置で取る。**
+
+    **形で探さない** —— 作品の名が年の形をしていた日に、作品名を年の札として
+    白名簿に入れてしまう。**位置で取り、形も強制する**(ここで返した札は公開の
+    白名簿に入るので、年の形でない語が1つ混ざれば点検に穴が開く ——
+    `vocab_year_labels` と同じ理由)。
+    """
+    segs = page_path.split("\\")
+    if len(segs) <= YEAR_SEGMENT:
+        return ""
+    v = segs[YEAR_SEGMENT]
+    return v if re.fullmatch(r"\d{4}[a-z]?", v) else ""
+
+
 def load_structure(path: str, drops):
     """構造の表を、**層名を持たない形に畳んで**読む。
 
@@ -643,6 +684,11 @@ def load_structure(path: str, drops):
     names_per_class = collections.defaultdict(collections.Counter)
     matched_at = []
     n_rows = n_no_z = 0
+    # **形式と年**(頁のパスから。名前は取らない)。**落ちた行は数えて返す**(規律9)
+    page_dims = {}
+    fmt_year = collections.defaultdict(collections.Counter)
+    fmt_year_pages = collections.defaultdict(set)
+    n_bad_fmt = n_bad_year = 0
     with open(path, encoding="utf-8", newline="") as fh:
         rd = _csv.reader(fh)
         head = next(rd)
@@ -655,6 +701,23 @@ def load_structure(path: str, drops):
             raise SystemExit(f"依頼8 の表に宣言した列が無い: {missing}")
         for row in rd:
             n_rows += 1
+            pg_ = row[ix["page_path"]]
+            dims = page_dims.get(pg_)
+            if dims is None:
+                dims = page_dims[pg_] = (path_format(pg_), path_year(pg_))
+            fmt, yr = dims
+            if not fmt:
+                n_bad_fmt += 1
+                drops.flag("頁のパスの拡張子が宣言した2形式でない(形式ごとの表)")
+            if not yr:
+                n_bad_year += 1
+                drops.flag("頁のパスの3つめが年の札の形でない(形式ごとの表)")
+            if fmt and yr:
+                cell = fmt_year[(yr, fmt)]
+                cell["sum_n_layers_incl_folders"] += 1
+                if row[ix["is_folder"]] == "True":
+                    cell["sum_n_folders"] += 1
+                fmt_year_pages[(yr, fmt)].add(pg_)
             name = row[ix["layer_name"]]
             anc = row[ix["ancestors"]]
             by_name = frozenset(k for k, p in pats.items() if name and p.search(name))
@@ -693,8 +756,154 @@ def load_structure(path: str, drops):
             pages[pg][i] = x[:8] + (hit,)
     _STRUCT_CACHE[path] = (
         pages, {"folder_rows": folder_rows, "folder_children": folder_children,
-                "n_no_z": n_no_z}, n_rows)
+                "n_no_z": n_no_z,
+                "page_fmt": {pg: d[0] for pg, d in page_dims.items()},
+                "fmt_year": fmt_year,
+                "fmt_year_pages": {k: len(v) for k, v in fmt_year_pages.items()},
+                "n_bad_fmt": n_bad_fmt, "n_bad_year": n_bad_year}, n_rows)
     return _STRUCT_CACHE[path]
+
+
+def load_pages_by_year(path: str, drops):
+    """年 × 形式の**頁数**(便 n1)。
+
+    **頁の数はこの便だけが持っている** —— 依頼8 の表は**層の在る頁**しか持たないので、
+    **読めなかった4頁がそこには出てこない。**「層が在る頁」と「頁」は別の量である。
+    """
+    import csv as _csv
+    if not os.path.exists(path):
+        drops.flag("年ごとの頁数の表が無い(便 n1 が未着)", path)
+        return {}
+    out = {}
+    with open(path, encoding="utf-8", newline="") as fh:
+        for r in _csv.DictReader(fh):
+            yr = (r.get("year_label") or "").strip()
+            fmt = (r.get("format") or "").strip()
+            # **年の札は白名簿に入る語**なので、形を強制して走行を落とす
+            if not re.fullmatch(r"\d{4}[a-z]?", yr) or fmt not in PAGE_FORMATS:
+                raise SystemExit(
+                    f"**便 n1 に宣言外の値**: year_label={yr!r} format={fmt!r}\n"
+                    "  **白名簿に入れない。** 年か形式の列に別のものが入っている")
+            out[(yr, fmt)] = (int(r["n_pages"]), int(r["n_read_error"] or 0))
+    return out
+
+
+def population_by_format(aux, n1, drops):
+    """**母集団を形式ごとに出す表。** 作者の決定(2026-10-27): **`.lip` を入れる。**
+
+    **2つの便を並べる**: 頁の数は便 n1、層とフォルダーの数は依頼8 の表。
+    **どちらも同じ DB の同じ走行**なので、**一致は一致であって独立の確認ではない**(T132)。
+
+    **この表が答えない**:
+    - **`.lip` の画素。** 1頁も無い —— 便 n4 の `rendered` は全行が空で、抽出側の言明は
+      **「描けなかったのではなく、描いていない」。** だから**素性の側(画素の分布)に
+      `.lip` は 0 頁**である —— **0 と測ったのではなく、材料が無い**(T126)
+    - **形式が年と独立であること。** **`.lip` は早い年に偏る**(行を見ること)。
+      **だから形式ごとの差を世代の差と読み分けられない** —— この表では分離できない
+    - **「層」が何を数えているか。** `sum_n_layers_incl_folders` は DB の `layers` の行で、
+      **フォルダーを含む**(便 n2 の `n_layers` と同じ量)
+    """
+    rows = []
+    keys = sorted(set(n1) | set(aux.get("fmt_year", {})))
+    fy = aux.get("fmt_year", {})
+    fyp = aux.get("fmt_year_pages", {})
+    tot = collections.defaultdict(collections.Counter)
+    for yr, fmt in keys:
+        n_pages, n_err = n1.get((yr, fmt), ("", ""))
+        c = fy.get((yr, fmt), collections.Counter())
+        n_lay = c["sum_n_layers_incl_folders"]
+        n_fol = c["sum_n_folders"]
+        n_with = fyp.get((yr, fmt), 0)
+        for k, v in (("n_pages", n_pages if n_pages != "" else 0),
+                     ("n_read_error", n_err if n_err != "" else 0),
+                     ("n_pages_with_layers", n_with),
+                     ("sum_n_layers_incl_folders", n_lay),
+                     ("sum_n_folders", n_fol)):
+            tot[fmt][k] += v
+            tot["both"][k] += v
+        rows.append(["year", yr, fmt, n_pages, n_err, n_with, n_lay, n_fol, ""])
+    # **年の札ごとに、どの形式が在るか。**
+    # **「早い年に偏る」と散文で書かない** —— `.lip` は 2020 にも在り、
+    # **2012〜2020 の6札に在って 2020b 以降に無い**。札を数えて書く
+    all_years = sorted({yr for yr, _ in keys})
+    years_of = {fmt: sorted({yr for yr, f in keys if f == fmt})
+                for fmt in PAGE_FORMATS}
+    # **年ごとの行の和は、この器具が計算する**(T140: 公開した行を読み手が足さない)
+    for fmt in list(PAGE_FORMATS) + ["both"]:
+        c = tot[fmt]
+        if not c:
+            continue
+        # **分母の種別を散文にも書く** —— 基盤が同じ割合を**非フォルダーの分母**で出して
+        # 66.3% 対 70.0% にずれた(2026-10-27)。**どちらも正しく、どちらも「層」と
+        # 書いていた。** 列名(`sum_n_layers_incl_folders`)は運んでいたが、
+        # **`reading` の散文が運んでいなかった** —— T138 の家族が分母の軸で出た形
+        share = (f"全層(**フォルダー込み**)の "
+                 f"{c['sum_n_layers_incl_folders'] / tot['both']['sum_n_layers_incl_folders']:.3f}"
+                 f" / 全頁の {c['n_pages'] / tot['both']['n_pages']:.3f}"
+                 f" / この形式が在る年の札 {len(years_of[fmt])}(全 {len(all_years)} 札): "
+                 + "・".join(years_of[fmt])
+                 if fmt != "both" and tot["both"]["sum_n_layers_incl_folders"] else
+                 f"**この2形式で母集団の全部**(作者の決定 2026-10-27)。"
+                 f"年の札は全 {len(all_years)}")
+        rows.append(["format_total", "", fmt, c["n_pages"], c["n_read_error"],
+                     c["n_pages_with_layers"], c["sum_n_layers_incl_folders"],
+                     c["sum_n_folders"], share])
+    # 年の行の読み: **その年の層のうちこの形式が占める割合**(年の中で形式が混ざる年が在る)
+    by_year = collections.Counter()
+    for r in rows:
+        if r[0] == "year":
+            by_year[r[1]] += r[6]
+    for r in rows:
+        if r[0] == "year" and by_year[r[1]]:
+            r[8] = (f"この年の層(**フォルダー込み**)の "
+                    f"{r[6] / by_year[r[1]]:.3f} がこの形式")
+    return rows
+
+
+def check_formats(aux, n2_path: str, n4_path: str, drops):
+    """**3つの便が同じ数を言っているか。**
+
+    - 依頼8 の表から数えた形式ごとの層数 ↔ 便 n2 の `n_layers` / `n_folders`
+    - 依頼8 の `.lip` の層数 ↔ 便 n4 の行数
+    - **便 n4 の `rendered` が本当に全行空か**(抽出側の言明: 「描いていない」)
+
+    **届く**: こちらの読み取りの誤り(拡張子の取り方・年の位置)、便どうしの食い違い、
+    言明と中身の食い違い。
+    **届かない**: DB そのもの。**3便とも同じ DB の同じ走行から出ている**ので、
+    **一致は一致であって、独立な確認ではない**(T132)。
+    """
+    import csv as _csv
+    out = []
+    fy = aux.get("fmt_year", {})
+    mine = collections.defaultdict(collections.Counter)
+    for (yr, fmt), c in fy.items():
+        mine[fmt]["n_layers"] += c["sum_n_layers_incl_folders"]
+        mine[fmt]["n_folders"] += c["sum_n_folders"]
+    if os.path.exists(n2_path):
+        with open(n2_path, encoding="utf-8", newline="") as fh:
+            for r in _csv.DictReader(fh):
+                fmt = (r.get("format") or "").strip()
+                if fmt not in PAGE_FORMATS:
+                    continue
+                for col in ("n_layers", "n_folders"):
+                    out.append((f"依頼8 から数えた {fmt} の {col}",
+                                mine[fmt][col], int(r[col])))
+    else:
+        drops.flag("便 n2 が無い(形式ごとの層数の突き合わせをしていない)", n2_path)
+    if os.path.exists(n4_path):
+        n4_rows = 0
+        n4_rendered = 0
+        with open(n4_path, encoding="utf-8", newline="") as fh:
+            for r in _csv.DictReader(fh):
+                n4_rows += 1
+                if (r.get("rendered") or "").strip():
+                    n4_rendered += 1
+        out.append(("便 n4 の行数(`.lip` の層)", mine["lip"]["n_layers"], n4_rows))
+        out.append(("便 n4 の `rendered` が空でない行"
+                    "(**抽出側の言明: 1枚も描いていない**)", 0, n4_rendered))
+    else:
+        drops.flag("便 n4 が無い(`.lip` の層の表の突き合わせをしていない)", n4_path)
+    return out
 
 
 def _front_shares(groups):
@@ -759,6 +968,15 @@ def front_position(pages, aux, drops):
     """
     import statistics
     rows = []
+    pf = aux.get("page_fmt", {})
+
+    def split(pgs):
+        """**形式ごとの層数。** `.lip` を母集団に入れたのは作者の決定(2026-10-27)で、
+        **入れた以上、どの行が何形式の層で出来ているかを書く**(`.lip` は早い年に偏るので、
+        形式の内訳は**世代の内訳でもある**)。"""
+        c = collections.Counter(pf.get(pg, "") for pg in pgs)
+        return c["clip"], c["lip"]
+
     by_page = [[(pg, x) for x in ls] for pg, ls in pages.items()]
     by_parent = collections.defaultdict(list)
     for pg, ls in pages.items():
@@ -772,6 +990,7 @@ def front_position(pages, aux, drops):
         base_dec = sum(1 for s in base if s < FRONT_DECILE) / len(base)
         rows.append([BASELINE_KEY, "**帰無値**(同じ群の層を1つ選んだとき)", "baseline",
                      scope, len(base), len(pages),
+                     *split([pg for _, pg, _ in shares]),
                      f"{base_med:.3f}", f"{base_dec:.3f}", "", "", "",
                      f"{scope_label}。**比が定義できない群の層 {skipped} は"
                      f"入れていない**(兄弟が自分だけの親)"])
@@ -795,6 +1014,7 @@ def front_position(pages, aux, drops):
                 rows.append([
                     key, label, matched_on, scope, n,
                     len({pg for _, pg, _ in sel}),
+                    *split([pg for _, pg, _ in sel]),
                     f"{med:.3f}", f"{dec:.3f}",
                     f"{sum(1 for _, _, x in sel if x[4] == 256) / n:.3f}",
                     f"{sum(1 for _, _, x in sel if x[5] % 2 == 1) / n:.3f}",
@@ -803,7 +1023,7 @@ def front_position(pages, aux, drops):
     return rows
 
 
-def front_decile_kinds(pages, drops):
+def front_decile_kinds(pages, aux, drops):
     """**軸の端を、どの種類が占めているか。**
 
     **なぜ要るか**(基盤、2026-10-27): 対照(線画)は**中央では帰無値どおり(0.508)**だが、
@@ -819,10 +1039,13 @@ def front_decile_kinds(pages, drops):
     import bisect
     dec = collections.Counter()
     allk = collections.Counter()
-    for ls in pages.values():
+    dec_fmt = collections.Counter()      # (種類, 形式) —— **前方1割の中の内訳**
+    pf = aux.get("page_fmt", {})
+    for pg, ls in pages.items():
         if len(ls) < 2:
             drops.flag("群が1層で前方割合が定義できない(前方1割の表)")
             continue
+        fmt = pf.get(pg, "")
         zs = sorted(x[0] for x in ls)
         m = len(ls) - 1
         for x in ls:
@@ -830,6 +1053,7 @@ def front_decile_kinds(pages, drops):
             allk[x[7]] += 1
             if share < FRONT_DECILE:
                 dec[x[7]] += 1
+                dec_fmt[(x[7], fmt)] += 1
     n_dec = sum(dec.values())
     n_all = sum(allk.values())
     # **束ねた数は数から出す**(上の `NON_PICTURE_KINDS` の注)
@@ -840,7 +1064,8 @@ def front_decile_kinds(pages, drops):
                     share_of_all=np_all / n_all if n_all else 0.0)
     rows = []
     for kind, n in dec.most_common():
-        rows.append([kind, n, f"{n / n_dec:.3f}", f"{n / allk[kind]:.3f}",
+        rows.append([kind, n, dec_fmt[(kind, "clip")], dec_fmt[(kind, "lip")],
+                     f"{n / n_dec:.3f}", f"{n / allk[kind]:.3f}",
                      f"{allk[kind] / n_all:.3f}",
                      "**この種類のほとんどが前方1割に在る**"
                      if n / allk[kind] >= 0.5 else
@@ -851,6 +1076,23 @@ def front_decile_kinds(pages, drops):
     return rows, n_dec, n_all, combined
 
 
+# **作者の判断**(2026-10-27)。**測定ではない。**
+#
+# 空の `黒消し` フォルダー 531/609 を「数として出し、結論は書かない」(規律6)として
+# 作者に問うた答:
+#
+# > **空であればテンプレで作られて使用しなかったものだろう。一時期そういう工程だった。**
+#
+# **これは作者のものなので、こちらの数で裏付けたとは書かない。** 数の側から言えるのは
+# **空のフォルダーが在る年の札が限られている**ことだけで、**「一時期」と一致して見える**のは
+# 一致であって確認ではない(作者はもう答を持っているので、裏付けの要る主張ではない)。
+AUTHOR_READING = {
+    "black_erase": "**作者の判断(2026-10-27、測定ではない)**: "
+                  "**空であればテンプレで作られて使用しなかったものだろう。"
+                  "一時期そういう工程だった。**",
+}
+
+
 def folder_contents(aux):
     """**名前がフォルダーに付いている類**(黒消し)の中身。
 
@@ -859,6 +1101,8 @@ def folder_contents(aux):
     **中が空のフォルダーも数える**(規律9: 落としたものを理由別に印字する)。
     """
     rows = []
+    pf = aux.get("page_fmt", {})
+    py = {pg: path_year(pg) for pg in pf}
     for key, label, pat, want_kind in CLASSES:
         if pat is None:
             continue
@@ -868,8 +1112,15 @@ def folder_contents(aux):
         kids = aux["folder_children"]
         with_kids = sum(1 for pp, lid in fr if kids.get((pp, lid), 0))
         n_kids = sum(kids.get((pp, lid), 0) for pp, lid in fr)
-        rows.append([key, label, len(fr), with_kids, len(fr) - with_kids, n_kids,
+        fc = collections.Counter(pf.get(pp, "") for pp, _ in fr)
+        years = sorted({py.get(pp, "") for pp, lid in fr
+                        if not kids.get((pp, lid), 0)} - {""})
+        rows.append([key, label, len(fr), fc["clip"], fc["lip"],
+                     with_kids, len(fr) - with_kids, n_kids,
                      len({pp for pp, _ in fr}),
+                     AUTHOR_READING.get(key, "")
+                     + (f" 空のフォルダーが在る年の札: {'・'.join(years)}"
+                        if years and key in AUTHOR_READING else ""),
                      "**フォルダーの数を遮蔽物の層の数と呼べない** —— "
                      f"直下の層 {n_kids}。中に層が無いフォルダーが {len(fr) - with_kids}"])
     return rows
