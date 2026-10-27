@@ -909,7 +909,7 @@ def emit_folder_contents(outdir: str, path: str, drops):
     written = write_csv(
         os.path.join(outdir, "occluder_folder_contents.csv"),
         ["occluder_class", "label", "n_folders", "n_folders_clip", "n_folders_lip",
-         "n_folders_with_layers",
+         "n_folders_with_layers", "n_folders_with_rows",
          "n_folders_empty", "n_folders_hidden", "n_child_layers", "n_pages",
          "author_reading", "reading",
          "population_note", "measured_by", "as_of"], out)
@@ -1167,7 +1167,8 @@ class ProseMatcher:
 # (宣言の無い列を黙って通すと、新しい列を足した日に点検が静かに緩む)
 METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_names", "n_folders", "n_pages_top_name", "n_parent_names",
-               "n_folders_with_layers", "n_folders_empty", "n_folders_hidden",
+               "n_folders_with_layers", "n_folders_with_rows",
+               "n_folders_empty", "n_folders_hidden",
                "n_child_layers",
                "n_pages", "n_distinct_pages", "n_layers", "n_rendered", "n_not_rendered",
                # **形式ごとの内訳**(`.lip` を母集団に入れた。作者の決定 2026-10-27)
