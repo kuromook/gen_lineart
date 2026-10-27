@@ -542,6 +542,21 @@ branches to the same GitHub remote but are invisible to `git worktree list` run
 here. Check `git branch -r` or the sibling directories, not just the worktree
 list.
 
+**`ListAgents` lists sessions from this account's OTHER projects, and a name there
+is not a track.** Found 2026-10-27, when the user said *some of it is already
+underway* and the foundation polled every live session: one listed session turned
+out to belong to an unrelated project of the user's, with no pixel work and no GPU
+use, and it had never opened this repository. **The 生存確認 instrument (CLAUDE.md
+§5) and this ledger read the same kind of name off different populations**, so a
+listed session may have nothing to do with this project; ask what it is rather than
+inferring from the name, and **do not add it to this ledger** -- a row here would
+make the ledger claim a track that does not exist (the names-are-not-checks family).
+**And do not write what it told you here either.** The first draft of this entry
+named that project, its directories and its schedule; `origin` is anonymously
+readable, so a note about our own instrument would have published another project's
+work. **A peer's answer about itself is not ours to publish** -- record the rule, and
+keep the instance in the session that owns it.
+
 The lineage forked in two on 2026-09-17, after Track D's diagnosis (lesson 8)
 closed the pixel-matching generative route:
 
