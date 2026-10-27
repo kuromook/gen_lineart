@@ -9,7 +9,7 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
   python tools/ui/l19_fill_label_server.py --host 0.0.0.0 --final  本番 (labels/fill_words.jsonl)
   python ... --final --reask results/l19_ui/reask.json              出し直し (語彙が増える前に答えた分)
   python ... --final --from 0                                       先頭から見直す (異常の報告用)
-  python ... --queue results/l25_layer_ui/queue.json --save labels/layer_kind.jsonl --extra ''
+  python ... --queue results/l25_layer_ui/queue.json --save labels/region_word.jsonl --extra ''
                                                                     **層ごとの正解** (L25)
   -> http://<host>:8475
 
@@ -20,6 +20,7 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
 **自動で決まる面も 1割が同じ見た目で混ざっている**(`why` はクライアントに送らない)。
 """
 import collections
+import sys
 import argparse, json, os, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -592,6 +593,19 @@ def main():
     sv = (Path(a.save) if a.save and os.path.isabs(a.save) else
           (ROOT / a.save if a.save else
            LAB / ('fill_words.jsonl' if a.final else 'fill_words_trial.jsonl')))
+    # **退役した名前で呼ばれたら止める**(2026-10-27、ユーザーの承認で改名)。
+    # `labels/layer_kind*.jsonl` は**面についての作者の語**で、供給側の
+    # `v_layer_kind`(**層**の種別。`mask_fill` 等)と名前が衝突していた(T138)。
+    # `region_word*.jsonl` へ移した。
+    # **古い名前で起動すると、この器具は空のファイルを新しく作って
+    # 「保存済み 0」で立ち上がる** —— 作者の答 95件が消えたようにしか見えない。
+    # 名前の点検は普通は無意味だが(「名前は点検ではない」)、**ここは名前そのものが
+    # 保存先を決めている**ので、名前が唯一の見分けである。
+    RETIRED = {'layer_kind.jsonl': 'region_word.jsonl',
+               'layer_kind_l27.jsonl': 'region_word_l27.jsonl'}
+    if sv.name in RETIRED:
+        sys.exit(f"止める: `{sv.name}` は 2026-10-27 に `{RETIRED[sv.name]}` へ改名した。"
+                 f"この名前で開くと**空のファイルを作って「保存済み 0」で立ち上がる**")
     load_state(sv, a.reask, a.queue,
                None if a.extra is None else [w for w in a.extra.split(',') if w])
     m = S['meta']

@@ -21,7 +21,7 @@ sys.path.insert(0, HERE)
 import l14_known_cells as K
 
 Q = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui/queue.json'
-LAB = '/home/sh1/deepl/lineart-fill-region/labels/layer_kind.jsonl'
+LAB = '/home/sh1/deepl/lineart-fill-region/labels/region_word.jsonl'
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui'
 # 定数ごとの「通す側」の意味。**この表が、何と何を比べているかの正本**
 CONST = [

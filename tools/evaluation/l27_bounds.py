@@ -19,7 +19,7 @@ import l25_calibrate as C
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l25_layer_ui'
 Q2 = f'{OUT}/queue_l27.json'
-L2 = '/home/sh1/deepl/lineart-fill-region/labels/layer_kind_l27.jsonl'
+L2 = '/home/sh1/deepl/lineart-fill-region/labels/region_word_l27.jsonl'
 ART = C.LINEISH + C.FILLISH + C.MIXED          # **登録どおりの「完成の絵」**
 
 
