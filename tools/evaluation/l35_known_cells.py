@@ -38,7 +38,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_arms import acc_add
-from l14_known_cells import A, MINREG, comps, gated_layers
+from l14_known_cells import A, MINREG, comps
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 from l17_known_cells import (MAX_FRAC, MIN_FRAC, beta_fill_layers, jobs,
                              panels_and_regions, zmap)
 
@@ -72,16 +73,19 @@ def kc42():
 def kc43(limit=0):
     """**選別が空でないことの確認。** 納品 beta が1層も無い頁・コマの数を印字する。
     **0 件なら「この点検は空」と印字する**(登録 §7)。"""
-    # **【印 2026-10-26 T131】この既知セルは、本体と違う母集団で回っている。**
-    # `gated_layers()` の腕は **1,681** だが、本体(`--raw-beta-standard`)が
+    # **【直した 2026-10-27 T131】本体と同じ母集団に錨を打った。**
+    # 2026-10-26 の印: 腕が **1,681** で回っていたが、本体(`--raw-beta-standard`)が
     # 使うのは **1,392**(両側に居る289層を外した後)。
-    # **既知セルが本体の母集団を錨にしていない** —— 規律2 は
-    # 「既知セルが再現しなければ本体を読まない」だが、**別の母集団の上で再現しても錨にならない。**
-    # **移すと出力が変わるので、登録どおり移さずに印を付ける**
-    # (「再現しない呼び手は移さず印を付ける」)。**直すのは別の走行。**
+    # **別の母集団の上で再現しても錨にならない**ので、`arms('beta_standard')` に移した。
+    # **だが出力は1画も変わらなかった(2026-10-27 実測)。予告は外れた。**
+    # **この点検が印字している量に腕が入っていない** —— `panels_and_regions` は面を
+    # **標準だけ**から作り(`comps(F & P)`)、線層は `sub` として返すだけである。
+    # `jobs` も `line` を `lz` に詰めるだけ。**腕を間違えても、この点検は落ちない。**
+    # 本体 `l18_propagate.one_page` は `assign_top(sub, ...)` でラベルを作るので
+    # **主値は腕に依存する。** その錨は **KC45** に置いた。
+    # **移す前の数(= 同じ数)も記録に残す**(消さない。規律7)。
     zz = zmap()
-    _, line = gated_layers()
-    fill = beta_fill_layers()
+    fill, line = arms('beta_standard')   # 本体と同じ母集団(標準=納品 beta / 腕=289層を外した後)
     js = jobs(zz, fill, line)
     if limit:
         js = js[:limit]
@@ -117,7 +121,7 @@ def kc44():
     # **この点検の目的は、外される前の重なりを数えることである。**
     # `beta_standard` は**その289層を外した後**を返すので、**0 になって点検が死ぬ。**
     # **生の腕が要る点検が在る** —— だから `arms('gated')` と使い分ける意味が在る。
-    _, line = gated_layers()
+    _, line = arms('gated')          # **生の腕。`beta_standard` にすると 0 になって死ぬ**
     bfill = beta_fill_layers()
     b = {(k, lid) for k, v in bfill.items() for lid, _ in v}
     l = {(k, lid) for k, v in line.items() for lid, _ in v}
@@ -146,16 +150,19 @@ def kc41(npages=2):
     **だから層集合を納品 beta に固定して、変更Bだけを見る。被覆 >= 0.95 を要求する。**
     **変更Aの大きさは棒ではなく報告に出す**(消さない。規律7)。
     """
-    # **【印 2026-10-26 T131】この既知セルは、本体と違う母集団で回っている。**
-    # `gated_layers()` の腕は **1,681** だが、本体(`--raw-beta-standard`)が
+    # **【直した 2026-10-27 T131】本体と同じ母集団に錨を打った。**
+    # 2026-10-26 の印: 腕が **1,681** で回っていたが、本体(`--raw-beta-standard`)が
     # 使うのは **1,392**(両側に居る289層を外した後)。
-    # **既知セルが本体の母集団を錨にしていない** —— 規律2 は
-    # 「既知セルが再現しなければ本体を読まない」だが、**別の母集団の上で再現しても錨にならない。**
-    # **移すと出力が変わるので、登録どおり移さずに印を付ける**
-    # (「再現しない呼び手は移さず印を付ける」)。**直すのは別の走行。**
+    # **別の母集団の上で再現しても錨にならない**ので、`arms('beta_standard')` に移した。
+    # **だが出力は1画も変わらなかった(2026-10-27 実測)。予告は外れた。**
+    # **この点検が印字している量に腕が入っていない** —— `panels_and_regions` は面を
+    # **標準だけ**から作り(`comps(F & P)`)、線層は `sub` として返すだけである。
+    # `jobs` も `line` を `lz` に詰めるだけ。**腕を間違えても、この点検は落ちない。**
+    # 本体 `l18_propagate.one_page` は `assign_top(sub, ...)` でラベルを作るので
+    # **主値は腕に依存する。** その錨は **KC45** に置いた。
+    # **移す前の数(= 同じ数)も記録に残す**(消さない。規律7)。
     zz = zmap()
-    _, line = gated_layers()
-    bfill = beta_fill_layers()
+    bfill, line = arms('beta_standard')  # 本体と同じ母集団(289層を外した後の腕)
     keys = [k for k in sorted(bfill)][:npages]
     if not keys:
         print('KC41\' 回せない: 両方の標準が作れる頁が無い')
@@ -197,11 +204,100 @@ def kc41(npages=2):
     return ok
 
 
+def kc45(npages=2):
+    """**KC45**(2026-10-27 に足した): **腕(線層)が面まで届いているか。腕を間違えたら落ちる。**
+
+    足した理由: KC43 / KC41'' は腕を受け取るが、**印字している量に腕が入っていない。**
+    `arms('beta_standard')` に移して腕が 1,681 -> 1,392 に変わっても、
+    **印字した数は1画も動かなかった**(2026-10-27 実測)。
+    `panels_and_regions` は面を**標準だけ**から作るからである。
+    **本体 `l18_propagate.one_page` は `assign_top(sub, ...)` でラベルを作るので
+    主値は腕に依存する。** 腕に感度の無い錨では規律2 を満たさない。
+
+    測るもの(頁ごと):
+      - 腕の層のうち **`sub` に届いた層の集合**
+      - **届かなかった層を理由別に数える**(PNG が読めない / 形が標準と違う。規律9。
+        `panels_and_regions` はこの2つを黙って `continue` している)
+    棒: **届いた集合 + 理由別の落ち = 腕の集合**(差が説明し切れること)、かつ
+        届いた集合が `arms('beta_standard')` の腕と**一致**すること。
+    **自己点検**: 腕から1層抜いた複製を渡し、**この比較が差として挙げることを確かめる**
+    (点検が発火することを同じ走行の中で示す。KC57 と同じ作法)。
+    """
+    zz = zmap()
+    fill, line = arms('beta_standard')
+    js = {(p, w): (p, w, fz, lz, sel) for p, w, fz, lz, sel in jobs(zz, fill, line)}
+    keys = [k for k in sorted(js)][:npages]
+    if not keys:
+        print('KC45 回せない: 仕事が1つも作れない')
+        return False
+
+    def reached(job):
+        """`sub` に届いた lid の集合と、届かなかった層の理由別の数。"""
+        pid, work, fz, lz, sel = job
+        shape = None
+        for lid, path in fz:
+            im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if im is not None:
+                shape = im.shape
+                break
+        drop = {'PNG が読めない': 0, '形が標準と違う': 0}
+        want = set()
+        for lid, path, z in lz:
+            im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if im is None:
+                drop['PNG が読めない'] += 1
+            elif shape is None or im.shape != shape:
+                drop['形が標準と違う'] += 1
+            else:
+                want.add(lid)
+        got = None
+        for _p, _w, _ci, _P, _glab, _gids, _gstat, sub in panels_and_regions(job):
+            got = {lid for lid, _ink, _z in sub}
+            break
+        return want, got, drop
+
+    ok = True
+    for k in keys:
+        job = js[k]
+        pid, work, fz, lz, sel = job
+        want, got, drop = reached(job)
+        if got is None:
+            print(f'KC45 {work} {pid}: **面が1つも立たない。この頁では測れない**')
+            ok = False
+            continue
+        arm = {lid for lid, _p, _z in lz}
+        acc = len(got) + sum(drop.values()) == len(arm)
+        same = (got == want)
+        print(f'KC45 {work} {pid}: 腕 {len(arm)}層 -> 面まで届いた **{len(got)}**層  '
+              f'{"**一致**" if same else "**届いた集合が合わない**"}  '
+              f'差の説明 {"**し切れている**" if acc else "**し切れていない**"}')
+        for r, n in drop.items():
+            print(f'       落とした {n:3d}  {r}'
+                  + ('  (**この理由は1度も発火していない**)' if n == 0 else ''))
+        ok &= same and acc
+
+    # ---- 自己点検: 腕から1層抜いて、比較が差として挙げるか
+    p0, w0, fz0, lz0, sel0 = js[keys[0]]
+    if len(lz0) < 2:
+        print('     **自己点検ができない(腕が1層以下)**')
+        return False
+    probe = (p0, w0, fz0, lz0[1:], sel0)
+    _want, got2, _d = reached(probe)
+    _want0, got0, _d0 = reached(js[keys[0]])
+    fires = got2 is not None and got0 is not None and got2 != got0
+    print(f'     自己点検(腕から1層抜く): 届いた層 {len(got0 or [])} -> {len(got2 or [])}  '
+          f'{"**差として挙がる(点検は発火する)**" if fires else "**挙がらない。点検が死んでいる**"}')
+    ok &= fires
+    print(f'     **KC45 {"PASS" if ok else "FAIL"}**')
+    return ok
+
+
 def main():
     print('L35 既知セル (登録 2026-10-26 15:07。**1つでも落ちたら本体を回さない**)')
     ok = True
     ok &= kc42()
     ok &= kc41()
+    ok &= kc45()
     kc43()
     kc44()
     print()
