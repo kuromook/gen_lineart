@@ -294,7 +294,7 @@ def kc17():
 
 def kc18(limit=6):
     """データ経路: adj の総和が、別経路で数えた「∂R から d 以内の**門が通した層**の墨」と一致する。"""
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)[:limit]
     print(f'KC18 データ経路: adj の総和を別経路と突き合わせる (頁 {len(js)})')
     nreg = 0; bad = 0
@@ -327,7 +327,7 @@ def kc19():
     for r in csv.DictReader(open(PREV)):
         if r['arm'] == 'real':
             want[r['work']] = want.get(r['work'], 0) + 1
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     got = {}
     nl = []
     for job in jobs(zz, fill, line):
@@ -504,17 +504,47 @@ def kc_arms():
     # 鍵だけの比較では、**同じ層を違うファイルから読んでいても PASS する。**
     # 呼び手は `(lid, path)` の組を使うので、**組ごと一致しなければ
     # 「同じ集合を返す」とは言えない。**
-    def norm(d):
-        return {k: sorted(v) for k, v in d.items() if v}
+    #
+    # **2026-10-27 にもう一段強めた。** 呼び手 25本を機械的に置き換える直前に、
+    # **この綱が何を比べていないか**を数えたら2つ在った:
+    #   1. `sorted(v)` で**順序を潰していた。** 呼び手は `fill[k]` を**そのまま回す**ので、
+    #      順序が違えば「同じ集合」でも出力が変わりうる(z 順の先勝ち・割り当ての先勝ち)。
+    #   2. `if v` で**空リストの頁を落としていた。** 片方に空で在る頁は映らない。
+    # **置き換えが頼っている性質は「同じ集合」ではなく「同じ列」である。**
+    # **綱は、頼っている性質を比べなければ綱ではない。**
+    def cmp(a, b):
+        """**順序まで**比べる。空リストの頁も鍵として比べる。差の理由を返す。"""
+        ka, kb = set(a), set(b)
+        if ka != kb:
+            return f'鍵が違う(片側だけ {len(ka ^ kb)}頁。例 {sorted(ka ^ kb)[:2]})'
+        bad = [k for k in ka if a[k] != b[k]]
+        if not bad:
+            return None
+        k = sorted(bad)[0]
+        if sorted(a[k]) == sorted(b[k]):
+            return f'**順序が違う** {len(bad)}頁(集合は同じ。例 {k})'
+        return f'組が違う {len(bad)}頁(例 {k})'
 
-    ok = (norm(f1) == norm(f2)) and (norm(l1) == norm(l2))
+    d_f, d_l = cmp(f1, f2), cmp(l1, l2)
+    ok = d_f is None and d_l is None
     n = lambda d: sum(len(v) for v in d.values())
-    print(f"KC57 arms('gated') == gated_layers() (**(層, パス) の組まで**):  "
+    print(f"KC57 arms('gated') == gated_layers() (**(層, パス) の組・順序・空の頁まで**):  "
           f'標準 {n(f1)} vs {n(f2)}  腕 {n(l1)} vs {n(l2)}  '
           f'{"PASS" if ok else "**FAIL**"}')
-    if not ok:
-        for nm, x, y in (('標準', f1, f2), ('腕', l1, l2)):
-            d = set(norm(x)) ^ set(norm(y))
-            if d:
-                print(f'  {nm}: 頁の差 {len(d)}  例 {sorted(d)[:3]}')
-    return ok
+    for nm, d in (('標準', d_f), ('腕', d_l)):
+        if d:
+            print(f'  {nm}: {d}')
+
+    # **この点検が発火することを、同じ走行の中で確かめる**(2026-10-26 の awk の罠。
+    # **一致しえない比較の PASS は、「同じ」ではない**)。
+    # 腕の1頁だけ順序を入れ替えた複製を作り、**cmp がそれを順序の差として挙げる**ことを見る。
+    probe = {k: list(v) for k, v in l1.items()}
+    pk = sorted(k for k, v in probe.items() if len(v) > 1)
+    if not pk:
+        print('  **自己点検ができない**(層が2つ以上在る頁が無い)。PASS を読まない')
+        return False
+    probe[pk[0]] = list(reversed(probe[pk[0]]))
+    fired = cmp(l1, probe)
+    print(f'  自己点検(1頁の順序を反転した複製): '
+          f'{"**順序の差として発火** " + fired if fired and "順序" in fired else "**発火しない。綱が死んでいる**"}')
+    return ok and bool(fired) and '順序' in (fired or '')

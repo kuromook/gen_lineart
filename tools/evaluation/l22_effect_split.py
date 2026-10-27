@@ -24,8 +24,9 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from fill_mask import fill_mask
 from l21_dirtiness import ridge_width, acc_w, quant
-from l17_known_cells import gated_layers, jobs, zmap, panels_and_regions, assign_top
+from l17_known_cells import jobs, zmap, panels_and_regions, assign_top
 from l14_known_cells import comps, A
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l22_effect_split'
@@ -148,7 +149,7 @@ def main():
              for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
     want, ans = kuro_layers()
     pages = {c.split('_c')[0].split('_', 1)[1] for c in want}
-    fill, line = gated_layers()
+    fill, line = arms('gated')
     zz = zmap()
 
     # --- 1. 黒消しの面の出所の層 id

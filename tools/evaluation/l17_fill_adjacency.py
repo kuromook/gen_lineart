@@ -24,7 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l15_known_cells import boundary
-from l17_known_cells import (DS, D1, adj_sets, assign_top, gated_layers, jobs,
+from l17_known_cells import (arms, DS, D1, adj_sets, assign_top, jobs,
                              n_lay90, panels_and_regions, place, purity, zmap,
                              SEEDS, TRIES)
 
@@ -273,7 +273,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     names = {(r['page_id'], r['layer_id']): r['name']
              for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)
     if a.limit:
         js = js[:a.limit]

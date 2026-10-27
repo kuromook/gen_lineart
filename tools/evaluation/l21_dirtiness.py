@@ -24,8 +24,8 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l17_known_cells import (DEL, DS, D1, MIN_FRAC, MAX_FRAC, adj_sets,
-                             assign_top, gated_layers, jobs,
+from l17_known_cells import (arms, DEL, DS, D1, MIN_FRAC, MAX_FRAC, adj_sets,
+                             assign_top, jobs,
                              panels_and_regions, zmap)
 from l15_known_cells import boundary
 from l14_known_cells import comps, A
@@ -224,7 +224,7 @@ def kc27():
     """データ経路: **門が通した層の墨**の総和が L17 の P36 / L18 の KC24 の分母と一致するか。"""
     print('KC27 データ経路: **門が通した層の墨**の総和が L17/L18 と一致するか')
     want = {'ako6': 43279719, 'ako7': 45598813}
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     got = Counter()
     for job in jobs(zz, fill, line):
         for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job):
@@ -522,7 +522,7 @@ def main():
     if a.kc:
         print('KC27 (データ経路) は本体と同じ読み込みなので、本体の走りで出す')
         return 0
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)
     if a.limit:
         js = js[:a.limit]

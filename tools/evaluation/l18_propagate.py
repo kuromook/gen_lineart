@@ -22,7 +22,7 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_known_cells import A
 from l15_known_cells import boundary
-from l17_known_cells import (D1, arms, assign_top, beta_fill_layers, gated_layers, jobs,
+from l17_known_cells import (D1, arms, assign_top, beta_fill_layers, jobs,
                              panels_and_regions,
                              place, SEEDS, TRIES, zmap)
 from l18_known_cells import (GS, comp_pur, geo_spread, ink_components, prop_full,

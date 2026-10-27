@@ -33,7 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l21_dirtiness import pages_with_window
-from l17_known_cells import (D1, adj_sets, assign_top, gated_layers, jobs, zmap)
+from l17_known_cells import (arms, D1, adj_sets, assign_top, jobs, zmap)
 from l15_known_cells import boundary
 
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
@@ -123,7 +123,7 @@ def main():
     want = {byorder[o]['crop']: o for o in fl}
     pages = {byorder[o]['pid'] for o in fl}
     print(f'異常の印 {len(fl)} 件 / 頁 {len(pages)}')
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     rows = []
     for job in jobs(zz, fill, line):
         if job[0] not in pages:

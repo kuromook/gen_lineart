@@ -17,7 +17,7 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l14_known_cells import A
 from l15_known_cells import boundary
-from l17_known_cells import (place, D1, adj_sets, assign_top, gated_layers, jobs,
+from l17_known_cells import (arms, place, D1, adj_sets, assign_top, jobs,
                              panels_and_regions, purity, ring, zmap)
 
 K8 = np.ones((3, 3), np.uint8)
@@ -154,7 +154,7 @@ def kc22():
 
 def kc23(limit=4):
     """データ経路: prop ⊇ seed が全面で成立し、cov を別経路で数えて一致する。"""
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)[:limit]
     print(f'KC23 データ経路: prop ⊇ seed と cov の二重計算 (頁 {len(js)})')
     nreg = 0; bad = 0; badcov = 0
@@ -186,7 +186,7 @@ def kc23(limit=4):
 
 def kc24():
     """データ経路: コマの**門が通した層の墨**の総和が L17 の P36 の分母と一致する。"""
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     tot = {}
     for job in jobs(zz, fill, line):
         for pid, work, ci, P, glab, gids, gstat, sub in panels_and_regions(job):

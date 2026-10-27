@@ -9,9 +9,10 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import comps, gated_layers, A
+from l14_known_cells import comps, A
 from l14_arms import acc_add
 from l15_known_cells import runs_of, endpoints, SUP_PX, END_PX
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 KOMA = '/home/sh1/deepl/lineart/dataset/regions_clip_pairs_v3_koma_panels_20260826'
 L12  = '/home/sh1/deepl/lineart-fill-region/results/l12_panel_regions/per_panel.csv'
@@ -95,7 +96,7 @@ def gate(rows=None):
 def main():
     gate()
     os.makedirs(OUT, exist_ok=True)
-    fill, line = gated_layers()
+    fill, line = arms('gated')
     man = {r['name']: r for r in csv.DictReader(open(f'{KOMA}/manifest.csv'))}
     panels = collections.defaultdict(list)
     for r in csv.DictReader(open(L12)):

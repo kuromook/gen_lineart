@@ -34,10 +34,11 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import comps, gated_layers, A, topf
+from l14_known_cells import comps, A, topf
 from l14_arms import acc_add
 from l15_known_cells import boundary
 from l15_occlusion import excluded_layers
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 DEL  = '/home/sh1/deepl/lineart/data/incoming_manuscript'
 INV  = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
@@ -177,7 +178,7 @@ def main():
           for r in csv.DictReader(open(ZCSV, encoding='utf-8-sig'))}
     vis = {(r['page_id'], r['layer_id']): (r['visibility'], r['ancestors'])
            for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
-    fill, line = gated_layers()
+    fill, line = arms('gated')
     ex, _ = excluded_layers()
     cut = collections.Counter()
     occs = {}

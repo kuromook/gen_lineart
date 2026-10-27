@@ -16,7 +16,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 import l18_propagate as L18
-from l17_known_cells import SEEDS, gated_layers, jobs, zmap
+from l17_known_cells import SEEDS, jobs, zmap
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 
 def rows_for(npages=1):
@@ -24,7 +25,7 @@ def rows_for(npages=1):
     L18.PAIRED = True
     L18.ARMS = 'both'
     zz = zmap()
-    fill, line = gated_layers()
+    fill, line = arms('gated')
     js = jobs(zz, fill, line)[:npages]
     comps, regs, pans, names = [], [], [], []
     for job in js:

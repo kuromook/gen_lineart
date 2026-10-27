@@ -16,7 +16,8 @@ sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l21_dirtiness import (TRAIN_SIDE, WCUT, acc_w, add_H, cum, quant,
                            pages_with_window, ridge_width)
-from l17_known_cells import assign_top, gated_layers, jobs, zmap
+from l17_known_cells import assign_top, jobs, zmap
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l21_dirtiness'
 SEED = 20261025
@@ -31,7 +32,7 @@ def main():
     from controlnet_aux import LineartAnimeDetector
     dev = 'cuda' if torch.cuda.is_available() else 'cpu'
     det = LineartAnimeDetector.from_pretrained('lllyasviel/Annotators').to(dev)
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)
     rng = np.random.default_rng(SEED)
     order = rng.permutation(len(js))

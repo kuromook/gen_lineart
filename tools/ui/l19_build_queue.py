@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, os.path.join(HERE, '..', 'evaluation'))
 from l15_known_cells import boundary
-from l17_known_cells import (D1, adj_sets, assign_top, gated_layers, jobs,
+from l17_known_cells import (arms, D1, adj_sets, assign_top, jobs,
                              panels_and_regions, place, SEEDS, zmap)
 
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
@@ -121,7 +121,7 @@ def main():
     os.makedirs(f'{OUT}/crops', exist_ok=True)
     names = {(r['page_id'], r['layer_id']): r['name']
              for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)
     print(f'頁 {len(js)}')
     rows = []

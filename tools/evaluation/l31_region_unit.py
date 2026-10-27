@@ -19,9 +19,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from fill_mask import fill_mask
-from l14_known_cells import A, MINREG, comps, gated_layers
+from l14_known_cells import A, MINREG, comps
 from l17_known_cells import DEL, MAX_FRAC, MIN_FRAC, jobs, zmap
 from pid_work import work_of
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l31_region_unit'
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
@@ -369,7 +370,7 @@ def main():
     if a.known_cells:
         return known_cells()
     os.makedirs(OUT, exist_ok=True)
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     js = jobs(zz, fill, line)
     if a.limit:
         js = js[:a.limit]

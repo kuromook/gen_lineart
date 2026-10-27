@@ -16,8 +16,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
 from l21_dirtiness import pages_with_window, NAMES
-from l17_known_cells import assign_top, gated_layers, jobs, zmap, adj_sets, D1
+from l17_known_cells import assign_top, jobs, zmap, adj_sets, D1
 from l15_known_cells import boundary
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 OUT = '/home/sh1/deepl/lineart-fill-region/results/l21_dirtiness/crops'
 Q = '/home/sh1/deepl/lineart-fill-region/results/l19_ui/queue.json'
@@ -71,7 +72,7 @@ def main():
         print('切り出しの指定が無い'); return 1
     pages = {c.split('_c')[0].split('_', 1)[1] for c in want}
     print(f'切り出し {len(want)} 枚 / 頁 {len(pages)}')
-    zz = zmap(); fill, line = gated_layers()
+    zz = zmap(); fill, line = arms('gated')
     done = 0
     for job in jobs(zz, fill, line):
         if job[0] not in pages:

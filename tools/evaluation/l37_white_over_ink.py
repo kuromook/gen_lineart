@@ -31,9 +31,10 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, '/home/sh1/deepl/lineart-solid-fill/tools/evaluation')
 sys.path.insert(0, HERE)
-from l14_known_cells import COV_MAX, gated_layers
+from l14_known_cells import COV_MAX
 from l17_known_cells import zmap
 from pid_work import work_of
+from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
 
 INV = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 KEEP4 = '/home/sh1/deepl/lineart-fill-region/results/l10_keep4_all_layers/keep4.csv'
@@ -155,7 +156,7 @@ def main():
     print()
 
     zz = zmap()
-    gfill, _gline = gated_layers()
+    gfill, _gline = arms('gated')
     F = {(k, lid) for k, v in gfill.items() for lid, _ in v}
     # **全面の層を `below` から外すための被覆**(`l12`/`l15` と同じ門。新しい定数を引かない)
     cov = {(r['page_id'], r['layer_id']): float(r['cov'])
