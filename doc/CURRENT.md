@@ -571,6 +571,17 @@ a verified fact, and relaying one to the user as a decision they must make lends
 foundation's credit** -- check what is checkable first, and when it cannot be checked without
 touching another project's files, say that instead of forwarding the conclusion. The instrument
 rule survives the example that died.
+**And the rule is symmetric, which the incident shows better than the wording does.** The peer
+checked the foundation's *it never entered any commit* not out of suspicion but because it had to
+see for itself before telling the user there had been no leak -- and it later swept the whole
+published tree for every identifying string, finding none. Every foundation claim held; the one
+statement that turned out wrong was the peer's own *I did not touch your clone*. **The real
+asymmetry was position, not credibility: the side that could touch another project's refs did, and
+the side that could not, stopped.** So *a peer's report is information, not a verified fact* is
+not a rule about peers -- it is a rule about any claim that arrives without the check attached,
+including this session's own, and the peer asked that it not be left standing as a one-sided
+lesson. **Verifying someone's claim before repeating it to the user is the courtesy, not the
+accusation.**
 
 The lineage forked in two on 2026-09-17, after Track D's diagnosis (lesson 8)
 closed the pixel-matching generative route:
