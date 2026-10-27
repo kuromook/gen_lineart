@@ -89,11 +89,18 @@ def join(a_path, b_path, col, key, label=None):
     return len(mism)
 
 if __name__ == '__main__':
-    a = [x for x in sys.argv[1:] if not x.startswith('--')]
+    # **`--key` の値も位置引数に数えていた**(2026-10-27 に直した) ——
+    # docstring が `--key` を使い方に書いているのに、渡すと使い方の印字に落ちていた。
+    # **書いてある旗が通らない形。名前は点検ではない、の小さい版である。**
+    k = 'page_path,layer_id'
+    a, skip = [], False
+    for x in sys.argv[1:]:
+        if skip:
+            k, skip = x, False
+        elif x == '--key':
+            skip = True
+        elif not x.startswith('--'):
+            a.append(x)
     if len(a) != 3:
         sys.exit(__doc__)
-    k = 'page_path,layer_id'
-    for i, x in enumerate(sys.argv):
-        if x == '--key':
-            k = sys.argv[i + 1]
     sys.exit(1 if join(a[0], a[1], a[2], k.split(',')) else 0)

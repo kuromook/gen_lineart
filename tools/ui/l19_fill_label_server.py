@@ -19,6 +19,7 @@ L17 の結論「ベタ面は線を1層に絞らない(過半の面では)。た�
 
 **自動で決まる面も 1割が同じ見た目で混ざっている**(`why` はクライアントに送らない)。
 """
+import collections
 import argparse, json, os, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -34,6 +35,79 @@ EXTRA_WORDS = ['まつ毛', '眉', 'フキダシ', '黒消し']   # 黒消しは
 
 lock = Lock()
 S = {}
+
+
+IDENT = ('work', 'pid', 'comp', 'region', 'why', 'lid', 'crop', 'area')
+
+
+def match_row(r, q, proj):
+    """保存された1行を**中身で**行列の位置に結ぶ。返すのは (位置, 落とした理由)。
+
+    **T144**(2026-10-27、基盤から回送。M が答を失う前に捕らえた):
+    ここは `S['done'][int(r['order'])]` だった ——
+    **`order` は行列の中の番号で、行列を振り直すと別の問を指す。**
+    M は補充の行列で `order` を 0 から振り直していて、1巡目と同じ保存先に向けると
+    **11問すべてが「もう答えた」として立ち上がる**ところだった
+    (1巡目 339記録のうち 14記録が `order` 0〜10 を占めている)。
+
+    > **症状は「やることが無い」と出る。** 何も測らずに通る点検と同じ署名である。
+    > **番号で鍵を作る器具は、振り直した行列を黙って「済み」と読む。**
+
+    **鍵は1つに決まらない。** 2026-10-27 に3つの行列で測った:
+
+    ```
+    (work,pid,comp,region)        l19 で重複 45鍵/105行   <- `region` の意味が ask と check で違う
+    + crop                        l19 で 0、**l25 で 5**(1つの切り出しに複数の層を問う)
+    + why                         l25/l29 で 0、**l19 で 37**
+    IDENT 全部(在る欄だけ射影)   3つの行列すべてで **0**
+    ```
+
+    だから**記録が持っている欄だけで射影し、合致が1つのときだけ結ぶ**。
+    **0個でも2個以上でも結ばない** —— **結ばなければ、その問はもう一度出る。**
+    向きが安全な側である(黙って「済み」にするのは答を失う)。
+    **理由別に数えて起動時に印字する**(規律9)。
+    """
+    fields = [k for k in IDENT if k in r]
+    if not fields:
+        return None, '記録に同定できる欄が1つも無い'
+    key = tuple(r[k] for k in fields)
+    hits = proj.setdefault(tuple(fields), None)
+    if hits is None:
+        hits = {}
+        for o, it in enumerate(q):
+            hits.setdefault(tuple(it.get(k) for k in fields), []).append(o)
+        proj[tuple(fields)] = hits
+    got = hits.get(key, [])
+    if len(got) == 1:
+        return got[0], ''
+    if not got:
+        return None, 'この行列に無い記録 (別の行列の保存先か、行列が変わった)'
+    # **中身で絞ったうえで `order` を同点決着に使う。** `order` だけを鍵にするのが T144 で、
+    # **中身の合致の中から選ぶのは別の形**である —— 振り直した行列が、同じ中身の行の上に
+    # 同じ番号を落とす確率は低い。**それでも何件そうしたかを数える**(規律9)。
+    o = r.get('order')
+    if o is not None and int(o) in got:
+        return int(o), f'中身が {len(got)}行に合致。**order で同点決着した**'
+    return None, f'**鍵が1つに決まらない({len(got)}行が同じ鍵。order も合わない)。結ばない**'
+
+
+def _read_jsonl(path, q, counts, undo_key=None):
+    """保存された行を**中身で**行列の位置に結び直す。`order` は当てにしない(T144)。"""
+    out, proj = {}, {}
+    for ln in open(path):
+        if not ln.strip():
+            continue
+        r = json.loads(ln)
+        o, why = match_row(r, q, proj)
+        if why:
+            counts[why] += 1      # **結べた場合の但し書きも数える**(同点決着を黙らせない)
+        if o is None:
+            continue
+        if undo_key and r.get(undo_key[0]) == undo_key[1]:
+            out.pop(o, None)
+            continue
+        out[o] = r
+    return out
 
 
 def load_state(save_path, reask=None, queue=None, extra=None):
@@ -70,19 +144,13 @@ def load_state(save_path, reask=None, queue=None, extra=None):
         got = {int(o) for o in json.loads(Path(reask).read_text())}
         S['only'] = sorted(o for o in got if 0 <= o < len(S['q']))
     LAB.mkdir(exist_ok=True)
+    # **行列の位置は、保存された行の中身から引き直す**(T144。`order` では引かない)
+    S['load'] = collections.Counter()
     if save_path.exists():
-        for ln in open(save_path):
-            if ln.strip():
-                r = json.loads(ln)
-                S['done'][int(r['order'])] = r
+        S['done'] = _read_jsonl(save_path, S['q'], S['load'])
     if S['flagfile'].exists():
-        for ln in open(S['flagfile']):
-            if ln.strip():
-                r = json.loads(ln)
-                if r.get('note') == '__undo__':
-                    S['flag'].pop(int(r['order']), None)
-                else:
-                    S['flag'][int(r['order'])] = r
+        S['flag'] = _read_jsonl(S['flagfile'], S['q'], S['load'],
+                                undo_key=('note', '__undo__'))
 
 
 def payload(o):
@@ -154,8 +222,12 @@ def make_rec(o, d, annotator):
     q = S['q'][o]
     cands = q.get('cands') or []
     top = cands[0] if cands else {}
+    # **`crop` も残す**(2026-10-27、T144)。これが在れば行列を振り直しても
+    # **中身だけで結べる**。無かった 2026-10-26 までの記録は、
+    # 中身で絞った上で `order` を同点決着に使って結んでいる(起動時に件数を印字する)。
     rec = dict(order=o, work=q['work'], pid=q['pid'], comp=q['comp'],
-               region=q['region'], why=q.get('why'), auto=q.get('auto', 0),
+               region=q['region'], crop=q.get('crop'),
+               why=q.get('why'), auto=q.get('auto', 0),
                purity=q.get('purity'), n_lay=q.get('n_lay'),
                n_lay90=q.get('n_lay90'), lid=q.get('lid'), area=q.get('area'),
                top_lid=top.get('lid'), top_name=top.get('name'),
@@ -537,6 +609,13 @@ def main():
         print(f'  開始位置 {a.start}  (全問を B / N で見直せます)', flush=True)
     print(f'  異常の報告: X または「⚑ 異常を報告」ボタン -> {S["flagfile"]}'
           f'  既報 {len(S["flag"])} 件', flush=True)
+    # **保存の読み込みで起きたことを印字する**(T144。黙って「済み」にしない。規律9)
+    print(f'  保存の読み込み: **記録の中身で行列に結んだ**(`order` では引かない。T144)'
+          f'  結んだ {len(S["done"])}', flush=True)
+    for k_, v_ in sorted(S['load'].items()):
+        print(f'    {v_:5d}  {k_}', flush=True)
+    if not S['load']:
+        print('    0  (order で読んだ行・この行列に無い行は無い)', flush=True)
     self_check()
     js_check()
     key_check()

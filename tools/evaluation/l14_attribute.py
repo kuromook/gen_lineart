@@ -98,9 +98,24 @@ def main():
               f'{sum(1 for r in s if r["ratio"]>2)/len(s):6.3f} '
               f'{sum(1 for r in s if r["has_mask"]=="True")/len(s):5.2f}  {nm}')
     print('\nクリップマスクの有無で割る (L11 の論点)')
+    # **【2026-10-27】`has_mask` は在庫 7,362層すべて True = 定数で、この軸は割れない。**
+    # それでも 1行だけ印字されるので、**割ったように見えていた**(`has_mask=False` は
+    # `if not s: continue` で黙って消えていた)。上の表の `mask` 欄が全行 1.00 なのも同じ理由。
+    # **定数は、値に見える。** T134(k)(発火しない門)の、階級の側の形である。
+    # 基盤から回送された罠 T142 も同じ場所を指している ——
+    # **「マスクが在る」は `layer_type` の2の位(構造)、「マスクが効いている」は
+    # `visibility` の2の位(状態)で、別の量である。** こちらの在庫で数えると
+    # 構造 2,302層 / 状態 2,546層 で、**`has_mask` はどちらとも一致しない**(定数だから)。
+    vals = sorted({r['has_mask'] for r in rows})
+    if len(vals) < 2:
+        print(f'  **`has_mask` は {vals} の1値しか取らない = 定数。この軸は割れない。**')
+        print('  **上の表の `mask` 欄も、値ではなく定数である**'
+              '(マスクの有無で割るなら `layer_type` の2の位 = 構造、'
+              'または `visibility` の2の位 = 状態を使う。T142)')
     for lab, v in (('has_mask=True', 'True'), ('has_mask=False', 'False')):
         s = [r for r in rows if r['support'] != '' and r['has_mask'] == v]
         if not s:
+            print(f'  {lab}: **面 0。この階級は空**(黙って飛ばさない。規律9)')
             continue
         print(f'  {lab}: 面 {len(s)}  support中央 '
               f'{st.median([r["support"] for r in s]):.4f}  IoU+1px中央 '

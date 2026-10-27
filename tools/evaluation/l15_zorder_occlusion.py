@@ -39,12 +39,17 @@ from l14_arms import acc_add
 from l15_known_cells import boundary
 from l15_occlusion import excluded_layers
 from l17_known_cells import arms  # T131: 腕と標準は1か所(KC57)
+from l15_author_occluder_gates import OCC_KINDS, occ_predicate  # 遮蔽物の述語は1か所
 
 DEL  = '/home/sh1/deepl/lineart/data/incoming_manuscript'
 INV  = '/home/sh1/deepl/lineart-fill-region/inbox/page_layers_priority65.csv'
 ZCSV = '/home/sh1/deepl/lineart-fill-region/inbox/layer_z_order_priority65.csv'
 OUT  = '/home/sh1/deepl/lineart-fill-region/results/l15_zorder_occ'
 SEED = 20261026
+# 遮蔽物の腕。**既定は `O_all`**(= 2026-10-26 の実装。再現の基準を動かさない)。
+# `--occ` で選ぶ。出力は腕ごとに別のファイルに書く(**既定だけ無印**)。
+OCC = 'O_all'
+ANC = False
 MIN_FRAC, MAX_FRAC = 0.002, 0.50
 
 
@@ -55,6 +60,61 @@ def best(R, lab, stats):
     vals, cnt = np.unique(v, return_counts=True)
     k = int(vals[int(np.argmax(cnt))]); inter = int(cnt.max()); ar = int(stats[k, A])
     return inter / (ar + n - inter), ar / n
+
+
+def occluder_cover(path, mask_path, shape):
+    """**遮蔽物1枚の遮蔽範囲。** マスクが在れば**掛けた後**を返す(O2' / O3 の経路)。
+
+    向きは **`<128` が見せる側**(KC55 でマスクの向きを確かめた。
+    反転したマスクは遮蔽を逆に測るので、**ここを間違えると数が逆向きに動く**)。
+    返すのは (ink, None) か (None, 落とした理由)。**理由は呼び手が数える**(規律9)。
+
+    作者の定義の「マスクが有効なら適用後の範囲が遮蔽範囲」はここに当たる。
+    **有効フラグそのものは分からない**(供給側に無効にした見本が無い)ので、
+    **マスクを渡された層は有効として扱う** —— 登録に書いた但し書きである。
+    """
+    H, W = shape
+    im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    if im is None:
+        return None, '遮蔽物の PNG が読めない'
+    if im.shape != (H, W):
+        return None, '遮蔽物の形が頁と違う'
+    ink = im < 128
+    if mask_path:
+        mk = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        if mk is None:
+            return None, 'マスクの PNG が読めない'
+        if mk.shape != (H, W):
+            return None, 'マスクの形が頁と違う'
+        ink = ink & (mk < 128)
+    return ink, None
+
+
+def front_by_z(occ, zs, shape):
+    """**z ごとの `OCC_front`**(その z より手前の遮蔽物の和集合)を返す。
+
+    2026-10-27 に `one_page` から切り出した。**KC56 がこの関数を呼ぶ** ——
+    合成の既知セルは**規則を書き写さず、本体と同じ関数を試験する**(T132、KC48 と同じ作法)。
+    切り出す前は `one_page` の中に在ったので、**合成の入力を通す口が無かった。**
+
+    `occ` = [(lid, path, z)](順不同)、`zs` = 面層の z(**降順**)、`shape` = (H, W)。
+    **読み込みで落ちた遮蔽物を理由別に数えて返す**(規律9。もとは黙って `continue` していた)。
+    """
+    H, W = shape
+    occ = sorted(occ, key=lambda t: -t[2])
+    cum = np.zeros((H, W), bool); front = {}; drop = collections.Counter()
+    oi = 0
+    for z in zs:
+        while oi < len(occ) and occ[oi][2] > z:
+            ink, why = occluder_cover(occ[oi][1],
+                                      occ[oi][3] if len(occ[oi]) > 3 else None, (H, W))
+            if ink is None:
+                drop[why] += 1
+            else:
+                acc_add(cum, None, ink, 'cover')
+            oi += 1
+        front[z] = cum.copy()
+    return front, drop
 
 
 def one_page(job):
@@ -70,22 +130,13 @@ def one_page(job):
         acc_add(s, None, ink, 'solid'); acc_add(G, None, ink, 'thin')
         F |= s; solids.append((z, s))
     if F is None:
-        return []
+        return [], collections.Counter()
     for lid, path in ll:
         acc_add(B, None, cv2.imread(path, cv2.IMREAD_GRAYSCALE) < 128, 'cover')
     H, W = F.shape
     # z の高い遮蔽物から積み上げ、面層の z ごとの OCC_front を作る
-    occ = sorted(occ, key=lambda t: -t[2])
-    cum = np.zeros((H, W), bool); front = {}
     zs = sorted({z for z, _ in solids}, reverse=True)
-    oi = 0
-    for z in zs:
-        while oi < len(occ) and occ[oi][2] > z:
-            im = cv2.imread(occ[oi][1], cv2.IMREAD_GRAYSCALE)
-            if im is not None and im.shape == (H, W):
-                acc_add(cum, None, im < 128, 'cover')
-            oi += 1
-        front[z] = cum.copy()
+    front, odrop = front_by_z(occ, zs, (H, W))   # 2026-10-27: 切り出した(KC56 が同じ関数を呼ぶ)
     kl = cv2.imread(f'{DEL}/{work}/koma/{pid}_koma_lines.png', cv2.IMREAD_GRAYSCALE)
     KL = (kl > 127) if (kl is not None and kl.shape == (H, W)) else np.zeros((H, W), bool)
     rng = np.random.default_rng(SEED + zlib.crc32(pid.encode()) % 100000)
@@ -169,47 +220,62 @@ def one_page(job):
                                      occf_cover=round(int((Rs & OF).sum()) / max(pn, 1), 4),
                                      W7_iou=round(iou, 4), W7_ratio=round(ratio, 3)))
                     break
-    return rows
+    return rows, odrop
 
 
 def main():
+    global OCC, ANC
+    ANC = '--anc' in sys.argv   # **祖先のフォルダーの表示も見る(T143。これが作者の定義)**
+    for i_, x_ in enumerate(sys.argv):
+        if x_ == '--occ':
+            OCC = sys.argv[i_ + 1]
+    if OCC not in OCC_KINDS:
+        sys.exit(f'--occ は {OCC_KINDS} のどれか。**既定に落とさない**(T104)')
+    tag = '' if (OCC == 'O_all' and not ANC) else f'_{OCC}' + ('_anc' if ANC else '')
     os.makedirs(OUT, exist_ok=True)
     zz = {(r['page_id'], r['layer_id']): int(r['z_global'])
           for r in csv.DictReader(open(ZCSV, encoding='utf-8-sig'))}
-    vis = {(r['page_id'], r['layer_id']): (r['visibility'], r['ancestors'])
+    vis = {(r['page_id'], r['layer_id']): r
            for r in csv.DictReader(open(INV, encoding='utf-8-sig'))}
     fill, line = arms('gated')
     ex, _ = excluded_layers()
     cut = collections.Counter()
     occs = {}
+    # **遮蔽物の述語は `l15_author_occluder_gates.occ_predicate` の1か所**
+    # (T131: 選別の入口を2つ置かない)。既定の `O_all` は 2026-10-26 の実装と同じ門で、
+    # **理由の文字列も同じにしてある** —— でないと再現の基準が壊れる。
+    # `--occ legacy612` が **KC53**(旧来の等値比較の再現)、
+    # `--occ O_wide` が **主値**(作者の定義: 乗算は遮蔽物ではない)。
+    keep_fn = occ_predicate(OCC, pages={r['page_path'] for r in vis.values()},
+                            ancestors=ANC)
     for k, v in ex.items():
         keep = []
         for lid, path, name, reason in v:
-            vi, anc = vis.get((k[0], str(lid)), ('', ''))
+            r = vis.get((k[0], str(lid)))
+            if r is None:
+                cut['在庫に無い'] += 1; continue
             # **T128** (2026-10-26。基盤から。抽出側が M の選別を調べて判明):
             # `visibility` は**ビット列**で、**1の位が表示、2の位がマスク**である。
             # ここは `vi != '1'` の**等値比較**だったので、**値 3/5/7 の層 ——
             # 可視である層 —— を「可視でない」として落としていた。**
             # 在庫 7,362層のうち 2,467層が可視で落ち、うち **2,459層は可視かつ
             # マスク持ち = トーン**。**遮蔽の解析から、遮蔽物の代表が抜けていた。**
-            # ここでは 128層(`visibility=3`)で、通した 612 に対し約2割である。
             #
             # **落としの理由は発火した条件から導く。横に書き添えない** ——
             # 書き添えた「可視でない」は、2,467層について**嘘を印字していた**。
             # **誤った理由の下で数えられた落としは、数えられていない落としより悪い**
             # (数が、点検が働いている証拠に見える)。
-            if not vi.strip().isdigit():
-                cut['visibility が数でない'] += 1; continue
-            if int(vi) & 1 == 0:
-                cut['visibility の1の位=0 (非表示)'] += 1; continue
-            if topf(anc) == 'sketch set':
-                cut['/sketch set (下絵は入力画像。L12 の修正A2)'] += 1; continue
+            ok_, why = keep_fn(r['page_path'], lid, r['visibility'],
+                               r['ancestors'], r['opacity'])
+            if not ok_:
+                cut[why] += 1; continue
             z = zz.get((k[0], str(lid)))
             if z is None:
                 cut['z順に無い'] += 1; continue
             keep.append((lid, path, z))
         occs[k] = keep
-    print('遮蔽物の選別 (z順で前後を決める。名前では切らない)')
+    print(f'遮蔽物の選別 (z順で前後を決める。名前では切らない)  **腕 {OCC}'
+          + ('  祖先も見る(T143)**' if ANC else '  祖先は見ない**') + ')')
     print(f'  通した {sum(len(v) for v in occs.values())}')
     for k, v in cut.most_common():
         print(f'  落とした {v:5d}  {k}')
@@ -229,22 +295,30 @@ def main():
             jobs.append((pid, work, fz, sorted(line.get((pid, work), [])),
                          occs.get((pid, work), []), sel))
     print(f'  頁 {len(jobs)}')
-    rows = []
+    rows = []; odrop = collections.Counter()
     with Pool(4) as pool:
-        for i, r in enumerate(pool.imap_unordered(one_page, jobs), 1):
-            rows += r
+        for i, (r, d) in enumerate(pool.imap_unordered(one_page, jobs), 1):
+            rows += r; odrop.update(d)
             if i % 10 == 0:
                 print(f'  {i}/{len(jobs)} 頁  行 {len(rows)}', flush=True)
     keys = ['pid', 'work', 'comp', 'region', 'area', 'panel_area', 'arm', 'src_z',
             'src_share', 'occf_cover'] + \
            [f'{v}_{k}' for v in ('W0', 'W1', 'W2', 'W6', 'W3', 'W7')
             for k in ('iou', 'ratio', 'sup')]
-    with open(f'{OUT}/per_region.csv', 'w', newline='', encoding='utf-8') as fh:
+    with open(f'{OUT}/per_region{tag}.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.DictWriter(fh, fieldnames=keys, extrasaction='ignore'); w.writeheader()
         for r in rows:
             w.writerow(r)
     real = [r for r in rows if r['arm'] == 'real']
-    print(f'-> {OUT}/per_region.csv  面 {len(real)}\n' + '=' * 88)
+    print(f'-> {OUT}/per_region{tag}.csv  面 {len(real)}')
+    # **遮蔽物の読み込みで落ちた分を理由別に印字する**(2026-10-27。規律9)。
+    # 切り出す前は黙って `continue` していた。**発火していない理由も印字する**(T134(k))。
+    for r_ in ('遮蔽物の PNG が読めない', '遮蔽物の形が頁と違う',
+               'マスクの PNG が読めない', 'マスクの形が頁と違う'):
+        n_ = odrop.get(r_, 0)
+        print(f'   落とした {n_:5d}  {r_}'
+              + ('  (**この理由は1度も発火していない**)' if n_ == 0 else ''))
+    print('=' * 88)
     print('【先に観察】作者の言明「手前に来るものの下は描いていない」の試験')
     print('  |R ∧ OCC_front| / |R|  —— 0 に近ければ言明どおり。**F を参照していない**')
     for w in ('ako6', 'ako7'):
