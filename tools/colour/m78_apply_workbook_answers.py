@@ -34,7 +34,10 @@ from pathlib import Path
 
 import openpyxl
 
-WB = Path('data/version_workbook/returned/version_decide_20261027_answered.xlsx')
+# **表は複数。後の表が前の表を上書きする**(= 答え直し。m63 と同じ規則)。
+# 2本目は ○ が入らなかった3塊だけを切り出して出し直した表(作者が記入して返した)
+WB = [Path('data/version_workbook/returned/version_decide_20261027_answered.xlsx'),
+      Path('data/version_workbook/returned/version_decide_rest3_20261027_answered.xlsx')]
 ROLES = Path('results/m76_version_ruling/version_roles_current.csv')
 OUT = Path('results/m78_workbook_applied'); OUT.mkdir(parents=True, exist_ok=True)
 # **原稿の根のフォルダーは書かない。** 追跡される器具に書くと、それ自身が公開される
@@ -58,28 +61,46 @@ def root_of(roles):
     return pre[:pre.rfind('\\') + 1]
 
 
-def read_workbook(root):
-    ws = openpyxl.load_workbook(WB, data_only=True)['問い(同年代)']
+def read_one(path, root):
+    ws = openpyxl.load_workbook(path, data_only=True)['問い(同年代)']
     hdr = [c for c in next(ws.iter_rows(min_row=2, max_row=2, values_only=True))]
     ix = {h: i for i, h in enumerate(hdr) if h}
     ci, cc = ix['相対パス'], ix['塊']
     cm = [i for h, i in ix.items() if h.startswith('【判断】使う')][0]
     cn = [i for h, i in ix.items() if h.startswith('【判断】理由')][0]
-    cl, drop = collections.defaultdict(list), collections.Counter()
+    out, drop = [], collections.Counter()
     for r in ws.iter_rows(min_row=3, values_only=True):
         if r[cc] in (None, ''):
             drop['塊の列が空(塊の間の空行)'] += 1; continue
         m = (str(r[cm]).strip() if r[cm] not in (None, '') else '')
         if m and m not in MARK:
             drop[f'印が読めない({m!r})'] += 1
-        cl[str(r[cc])].append(dict(
-            page_path=root + str(r[ci]), rel=str(r[ci]),
-            mark=(m in MARK), note=(str(r[cn]).strip() if r[cn] else '')))
+        out.append(dict(cluster=str(r[cc]), page_path=root + str(r[ci]),
+                        rel=str(r[ci]), mark=(m in MARK),
+                        note=(str(r[cn]).strip() if r[cn] else '')))
+    return out, drop
+
+
+def read_workbook(root):
+    """**複数の表を順に読み、同じ頁は後の表で上書きする**(規律9: 差分を印字)。"""
     print('== 材料 ==')
-    print(f'  {WB}')
+    rows, drop = {}, collections.Counter()
+    order = []
+    for wb in WB:
+        got, d = read_one(wb, root)
+        over = sum(1 for w in got if w['page_path'] in rows)
+        print(f'  {wb.name}  {len(got)} 行  (うち前の表を上書き {over})')
+        drop.update(d)
+        for w in got:
+            if w['page_path'] not in rows:
+                order.append(w['page_path'])
+            rows[w['page_path']] = w
     print('== 母集団の差分(理由別。規律9)==')
     for k, v in drop.most_common():
         print(f'  {k:34s} -{v}')
+    cl = collections.defaultdict(list)
+    for pp in order:
+        cl[rows[pp]['cluster']].append(rows[pp])
     print(f'  **塊 {len(cl)} / 行 {sum(len(v) for v in cl.values())}**'
           f'  (表を作ったときは 56 / 119)')
     return cl
@@ -199,8 +220,13 @@ def main():
                 print(f'        {w["rel"]}')
 
     # ---- 札に反映 ----
-    before = collections.Counter(
-        'ADOPT' if r['use'].startswith('採点する') else 'DROP' for r in roles)
+    # **採点側の数え方を2つ併記する**(追補108 §D。`別行で採点` は採点しない側ではない)
+    def cnt(rs):
+        a = sum(1 for r in rs if r['use'].startswith('採点する'))
+        b = a + sum(1 for r in rs if r['use'].startswith('別行で採点'))
+        return a, b
+
+    before = cnt(roles)
     moved = []
     for a in acts:
         if not a['new_use']:
@@ -217,13 +243,15 @@ def main():
             r['version_role'] = 'unrelated'; r['superseded_by'] = ''
         else:
             r['version_role'] = 'final'; r['superseded_by'] = ''
-    after = collections.Counter(
-        'ADOPT' if r['use'].startswith('採点する') else 'DROP' for r in roles)
+    after = cnt(roles)
 
-    print('\n== 主値(`採点する` と数える頁)==')
-    print(f'  前 {before["ADOPT"]} -> 後 **{after["ADOPT"]}**  差 {after["ADOPT"] - before["ADOPT"]}')
-    print(f'  採点しない {before["DROP"]} -> {after["DROP"]}')
-    print(f'  **帰無値は「動かない」。{"動いた" if after["ADOPT"] != before["ADOPT"] else "動かなかった"}**')
+    print('\n== 主値(採点側と数える頁。**数え方を2つ併記**)==')
+    print(f'  A(`採点する` で始まる札)      前 {before[0]} -> 後 **{after[0]}**'
+          f'  差 {after[0] - before[0]}')
+    print(f'  B(A + `別行で採点`)          前 {before[1]} -> 後 **{after[1]}**'
+          f'  差 {after[1] - before[1]}')
+    print(f'  採点しない(B の外)            {len(roles) - before[1]} -> {len(roles) - after[1]}')
+    print(f'  **帰無値は「動かない」。{"動いた" if after[0] != before[0] else "動かなかった"}**')
     left = [r for r in roles if r['use'] == STALLED]
     print(f'  裁定3 の暫定の札 {len(stalled)} -> **{len(left)}**')
 
