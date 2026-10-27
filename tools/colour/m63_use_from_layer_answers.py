@@ -18,6 +18,11 @@
   **新しい既知セル** -> **答の集計だけの判定と最終の判定の差が 0 でない**
                        (0 なら書き直しが何も変えていない = 器具を疑う)
 
+**2026-10-27(追補101)**: 行列と答のファイルを**対で並べられる**ようにした
+(`--with-supp` で補充の行列 `results/m71_ui` + `labels/layer_kind_supp.jsonl` を足す)。
+**`order` は行列ごとに振り直されているので、鍵は `(行列, order)`**(T144)。
+**既定の挙動は変えていない**(引数なしなら1巡目だけ。前の印字と一致することを確かめる)。
+
 **錨の表は追跡外**(`results/alias/author_anchors.json`。追補73 の形)。
 **結合は `page_path`(フルパス)。ファイル名では結合しない。**
 **飛ばした行は理由別に件数を印字する。**
@@ -55,14 +60,25 @@ def tally_only(s):
     return 'undecided', '規則のどれにも当たらない'
 
 
-def main():
+SOURCES = [('results/m56_ui/queue.json', 'labels/layer_kind.jsonl')]
+SUPP = ('results/m71_ui/queue.json', 'labels/layer_kind_supp.jsonl')
+
+
+def main(argv=()):
     anchors = load_anchors()
-    q = {it['order']: it for it in
-         json.load(open('results/m56_ui/queue.json'))['queue']}
-    last, drop = {}, collections.Counter()
-    for l in open('labels/layer_kind.jsonl', encoding='utf-8'):
-        if l.strip():
-            r = json.loads(l); last[r['order']] = r      # 後勝ち = 第2走
+    srcs = list(SOURCES) + ([SUPP] if '--with-supp' in argv else [])
+    q, last, drop = {}, {}, collections.Counter()
+    for qf, lf in srcs:
+        # **鍵は (行列, order)**。`order` は行列ごとに振り直されている(T144)
+        for it in json.load(open(qf))['queue']:
+            q[(qf, it['order'])] = it
+        for l in open(lf, encoding='utf-8'):
+            if l.strip():
+                r = json.loads(l)
+                last[(qf, r['order'])] = r               # 後勝ち = 答え直し
+    print(f'== 材料({len(srcs)} 対)==')
+    for qf, lf in srcs:
+        print(f'  {qf}  +  {lf}')
     bypage = collections.defaultdict(list)
     for o, a in last.items():
         it = q.get(o)
@@ -97,9 +113,11 @@ def main():
             why = f'答が薄い(聞いた層 {len(kinds)})。集計だけなら「{t_use}」'
         rows.append(dict(page_path=src, use=use, 根拠=why,
                          集計だけの判定=t_use, 層=len(kinds),
+                         # **同数の並びを決める**(集合の反復順に依存していた。
+                         # 判定は変わらないが、印字が走りごとに変わる)
                          種類=' / '.join(f'{k}×{kinds.count(k)}'
-                                       for k in sorted(s, key=kinds.count,
-                                                       reverse=True))))
+                                       for k in sorted(
+                                           s, key=lambda k: (-kinds.count(k), k)))))
 
     print(f'\n== 導いた `use`({len(rows)} 頁)==')
     for k, v in collections.Counter(r['use'] for r in rows).most_common():
@@ -146,4 +164,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
