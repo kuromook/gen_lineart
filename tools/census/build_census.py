@@ -834,7 +834,8 @@ def emit_front_decile_kinds(outdir: str, path: str, drops):
     return written
 
 
-def emit_population_by_format(outdir: str, path: str, n1_path: str, drops):
+def emit_population_by_format(outdir: str, path: str, n1_path: str,
+                              drops, folded=None, folded_aux=None):
     """**母集団を年 × 形式で出す表。** 作者の決定(2026-10-27): **`.lip` を入れる。**
 
     **この表が在るまで、`.lip` は入っていながら書かれていなかった** ——
@@ -858,7 +859,7 @@ def emit_population_by_format(outdir: str, path: str, n1_path: str, drops):
     # の両方で `^\d{4}[a-z]?$` を強制してある)
     ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in n1})
     ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in aux["fmt_year"]})
-    rows = occluders.population_by_format(aux, n1, drops)
+    rows = occluders.population_by_format(aux, n1, drops, folded)
     note = (f"頁の数は便 n1、層とフォルダーの数は依頼8 の表({n_rows:,} 行)。"
             "**どちらも同じ DB の同じ走行**なので、**一致は一致であって"
             "独立な確認ではない**(T132)。"
@@ -870,20 +871,70 @@ def emit_population_by_format(outdir: str, path: str, n1_path: str, drops):
             "**同じ割合を非フォルダーの分母で出すと別の数になる**"
             "(2026-10-27、基盤と 66.3% 対 70.0% でずれた。**どちらも正しく、"
             "どちらも「層」と書いていた**)")
+    if folded:
+        note += ("。**`n_pages_folded` はバイト同一の重複を畳んだ後の頁数** —— "
+                 "畳む規則は**作者の裁定**(2026-10-28): "
+                 "**より新しい札の写しを代表に残す。同じ暦年では `b`/`c` の付いた札が"
+                 "新しい(`2024` < `2024b` < `2024c`・`2022` < `2022b`・"
+                 "`2019` < `2019b`)。** **札そのものは畳まない**"
+                 "(`2019` と `2019b` は別の池。作者の決定 2026-10-26)。"
+                 "**畳む前と畳んだ後は同じ母集団の別の量で、差は量ではない**"
+                 "(余り 2,235 は「複製されたファイルの数」ではない)。"
+                 "**行は年 × 形式で、`share_kept` もその行の値** —— "
+                 "**年の合計の行は無い**(`2015` は `.clip` 0.650 / `.lip` 0.481 で、"
+                 "合わせた 0.486 はどの行にも無い)。"
+                 "**年ごとの傾向はこの列で読むこと** —— 池は一様に縮まないので、"
+                 "**畳む前の数で年を比べると複製の多い年ほど大きく見える**。"
+                 "**この決め方は合計を動かさない** —— 同じ暦年で札が違う組 527 の"
+                 "決め方をひっくり返すと **517頁が札の間を動き、合計 7,418 は"
+                 "1頁も動かない**。**だから合計の突き合わせでは映らない**"
+                 "(2026-10-28、基盤と 11量が一致した後に見つかった)。"
+                 "**ハッシュは抽出側が計算した列**なので、"
+                 "**先方の読みが違えば同じく違う**")
     out = [r + [note, "抽出側(um350)が出した2便 / census track が年 × 形式に組んだ",
                 bc_today()] for r in rows]
     written = write_csv(
         os.path.join(outdir, "population_by_format.csv"),
         ["grain", "year_label", "format", "n_pages", "n_read_error",
          "n_pages_with_layers", "sum_n_layers_incl_folders", "sum_n_folders",
+         "n_pages_folded", "share_kept",
          "reading", "population_note", "measured_by", "as_of"], out)
     print(f"  [母集団の形式ごとの内訳] 年 × 形式 {sum(1 for r in rows if r[0] == 'year')} 行"
           f" / 拡張子が2形式でない行 {aux['n_bad_fmt']}"
           f" / 年の札の形でない行 {aux['n_bad_year']}")
     for r in out:
         if r[0] == "format_total":
+            # **`reading` の位置は畳みの2列ぶん後ろにある**(列を足したら
+            # 添字を数え直す。T142 の家族: 同じ添字が別の量を指す)
             print(f"      {r[2]:5s} 頁 {r[3]:>6}(層が在る {r[5]:>6})"
-                  f" / 層 {r[6]:>7} / フォルダー {r[7]:>7}  {r[8]}")
+                  f" / 畳んだ後 {r[8] if r[8] != '' else '—':>6}"
+                  f" / 層 {r[6]:>7} / フォルダー {r[7]:>7}  {r[10]}")
+    if folded:
+        a = folded_aux or {}
+        print(f"    [重複を畳んだ後] 組 {a.get('n_clusters', 0):,}"
+              f" / 暦年をまたぐ組 {a.get('n_multi_year', 0):,}"
+              f" / **同じ暦年で札が違う組 {a.get('n_tie_label', 0):,}**"
+              f" / 形式をまたぐ組 {a.get('n_cross_format', 0):,}"
+              f"(0 であるべき —— `.clip` と `.lip` は同じバイト列になり得ない)")
+        for pair, n in sorted(a.get("tie_pairs", {}).items(), key=lambda kv: -kv[1]):
+            print(f"        同順位 {' + '.join(pair)}: {n:,} 組"
+                  f"(**作者の裁定で後ろの札が代表**)")
+        # **足した列の合計が、同じ器具の異なり数と合うか。**
+        # **同じ述語なので裏付けではない** —— 映るのは組み方の誤りだけ
+        col = collections.Counter()
+        for r in out:
+            if r[0] == "year" and r[8] != "":
+                col[r[2]] += r[8]
+        said = collections.Counter()
+        for (_yr, fmt), (_b, aft) in folded.items():
+            said[fmt] += aft
+        for fmt in sorted(said):
+            mark = "一致" if col[fmt] == said[fmt] else "**食い違い**"
+            print(f"        年の行の和 {fmt}: {col[fmt]:,} 対 畳みの表 {said[fmt]:,}  {mark}")
+        missing = [k for k in folded if ("year", k[0], k[1]) not in
+                   {(r[0], r[1], r[2]) for r in out}]
+        if missing:
+            print(f"        **畳みの表に在るが年の行が無いセル {len(missing)}**: {missing[:5]}")
     # **3便の突き合わせ。** 合わないまま公開しない
     bad = 0
     print("    [便どうしの突き合わせ]")
@@ -1195,7 +1246,9 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_common_names", "n_common_names_bytes_differ",
                "n_pixels_in_both", "n_pixels_in_both_same_name",
                "n_pixels_in_both_renamed", "n_pixels_only_a", "n_pixels_only_b",
-               "n", "cluster_size", "n_clusters")
+               "n", "cluster_size", "n_clusters",
+               # **畳んだ後の頁数。** 畳む前(`n_pages`)とは別の量で、差は量ではない
+               "n_pages_folded")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1203,7 +1256,9 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # **割合の列。** 件数ではないので小数が正しい
               "median_front_share", "share_front_decile", "share_opacity_full",
               "share_visible_bit", "share_composite_normal",
-              "share_ancestor_hidden")
+              "share_ancestor_hidden",
+              # **残る割合** = 畳んだ後 ÷ 畳む前。件数ではないので小数が正しい
+              "share_kept")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1667,8 +1722,11 @@ def main() -> int:
         args.public_out, occluders.R7_DEFAULT, drops_dl)
     pub["occluder_front_position.csv"] = emit_front_position(
         args.public_out, occluders.R8_DEFAULT, drops_dl)
+    folded_by_year, folded_aux = hashes.folded_by_year(
+        hash_rows, occluders.path_year, drops_h)
     pub["population_by_format.csv"] = emit_population_by_format(
-        args.public_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, drops_dl)
+        args.public_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, drops_dl,
+        folded_by_year, folded_aux)
     pub["occluder_folder_contents.csv"] = emit_folder_contents(
         args.public_out, occluders.R8_DEFAULT, drops_dl)
     pub["front_decile_kinds.csv"] = emit_front_decile_kinds(
@@ -1706,7 +1764,8 @@ def main() -> int:
     full["occluder_front_position.csv"] = emit_front_position(
         args.full_out, occluders.R8_DEFAULT, Drops())
     full["population_by_format.csv"] = emit_population_by_format(
-        args.full_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, Drops())
+        args.full_out, occluders.R8_DEFAULT, occluders.N1_DEFAULT, Drops(),
+        folded_by_year, folded_aux)
     full["occluder_folder_contents.csv"] = emit_folder_contents(
         args.full_out, occluders.R8_DEFAULT, Drops())
     full["front_decile_kinds.csv"] = emit_front_decile_kinds(

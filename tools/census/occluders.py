@@ -837,7 +837,7 @@ def load_pages_by_year(path: str, drops):
     return out
 
 
-def population_by_format(aux, n1, drops):
+def population_by_format(aux, n1, drops, folded=None):
     """**母集団を形式ごとに出す表。** 作者の決定(2026-10-27): **`.lip` を入れる。**
 
     **2つの便を並べる**: 頁の数は便 n1、層とフォルダーの数は依頼8 の表。
@@ -906,6 +906,26 @@ def population_by_format(aux, n1, drops):
         if r[0] == "year" and by_year[r[1]]:
             r[8] = (f"この年の層(**フォルダー込み**)の "
                     f"{r[6] / by_year[r[1]]:.3f} がこの形式")
+    # **畳んだ後の頁数を、畳む前の隣に置く**(T140: 読み手に足させない・引かせない)。
+    # **畳む規則は作者の裁定**で、述語は `hashes.folded_by_year` に書いてある。
+    # **畳む前と畳んだ後は同じ母集団の別の量** —— **差は量ではなく手続きの結果**
+    # (余り 2,235 は「複製されたファイルの数」ではない。T96 の家族)。
+    # **この列が無い間、年ごとの傾向は読めなかった** —— 池は一様に縮まないので
+    # (2023b 0.480 / 2024c 1.000)、**畳む前の数で年を比べると複製の多い年ほど
+    # 大きく見える**(Track M の指摘、2026-10-28)
+    if folded:
+        fsum = collections.Counter()
+        for (yr, fmt), (_before, after) in folded.items():
+            fsum[("year", yr, fmt)] += after
+            fsum[("format_total", "", fmt)] += after
+            fsum[("format_total", "", "both")] += after
+        out = []
+        for r in rows:
+            n_after = fsum.get((r[0], r[1], r[2]), "")
+            n_before = r[3] if isinstance(r[3], int) else 0
+            kept = f"{n_after / n_before:.3f}" if n_after != "" and n_before else ""
+            out.append(r[:8] + [n_after, kept] + r[8:])
+        rows = out
     return rows
 
 

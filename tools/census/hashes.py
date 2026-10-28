@@ -124,3 +124,60 @@ def grad_layer_map(path: str, drops):
                     moved += 1
     rows = [[k, v] for k, v in sorted(cat.items(), key=lambda x: -x[1])]
     return rows, n, both_cover, moved
+
+
+# **畳む規則は作者の裁定である**(2026-10-28)——
+# バイト同一の組は**より新しい札の写しを代表に残す**。同じ暦年では
+# **`b`/`c` の付いた札の方が新しい**(`2024` < `2024b` < `2024c`、
+# `2022` < `2022b`、`2019` < `2019b`。3組を作者が答え、`2024b` の位置も作者が確定した)。
+#
+# **札そのものは畳まない**(`2019` と `2019b` は別の池。作者の決定 2026-10-26)——
+# 畳むのは**代表の選択だけ**で、残った1枚はその札の行に数える。
+#
+# **この決め方が年ごとの数を入れ替える。** 同じ暦年で札が違う組が 527 あり、
+# 綴りの前後をひっくり返すと **517頁が札の間を動く**。
+# **合計 7,418 はどちらの読みでも動かないので、合計の突き合わせでは映らない**
+# (2026-10-28、基盤との突き合わせで 11量が一致した後に見つかった)。
+def _newer(label: str):
+    """2つの札のどちらが新しいかの順序。**暦年が先、同じなら綴りの後ろが新しい。**"""
+    return (label[:4], label[4:])
+
+
+def folded_by_year(rows, year_of, drops):
+    """**年 × 形式ごとに、畳む前と畳んだ後の頁数。**
+
+    返すのは `{(year_label, fmt): (畳む前, 畳んだ後)}` と、決め方の内訳。
+
+    **`.clip` と `.lip` は同じバイト列になり得ない**(容れ物が違う)ので、
+    組は形式の中で閉じる —— だから形式ごとに数えても組が割れない。
+    **それでも形式を跨いで組を作って数え、跨いだ組が 0 であることを印字する**
+    (**閉じていることを仮定ではなく数で言う**)。
+    """
+    clusters = collections.defaultdict(list)
+    for r in rows:
+        yr = year_of(r["page_path"])
+        if not yr:
+            drops.drop("年の札が `\\d{4}[a-z]?` の形でない")
+            continue
+        clusters[r["sha"]].append((yr, r["fmt"]))
+
+    before = collections.Counter()
+    folded = collections.Counter()
+    aux = dict(n_clusters=0, n_multi_year=0, n_tie_label=0, n_cross_format=0,
+               tie_pairs=collections.Counter())
+    for sha, mem in clusters.items():
+        aux["n_clusters"] += 1
+        for yr, fmt in mem:
+            before[(yr, fmt)] += 1
+        if len({f for _, f in mem}) > 1:
+            aux["n_cross_format"] += 1
+        if len({yr[:4] for yr, _ in mem}) > 1:
+            aux["n_multi_year"] += 1
+        newest = max(_newer(yr) for yr, _ in mem)
+        top = sorted({(yr, fmt) for yr, fmt in mem if _newer(yr) == newest})
+        if len({yr for yr, _ in mem if _newer(yr)[0] == newest[0]}) > 1:
+            aux["n_tie_label"] += 1
+            aux["tie_pairs"][tuple(sorted({yr for yr, _ in mem
+                                           if yr[:4] == newest[0]}))] += 1
+        folded[top[0]] += 1
+    return {k: (before[k], folded.get(k, 0)) for k in before}, aux
