@@ -66,6 +66,7 @@ OUT = f'{ROOT}/results/l38_cluster_ui'
 L19Q = f'{ROOT}/results/l19_ui/queue.json'
 L19A = f'{ROOT}/labels/fill_words.jsonl'
 MAXSIDE = 1200
+SEED = 20261028        # **行列の並びの種。** 記録する(途中で止めた分を標本として読むため)
 # 面の色(BGR、淡い)。番号で見分けるので色は巡回でよい
 PAL = [(245, 215, 215), (215, 245, 215), (215, 225, 250), (245, 235, 205),
        (240, 215, 245), (205, 245, 245), (225, 225, 245), (235, 245, 215),
@@ -180,6 +181,8 @@ def answers_by_crop():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--limit', type=int, default=0, help='頁を切る(煙試験)')
+    ap.add_argument('--keep-single', action='store_true',
+                    help='面が1つだけのコマも行列に残す(既定は外す。作者の判断 2026-10-28)')
     a = ap.parse_args()
     os.makedirs(f'{OUT}/panels', exist_ok=True)
     print('L38: **面のまとまり**の待ち行列。標準は `arms(\'gated\')` '
@@ -199,6 +202,39 @@ def main():
     # **並びを決定的にする**(Pool の戻り順は不定。作り直すたびに order がずれると
     # 保存済みの答と対応しなくなる。L19 で同じ手当てをしている)
     rows.sort(key=lambda r: (r['work'], r['pid'], r['pan']))
+    # **名前の点検は選別の前に当てる。** 名前は頁を歩く間に振るもので、
+    # **どのコマを行列に載せるかとは別の話**である
+    # (2026-10-28: 選別の後で比べて FAIL になり、点検を当てる場所を間違えていた)。
+    seen_all = {r['pid'] for r in rows}
+    got_all = {f['crop'] for r in rows for f in r['faces'] if f['crop']}
+    # ---- 選別(規律9: 落としたものを理由別に数えて印字する)
+    n0 = len(rows)
+    if not a.keep_single:
+        # **作者が既に触れたコマは外さない。** 外すと、答えた行はファイルに残るのに
+        # 画面から消える —— **作者の仕事を黙って見えなくする**。
+        # 2026-10-28 の実測: 触れた 25コマのうち 7コマが「面が1つ」で、
+        # **そこにも答えが付いていた**(髪・背景3D・まとまりでない)。
+        touched = set()
+        sp = f'{ROOT}/labels/region_cluster.jsonl'
+        if os.path.exists(sp):
+            for ln in open(sp, encoding='utf-8'):
+                if ln.strip():
+                    touched.add(json.loads(ln).get('tag'))
+        keep = [r for r in rows if len(r['faces']) >= 2 or r['tag'] in touched]
+        kept1 = sum(1 for r in keep if len(r['faces']) < 2)
+        print(f'  落とした {n0 - len(keep)}  **面が1つだけのコマ**'
+              f'(束ねる判断が無い。作者の判断 2026-10-28)')
+        print(f'  落とさなかった {kept1}  面が1つだが**作者が既に触れたコマ**')
+        rows = keep
+    else:
+        print('  落とした 0  (`--keep-single`。面が1つのコマも残した)')
+    # ---- **無作為に並べる。種を記録する**(作者の判断 2026-10-28)
+    # **途中で止めても、そこまでが母集団の無作為標本になる** ——
+    # 頁の順だと「ako6 の前半だけ」という偏った集まりになり、
+    # 後で測るときに「途中まで」としか書けない。
+    rng = np.random.default_rng(SEED)
+    rows = [rows[int(i)] for i in rng.permutation(len(rows))]
+    print(f'  **無作為に並べた**(種 {SEED})。コマ {len(rows)}')
     ans = answers_by_crop()
     nface = nans = 0
     for o, r in enumerate(rows):
@@ -215,14 +251,17 @@ def main():
     # **原理的に通れない門**になる —— 2026-10-28 に KC30 で直したのと同じ病を、
     # この器具を書いた同じ日にもう一度踏んだ(`--limit 2` で 18/551 で FAIL)。
     # **頁で絞るのは水準を下げることではない**: 走った頁の上では「全部ある」が要求のまま。
-    seen = {r['pid'] for r in rows}
     want = {x['crop'] for x in json.load(open(L19Q, encoding='utf-8'))['queue']
-            if x['pid'] in seen}
+            if x['pid'] in seen_all}
+    ok2 = want <= got_all
+    print(f'\n既知セル2 名前(**選別の前**): 走った {len(seen_all)}頁 の L19 の '
+          f'{len(want)} 面が、振った {len(got_all)} 面に全部あるか: '
+          f'{"ok" if ok2 else "**FAIL**"}  欠け {len(want - got_all)}')
+    # 選別で行列から消えた L19 の面(**規律9。答が画面から見えなくなる数**)
     got = {f['crop'] for r in rows for f in r['faces'] if f['crop']}
-    ok2 = want <= got
-    print(f'\n既知セル2 名前: 走った {len(seen)}頁 の L19 の {len(want)} 面が'
-          f'今回の {len(got)} 面に全部あるか: '
-          f'{"ok" if ok2 else "**FAIL**"}  欠け {len(want - got)}')
+    lost = want - got
+    print(f'  選別で行列から外れた L19 の面 **{len(lost)}**'
+          f'(面ごとの答は `fill_words.jsonl` に残るが、**この画面には出ない**)')
     if not ok2:
         print('**`k` の振り方が L19 と違う。答が結べないので止める**')
         return 1
@@ -274,7 +313,11 @@ def main():
         print('**ブラウザが画像を引き伸ばす。押した座標がずれる。止める**')
         return 1
     q = dict(n=len(rows), n_face=nface, n_face_answered=nans,
-             n_unclickable=int(unreach),
+             n_unclickable=int(unreach), seed=SEED, order='random',
+             # **並びの来歴**: 最初の版は頁の順で、作者はその順で 24コマ終えた。
+             # ここから後が無作為である。**「全部が無作為標本」ではない**
+             order_note='最初の24コマは頁の順で答えられた。以降がこの種での無作為',
+             n_panel_all=int(n0), dropped_single=int(n0 - len(rows)),
              standard='gated', unit='panel', cross_panel=False,
              built='l38_build_cluster_queue.py', queue_id='l38_panel_v1',
              kc=dict(names_ok=bool(ok2), hit_fatal=int(sum(bad.values())),
