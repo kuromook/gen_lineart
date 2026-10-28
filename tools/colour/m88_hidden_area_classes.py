@@ -58,6 +58,24 @@ CAP = 1400                # 1枚の板の上限(原寸。超えたら中央で�
 PER_CLASS_PER_PAGE = 2    # 切り出しを作る数(頁ごと・類ごと)
 
 
+def occ_box(r, files, grid, cache, cbase, box):
+    """矩形の中だけで1層の遮蔽範囲を取る(フォルダーは候補に入らないので単層のみ)。"""
+    y, x, h, w = box
+    a = m87.alpha_of(r['layer_id'], files, grid, cache)
+    if a is None:
+        return None
+    m = a[y:y + h, x:x + w]
+    if r['clip'] == '1':
+        b = cbase.get(r['layer_id'])
+        if b is None:
+            return None
+        ba = m87.alpha_of(b['layer_id'], files, grid, cache)
+        if ba is None:
+            return None
+        m = m & ba[y:y + h, x:x + w]
+    return m
+
+
 def aliases():
     if not ALIAS.exists():
         return {}
@@ -156,7 +174,7 @@ def main():
         cb = np.zeros(grid, np.uint16)
         co = np.zeros(grid, np.uint16)
         clips_by_base = collections.defaultdict(list)
-        cmask, cache = {}, {}
+        cmask, cache, added = {}, {}, []
         prev = cv2.imread(str(m12.D / p['preview']['file']), cv2.IMREAD_COLOR)
         made = collections.Counter()
         i = 0
@@ -175,6 +193,7 @@ def main():
                     cb += m
                 else:
                     co += m
+                added.append(r)
                 if bb is not None:
                     clips_by_base[str(bb['layer_id'])].append(
                         str(r['layer_id']))
@@ -201,19 +220,50 @@ def main():
             only_b = not (c['mask'] & ~ob).any()
             only_o = not (c['mask'] & ~oo).any()
             cls = 'C1' if only_b else ('C2' if only_o else 'C3')
+            # **身内 / 外**(追補127。**切り出しを見て足した軸**)——
+            # **「上に在る層」は「その面を見えなくする層」ではない。**
+            # その部位自身の塗り・線・同じ形の別のシルエットも上に在る。
+            # **身内 = その面の下地と同じフォルダーの中に在る層**
+            F = parent.get(str(c['base'])) if c['base'] is not None else None
+            exempt = set()
+            if c['base'] is not None:
+                for b in [str(c['base'])] + m87.ancestors(c['base'], parent):
+                    exempt.update(clips_by_base.get(b, ()))
+            ui = np.zeros((h, w), bool)
+            uo = np.zeros((h, w), bool)
+            for r in added:
+                if str(r['layer_id']) in exempt:
+                    continue
+                mm = occ_box(r, files, grid, cache, cbase, (y, x, h, w))
+                if mm is None or not mm.any():
+                    continue
+                inside = (F is not None
+                          and (F in m87.ancestors(r['layer_id'], parent)
+                               or str(r['layer_id']) == str(c['base'])))
+                if inside:
+                    ui |= mm
+                else:
+                    uo |= mm
+            only_i = not (c['mask'] & ~ui).any()
+            only_x = not (c['mask'] & ~uo).any()
+            dcl = 'D1' if only_i else ('D2' if only_x else 'D3')
+            tot[dcl] += 1
             tot['hidden'] += 1
             tot[cls] += 1
             a0 = int(c['mask'].sum())
             rows_out.append(dict(
-                page=al.get(p['source'], p['page']), 類=cls,
+                page=al.get(p['source'], p['page']), 類=cls, 身内外=dcl,
                 面の画素=a0, 面の割合=round(a0 / (grid[0] * grid[1]), 8),
                 ベース系だけで覆う=only_b, 非ベース系だけで覆う=only_o,
                 ベース系の被覆=round(float((c['mask'] & ob).sum()) / a0, 4),
                 非ベース系の被覆=round(float((c['mask'] & oo).sum()) / a0, 4),
+                身内の被覆=round(float((c['mask'] & ui).sum()) / a0, 4),
+                外の被覆=round(float((c['mask'] & uo).sum()) / a0, 4),
+                同じフォルダーが在る=F is not None,
                 面の高さ=h, 面の幅=w))
-            if made[cls] >= PER_CLASS_PER_PAGE:
+            if made[dcl] >= PER_CLASS_PER_PAGE:
                 continue
-            made[cls] += 1
+            made[dcl] += 1
             # ---- 原寸 1:1 の切り出し(拡大・縮小しない)----
             y0 = max(0, y - MARGIN); x0 = max(0, x - MARGIN)
             y1 = min(grid[0], y + h + MARGIN); x1 = min(grid[1], x + w + MARGIN)
@@ -253,22 +303,33 @@ def main():
             so2 = co[y0:y1, x0:x1] > 0
             fb[sb2] = (40, 150, 240)      # ベース系 = 橙(BGR)
             fo[so2] = (210, 130, 40)      # 非ベース系 = 青(BGR)
+            q = {'D1': '**問い: この面の上に在るのは、同じフォルダー'
+                        '(= 同じ部位)の層だけです。これは「遮蔽」ですか**',
+                 'D2': '**問い: この面は、別の部位の層に完全に覆われています。'
+                       'これを「面」として数えますか**',
+                 'D3': '**問い: この面は、同じ部位の層と別の部位の層の'
+                       '両方に覆われています。これを「面」として数えますか**'}[dcl]
             head = [f'{al.get(p["source"], p["page"])}  面 {a0:,}px  '
-                    f'{w}x{h}  類 {cls}',
-                    '**問い: 赤い輪郭の面は、絵の中で1画素も見えていない。'
-                    'これを「面」として数えるべきか**']
+                    f'{w}x{h}  {dcl}(遮蔽物の出所) / {cls}(ベース系か否か)',
+                    q,
+                    '**注: 「絵の中で見えない」という意味ではありません。'
+                    '上の層にはこの部位自身の塗りや線も含まれます**']
             sub = ['板は左から: (1) 合成(プレビューを最近傍で '
                    f'{s}倍。原寸の合成は存在しない) '
                    '(2) 赤の面=白 / 同じベースの他の面=暗い灰',
                    '(3) ベース系の遮蔽物(別の部位とその塗り)=橙 '
                    '(4) 非ベース系の遮蔽物(線画・効果)=青',
-                   f'ベース系の被覆 {float((c["mask"] & ob).sum())/a0:.4f} / '
-                   f'非ベース系の被覆 {float((c["mask"] & oo).sum())/a0:.4f}'
-                   '  **原寸 1:1。拡大・縮小していない**']
+                   f'身内(同じフォルダー)の被覆 '
+                   f'{float((c["mask"] & ui).sum())/a0:.4f} / '
+                   f'外の被覆 {float((c["mask"] & uo).sum())/a0:.4f}'
+                   f'  / ベース系 {float((c["mask"] & ob).sum())/a0:.4f}'
+                   f' / 非ベース系 {float((c["mask"] & oo).sum())/a0:.4f}',
+                   '**原寸 1:1。拡大・縮小していない**'
+                   f'{"  (板は中央で " + str(CAP) + "px に切った)" if max(h+2*MARGIN, w+2*MARGIN) > CAP else ""}']
             img = strip([panel(comp, mk), panel(ba, mk),
                          panel(fb, mk), panel(fo, mk)], font, head, sub)
-            fn = CROP / (f'{al.get(p["source"], p["page"])}_{cls}'
-                         f'_{made[cls]}_{a0}px.png')
+            fn = CROP / (f'{al.get(p["source"], p["page"])}_{dcl}_{cls}'
+                         f'_{made[dcl]}_{a0}px.png')
             cv2.imwrite(str(fn), img)
         for k, v in drop.items():
             tot[f'落: {k}'] += v
@@ -302,6 +363,24 @@ def main():
         print(f'  {cls}  {n:>4} ({n/tot["hidden"]:>6.1%})  '
               f'面の画素 中央 {med:>8,} / 最小 {(px[0] if px else 0):>8,} '
               f'/ 最大 {(px[-1] if px else 0):>9,}   {why}')
+
+    print('\n== 遮蔽物の出所(**追補127 で足した軸。切り出しを見て足した**)==')
+    for d, why in (('D1', '身内だけ = その部位自身の塗り・線・同じ形の別のシルエット'),
+                   ('D2', '外だけ = 別の部位が完全に覆っている'),
+                   ('D3', '両方必要')):
+        n = tot[d]
+        px = sorted(r['面の画素'] for r in rows_out if r['身内外'] == d)
+        med = px[len(px) // 2] if px else 0
+        print(f'  {d}  {n:>4} ({n/tot["hidden"]:>6.1%})  '
+              f'面の画素 中央 {med:>8,} / 最大 {(px[-1] if px else 0):>9,}   {why}')
+    print('  **D1 は「絵の中で見えない」ではない。'
+          '遮蔽物の集合が自分の部位の層を含んでいるということである**')
+
+    print('\n== 2つの軸の交差 ==')
+    x2 = collections.Counter((r['身内外'], r['類']) for r in rows_out)
+    print(f'  {"":6s} {"C1":>6} {"C2":>6} {"C3":>6}')
+    for d in ('D1', 'D2', 'D3'):
+        print(f'  {d:6s} {x2[(d,"C1")]:>6} {x2[(d,"C2")]:>6} {x2[(d,"C3")]:>6}')
 
     print('\n== 頁ごと(プールしない)==')
     byq = collections.Counter((r['page'], r['類']) for r in rows_out)
