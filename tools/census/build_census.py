@@ -681,6 +681,61 @@ def emit_mask_cover(outdir: str, path: str, drops):
     return written
 
 
+def emit_folded_totals(outdir: str, folded, folded_aux):
+    """**重複を畳んだ後の合計。形式ごとと全体だけ。年ごとには割らない。**
+
+    **年ごとに割らない理由**(2026-10-28、ユーザーの判断): 畳む規則は
+    **作者の裁定で「より古い札の写しを残す」**なので、**畳んだ後の年ごとの数は
+    「最も早く現れた札」の側**になる。**その補正は年ごとに不均等である** ——
+    **早い札に付け替えられるのは、同じバイト列が早いフォルダにも在る頁だけ**で、
+    **1回しか現れない頁は、使い回されていても補正されない**。
+    だから**年ごとの行は、年の傾向ではなく複製の分布を映す。**
+
+    **合計には不均等が無い** —— どの札を代表に選んでも、組は1つずつしか残らない。
+    **だから合計だけを出す。**(年ごとの数は段 C の `period_label_by_year.csv` に在る。)
+    """
+    if not folded:
+        return {}
+    tot = collections.Counter()
+    for (_yr, fmt), (before, after) in folded.items():
+        tot[(fmt, "before")] += before
+        tot[(fmt, "after")] += after
+        tot[("both", "before")] += before
+        tot[("both", "after")] += after
+    a = folded_aux or {}
+    rows = []
+    for fmt in ("clip", "lip", "both"):
+        b, f = tot[(fmt, "before")], tot[(fmt, "after")]
+        if not b:
+            continue
+        rows.append([
+            fmt, b, f, f"{f / b:.3f}",
+            "**ファイル数と異なり数は同じ母集団の別の量** —— "
+            "**差は量ではない**(余り 2,235 は「複製されたファイルの数」ではない。"
+            "双子を持つファイルは 3,804、塊は 1,569。"
+            "3つの量は `duplicate_quantities.csv`)。"
+            "畳む規則は**作者の裁定**(2026-10-28): "
+            "**より古い札の写しを代表に残す**(「ページが同バイト数なら"
+            "年代の古いものを代表とする」)。"
+            "**年ごとには割らない** —— **補正が年ごとに不均等**で、"
+            "**早い札に付け替えられるのは同じバイト列が早いフォルダにも在る頁だけ、"
+            "1回しか現れない頁は使い回されていても補正されない**ので、"
+            "**年ごとの行は年の傾向ではなく複製の分布を映す**。"
+            "**合計には不均等が無い。** "
+            "**ハッシュは抽出側が計算した列**なので、先方の読みが違えば同じく違う",
+            pop("db_files"), "census track(sha256 の列から数えた)", bc_today()])
+    print(f"  [畳んだ後の合計] " + " / ".join(
+        f"{r[0]} {r[1]:,} → {r[2]:,}({r[3]})" for r in rows))
+    print(f"      組 {a.get('n_clusters', 0):,}"
+          f" / 代表に効く同順位 {a.get('n_tie_label', 0):,}"
+          f" —— **年ごとには割らない**(2026-10-28 ユーザーの判断。"
+          f"年ごとは段 C の `period_label_by_year.csv`)")
+    return {"folded_totals.csv": write_csv(
+        os.path.join(outdir, "folded_totals.csv"),
+        ["format", "n_files", "n_pages_folded", "share_kept",
+         "not_answers", "population", "measured_by", "as_of"], rows)}
+
+
 def emit_period_label(outdir: str, hash_rows, drops):
     """**段 C だけの表。** 2つの読みを並べて残す。
 
@@ -1103,7 +1158,7 @@ def emit_population_by_format(outdir: str, path: str, n1_path: str,
     # の両方で `^\d{4}[a-z]?$` を強制してある)
     ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in n1})
     ALLOWED_PUBLIC_TOKENS.update({yr for yr, _ in aux["fmt_year"]})
-    rows = occluders.population_by_format(aux, n1, drops, folded)
+    rows = occluders.population_by_format(aux, n1, drops)
     note = (f"頁の数は便 n1、層とフォルダーの数は依頼8 の表({n_rows:,} 行)。"
             "**どちらも同じ DB の同じ走行**なので、**一致は一致であって"
             "独立な確認ではない**(T132)。"
@@ -1116,77 +1171,29 @@ def emit_population_by_format(outdir: str, path: str, n1_path: str,
             "(2026-10-27、基盤と 66.3% 対 70.0% でずれた。**どちらも正しく、"
             "どちらも「層」と書いていた**)")
     if folded:
-        note += ("。**`n_pages_folded` はバイト同一の重複を畳んだ後の頁数** —— "
-                 "畳む規則は**作者の裁定**(2026-10-28): "
-                 "**より古い札の写しを代表に残す**(「**ページが同バイト数なら"
-                 "年代の古いものを代表とする**」)。"
-                 "**2026-10-28 に一度、逆の規則(新しい方を残す)で公開した。"
-                 "他の track の便を、作者に確かめずに前提にした誤りである。** "
-                 "札の前後は作者の裁定で**同じ暦年では `b`/`c` が新しい**"
-                 "(`2024` < `2024b` < `2024c`)—— **残すのはその古い側**。"
-                 "**札そのものは畳まない**"
-                 "(`2019` と `2019b` は別の池。作者の決定 2026-10-26)。"
-                 "**畳む前と畳んだ後は同じ母集団の別の量で、差は量ではない**"
-                 "(余り 2,235 は「複製されたファイルの数」ではない)。"
-                 "**行は年 × 形式で、`share_kept` もその行の値** —— "
-                 "**年の合計の行は無い**(`2015` は `.clip` と `.lip` の2行)。"
-                 "**この列は「最も早く現れた札」の側である** —— "
-                 "**「制作時期」ではない**(年代札は頁ごとに「それ以降ではない」という上限)。"
-                 "**早い札に付け替えられるのは、同じバイト列が早いフォルダにも在る頁だけで、"
-                 "1回しか現れない頁は使い回されていても補正されない。"
-                 "補正は不均等で、不均等自身が傾向を作り得る**"
-                 "(複製の多い年ほど頁を早い年へ差し出す)。"
-                 "**年ごとの傾向はこの列で読むが、この但し書きと一緒に読むこと。** "
-                 "**この決め方は合計を動かさない** —— **この列に効く同順位は"
-                 "「最も古い暦年で札が複数」= 272組**で、"
-                 "**ひっくり返すと 262頁が札の間を動き、合計 7,418 は1頁も動かない**。"
-                 "**だから合計の突き合わせでは映らない**。"
-                 "**ハッシュは抽出側が計算した列**なので、"
-                 "**先方の読みが違えば同じく違う**")
+        note += ("。**この表には「畳んだ後」の列を置いていない**"
+                 "(2026-10-28、ユーザーの判断)—— "
+                 "**年ごとの行に置くと、年の傾向として読まれる。** "
+                 "畳む規則は**作者の裁定で「より古い札の写しを残す」**なので、"
+                 "**畳んだ後の年ごとの数は「最も早く現れた札」の側**になり、"
+                 "**補正が年ごとに不均等**である"
+                 "(**早い札に付け替えられるのは、同じバイト列が早いフォルダにも"
+                 "在る頁だけ。1回しか現れない頁は、使い回されていても補正されない**)。"
+                 "**合計だけを `folded_totals.csv` に出す** —— 合計には不均等が無い")
     out = [r + [note, "抽出側(um350)が出した2便 / census track が年 × 形式に組んだ",
                 bc_today()] for r in rows]
     written = write_csv(
         os.path.join(outdir, "population_by_format.csv"),
         ["grain", "year_label", "format", "n_pages", "n_read_error",
          "n_pages_with_layers", "sum_n_layers_incl_folders", "sum_n_folders",
-         "n_pages_folded", "share_kept",
          "reading", "population_note", "measured_by", "as_of"], out)
     print(f"  [母集団の形式ごとの内訳] 年 × 形式 {sum(1 for r in rows if r[0] == 'year')} 行"
           f" / 拡張子が2形式でない行 {aux['n_bad_fmt']}"
           f" / 年の札の形でない行 {aux['n_bad_year']}")
     for r in out:
         if r[0] == "format_total":
-            # **`reading` の位置は畳みの2列ぶん後ろにある**(列を足したら
-            # 添字を数え直す。T142 の家族: 同じ添字が別の量を指す)
             print(f"      {r[2]:5s} 頁 {r[3]:>6}(層が在る {r[5]:>6})"
-                  f" / 畳んだ後 {r[8] if r[8] != '' else '—':>6}"
-                  f" / 層 {r[6]:>7} / フォルダー {r[7]:>7}  {r[10]}")
-    if folded:
-        a = folded_aux or {}
-        print(f"    [重複を畳んだ後] 組 {a.get('n_clusters', 0):,}"
-              f" / 暦年をまたぐ組 {a.get('n_multi_year', 0):,}"
-              f" / **同じ暦年で札が違う組 {a.get('n_tie_label', 0):,}**"
-              f" / 形式をまたぐ組 {a.get('n_cross_format', 0):,}"
-              f"(0 であるべき —— `.clip` と `.lip` は同じバイト列になり得ない)")
-        for pair, n in sorted(a.get("tie_pairs", {}).items(), key=lambda kv: -kv[1]):
-            print(f"        同順位 {' + '.join(pair)}: {n:,} 組"
-                  f"(**作者の裁定で古い側 = 綴りの前の札が代表**)")
-        # **足した列の合計が、同じ器具の異なり数と合うか。**
-        # **同じ述語なので裏付けではない** —— 映るのは組み方の誤りだけ
-        col = collections.Counter()
-        for r in out:
-            if r[0] == "year" and r[8] != "":
-                col[r[2]] += r[8]
-        said = collections.Counter()
-        for (_yr, fmt), (_b, aft) in folded.items():
-            said[fmt] += aft
-        for fmt in sorted(said):
-            mark = "一致" if col[fmt] == said[fmt] else "**食い違い**"
-            print(f"        年の行の和 {fmt}: {col[fmt]:,} 対 畳みの表 {said[fmt]:,}  {mark}")
-        missing = [k for k in folded if ("year", k[0], k[1]) not in
-                   {(r[0], r[1], r[2]) for r in out}]
-        if missing:
-            print(f"        **畳みの表に在るが年の行が無いセル {len(missing)}**: {missing[:5]}")
+                  f" / 層 {r[6]:>7} / フォルダー {r[7]:>7}  {r[8]}")
     # **3便の突き合わせ。** 合わないまま公開しない
     bad = 0
     print("    [便どうしの突き合わせ]")
@@ -1499,6 +1506,8 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_pixels_in_both", "n_pixels_in_both_same_name",
                "n_pixels_in_both_renamed", "n_pixels_only_a", "n_pixels_only_b",
                "n", "cluster_size", "n_clusters",
+               # 畳んだ後の合計(`folded_totals.csv`)。**畳む前のファイル数**
+               "n_files",
                # マスクの被覆(便 2026-10-26)
                "n_cover_zero", "n_cover_full", "n_with_value",
                "n_mask_dims_differ",
@@ -1998,6 +2007,7 @@ def main() -> int:
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
         args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
+    pub.update(emit_folded_totals(args.public_out, folded_by_year, folded_aux))
     pub.update(emit_mask_cover(
         args.public_out, "inbox/mask_cover_request3_20261026.csv", drops_dl))
     pub["canvas_declared.csv"] = emit_canvas(
@@ -2040,6 +2050,7 @@ def main() -> int:
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
+    full.update(emit_folded_totals(args.full_out, folded_by_year, folded_aux))
     full["period_label_by_year.csv"] = emit_period_label(
         args.full_out, hash_rows, drops_h)
     full["canvas_declared.csv"] = emit_canvas(

@@ -126,9 +126,10 @@ COLUMN_CAVEATS = {
     "n_cover_zero": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_cover_full": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_mask_dims_differ": ["`mask_cover`(**読み手が本体の側と逆である**)"],
-    "n_pages_folded": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の頁数**)",
+    "n_files": ["ファイル数 / 異なり数"],
+    "n_pages_folded": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の合計。年ごとには割らない**)",
                        "ファイル数 / 異なり数"],
-    "share_kept": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の頁数**)"],
+    "share_kept": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の合計。年ごとには割らない**)"],
     "n_read_error": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
     "n_pages_with_layers": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
     "n_layers_clip": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
@@ -191,7 +192,8 @@ def main() -> int:
                           "occluder_vocab_full", "occluder_front_position",
                           "occluder_folder_contents", "front_decile_kinds",
                           "population_by_format",
-                          "mask_cover_bound", "mask_cover_by_kind")}
+                          "mask_cover_bound", "mask_cover_by_kind",
+                          "folded_totals")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])
