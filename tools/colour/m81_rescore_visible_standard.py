@@ -165,7 +165,10 @@ def main(argv=()):
             print(f'  {arm:17s} {nm} 1.0 の頁 {n}/{len(pages)}  '
                   f'{"PASS" if n == len(pages) else "**FAIL**"}')
             ok &= n == len(pages)
-    print(f'\n  **門 {"すべて PASS" if ok else "**FAIL**。以降の行を読まない"}**')
+    # **副値の走行では面の数を門にしていない**ので「すべて PASS」と書かない
+    # (床を変えると標準の面の数が変わるのは当たり前で、門にすると床で門が動く)
+    print(f'\n  **門 {"PASS" if ok else "**FAIL**。以降の行を読まない"}'
+          f'{"(主値。面の数も門)" if primary else "(**副値。面の数は門にしていない。床 1e-5 の走行で通っている**)"}**')
     if not ok:
         return 1
 
