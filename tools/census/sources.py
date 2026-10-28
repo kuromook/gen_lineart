@@ -164,7 +164,27 @@ LOCAL_CSV = [
         path="inbox/pages_added33_structure_20261026.csv",
         predicate="後から入った33頁の構造(層数・フォルダー数・画布・dpi)",
         supplier="抽出側(um350)", as_of="2026-10-26",
-        caveat="**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)",
+        caveat="**`canvas_unit` 列が無い。** 行ごとに mm か px かを決められない(T126)"
+               " —— **単位は便 n5(`canvas_px`)で決まった**(2026-10-28)",
+    ),
+    dict(
+        key="mask_cover_request3",
+        path="inbox/mask_cover_request3_20261026.csv",
+        predicate="依頼3のマスクの被覆(**16,273行・766頁。フォルダーの行を 1,839 含む**)",
+        supplier="抽出側(um350)", as_of="2026-10-26",
+        caveat="**`LayerMaskOffset` を足していない** —— ずれのある層では被覆が動く。"
+               "**便にその列が無いので、ずれている層の数はこの材料では測れない**。"
+               "**依頼3の層の便はフォルダーを落としているが、この便は含む** —— "
+               "**層数を2つの便の間で引き算しない**(T138)",
+    ),
+    dict(
+        key="canvas_px",
+        path="inbox/census_n5_added33_canvas_20261027.csv",
+        predicate="33頁の `canvas_unit` と**画素の画布**(`v_canvas_px_w/h`)",
+        supplier="抽出側(um350)", as_of="2026-10-27",
+        caveat="**宣言(`canvas_unit`)と量(画素)は別の側である** —— "
+               "**両方で確かめた**(`mm / 25.4 * dpi` が実測の画素と一致するか)。"
+               "**2頁は `canvas_unit` が空**で、px と読んだのは**読みであって宣言ではない**",
     ),
 ]
 
@@ -174,16 +194,6 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
-    dict(path="inbox/census_n5_added33_canvas_20261027.csv",
-         supplies="canvas_px",
-         what="33頁の `canvas_unit`(mm 31頁 / px 2頁)と画素の画布",
-         why_not_yet="**`canvas_declared.csv` の単位の列を埋める作業がまだ**"),
-    dict(path="inbox/mask_cover_request3_20261026.csv",
-         supplies=None,
-         what="依頼3のマスクの被覆(16,273行・766頁)",
-         why_not_yet="**§3-4 の納品の覆いに入れる作業がまだ**。"
-                     "`mask_cover` は下限ではないが、**`LayerMaskOffset` を足していない**ので"
-                     "ずれた層では被覆が動く(幅と層数は未測定)"),
 ]
 
 

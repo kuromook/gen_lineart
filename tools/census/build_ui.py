@@ -120,6 +120,12 @@ COLUMN_CAVEATS = {
                                   "`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
     "sum_n_folders": ["層数(集計どうしの比較)"],
     "grain": ["`.lip` を母集団に入れた(**作者の決定 2026-10-27**)"],
+    "median_mask_cover": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "share_cover_zero": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "share_cover_full": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "n_cover_zero": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "n_cover_full": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "n_mask_dims_differ": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_pages_folded": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の頁数**)",
                        "ファイル数 / 異なり数"],
     "share_kept": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の頁数**)"],
@@ -184,7 +190,8 @@ def main() -> int:
                           "faint_alpha_gap", "occluder_balloon_two_sided",
                           "occluder_vocab_full", "occluder_front_position",
                           "occluder_folder_contents", "front_decile_kinds",
-                          "population_by_format")}
+                          "population_by_format",
+                          "mask_cover_bound", "mask_cover_by_kind")}
 
     n_pages = sum(int(r["n_pages"]) for r in pages if r["n_pages"])
     n_layers = sum(int(r["n_layers"]) for r in layers if r["n_layers"])

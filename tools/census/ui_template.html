@@ -305,6 +305,15 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede"><code>alpha_ge1_ratio</code>(アルファ≥1)との差が、落ちている量。<b>本体がラスタの層で落ちているなら、それは薄い線である。</b></p>
 <div class="scroller"><table id="t-faint"></table></div>
 
+<h3 class="sub">マスクの被覆 —— <b>同じ「被覆」で、2つの読み手が逆の埋め方をしている</b></h3>
+<p class="lede"><b>依頼3のマスクの被覆が 10-28 にこの集計へ入った</b>(16,273層 / 766頁 / 値が無い 8 = 供給元の error)。<b>抽出側は 2026-10-26 に、聞かれずに「この列は下限ではない」と書いた</b> —— マスクの読み手は保存されていないブロックを <code>InitColor</code> で埋める、と。<b>いま数で確かめた:保存ブロックが 0 の層で、印字された被覆が <code>InitColor</code> どおりになる</b> —— <b>255 → 1.000 が 1,144/1,144、0 → 0.000 が 1,649/1,649。どちら向きの例外も 0。</b></p>
+<p class="lede"><b>本体の側は逆である</b> —— 描画用の読み手は保存されていないブロックを <b>0 で埋める</b>ので、<code>body_init 255</code> + 保存0 の層は <code>drawn_ratio</code> が 0 と出る(上の表の 11,499層)。<b>マスクの側は同じ条件で 1.000 と出る。同じ語の2つの列を、同じ向きに読んではいけない。</b></p>
+<p class="lede"><b>測れないものは測れないまま出す</b> —— マスクの読み手は <code>LayerMaskOffset</code> を足していないので、ずれのある層では被覆が動く。<b>便にその列が無いので、ずれている層の数はこの材料では測れない。</b>数えられるのは <b>マスクの寸法が画布と違う層 1,516(9.3%)</b> だけで、<b>それは「ずれている層」ではない</b>(寸法が同じでもずれ得る)。<br><b>そしてこの便はフォルダーの行を 1,839 含む</b> —— <b>依頼3の層の便(56,576層)はフォルダーを落としている。同じ依頼でも材料ごとに母集団が違うので、層数を2つの便の間で引き算しない</b>(T138)。</p>
+<div class="scroller"><table id="t-maskbound"></table></div>
+<h3 class="sub">種別 × <code>InitColor</code> ごとの被覆</h3>
+<p class="lede"><b><code>init</code> で向きが変わるので、種別だけで畳まない</b>(同じ <code>mask_fill</code> でも 255 と 0 は別の行)。<code>n_with_value</code> が <code>n_layers</code> より小さい行は、供給元の error の分である。</p>
+<div class="scroller"><table id="t-maskkind"></table></div>
+
 <h3 class="sub">本体の <code>InitColor</code> の分類(2,095層の納品)</h3>
 <p class="lede">描画用の読み手は<b>保存されていないブロックを 0 で埋める</b>ので、<code>body_init 255</code> で一部だけ保存された層では値が小さく出る。<b>0 は特別ではなく、下限が 0 まで下がった場合でしかない。</b>本体が届いた 2,095層を数えると <b><code>255 + 一部保存</code> は 0層</b> —— <b>列全体を下限扱いする必要はない。</b>ただし<b>依頼3の 56,576層には <code>blocks</code>/<code>stored</code> が無いので、そちらの該当数は未計数</b>(機序は確定、件数が無い)。</p>
 <div class="scroller"><table id="t-bound"></table></div>
@@ -313,8 +322,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
 <p class="lede">供給元の対応表(258層)から数え直した。<b>名前を鍵にすると 152枚が「違う」</b>と出るが、層を鍵にすると <b>131 は画素が同じで名前が違うだけ</b>で、<b>本当に画素が変わったのは 21層</b>(<code>mask_cover</code> が動いた層数と一致)。<b>103層は v2 で加わった層</b>で、これが採番を後ろにずらした原因である。</p>
 <div class="scroller"><table id="t-grad"></table></div>
 
-<h3 class="sub">画布の宣言値 —— <b>単位がこの材料では決まらない</b></h3>
-<p class="lede">33頁の材料には <code>canvas_unit</code> 列が無い。497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が同じ列に並ぶ。<b>どちらかをここで決めない</b> —— <code>v_canvas_px_w/h</code> を待つ。</p>
+<h3 class="sub">画布の宣言値 —— <b>単位が決まった(2026-10-28)</b></h3>
+<p class="lede"><b>2026-10-26 から 10-28 まで、この表は単位を決められなかった</b> —— 33頁の材料に <code>canvas_unit</code> 列が無く、497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が同じ列に並んでいた。<b>そこを埋める便(n5)が 10-27 に届き、いま <code>canvas_unit_resolved</code> に書いてある:mm 31頁 / px(読み)2頁 / 決まらない 0頁。</b></p>
+<p class="lede"><b>両面で確かめている</b>(作者の規則: 片面で済ませない)—— <b>宣言の側</b>は供給元の <code>canvas_unit</code> 列、<b>量の側</b>は <code>mm / 25.4 * dpi</code> が実測の画素(<code>v_canvas_px_w/h</code>)と一致するか。<b><code>canvas_unit=2</code> の 31頁は 31/31 行で一致した(差 0)。</b><br><b>残る2頁は <code>canvas_unit</code> が空である</b> —— 宣言値が実測の画素と等しいので px と読んだ。<b>これは読みであって宣言ではない</b>ので、列には <code>px(読み)</code> と書いてある。</p>
 <div class="scroller"><table id="t-canvas"></table></div>
 
 <h3 class="sub">同じ名前が2つの納品に在る 1,636枚 —— <b>うち 256枚は中身が違う</b></h3>
@@ -426,6 +436,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
     share_ancestor_hidden: "祖先が非表示", n_folders_hidden: "非表示のフォルダー",
     n_folders_with_rows: "直下に行が在る",
     n_pages_folded: "畳んだ後の頁", share_kept: "残る割合",
+    median_mask_cover: "被覆の中央", share_cover_zero: "被覆0の割合",
+    share_cover_full: "被覆1の割合", n_cover_zero: "被覆0", n_cover_full: "被覆1",
+    n_with_value: "値が在る", n_mask_dims_differ: "寸法が画布と違う",
     share_composite_normal: "通常合成",
     share_of_decile: "前方1割の内訳", share_of_kind: "その種類のうち",
     share_of_all: "全体では",
@@ -562,6 +575,13 @@ code { font-family: var(--font-mono); font-size: 0.92em; background: var(--accen
          D.req3_bound_classes);
   render($("t-faint"), ["is_drawing_layer", "gap_bucket", "n_layers"],
          D.faint_alpha_gap);
+  render($("t-maskbound"), ["bound_class", "meaning", "n_layers", "n_pages",
+                            "n_cover_zero", "n_cover_full", "median_mask_cover",
+                            "reading", "measured_by"], D.mask_cover_bound);
+  render($("t-maskkind"), ["v_layer_kind", "init", "n_layers", "n_with_value",
+                           "n_mask_dims_differ", "median_mask_cover",
+                           "share_cover_zero", "share_cover_full"],
+         D.mask_cover_by_kind);
   render($("t-bound"), ["kind", "bound_class", "meaning", "n_layers", "rule"],
          D.coverage_bound_classes);
   render($("t-grad"), ["category", "n_layers", "measured_by"], D.grad_v1_v2_by_layer);

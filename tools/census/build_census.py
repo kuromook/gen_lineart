@@ -22,6 +22,7 @@ import collections
 import csv
 import re
 import hashlib
+import statistics
 import os
 import subprocess
 import sys
@@ -76,7 +77,13 @@ ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "db_all_layers", "body_initcolor", "priority65",
                        "delivery_png", "clip_files", "grad_v1_v2")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
-                       "paper", "story_info", "filter", "gradation", "vector", "3d")
+                       "paper", "story_info", "filter", "gradation", "vector", "3d",
+                       # **フォルダーの2種は、マスクの便にしか出てこない**(2026-10-28)——
+                       # 依頼3の層の便は**フォルダー行を落としている**が、
+                       # **マスクの便は含んでいる**(`folder` 列が 1 の行)。
+                       # **同じ「依頼3」でも材料ごとに母集団が違う**(T138 の家族)——
+                       # だから層数を2つの便の間で引き算しない
+                       "folder", "frame_folder")
 
 
 def pop(key: str) -> str:
@@ -300,6 +307,28 @@ def load_added33(path: str):
     return rows, drops
 
 
+def load_canvas_units(path: str, drops):
+    """33頁の `canvas_unit` と画素の画布(便 n5、2026-10-27 着)。
+
+    **単位の列と画素の値は別の側である** —— 列は供給元の宣言、画素は実測。
+    **片面で済ませない**(作者の規則): 宣言が mm なら、
+    **`mm / 25.4 * dpi` が画素と一致するはず**で、それを行ごとに確かめる。
+    """
+    out = {}
+    if not os.path.exists(path):
+        print(f"  [画布の単位] **便 n5 が無い**({path})")
+        return out
+    with open(path, encoding="utf-8") as fh:
+        for rec in csv.DictReader(fh):
+            try:
+                pw, ph = int(rec["v_canvas_px_w"]), int(rec["v_canvas_px_h"])
+            except (ValueError, KeyError):
+                drops.drop("画素の画布が整数でない", rec.get("page_path", ""))
+                continue
+            out[rec["page_path"]] = (rec["canvas_unit"].strip(), pw, ph)
+    return out
+
+
 def load_initcolor(path: str):
     """本体の `InitColor` の納品(**1層1行**)。だから**ここで測れる** ——
     要約を引用するのではなく、行から数え直す(T132 の避け方)。
@@ -463,21 +492,184 @@ def emit_initcolor(outdir: str, rows, keep_private: bool):
                      list(key) + ["n_layers"], out)
 
 
-def emit_canvas(outdir: str, a33_rows):
-    """画布の宣言値の分布。**単位は行ごとに決められない**(T126)。
+def emit_canvas(outdir: str, a33_rows, units=None):
+    """画布の宣言値の分布。**単位は便 n5 が来るまで行ごとに決められなかった**(T126)。
 
-    `pages_added33_structure_20261026.csv` には **`canvas_unit` 列が無い** ので、
-    497×277 や 210×297(mm と読める)と 3000×3000 や 2033×3433(px と読める)が
-    同じ列に並ぶ。**どちらかをここで決めない** —— `v_canvas_px_w/h` を待つ。
+    **2026-10-28 に決まった** —— 便 n5 の `canvas_unit` と `v_canvas_px_w/h` が届いた。
+    **両面で確かめている**(作者の規則: 片面で済ませない):
+    **宣言の側**は供給元の `canvas_unit` 列、**量の側**は `mm / 25.4 * dpi` が
+    実測の画素と一致するか。**一致しない行が在れば、どちらかの読みが違う。**
+
+    **単位の列が空の行も在る** —— そこは**宣言が無い**ので、
+    **画素と宣言値が等しいことから px と読んでいる。これは読みであって宣言ではない**
+    (列に「(読み)」と書いて区別する)。
     """
-    cells = collections.Counter(
-        (r["canvas_w"], r["canvas_h"], r["dpi"]) for r in a33_rows)
-    rows = [[w, h, d, n, "no",
-             "`canvas_unit` 列が無い。mm と読める行と px と読める行が同じ列に並ぶ(T126)"]
-            for (w, h, d), n in sorted(cells.items(), key=lambda x: -x[1])]
+    units = units or {}
+    cells = collections.defaultdict(lambda: [0, 0, 0])   # 頁数 / mm 一致 / px 一致
+    for r in a33_rows:
+        u, pw, ph = units.get(r["page_path"], ("", "", ""))
+        key = (r["canvas_w"], r["canvas_h"], r["dpi"], u, pw, ph)
+        cells[key][0] += 1
+        if pw == "":
+            continue
+        try:
+            w, h, d = float(r["canvas_w"]), float(r["canvas_h"]), float(r["dpi"])
+        except ValueError:
+            continue
+        if abs(pw - round(w / 25.4 * d)) <= 1 and abs(ph - round(h / 25.4 * d)) <= 1:
+            cells[key][1] += 1
+        if pw == round(w) and ph == round(h):
+            cells[key][2] += 1
+    rows, n_mm, n_px, n_unknown = [], 0, 0, 0
+    for (w, h, d, u, pw, ph), (n, ok_mm, ok_px) in sorted(
+            cells.items(), key=lambda x: -x[1][0]):
+        if u == "2" and ok_mm == n:
+            resolved, why = "mm", (f"**宣言(`canvas_unit=2`)と量の両方**: "
+                                   f"`mm / 25.4 * dpi` が実測の画素と {ok_mm}/{n} 行で一致")
+            n_mm += n
+        elif u == "" and ok_px == n:
+            resolved, why = "px(読み)", ("**宣言が無い行。** "
+                                         f"宣言値が実測の画素と {ok_px}/{n} 行で等しいので "
+                                         "px と読める —— **読みであって宣言ではない**")
+            n_px += n
+        elif u == "2":
+            resolved, why = "**食い違い**", (f"`canvas_unit=2`(mm)だが、"
+                                             f"`mm / 25.4 * dpi` が一致するのは {ok_mm}/{n} 行")
+            n_unknown += n
+        else:
+            resolved, why = "", (f"**決まらない。** 宣言 `canvas_unit={u or '(空)'}` / "
+                                 f"mm と読んで一致 {ok_mm}/{n} / px と読んで一致 {ok_px}/{n}")
+            n_unknown += n
+        rows.append([w, h, d, pw, ph, n, resolved, why])
+    print(f"  [画布の宣言値] mm {n_mm}頁 / px(読み) {n_px}頁 / 決まらない {n_unknown}頁"
+          f" —— **単位の列が無かった間は 33頁すべてが「決まらない」だった**(T126)")
     return write_csv(os.path.join(outdir, "canvas_declared.csv"),
-                     ["canvas_w", "canvas_h", "dpi", "n_pages",
+                     ["canvas_w", "canvas_h", "dpi",
+                      "v_canvas_px_w", "v_canvas_px_h", "n_pages",
                       "canvas_unit_resolved", "why"], rows)
+
+
+def emit_mask_cover(outdir: str, path: str, drops):
+    """依頼3のマスクの被覆(便 2026-10-26、16,273行・766頁)。
+
+    **この便が答えるのは、本体の側と同じ問いのマスク版である** ——
+    **被覆の値は、値か下限か。** そして答は**本体の側と違った**:
+
+    **マスクの読み手は、保存されていないブロックを `InitColor` で埋める**
+    (抽出側が聞かれずに自ら書いた言明、2026-10-26)。**いま数で確かめた** ——
+    **保存ブロックが 0 の層では、印字された被覆が `InitColor` どおりの値に
+    ぴったり一致する**(255 → 1.000 が 1,144/1,144、0 → 0.000 が 1,649/1,649、
+    **どちら向きの例外も 0**)。**だからこの列は下限ではない。**
+
+    **本体の側は逆である** —— 描画用の読み手は**保存されていないブロックを 0 で埋める**
+    ので、`body_init 255` + 保存0 の層は `drawn_ratio` が 0 と出る(T60)。
+    **同じ「被覆」という語で、2つの読み手が逆の埋め方をしている。**
+
+    **この表が答えないもの**: **`LayerMaskOffset` を足していない**ので、
+    ずれのある層では被覆が動く。**便に `LayerMaskOffset` の列が無いので、
+    ずれている層の数はこの材料では測れない** —— 測れるのは
+    **マスクの寸法が画布と違う層の数**だけで、それは「ずれている層」ではない。
+    """
+    if not os.path.exists(path):
+        print(f"  [マスクの被覆] **便が無い**({path})")
+        return {}
+    rows = list(csv.DictReader(open(path, encoding="utf-8")))
+    cls_n = collections.Counter()
+    cls_pages = collections.defaultdict(set)
+    cls_zero, cls_full, cls_vals = collections.Counter(), collections.Counter(), {}
+    kind_n = collections.Counter()
+    kind_vals, kind_zero, kind_full = {}, collections.Counter(), collections.Counter()
+    kind_dims = collections.Counter()
+    n_err = 0
+    for r in rows:
+        kind, init = r["v_layer_kind"].strip(), r["init"].strip()
+        kind_n[(kind, init)] += 1
+        if (r["mask_w"], r["mask_h"]) != (r["canvas_w"], r["canvas_h"]):
+            kind_dims[(kind, init)] += 1
+        if not r["mask_cover"].strip():
+            n_err += 1
+            drops.drop(f"被覆が空(供給元の error: {r['error'][:30] or '空'})",
+                       r["page_path"])
+            continue
+        v = float(r["mask_cover"])
+        cls = classify_bound(init, int(r["blocks"] or 0), int(r["stored"] or 0))
+        cls_n[cls] += 1
+        cls_pages[cls].add(r["page_path"])
+        cls_vals.setdefault(cls, []).append(v)
+        kind_vals.setdefault((kind, init), []).append(v)
+        if v == 0.0:
+            cls_zero[cls] += 1
+            kind_zero[(kind, init)] += 1
+        if v >= 1.0:
+            cls_full[cls] += 1
+            kind_full[(kind, init)] += 1
+
+    def med(vals):
+        return f"{statistics.median(vals):.3f}" if vals else ""
+
+    # **読み手の振る舞いは、保存0 の層でしか見えない** —— そこだけ註に書く
+    out_cls = []
+    for cls, meaning, _ in BOUND_CLASSES:
+        n = cls_n.get(cls, 0)
+        if not n:
+            continue
+        z, f = cls_zero.get(cls, 0), cls_full.get(cls, 0)
+        if cls == "255 + 保存0":
+            reading = (f"**保存されたブロックが無いのに被覆が 1.000 の層が {f}/{n}** —— "
+                       "**マスクの読み手は `InitColor`(255 = 全面)で埋めている。"
+                       "0 で埋めていない。** "
+                       "**本体の側は逆で、同じ条件の層の `drawn_ratio` は 0 と出る**(T60)")
+        elif cls == "0 + 保存0":
+            reading = (f"**被覆 0.000 が {z}/{n}** —— `InitColor`(0 = 全く無い)どおり。"
+                       "**値が 0 なのであって、下限ではない**")
+        else:
+            reading = ("保存されたブロックが在る層。**読み手の埋め方はここでは見えない** —— "
+                       "**見えるのは保存 0 の2行だけ**")
+        out_cls.append([cls, meaning, n, len(cls_pages.get(cls, ())), z, f,
+                        med(cls_vals.get(cls, [])), reading])
+    written = {}
+    written["mask_cover_bound.csv"] = write_csv(
+        os.path.join(outdir, "mask_cover_bound.csv"),
+        ["bound_class", "meaning", "n_layers", "n_pages",
+         "n_cover_zero", "n_cover_full", "median_mask_cover", "reading",
+         "population", "measured_by", "as_of"],
+        [r + [pop("req3_layer_kind"), "抽出側(um350)", "2026-10-26"]
+         for r in out_cls])
+
+    out_kind = []
+    for key in sorted(kind_n, key=lambda k: -kind_n[k]):
+        kind, init = key
+        vals = kind_vals.get(key, [])
+        n = kind_n[key]
+        out_kind.append([
+            kind, init, n, len(vals), kind_dims.get(key, 0), med(vals),
+            f"{kind_zero.get(key, 0) / len(vals):.3f}" if vals else "",
+            f"{kind_full.get(key, 0) / len(vals):.3f}" if vals else "",
+        ])
+    written["mask_cover_by_kind.csv"] = write_csv(
+        os.path.join(outdir, "mask_cover_by_kind.csv"),
+        ["v_layer_kind", "init", "n_layers", "n_with_value",
+         "n_mask_dims_differ", "median_mask_cover",
+         "share_cover_zero", "share_cover_full",
+         "population", "measured_by", "as_of"],
+        [r + [pop("req3_layer_kind"), "抽出側(um350)", "2026-10-26"]
+         for r in out_kind])
+    n_dims = sum(kind_dims.values())
+    n_folder_rows = sum(1 for r in rows if r["folder"].strip() == "1")
+    print(f"  [マスクの被覆] {len(rows):,}層 / {len({r['page_path'] for r in rows}):,}頁"
+          f" / 値が無い {n_err}(供給元の error)")
+    print(f"      **この便はフォルダーの行を含む {n_folder_rows:,}** —— "
+          f"**依頼3の層の便はフォルダーを落としている。** "
+          f"**同じ依頼でも材料ごとに母集団が違うので、層数を引き算しない**(T138)")
+    print(f"      **読み手は `InitColor` で埋めている** —— "
+          f"`255 + 保存0` の {cls_full.get('255 + 保存0', 0)}/{cls_n.get('255 + 保存0', 0)} が被覆 1.000、"
+          f"`0 + 保存0` の {cls_zero.get('0 + 保存0', 0)}/{cls_n.get('0 + 保存0', 0)} が 0.000"
+          f"(**どちら向きの例外も 0 なら、この列は下限ではない**)")
+    print(f"      **`LayerMaskOffset` は足されていない** —— 便にその列が無いので"
+          f"**ずれている層の数は測れない。** 測れるのは"
+          f"**マスクの寸法が画布と違う層 {n_dims:,}**"
+          f"({n_dims / len(rows):.1%})で、**それは「ずれている層」ではない**")
+    return written
 
 
 def emit_full_population(outdir: str):
@@ -566,9 +758,8 @@ INLINE_NEEDS = {
     # **依頼と表が両方向にずれた。** 表が依頼の正本である
     # **満たされた**(2026-10-27 の便)—— 下限の層は 512層・210頁、全部 用紙 と 色調補正
     "req3_layer_kind": ("", ("source", "req3_body_blocks")),
-    "added33_structure": ("`canvas_unit` と `v_canvas_px_w/h`"
-                          "(行ごとの単位が決められない。T126)",
-                          ("source", "canvas_px")),
+    # **満たされた**(2026-10-28、便 n5)—— mm 31頁 / px(読み)2頁 / 決まらない 0頁
+    "added33_structure": ("", ("source", "canvas_px")),
     "db_all_layers": ("", None),
     "grad_v1_v2": ("", None),
     "delivery_png": ("", None),
@@ -1247,18 +1438,24 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_pixels_in_both", "n_pixels_in_both_same_name",
                "n_pixels_in_both_renamed", "n_pixels_only_a", "n_pixels_only_b",
                "n", "cluster_size", "n_clusters",
+               # マスクの被覆(便 2026-10-26)
+               "n_cover_zero", "n_cover_full", "n_with_value",
+               "n_mask_dims_differ",
                # **畳んだ後の頁数。** 畳む前(`n_pages`)とは別の量で、差は量ではない
                "n_pages_folded")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
+              # **実測の画布(画素)。** 宣言値(`canvas_w/h`)とは別の量
+              "v_canvas_px_w", "v_canvas_px_h",
               "share_of_decile", "share_of_kind", "share_of_all",
               # **割合の列。** 件数ではないので小数が正しい
               "median_front_share", "share_front_decile", "share_opacity_full",
               "share_visible_bit", "share_composite_normal",
               "share_ancestor_hidden",
               # **残る割合** = 畳んだ後 ÷ 畳む前。件数ではないので小数が正しい
-              "share_kept")
+              "share_kept",
+              "median_mask_cover", "share_cover_zero", "share_cover_full")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1365,7 +1562,11 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "item": {"item", *delivery.ITEMS.values(), ""},
         "is_mask": {"is_mask", "yes", "no", ""},
         "content_match": {"content_match", "same", "different", ""},
-        "canvas_unit_resolved": {"canvas_unit_resolved", "no", "yes", ""},
+        # **値の集合が変わった**(2026-10-28、便 n5 で単位が決まった)——
+        # `yes`/`no` は「決まったか」の印だったが、いまは**決まった単位そのもの**を出す。
+        # `px(読み)` は**宣言が無い行**(画素との一致から読んだ。宣言ではない)
+        "canvas_unit_resolved": {"canvas_unit_resolved", "mm", "px(読み)",
+                                 "**食い違い**", "no", "yes", ""},
         "quantity": {"quantity", "n_files", "n_distinct", "excess",
                      "files_in_clusters", "clusters", ""},
         "format": {"format", "clip", "lip", "both", ""},
@@ -1654,6 +1855,8 @@ def main() -> int:
     print(f"  {args.req3}: {len(req3_rows)} 層 / {len(req3_pages)} 頁")
     drops_r3.report("依頼3")
     a33_rows, drops_a33 = load_added33(args.added33)
+    canvas_units = load_canvas_units(
+        sources.by_key("canvas_px")["path"], drops_a33)
     print(f"  {args.added33}: {len(a33_rows)} 頁")
     drops_a33.report("added33")
 
@@ -1734,7 +1937,10 @@ def main() -> int:
     pub["coverage_bound_classes.csv"] = emit_bound_classes(
         args.public_out, ic_rows, False)
     pub.update(emit_duplicates(args.public_out, hash_rows, grad))
-    pub["canvas_declared.csv"] = emit_canvas(args.public_out, a33_rows)
+    pub.update(emit_mask_cover(
+        args.public_out, "inbox/mask_cover_request3_20261026.csv", drops_dl))
+    pub["canvas_declared.csv"] = emit_canvas(
+        args.public_out, a33_rows, canvas_units)
     pub.update(emit_full_population(args.public_out))
     pub["body_initcolor.csv"] = emit_initcolor(args.public_out, ic_rows, False)
     sha_by_path = {r["page_path"]: r["sha"] for r in hash_rows}
@@ -1773,7 +1979,8 @@ def main() -> int:
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
-    full["canvas_declared.csv"] = emit_canvas(args.full_out, a33_rows)
+    full["canvas_declared.csv"] = emit_canvas(
+        args.full_out, a33_rows, canvas_units)
     full.update(emit_full_population(args.full_out))
     full["body_initcolor.csv"] = emit_initcolor(args.full_out, ic_rows, True)
     full["caveats.csv"] = write_caveats(args.full_out)
