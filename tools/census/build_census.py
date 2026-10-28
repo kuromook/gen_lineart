@@ -688,12 +688,18 @@ def emit_period_label(outdir: str, hash_rows, drops):
              "**補正は不均等で、不均等自身が傾向を作り得る**"
              "(複製の多い年ほど頁を早い年へ差し出す)。"
              "**走行の主値の層別にこの札を使わない**(基盤の制約)")
+    tie = ("**「同順位」は3つの別の量である** —— "
+           f"**代表の札に効く(最も新しい暦年で札が複数)= {aux['n_tie_newest_year']:,}組** / "
+           f"**時期の札に効く(最も古い暦年で札が複数)= {aux['n_tie_oldest_year']:,}組** / "
+           f"どこかの暦年で札が複数 = {aux['n_tie_any_year']:,}組。"
+           "**どの分母の上で言うかを書かずに「同順位」と書かない**"
+           "(2026-10-28、Track M との突き合わせで分かれた)")
     rows = []
     for yr in sorted(set(period) | set(repr_), key=lambda y: (y[:4], y[4:])):
         rows.append([yr, repr_[yr], period[yr], period[yr] - repr_[yr],
                      "Track M `m83_period_label` から受け取り、"
                      "census track が自分の器具で引き直した(門3つと18行が一致)",
-                     limit, bc_today()])
+                     limit + "。" + tie, bc_today()])
     written = write_csv(os.path.join(outdir, "period_label_by_year.csv"),
                         ["year_label", "n_pages_representative", "n_pages_period",
                          "diff", "measured_by", "not_answers", "as_of"], rows)
@@ -701,6 +707,10 @@ def emit_period_label(outdir: str, hash_rows, drops):
           f" / 札が1つに決まらない組 {aux['n_multi_label']:,}"
           f" / 時期の札が代表と違う組 {aux['n_period_differs']:,}"
           f" —— **公開物には出さない**(2026-10-28 ユーザーの判断)")
+    print(f"      **「同順位」は3つの量**: 代表に効く {aux['n_tie_newest_year']:,}"
+          f" / 時期に効く {aux['n_tie_oldest_year']:,}"
+          f" / どこかの暦年 {aux['n_tie_any_year']:,}"
+          f" —— **分母を書かずに「同順位」と書かない**")
     return written
 
 

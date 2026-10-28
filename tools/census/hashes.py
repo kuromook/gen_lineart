@@ -209,13 +209,30 @@ def period_by_year(rows, year_of, drops):
         clusters[r["sha"]].append(yr)
     period, repr_ = collections.Counter(), collections.Counter()
     n_multi = n_diff = 0
+    # **「同順位」は3つの別の量である**(2026-10-28、Track M との突き合わせで分かれた)——
+    # **同じ暦年の札の前後(`2024` < `2024b` < `2024c`)が、2つの列に別の大きさで効く**:
+    # **代表の札に効くのは群の最も新しい暦年の同順位、時期の札に効くのは最も古い暦年の同順位。**
+    # **どこかの暦年の同順位**(その和集合)はどちらの分母でもない。
+    # **合計も門も一致したまま、分母だけが違う** —— T146 の向きを逆にした形
+    n_tie_newest = n_tie_oldest = n_tie_any = 0
     for mem in clusters.values():
         early, late = min(mem, key=_newer), max(mem, key=_newer)
         period[early] += 1
         repr_[late] += 1
-        if len(set(mem)) > 1:
+        labels = set(mem)
+        if len(labels) > 1:
             n_multi += 1
         if early != late:
             n_diff += 1
+        years = collections.Counter(l[:4] for l in labels)
+        if years[max(years)] > 1:
+            n_tie_newest += 1
+        if years[min(years)] > 1:
+            n_tie_oldest += 1
+        if any(v > 1 for v in years.values()):
+            n_tie_any += 1
     return period, repr_, dict(n_clusters=len(clusters), n_multi_label=n_multi,
-                               n_period_differs=n_diff)
+                               n_period_differs=n_diff,
+                               n_tie_newest_year=n_tie_newest,
+                               n_tie_oldest_year=n_tie_oldest,
+                               n_tie_any_year=n_tie_any)
