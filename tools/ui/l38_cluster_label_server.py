@@ -182,6 +182,46 @@ def page_check():
     return 0
 
 
+MASKS = {}
+
+
+def mask_png(tag, i, c):
+    """面 i の形を、**画面の大きさの半透明 PNG**(縁は不透明)で返す。
+
+    2026-10-28、作者の報告: **「選択している面がどれか画面上でわからない。
+    右にリストはあるが対応がわからない」**。
+    番号の札だけでは**どの面を選んだかが絵の上に出ない** ——
+    **札は面を指しているが、面を見せていない。**
+    だから**面そのものを塗る**。
+
+    縮小は `INTER_AREA` を 0/255 に当てて **> 0 で拾う** ——
+    `INTER_NEAREST` だと**細い面が画面から消える**(地図でも同じ所を踏んだ)。
+    """
+    k = (tag, i, c)
+    if k in MASKS:
+        return MASKS[k]
+    r = next(x for x in S['q'] if x['tag'] == tag)
+    m = fmap(tag)
+    m8 = ((m == i).astype(np.uint8) * 255)
+    w, h = r['sel_w'], r['sel_h']
+    if (m8.shape[1], m8.shape[0]) != (w, h):
+        m8 = cv2.resize(m8, (w, h), interpolation=cv2.INTER_AREA)
+    sel = m8 > 0
+    edge = sel & ~cv2.erode(sel.astype(np.uint8),
+                            np.ones((3, 3), np.uint8), iterations=2).astype(bool)
+    # **OpenCV は BGR。** 最初ここを RGB のつもりで書いて、
+    # **札は青・塗りは赤**という食い違いになった(2026-10-28、合成して目で見て気付いた)。
+    # 選択 = 青(札 `.bg.on` の `#00c` と同じ) / 一覧に触れた = 橙
+    bgr = (230, 60, 60) if c == 'sel' else (40, 150, 230)
+    img = np.zeros((h, w, 4), np.uint8)
+    img[sel, :3] = bgr
+    img[sel, 3] = 90                      # 面の中は薄く
+    img[edge, 3] = 255                     # 縁ははっきり
+    ok, buf = cv2.imencode('.png', img)
+    MASKS[k] = buf.tobytes()
+    return MASKS[k]
+
+
 def png_size(path):
     """PNG の IHDR だけ読んで (幅, 高さ)。**画像を展開しない**(246枚を起動のたびに読む)。"""
     with open(path, 'rb') as fh:
@@ -231,7 +271,7 @@ def payload(i):
 
 
 JS = r'''
-let ST=null, SEL=new Set(), NAT=false;
+let ST=null, SEL=new Set(), NAT=false, HOV=0;
 function $(id){return document.getElementById(id);}
 function load(o){
   fetch('/state?order='+o).then(r=>r.json()).then(d=>{ST=d;SEL=new Set();draw();});
@@ -245,6 +285,21 @@ function draw(){
   const img=$('im');
   img.src='/img?tag='+encodeURIComponent(it.tag)+'&kind='+(NAT?'nat':'sel')+'&v='+it.order;
   img.width=NAT?it.nat_w:it.sel_w;
+  // **選んだ面を絵の上に塗る。** 札は面を指すだけで、面を見せていない
+  // (2026-10-28、作者の「どれを選んでるか不明」)。
+  const ov=$('ovs'); ov.innerHTML='';
+  SEL.forEach(i=>{
+    const o=document.createElement('img');
+    o.className='ov';
+    o.src='/mask?tag='+encodeURIComponent(it.tag)+'&i='+i+'&c=sel';
+    ov.appendChild(o);
+  });
+  if(HOV && !SEL.has(HOV)){
+    const o=document.createElement('img');
+    o.className='ov';
+    o.src='/mask?tag='+encodeURIComponent(it.tag)+'&i='+HOV+'&c=hov';
+    ov.appendChild(o);
+  }
   const bl=$('badges'); bl.innerHTML='';
   // **札は百分率で置く。** px で置くと、窓が狭くて画像が縮んだとき札だけ元の位置に残り、
   // **面から外れる**(2026-10-28、作者の「選択ができない」の正体)。
@@ -264,10 +319,13 @@ function draw(){
   it.faces.forEach(f=>{
     const li=document.createElement('div');
     li.className='row'+(SEL.has(f.i)?' on':'');
-    li.textContent=f.i+'. 面積 '+f.area.toLocaleString()+'  語 '+(f.word||'—')
+    li.textContent='［'+f.i+'］ 面積 '+f.area.toLocaleString()+'  語 '+(f.word||'—')
       +(f.adj?'':'  [縁に線なし]')
       +(f.clickable?'':'  [画像からは押せない。ここから選ぶ]');
     li.onclick=()=>toggle(f.i);
+    // **一覧と絵の対応**: 行に触れると、その面が絵の上で橙に光る
+    li.onmouseenter=()=>{HOV=f.i;draw();};
+    li.onmouseleave=()=>{if(HOV===f.i){HOV=0;draw();}};
     ul.appendChild(li);
   });
   const cl=$('cl'); cl.innerHTML='';
@@ -333,18 +391,24 @@ body{font-family:system-ui,sans-serif;margin:12px;background:#fafafa}
 #im{display:block;cursor:crosshair;max-width:100%;height:auto}
 .bg{position:absolute;width:22px;height:22px;border-radius:11px;background:#fff;
     border:2px solid #555;font:700 12px/18px system-ui;text-align:center;cursor:pointer;
-    opacity:.85}
-.bg.on{background:#c00;color:#fff;border-color:#700;opacity:1}
+    opacity:.85;z-index:3}
+.bg.on{background:#00c;color:#fff;border-color:#008;opacity:1;
+       width:28px;height:28px;border-radius:14px;font:700 15px/24px system-ui;
+       box-shadow:0 0 0 3px rgba(0,0,200,.35)}
+/* 選んだ面を塗る層。**押下は通す**(pointer-events:none) */
+.ov{position:absolute;left:0;top:0;width:100%;height:auto;pointer-events:none;z-index:2}
 #side{width:330px;max-height:86vh;overflow:auto}
 .row{padding:3px 6px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}
-.row.on{background:#fdd;font-weight:700}
+.row.on{background:#ccf;font-weight:700;border-left:6px solid #00c}
+.row:hover{background:#fe8}
 .crow{padding:3px 6px;background:#eef;margin:2px 0;font-size:13px}
 button{margin:2px;padding:6px 10px;font-size:14px}
 #sel{margin:6px 0;font-weight:700}#dn{color:#a00}
 </style>
 <div id="hdr"></div><div id="ask"></div>
 <div id="wrap">
- <div id="pane"><img id="im" onclick="hit(event)"><div id="badges"></div></div>
+ <div id="pane"><img id="im" onclick="hit(event)"><div id="ovs"></div>
+  <div id="badges"></div></div>
  <div id="side">
   <div id="sel"></div><div id="dn"></div>
   <div id="diag" style="font-size:11px;color:#777"></div>
@@ -396,6 +460,12 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, 'text/plain', b'bad')
             p = UI / 'panels' / f'{tag}_{kind}.png'
             return self._send(200, 'image/png', p.read_bytes())
+        if u.path == '/mask':
+            tag, i = qs['tag'][0], int(qs['i'][0])
+            c = qs.get('c', ['sel'])[0]
+            if tag not in {r['tag'] for r in S['q']} or c not in ('sel', 'hov'):
+                return self._send(400, 'text/plain', b'bad')
+            return self._send(200, 'image/png', mask_png(tag, i, c))
         if u.path == '/hit':
             tag = qs['tag'][0]
             m = fmap(tag)
