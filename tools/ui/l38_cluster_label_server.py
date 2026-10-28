@@ -129,6 +129,36 @@ def kc_hit():
     return sum(bad.values())
 
 
+def png_size(path):
+    """PNG の IHDR だけ読んで (幅, 高さ)。**画像を展開しない**(246枚を起動のたびに読む)。"""
+    with open(path, 'rb') as fh:
+        d = fh.read(26)
+    if len(d) < 24 or d[:8] != b'\x89PNG\r\n\x1a\n':
+        return None
+    return int.from_bytes(d[16:20], 'big'), int.from_bytes(d[20:24], 'big')
+
+
+def kc_dims():
+    """**起動の門その4**: 行列が配る画面の寸法が、実際の選択画像と一致するか。
+
+    2026-10-28 に踏んだ: 地図を原寸にしたとき、`sel_w/sel_h` が**地図の寸法**から
+    取られたままだった。**原寸の寸法が画面の寸法として配られ**、ブラウザが画像を
+    引き伸ばし、**札の位置も押した座標もずれた**。
+    **当たり判定の既知セルはこれを映さない** —— あちらは `sy/sx` と `scale` しか
+    見ないので、その2つが揃っていれば通ってしまう。
+
+    > **当たり判定が正しいことと、画面が正しいことは別である。**
+    > **器具の中で閉じた点検は、画面に出る形を見ていない。**
+    """
+    bad = 0
+    for r in S['q']:
+        sz = png_size(UI / 'panels' / f'{r["tag"]}_sel.png')
+        if sz is None or sz != (r['sel_w'], r['sel_h']):
+            bad += 1
+    print(f'  起動の門その4 画面の寸法: 行列と選択画像が食い違うコマ **{bad}**')
+    return bad
+
+
 def payload(i):
     r = S['q'][i]
     d = S['done'][r['tag']]
@@ -396,6 +426,9 @@ def main():
         payload(i)
     print(f'  起動の門その1: 行列 {len(S["q"])} コマすべてで記録を組み立てられた')
     js_check()
+    if kc_dims():
+        print('**ブラウザが画像を引き伸ばす。押した座標がずれる。立ち上げない**')
+        sys.exit(4)
     if kc_hit():
         print('**当たり判定が外れている。立ち上げない** —— '
               '押した面と違う面が選ばれる UI は、作者の答を黙って壊す')

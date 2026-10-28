@@ -141,7 +141,12 @@ def one_page(job):
         out.append(dict(work=work, pid=pid, pan=pan, comp=int(ci), tag=tag,
                         faces=faces, scale=round(float(sc), 5),
                         nat_h=int(h), nat_w=int(w),
-                        sel_h=int(smap.shape[0]), sel_w=int(smap.shape[1])))
+                        # **選択画像の大きさは選択画像から取る。**
+                        # 地図を原寸にした日(2026-10-28)、ここは `smap.shape` の
+                        # ままだったので**原寸の寸法が画面の寸法として配られ**、
+                        # ブラウザが画像を引き伸ばし、**札の位置も押した座標もずれた**。
+                        # 当たり判定の既知セルは `sy/sx` と `scale` だけを見るので映らない
+                        sel_h=int(sel.shape[0]), sel_w=int(sel.shape[1])))
     return out
 
 
@@ -257,6 +262,17 @@ def main():
         if m is None or int(m.max()) != len(r['faces']):
             mism += 1
     print(f'既知セル3 面の数: 待ち行列と地図が食い違うコマ **{mism}**')
+    # ---- 既知セル4: **行列が配る画面の寸法と、実際の選択画像の寸法**
+    # (2026-10-28 に踏んだ。寸法が食い違うとブラウザが引き伸ばし、押した座標がずれる)
+    dim = 0
+    for r in rows:
+        im = cv2.imread(f'{OUT}/panels/{r["tag"]}_sel.png')
+        if im is None or (im.shape[0], im.shape[1]) != (r['sel_h'], r['sel_w']):
+            dim += 1
+    print(f'既知セル4 画面の寸法: 行列と選択画像が食い違うコマ **{dim}**')
+    if dim:
+        print('**ブラウザが画像を引き伸ばす。押した座標がずれる。止める**')
+        return 1
     q = dict(n=len(rows), n_face=nface, n_face_answered=nans,
              n_unclickable=int(unreach),
              standard='gated', unit='panel', cross_panel=False,
