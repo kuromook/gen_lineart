@@ -129,6 +129,59 @@ def kc_hit():
     return sum(bad.values())
 
 
+def render_page():
+    """頁の全文。**`%` 書式は使わない** —— CSS の `max-width:100%;` が書式指定として
+    読まれ、**起動の門を全部通った後で、頁を出す所だけが 500 で落ちた**(2026-10-28)。
+    置換なら雛形に何を書いても壊れない。**起動時にもこの関数を通す**(下の `page_check`)。
+    """
+    return (HTML.replace('__JS__', JS)
+                .replace('__WORDS__', json.dumps(WORDS, ensure_ascii=False))
+                .replace('__CUR__', str(S['cur'])))
+
+
+def page_check():
+    """**起動の門その5**: 頁を組み立て、**その JS を実際に走らせて選べるかを見る**。
+
+    2026-10-28、作者から「**選択ができない どういう状況かも不明**」。
+    それまで通っていたのは起動の門(行列・JS の構文・寸法・当たり判定)と HTTP 200 だけで、
+    **どれも画面の JS を1行も走らせていない**。L19 が 2026-10-26 に同じ形で踏んでいる ——
+    **同じ罠を、同じ器具の族で2度踏んだ。**
+
+    `l38_ui_smoke.js` は **画像が縮んで描画されている状況**(窓が狭いと flex が縮める)で
+    札と一覧と画像の押下を試す。**縮んだ画像の上の座標を縮んでいない前提で送る実装は、
+    ここで落ちる**(実測のずれ 462 / 1,911 画素)。
+    """
+    import re as _re, shutil, subprocess, tempfile
+    node = shutil.which('node') or shutil.which('nodejs')
+    if not node:
+        print('  (node が無いので画面の試験は飛ばす —— **渡す前に画面を見ること**)')
+        return 0
+    try:
+        page = render_page()
+    except Exception as e:
+        print(f'**頁が組み立てられない: {e}。立ち上げない**')
+        return 1
+    m = _re.search(r'<script>(.*)</script>', page, _re.S)
+    if not m:
+        print('**頁に <script> が無い。立ち上げない**')
+        return 1
+    i = next((k for k, r in enumerate(S['q']) if len(r['faces']) >= 2), 0)
+    d = tempfile.mkdtemp()
+    open(f'{d}/ui.js', 'w', encoding='utf-8').write(m.group(1))
+    open(f'{d}/pay.json', 'w', encoding='utf-8').write(
+        json.dumps(payload(i), ensure_ascii=False))
+    smoke = str(Path(__file__).resolve().parent / 'l38_ui_smoke.js')
+    r = subprocess.run([node, smoke, f'{d}/pay.json', f'{d}/ui.js'],
+                       capture_output=True, text=True)
+    print('  起動の門その5 画面: ' + (r.stdout.strip().splitlines() or ['(出力なし)'])[-1]
+          + f'  (コマ order={i})')
+    if r.returncode:
+        print(r.stdout)
+        print(r.stderr)
+        return 1
+    return 0
+
+
 def png_size(path):
     """PNG の IHDR だけ読んで (幅, 高さ)。**画像を展開しない**(246枚を起動のたびに読む)。"""
     with open(path, 'rb') as fh:
@@ -193,11 +246,16 @@ function draw(){
   img.src='/img?tag='+encodeURIComponent(it.tag)+'&kind='+(NAT?'nat':'sel')+'&v='+it.order;
   img.width=NAT?it.nat_w:it.sel_w;
   const bl=$('badges'); bl.innerHTML='';
-  const k=NAT?(1/it.scale):1;
+  // **札は百分率で置く。** px で置くと、窓が狭くて画像が縮んだとき札だけ元の位置に残り、
+  // **面から外れる**(2026-10-28、作者の「選択ができない」の正体)。
+  // 百分率なら `#pane` が画像とぴたり同じ大きさなので、どんな倍率でも面に乗る。
+  const W=NAT?it.nat_w:it.sel_w, H=NAT?it.nat_h:it.sel_h;
+  const kx=NAT?(1/it.scale):1;
   it.faces.forEach(f=>{
     const b=document.createElement('div');
     b.className='bg'+(SEL.has(f.i)?' on':'');
-    b.style.left=(f.sx*k-11)+'px'; b.style.top=(f.sy*k-11)+'px';
+    b.style.left='calc('+(f.sx*kx/W*100)+'% - 11px)';
+    b.style.top='calc('+(f.sy*kx/H*100)+'% - 11px)';
     b.textContent=f.i; b.title='面'+f.i+' 面積'+f.area+(f.word?(' 語:'+f.word):'');
     b.onclick=(e)=>{e.stopPropagation();toggle(f.i);};
     bl.appendChild(b);
@@ -223,15 +281,24 @@ function draw(){
     li.appendChild(b); cl.appendChild(li);
   });
   $('sel').textContent=SEL.size?('選択中: '+[...SEL].sort((a,b)=>a-b).join(', ')):'未選択';
+  const im2=$('im').getBoundingClientRect?$('im').getBoundingClientRect():{width:0};
+  $('diag').textContent='状態: 面'+it.faces.length+' 札'+bl.children.length
+    +' 画像'+(NAT?'原寸':'縮小')+' '+W+'x'+H+' 実表示'+Math.round(im2.width||0)+'px';
   $('dn').textContent=it.done?'このコマは「終わり」と記録済み':'';
 }
 function toggle(i){ if(SEL.has(i))SEL.delete(i); else SEL.add(i); draw(); }
 function hit(e){
+  // **描画された大きさから原寸へ直す。** `r.width` は実際に画面に出ている幅で、
+  // 窓が狭ければ画像は縮む(flex は既定で縮む)。
+  // **縮んだ画像の上の座標を、縮んでいない前提で送っていたのが「選べない」の正体**
+  // (2026-10-28)。ここで出すのは**原寸の座標**で、サーバはそのまま地図を引く。
   const im=$('im'), r=im.getBoundingClientRect();
-  const k=NAT?ST.scale:1;
-  const x=Math.round((e.clientX-r.left)*k), y=Math.round((e.clientY-r.top)*k);
-  fetch('/hit?tag='+encodeURIComponent(ST.tag)+'&y='+y+'&x='+x)
-    .then(r=>r.json()).then(d=>{ if(d.i>0) toggle(d.i); });
+  if(!r.width||!r.height) return;
+  const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+  const nx=Math.round(fx*ST.nat_w), ny=Math.round(fy*ST.nat_h);
+  fetch('/hit?tag='+encodeURIComponent(ST.tag)+'&y='+ny+'&x='+nx)
+    .then(r=>r.json()).then(d=>{ if(d.i>0) toggle(d.i); else
+      $('dn').textContent='そこには面がありません(面の外を押した)'; });
 }
 function save(choice,word){
   if(choice!=='panel_done' && SEL.size===0){ alert('面が選ばれていません'); return; }
@@ -260,9 +327,10 @@ HTML = '''<!doctype html><html lang="ja"><meta charset="utf-8">
 <title>L38 面のまとまり</title><style>
 body{font-family:system-ui,sans-serif;margin:12px;background:#fafafa}
 #hdr{font-weight:700}#ask{margin:6px 0;color:#044}
-#wrap{display:flex;gap:14px;align-items:flex-start}
-#pane{position:relative;display:inline-block;border:1px solid #ccc;background:#fff}
-#im{display:block;cursor:crosshair}
+#wrap{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+#pane{position:relative;display:inline-block;border:1px solid #ccc;background:#fff;
+      max-width:calc(100vw - 380px);min-width:280px}
+#im{display:block;cursor:crosshair;max-width:100%;height:auto}
 .bg{position:absolute;width:22px;height:22px;border-radius:11px;background:#fff;
     border:2px solid #555;font:700 12px/18px system-ui;text-align:center;cursor:pointer;
     opacity:.85}
@@ -279,20 +347,21 @@ button{margin:2px;padding:6px 10px;font-size:14px}
  <div id="pane"><img id="im" onclick="hit(event)"><div id="badges"></div></div>
  <div id="side">
   <div id="sel"></div><div id="dn"></div>
+  <div id="diag" style="font-size:11px;color:#777"></div>
   <div id="btns"></div>
   <h4>このコマの面</h4><div id="list"></div>
   <h4>作ったまとまり</h4><div id="cl"></div>
   <p style="font-size:12px;color:#666">Enter = このコマは終わり / C = 原寸 /
    Esc = 選択解除 / n,b = 次,前のコマ</p>
  </div></div>
-<script>%s
+<script>__JS__
 const B=$('btns');
-%s.forEach(w=>{const b=document.createElement('button');b.textContent=w;
+__WORDS__.forEach(w=>{const b=document.createElement('button');b.textContent=w;
   b.onclick=()=>save('word',w);B.appendChild(b);});
 [['自由入力',free],['まとまりでない',()=>save('not_cluster','')],
  ['このコマは終わり',()=>save('panel_done','')]].forEach(([t,fn])=>{
   const b=document.createElement('button');b.textContent=t;b.onclick=fn;B.appendChild(b);});
-load(%d);
+load(__CUR__);
 </script></html>'''
 
 
@@ -311,8 +380,7 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         qs = parse_qs(u.query)
         if u.path == '/':
-            body = (HTML % (JS, json.dumps(WORDS, ensure_ascii=False),
-                            S['cur'])).encode('utf-8')
+            body = render_page().encode('utf-8')
             return self._send(200, 'text/html; charset=utf-8', body)
         if u.path == '/app.js':
             return self._send(200, 'application/javascript', JS.encode('utf-8'))
@@ -331,11 +399,10 @@ class H(BaseHTTPRequestHandler):
         if u.path == '/hit':
             tag = qs['tag'][0]
             m = fmap(tag)
-            # **地図は原寸。** 画面の座標を `1/scale` で戻して引く ——
-            # 縮めた地図で引くと 1画素より細い面が消える(2026-10-28 に 2面で実測)
-            sc = next((r['scale'] for r in S['q'] if r['tag'] == tag), 1.0)
-            y = int(round(int(qs['y'][0]) / sc))
-            x = int(round(int(qs['x'][0]) / sc))
+            # **受け取るのは原寸の座標**(2026-10-28 に画面側へ移した)。
+            # 画面側は `getBoundingClientRect()` の**実際に描画された大きさ**から
+            # 割合を出して原寸へ直す —— 窓の幅に依らない唯一の形である。
+            y, x = int(qs['y'][0]), int(qs['x'][0])
             i = 0
             if m is not None and 0 <= y < m.shape[0] and 0 <= x < m.shape[1]:
                 i = int(m[y, x])
@@ -429,6 +496,9 @@ def main():
     if kc_dims():
         print('**ブラウザが画像を引き伸ばす。押した座標がずれる。立ち上げない**')
         sys.exit(4)
+    if page_check():
+        print('**画面で選べない。立ち上げない**')
+        sys.exit(5)
     if kc_hit():
         print('**当たり判定が外れている。立ち上げない** —— '
               '押した面と違う面が選ばれる UI は、作者の答を黙って壊す')
