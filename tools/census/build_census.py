@@ -681,6 +681,62 @@ def emit_mask_cover(outdir: str, path: str, drops):
     return written
 
 
+def emit_representative_table(outdir: str, hash_rows, drops):
+    """**頁ごとに代表を引ける表**(段 C。1行1頁・9,653行)。
+
+    **抽出側の依頼**(2026-10-28): **頁ごとに代表を引ける列がどこにも無く、
+    代表で落とした切り口を出すたびに各 track がその場で代表を決め直している。**
+    **決め方が少しでも違うと、組の外れ方が食い違う。**
+    **表とスキーマを決めるのは census**(ユーザーの指示)。
+
+    **代表の規則は作者の裁定**(2026-10-28): **より古い札の写しを代表に残す**
+    (「ページが同バイト数なら年代の古いものを代表とする」)。
+    札の前後も作者の裁定で、**`b`/`c` は年の中の時期**(`2024` → `2024b` → `2024c`)。
+
+    **規則が届かない所を、表の中で名乗らせる** —— **同じ札に2枚以上在る組では、
+    作者の裁定は代表のファイルを決めない。** そこは**道の辞書順**で決めており、
+    `chosen_by` の列にそう書く(**作者の規則ではない**)。
+    **この表は公開しない** —— `page_path` は原稿の固有名である。
+    """
+    clusters = collections.defaultdict(list)
+    for r in hash_rows:
+        yr = occluders.path_year(r["page_path"])
+        if not yr:
+            drops.drop("年の札が `\\d{4}[a-z]?` の形でない", r["page_path"])
+            continue
+        clusters[r["sha"]].append((yr, r["page_path"], r["fmt"]))
+    rows, n_tie, n_rep, n_tie_files = [], 0, 0, 0
+    for sha, mem in clusters.items():
+        oldest = min(yr for yr, _, _ in mem)
+        in_oldest = sorted(p for yr, p, _ in mem if yr == oldest)
+        tie = len(in_oldest) > 1
+        n_tie += 1 if tie else 0
+        n_tie_files += len(in_oldest) if tie else 0
+        rep = in_oldest[0]
+        chosen = ("**道の辞書順**(同じ札に2枚以上。**作者の裁定はここまで決めない**)"
+                  if tie else "作者の裁定(最も古い札)")
+        for yr, path, fmt in sorted(mem, key=lambda x: x[1]):
+            is_rep = path == rep
+            n_rep += 1 if is_rep else 0
+            rows.append([path, fmt, yr, sha, len(mem),
+                         "yes" if is_rep else "no", rep, oldest,
+                         "yes" if tie else "no", chosen])
+    rows.sort(key=lambda r: r[0])
+    written = write_csv(
+        os.path.join(outdir, "page_representative.csv"),
+        ["page_path", "format", "year_label", "f_sha256", "cluster_size",
+         "is_representative", "representative_path", "representative_year_label",
+         "tie_in_label", "chosen_by"], rows)
+    print(f"  [頁ごとの代表(**段 C だけ。公開しない**)] {len(rows):,}行"
+          f" / 代表 {n_rep:,}(= 異なり数)"
+          f" / **同じ札に2枚以上で辞書順に頼った組 {n_tie:,}"
+          f"(その札の中のファイル {n_tie_files:,})**"
+          f" —— **作者の裁定は代表のファイルまでは決めない**"
+          f"(抽出側の「最も新しい札に2枚以上ある組 101」は"
+          f"**取り下げた規則の側の数**。同じ札だけでできた組 80 は両方に入る)")
+    return written
+
+
 def emit_folded_totals(outdir: str, folded, folded_aux):
     """**重複を畳んだ後の合計。形式ごとと全体だけ。年ごとには割らない。**
 
@@ -2050,6 +2106,8 @@ def main() -> int:
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
+    full["page_representative.csv"] = emit_representative_table(
+        args.full_out, hash_rows, drops_h)
     full.update(emit_folded_totals(args.full_out, folded_by_year, folded_aux))
     full["period_label_by_year.csv"] = emit_period_label(
         args.full_out, hash_rows, drops_h)
