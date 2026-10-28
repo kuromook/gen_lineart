@@ -2915,11 +2915,17 @@ incident that actually happened here.
    not a legitimacy one, and the first version of this entry mixed the two** --
    the error came in through M's notice and was repeated here unexamined, the
    worked example being right and the general form drawn from it wrong, which is
-   the ordinary way a general form goes wrong. **The same defect sits in
+   the ordinary way a general form goes wrong. **The same defect sat in
    CLAUDE.md 3's one-line form**, *widening the exposure or the population is
-   also moving the bar*: it names a direction because T112 was a widening, and
-   read strictly it licenses narrowing. **Rewriting that line is the user's
-   call; it is raised and unmade.** Second: **a ratio whose
+   also moving the bar*: it named a direction because T112 was a widening, and
+   read strictly it licensed narrowing. **The user replaced it on 2026-10-28**
+   with the direction-free form -- *move the population or the exposure after
+   seeing the result and you have moved the bar, whichever way it went; the
+   reason for moving it must be independent of the score; print both counts by
+   name* -- and the detectability clause stayed with it, as a clause about what
+   a check catches. **Documents dated before that replacement quote the old
+   line as it stood and are not edited** (T139): the current form lives in
+   CLAUDE.md 3 and here. Second: **a ratio whose
    denominator moved cannot be read without its numerator beside it.** When the
    author chose `standard_visible`, M's recall range rose from 0.000-0.239 to
    **0.000-0.692** while **the matched regions fell, 87 -> 83**: the denominator
