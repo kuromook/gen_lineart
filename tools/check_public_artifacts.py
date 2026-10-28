@@ -15,6 +15,11 @@ ALLOWLIST = ROOT / "doc" / "public_artifacts_allowlist.txt"
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp", ".gif", ".psd", ".clip"}
 # 重みの公開はユーザーの承認が要る (2026-10-26)。表に無い追跡重みは終了コード1。
 WEIGHT_SUFFIXES = {".pth", ".pt", ".ckpt", ".safetensors", ".onnx", ".bin", ".h5", ".pb"}
+# **原稿の中身そのもの。** 追跡されていたら**無条件で失敗**させる —— 許可表は作らない
+# (2026-10-28、構造 DB の控えを受け取ったときに足した。**作業木の外に置いてある**ので
+#  ここに出ることは無いはずで、**出たら置き場を間違えている**)。
+# 2026-10-23 に 99MB の DB を public repo に上げた事故がある。**force-push では消えない**
+CORPUS_SUFFIXES = {".duckdb", ".db", ".sqlite", ".sqlite3", ".jsonl"}
 BIG_FILE_MB = 5.0
 
 
@@ -66,6 +71,17 @@ def main():
         print(f"      {mb:8.1f} MB  {path}")
     print(f"  計 {len(big)} 件 / {sum(mb for mb, _ in big):.1f} MB")
 
+    # **原稿の中身は許可表を持たない** —— 在ったら失敗。**承認では解除しない**
+    corpus = sorted(p for p in tracked
+                    if Path(p).suffix.lower() in CORPUS_SUFFIXES)
+    print(f"  原稿の中身(DB・JSONL。**追跡されていてはいけない**): {len(corpus)}")
+    for p in corpus:
+        print(f"      {p}")
+
+    if corpus:
+        print("\n**原稿の中身が追跡されている。** 置き場を作業木の外に移すこと "
+              "(`doc/db_snapshot.md`)—— **許可表では解除しない**", file=sys.stderr)
+        return 1
     if unlisted:
         print("\n表に無い追跡画像・追跡重み(公開にはユーザーの承認が要る):", file=sys.stderr)
         for p in unlisted:
