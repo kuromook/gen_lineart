@@ -10,7 +10,12 @@
 |---|---|---|
 | **KC-R4a** | 一覧の **303層が 303/303 揃っている** | 残りを読まない |
 | **KC-R4b** | **アルファの画素がパイロットと一致** 303/303(バイト一致は印字するが**必須にしない** —— 再エンコードで変わりうる) | 残りを読まない |
-| **KC-R4c** | 届いたラスタで標準を作り直すと **ベース183 / 成分823 / 面801** を再現し、**IC-M6(標準を予測として入れて region-F1 = 1.0)が 8/8** | 残りを読まない |
+| **KC-R4c** | 届いたラスタで標準を作り直すと **ベース183 / 成分823 / 面801**(`standard_all`)を再現し、**IC-M6(標準を予測として入れて region-F1 = 1.0)が 8/8** | 残りを読まない |
+| **KC-R4c′**(2026-10-28 に**足した**) | 同じラスタで **`standard_visible` が ベース152 / 成分503 / 面483** を再現し、**その IC-M6 も 8/8** | 残りを読まない |
+
+**KC-R4c′ は棒を緩めずに足したものである**(追補111 §E)。
+**作者が 2026-10-28 に `standard_visible` を標準に選んだ**ので、
+**納品が再現しなければならない標準が2つになった。** 片方だけ合う納品は通さない。
 
 **KC-R4b でバイトが違い画素が同じ場合**は、**PNG の再エンコード**として記録し通す。
 **画素が違えば止める** —— 「同じ層のアルファ」が同じでないなら、
@@ -44,11 +49,17 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import m12_score_a0_nulls as m12                       # noqa: E402
 import m16_score_corrected_standard as m16             # noqa: E402
+import m77_standard_visible as m77                    # noqa: E402
 
 LIST = Path('results/m21_request4/request4_layer_list.csv')
 PILOT = m12.D
 DEFAULT_DIR = Path('/home/sh1/deepl/lineart/data/incoming_manuscript/colour_request4')
+# **既知セルは世代ごとに1つ。片方に差し替えない**(追補111 §E)。
+# **作者は 2026-10-28 に `standard_visible` を標準に選んだ**ので、
+# **両方の再現を門にする** —— `standard_all` が合って `standard_visible` が合わない
+# (またはその逆)なら、**届いたラスタは追補14 の標準でも新しい標準でもない**。
 EXPECT = {'layers': 303, 'bases': 183, 'components': 823, 'areas': 801}
+EXPECT_VIS = {'bases': 152, 'components': 503, 'areas': 483}   # 追補105/111
 
 
 def md5(p):
@@ -143,8 +154,8 @@ def main(argv):
     # m16 の measure_standard をそのまま使うには manifest の file 名が要るので、
     # 納品側のファイル名に差し替えた manifest を組む(規則は m16 と同一)。
     rowsrc = {r['page_path'] for r in want}
-    tot = collections.Counter()
-    bad = []
+    tot, vtot = collections.Counter(), collections.Counter()
+    bad, vbad = [], []
     for src in sorted(rowsrc):
         p = dm[src]
         s = int(round(p['preview']['縮小率']))
@@ -160,22 +171,41 @@ def main(argv):
             (gt, garea), (gt_a, garea_a), st = m16.measure_standard(
                 p, prows, grid, floor_px)
             known, _ = m12.score_from_small(gt_a, 1, gt_a, garea_a, floor_px)
+            # **`standard_visible`(作者が選んだ標準)でも作り直す**
+            vrows, _ = m77.visible_rows(prows)
+            (_, _), (vt_a, varea_a), vst = m16.measure_standard(
+                p, vrows, grid, floor_px)
+            vknown, _ = m12.score_from_small(vt_a, 1, vt_a, varea_a, floor_px)
+            del vt_a
         finally:
             m12.D = old_D
         tot['bases'] += st['bases']
         tot['components'] += st['components']
         tot['areas'] += len(garea_a)
+        vtot['bases'] += vst['bases']
+        vtot['components'] += vst['components']
+        vtot['areas'] += len(varea_a)
         if abs(known['region_f1'] - 1.0) > 1e-9:
             bad.append((p['page'], known['region_f1']))
+        if abs(vknown['region_f1'] - 1.0) > 1e-9:
+            vbad.append((p['page'], vknown['region_f1']))
         print(f'  {p["page"]:44s} ベース{st["bases"]:>4} 成分{st["components"]:>4} '
-              f'面{len(garea_a):>4} IC-M6 {known["region_f1"]:.4f}', flush=True)
-    print(f'\n  合計 ベース {tot["bases"]}/{EXPECT["bases"]}  '
+              f'面{len(garea_a):>4} IC-M6 {known["region_f1"]:.4f}  '
+              f'| visible ベース{vst["bases"]:>4} 成分{vst["components"]:>4} '
+              f'面{len(varea_a):>4} IC-M6 {vknown["region_f1"]:.4f}', flush=True)
+    print(f'\n  standard_all      ベース {tot["bases"]}/{EXPECT["bases"]}  '
           f'成分 {tot["components"]}/{EXPECT["components"]}  '
           f'面 {tot["areas"]}/{EXPECT["areas"]}')
+    print(f'  **standard_visible**  ベース {vtot["bases"]}/{EXPECT_VIS["bases"]}  '
+          f'成分 {vtot["components"]}/{EXPECT_VIS["components"]}  '
+          f'面 {vtot["areas"]}/{EXPECT_VIS["areas"]}  '
+          f'(**作者が選んだ標準**)')
     ok = (tot['bases'] == EXPECT['bases']
           and tot['components'] == EXPECT['components']
-          and tot['areas'] == EXPECT['areas'] and not bad)
-    print(f'  IC-M6 1.0 でないページ {len(bad)} {bad[:4]}')
+          and tot['areas'] == EXPECT['areas'] and not bad
+          and all(vtot[k] == v for k, v in EXPECT_VIS.items()) and not vbad)
+    print(f'  IC-M6 1.0 でないページ  all {len(bad)} {bad[:4]} / '
+          f'visible {len(vbad)} {vbad[:4]}')
     print(f'\n**KC-R4c -> {"PASS" if ok else "FAIL"}**')
     if not ok:
         print('**既知セルが合わない。残りの納品を読まない。**')
