@@ -181,3 +181,41 @@ def folded_by_year(rows, year_of, drops):
                                            if yr[:4] == newest[0]}))] += 1
         folded[top[0]] += 1
     return {k: (before[k], folded.get(k, 0)) for k in before}, aux
+
+
+def period_by_year(rows, year_of, drops):
+    """**「最も早く現れた札」**を札ごとに数える(Track M から渡された列、2026-10-28)。
+
+    **代表の札**(`folded_by_year`)とは**別の量**である ——
+    代表は**最も新しい札**(作者の裁定)、こちらは**最も早い札**。
+    合計はどちらも 7,418 で、**年ごとに割ったときだけ違う**。
+
+    **この列が答えないこと(Track M と基盤から、列と一緒に受け取った限界)**:
+
+    - **「制作時期」ではない。** 年代札はどの頁についても**「それ以降ではない」という上限**で、
+      **早い札に付け替えられるのは、同じバイト列が早いフォルダにも在る頁だけ**
+    - **1回しか現れない頁は、使い回されていても補正されない**
+    - **補正は不均等で、不均等自身が傾向を作り得る**(複製の多い年ほど頁を早い年へ差し出す)
+    - **走行の主値の層別にこの札を使わない**(基盤の制約)—— 年別の差が補正の不均等を映す
+
+    **だから公開物には出していない**(2026-10-28、ユーザーの判断)。段 C だけに置く。
+    """
+    clusters = collections.defaultdict(list)
+    for r in rows:
+        yr = year_of(r["page_path"])
+        if not yr:
+            drops.drop("年の札が `\\d{4}[a-z]?` の形でない")
+            continue
+        clusters[r["sha"]].append(yr)
+    period, repr_ = collections.Counter(), collections.Counter()
+    n_multi = n_diff = 0
+    for mem in clusters.values():
+        early, late = min(mem, key=_newer), max(mem, key=_newer)
+        period[early] += 1
+        repr_[late] += 1
+        if len(set(mem)) > 1:
+            n_multi += 1
+        if early != late:
+            n_diff += 1
+    return period, repr_, dict(n_clusters=len(clusters), n_multi_label=n_multi,
+                               n_period_differs=n_diff)

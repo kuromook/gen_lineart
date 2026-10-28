@@ -672,6 +672,38 @@ def emit_mask_cover(outdir: str, path: str, drops):
     return written
 
 
+def emit_period_label(outdir: str, hash_rows, drops):
+    """**段 C だけの表。** 「最も早く現れた札」を札ごとに数える。
+
+    **公開物には出さない**(2026-10-28、ユーザーの判断)——
+    **列の名前だけ見ると制作が早まったように読める**のに、
+    **補正が不均等**だからである(`hashes.period_by_year` に限界を書いてある)。
+    **引き直せる形は残す** —— 他の track から聞かれたらここで引いて答える。
+    """
+    period, repr_, aux = hashes.period_by_year(hash_rows, occluders.path_year, drops)
+    limit = ("**「制作時期」ではない。最も早く現れた札である。** "
+             "年代札は頁ごとに**「それ以降ではない」という上限**で、"
+             "**早い札に付け替えられるのは、同じバイト列が早いフォルダにも在る頁だけ**。"
+             "**1回しか現れない頁は、使い回されていても補正されない。** "
+             "**補正は不均等で、不均等自身が傾向を作り得る**"
+             "(複製の多い年ほど頁を早い年へ差し出す)。"
+             "**走行の主値の層別にこの札を使わない**(基盤の制約)")
+    rows = []
+    for yr in sorted(set(period) | set(repr_), key=lambda y: (y[:4], y[4:])):
+        rows.append([yr, repr_[yr], period[yr], period[yr] - repr_[yr],
+                     "Track M `m83_period_label` から受け取り、"
+                     "census track が自分の器具で引き直した(門3つと18行が一致)",
+                     limit, bc_today()])
+    written = write_csv(os.path.join(outdir, "period_label_by_year.csv"),
+                        ["year_label", "n_pages_representative", "n_pages_period",
+                         "diff", "measured_by", "not_answers", "as_of"], rows)
+    print(f"  [最も早く現れた札(**段 C だけ**)] 組 {aux['n_clusters']:,}"
+          f" / 札が1つに決まらない組 {aux['n_multi_label']:,}"
+          f" / 時期の札が代表と違う組 {aux['n_period_differs']:,}"
+          f" —— **公開物には出さない**(2026-10-28 ユーザーの判断)")
+    return written
+
+
 def emit_full_population(outdir: str):
     """全数 437,561層の表。**供給元が測った。ここでは測れない**(DB が手元に無い)。"""
     written = {}
@@ -1979,6 +2011,8 @@ def main() -> int:
     full["coverage_bound_classes.csv"] = emit_bound_classes(
         args.full_out, ic_rows, True)
     full.update(emit_duplicates(args.full_out, hash_rows, grad))
+    full["period_label_by_year.csv"] = emit_period_label(
+        args.full_out, hash_rows, drops_h)
     full["canvas_declared.csv"] = emit_canvas(
         args.full_out, a33_rows, canvas_units)
     full.update(emit_full_population(args.full_out))
