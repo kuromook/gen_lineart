@@ -120,6 +120,20 @@ This split exists because on `controlnet-realpairs` the briefing doubled as the
 work log and grew past 900 lines, at which point it stopped being readable.
 Start every new track with both files.
 
+**The briefing carries one fixed section, `## 条例` — the track's own ordinance.**
+The form is `doc/ordinance_spec.md`, adopted into the source of truth on
+2026-10-30 (proposed by `ops-review`): section name fixed, four contents in order
+(pointer at the higher law / the unit of judgement / numbered items, each
+prohibition with what would refute it / numbers that must not be quoted), a
+2,000-character budget that **warns rather than truncates**, and **no copy of the
+basic law — a pointer only**, which is what makes it harmless when the branch
+freezes it. It is a section, not a third document: the two-document rule stands.
+`tools/hooks/session_brief.py` reads that one section at `SessionStart` and puts
+it in context, so a copied-and-frozen `CLAUDE.md` is never the thing a track
+reads its rules from (T84/T92). Eight of the seventeen briefings already have an
+ordinance under seven different names; writing it in the fixed form is the
+track's own job, not the foundation's.
+
 The briefing lives in `doc/`, not `inbox/`, as of 2026-09-06. It was
 originally placed in `inbox/` by analogy with the extraction-tool
 correspondence, but `inbox/` and `outbox/` are `.gitignore`d — which left the
