@@ -15714,3 +15714,7 @@ SessionStart の器具が**立場・法の鮮度・条例 1,949 字**を出す�
 `tools/hooks/guard_forced_add.py` は木に在るが `.claude/settings.json` の hooks に繋いでいない。
 
 **基盤へ1通**: `outbox/reply_census_law_and_hooks_pushed_20261030.md` → `../lineart/inbox/`。
+
+**07:57 追記**: **`/hooks` を一度開いた(ユーザー)。残り2手は両方とも終わり。**
+設定監視はセッション開始時に在った設定しか見ないので、**この木で hooks が画面から見えるのは次のセッションから**。
+心拍(`.claude/hook_last_run.log`)は今日のセッションから既に残っている。
