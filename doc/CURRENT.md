@@ -2991,6 +2991,32 @@ incident that actually happened here.
    judgement is taken, and where two disagreeing bars leave the results read
    against the older one is undrawn.
 
+11. **A conjunctive bar is judged by its worst value, and the best is labelled
+   as the best.** Raised by Track M on 2026-10-30, measured (T-M25). M's bar was
+   "A0 beats N1, N2 and N3", and the instrument printed "met" **when one of the
+   three passed**. The defect stayed invisible while all three failed, and
+   surfaced only when the unit changed and N3 alone passed: **a bug that only
+   shows when the arm improves is a bug that will be believed.** M's own numbers
+   on the author's unit are the illustration -- N1 0.0703, **N2 0.4531**, N3
+   0.0156, which is a **fail** on the worst value, and would have printed as met
+   on the best. **Refutation condition: all the component values are printed
+   side by side and the verdict quotes the worst one.** Not in `moat` on any
+   branch, and the general form of this project's older rule that a verdict word
+   travels with its threshold.
+
+12. **A range is not an invariant: print the per-row column beside it.** Raised by
+   Track M the same day (T-M24). When M rescored on the author's unit, **the
+   matched regions rose 83 -> 143** while the ranges of `recall`, `precision`
+   and `F1` **did not move in the first digit** -- both extremes came from the
+   one page whose region count did not change. The sibling of discipline 9's
+   ratio clause (a moved denominator cannot be read without its numerator): a
+   min-max pair hides movement whenever the extremes sit on unmoved rows, and
+   `moat` 8's "print per row rather than averaging" does not cover the range,
+   which looks like a per-row quantity and is not one. **Also recorded with it:
+   a null whose shape is derived from the standard moves with the unit** -- M's
+   N3 grid went 107x1 -> 10x14, so **N3's win or loss cannot be compared across
+   units.**
+
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
 understanding), reconcile the index against the filesystem, then walk the numbers
