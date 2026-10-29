@@ -95,17 +95,42 @@ process.on('unhandledRejection', e => { REJ = REJ || e; });
              ずれ: [Math.abs(gy - wy), Math.abs(gx - wx)]};
   } catch (e) { hErr = e; }
 
+  // ---- **「この面は複数の意味」を押す**(2026-10-29)。**面1つだけ**の状態にしてから。
+  // ボタンを足しただけでは「押せる」ことにならない —— 押して記録が飛ぶまで見る。
+  let oErr = null, oPost = null, oAlert = null;
+  try {
+    const cur = ((els['sel'] || {}).textContent || '').match(/\d+/g) || [];
+    cur.slice(1).forEach(i => ctx.toggle(+i));            // 1つだけ残す
+    if (!cur.length) ctx.toggle(it.faces[0].i);
+    const btn = (els['btns'] || {children: []}).children
+                  .find(b => (b.textContent || '').indexOf('複数の意味') >= 0);
+    if (btn && btn._c) { btn._c(); await new Promise(r => setTimeout(r, 10)); }
+    oPost = posted.filter(x => x && x.choice === 'overmerged').pop() || null;
+    // 2面選んだ状態では**出させない**(印は面1つに付く)。
+    // 保存すると画面は読み直され **選択は空に戻る** ので、ここで2面入れ直す
+    ctx.toggle(it.faces[0].i); ctx.toggle(it.faces[1].i);
+    if (btn && btn._c) { btn._c(); await new Promise(r => setTimeout(r, 10)); }
+    const n2 = posted.filter(x => x && x.choice === 'overmerged').length;
+    oAlert = {二面でも送った: n2 > 1,
+              断りが出た: posted.some(x => typeof x === 'string' && x.indexOf('1つだけ') >= 0)};
+  } catch (e) { oErr = e; }
+
   const out = {err: err && String(err), 握り潰された誤り: REJ && String(REJ.stack || REJ), 面: nf, 札: nb, 一覧: nl,
                選択前: selTxt0, 札を押した後: selTxt1, 選択中の札: onCnt,
                一覧も押した後: selTxt2,
                札の誤り: tErr && String(tErr), 一覧の誤り: lErr && String(lErr),
                縮んだ画像を押す: hitOk, 縮めた倍率: SHRINK,
-               押した誤り: hErr && String(hErr)};
+               押した誤り: hErr && String(hErr),
+               複数の意味の印: oPost && {面: oPost.faces, 語: oPost.word},
+               一面だけという制限: oAlert, 印の誤り: oErr && String(oErr)};
   console.log(JSON.stringify(out, null, 1));
   const TOL = 3;   // 丸めの許容(画素)
-  const bad = err || REJ || tErr || lErr || hErr || nb !== nf || nl !== nf ||
+  const bad = err || REJ || tErr || lErr || hErr || oErr || nb !== nf || nl !== nf ||
               selTxt1 === selTxt0 || onCnt !== 1 || selTxt2 === selTxt1 ||
-              !hitOk || hitOk.ずれ[0] > TOL || hitOk.ずれ[1] > TOL;
-  console.log(bad ? '**選べない。止める**' : '選べる(札・一覧の両方)');
+              !hitOk || hitOk.ずれ[0] > TOL || hitOk.ずれ[1] > TOL ||
+              !oPost || oPost.faces.length !== 1 ||
+              !oAlert || oAlert.二面でも送った || !oAlert.断りが出た;
+  console.log(bad ? '**選べない。止める**'
+                  : '選べる(札・一覧の両方)。**複数の意味の印も押せる**');
   process.exit(bad ? 1 : 0);
 })();

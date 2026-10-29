@@ -20,6 +20,22 @@ L18 が閉じたのは「面1つに語1つ、連結した墨で運ぶ」形で�
 - 答える: 語のボタン / 自由入力 / **まとまりでない** / 保留
 - **1コマに複数のまとまりを作れる。** 作り終えたら「このコマは終わり」で次へ
 
+## **単位は上にも下にも壊れる**(2026-10-29、作者の指摘)
+
+> **線の判断でも同じ問題があったが、ベタが過剰に結合していて複数の意味を内容している
+> 場合どうかくか**
+
+**まとまりは「面1つでは足りない」側の壊れ方で、その逆向きが在る** ——
+**面1つの中に意味が複数入っている**(過剰結合)。面は墨の連結成分なので、
+**どちらも作者が決める単位と、墨の連結が一致していない形**である。
+Track K が線で踏んだ **過接続と過分割**と同じ対(K では**どちらも修理が届かなかった**)。
+
+- 印は**面1つ**に付く(`kind=overmerged`)。まとまりと**同じ行列に混ぜない**
+- 中に在る意味を書ける(**空でもよい。印だけ残る**)。`words_given` で区別する
+- **この印を付けた面は、どのまとまりに入れても正しくない。** だから
+  **面を単位にした器具の天井**になる —— 器具の良し悪しではなく、単位の限界である
+- **UI は禁止しない**(規律6。作者が束ねたいなら束ねられる。両方記録して測る側で分ける)
+
 ## 保存
 
 `labels/region_cluster.jsonl` に追記。**`labels/fill_words.jsonl`(面ごとの 628件)には
@@ -34,7 +50,7 @@ L18 が閉じたのは「面1つに語1つ、連結した墨で運ぶ」形で�
    **外した面を理由別に数える。** 1つでも外したら立ち上がらない ——
    **押した面と違う面が選ばれる UI は、作者の答を黙って壊す**
 """
-import argparse, collections, json, os, sys, time
+import argparse, collections, json, os, re, sys, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Lock
@@ -256,16 +272,24 @@ def payload(i):
     r = S['q'][i]
     d = S['done'][r['tag']]
     cl = [x for x in d if x.get('kind') == 'cluster']
+    om = [x for x in d if x.get('kind') == 'overmerged']
+    omw = collections.defaultdict(list)
+    for x in om:
+        for k in x.get('faces', []):
+            omw[k] += x.get('words', [])
     return dict(order=i, n=len(S['q']), tag=r['tag'], work=r['work'], pid=r['pid'],
                 pan=r['pan'], comp=r['comp'], scale=r['scale'],
                 sel_w=r['sel_w'], sel_h=r['sel_h'], nat_w=r['nat_w'], nat_h=r['nat_h'],
                 faces=[dict(i=k, region=f['region'], area=f['area'], adj=f['adj'],
                             word=f['word'], choice=f['choice'],
                             clickable=bool(f.get('clickable', True)),
+                            om=bool(k in omw), om_words=omw.get(k, []),
                             sy=f['sy'], sx=f['sx'], crop=f['crop'])
                        for k, f in enumerate(r['faces'], 1)],
                 clusters=[dict(cid=x['cid'], faces=x['faces'], word=x.get('word', ''),
                                choice=x['choice']) for x in cl],
+                oms=[dict(cid=x['cid'], faces=x.get('faces', []),
+                          words=x.get('words', [])) for x in om],
                 done=any(x.get('kind') == 'panel_done' for x in d),
                 words=WORDS)
 
@@ -308,10 +332,11 @@ function draw(){
   const kx=NAT?(1/it.scale):1;
   it.faces.forEach(f=>{
     const b=document.createElement('div');
-    b.className='bg'+(SEL.has(f.i)?' on':'');
+    b.className='bg'+(SEL.has(f.i)?' on':'')+(f.om?' om':'');
     b.style.left='calc('+(f.sx*kx/W*100)+'% - 11px)';
     b.style.top='calc('+(f.sy*kx/H*100)+'% - 11px)';
-    b.textContent=f.i; b.title='面'+f.i+' 面積'+f.area+(f.word?(' 語:'+f.word):'');
+    b.textContent=f.i; b.title='面'+f.i+' 面積'+f.area+(f.word?(' 語:'+f.word):'')
+      +(f.om?' 【複数の意味】':'');
     b.onclick=(e)=>{e.stopPropagation();toggle(f.i);};
     bl.appendChild(b);
   });
@@ -320,6 +345,7 @@ function draw(){
     const li=document.createElement('div');
     li.className='row'+(SEL.has(f.i)?' on':'');
     li.textContent='［'+f.i+'］ 面積 '+f.area.toLocaleString()+'  語 '+(f.word||'—')
+      +(f.om?('  【複数の意味'+(f.om_words.length?': '+f.om_words.join('/'):'')+'】'):'')
       +(f.adj?'':'  [縁に線なし]')
       +(f.clickable?'':'  [画像からは押せない。ここから選ぶ]');
     li.onclick=()=>toggle(f.i);
@@ -337,6 +363,16 @@ function draw(){
     const b=document.createElement('button');
     b.textContent='取消'; b.onclick=()=>undo(c.cid);
     li.appendChild(b); cl.appendChild(li);
+  });
+  const ol=$('om'); ol.innerHTML='';
+  it.oms.forEach(c=>{
+    const li=document.createElement('div');
+    li.className='orow';
+    li.textContent='['+c.cid+'] 面 '+c.faces.join(',')+' の中に複数の意味'
+      +(c.words.length?(': '+c.words.join(' / ')):'(中身は未記入)');
+    const b=document.createElement('button');
+    b.textContent='取消'; b.onclick=()=>undo(c.cid);
+    li.appendChild(b); ol.appendChild(li);
   });
   $('sel').textContent=SEL.size?('選択中: '+[...SEL].sort((a,b)=>a-b).join(', ')):'未選択';
   const im2=$('im').getBoundingClientRect?$('im').getBoundingClientRect():{width:0};
@@ -371,12 +407,23 @@ function undo(cid){
     .then(()=>load(ST.order));
 }
 function free(){ const w=prompt('語を入力'); if(w) save('free',w); }
+// **面1つの中に意味が複数在る**(過剰結合)。まとまりの逆向きの壊れ方で、
+// **まとまりとは別の種類の行**になる(2026-10-29、作者の指摘)。
+function omerge(){
+  if(SEL.size!==1){ alert('印は面1つに付きます。**面を1つだけ**選んでください'
+    +(SEL.size?('(いま '+SEL.size+' 面)'):'')); return; }
+  const w=prompt('この面の中に入っている意味を、読点か空白で区切って入力。'
+    +'\n分からなければ空のまま OK —— **印だけ残します**');
+  if(w===null) return;      // 取り消しは何も書かない
+  save('overmerged',w);
+}
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
   if(e.key==='Enter')save('panel_done','');
   else if(e.key==='c'||e.key==='C'){NAT=!NAT;draw();}
   else if(e.key==='n')load(Math.min(ST.order+1,ST.n-1));
   else if(e.key==='b')load(Math.max(ST.order-1,0));
+  else if(e.key==='m'||e.key==='M')omerge();
   else if(e.key==='Escape'){SEL=new Set();draw();}
 });
 '''
@@ -402,6 +449,9 @@ body{font-family:system-ui,sans-serif;margin:12px;background:#fafafa}
 .row.on{background:#ccf;font-weight:700;border-left:6px solid #00c}
 .row:hover{background:#fe8}
 .crow{padding:3px 6px;background:#eef;margin:2px 0;font-size:13px}
+.orow{padding:3px 6px;background:#fde8cf;margin:2px 0;font-size:13px}
+/* 印の付いた面の札は**破線の橙**。束ねる前に、画面で分かる */
+.bg.om{border-color:#c50;border-style:dashed;border-width:3px}
 button{margin:2px;padding:6px 10px;font-size:14px}
 #sel{margin:6px 0;font-weight:700}#dn{color:#a00}
 </style>
@@ -415,14 +465,16 @@ button{margin:2px;padding:6px 10px;font-size:14px}
   <div id="btns"></div>
   <h4>このコマの面</h4><div id="list"></div>
   <h4>作ったまとまり</h4><div id="cl"></div>
+  <h4>複数の意味が入っている面</h4><div id="om"></div>
   <p style="font-size:12px;color:#666">Enter = このコマは終わり / C = 原寸 /
-   Esc = 選択解除 / n,b = 次,前のコマ</p>
+   Esc = 選択解除 / n,b = 次,前のコマ / m = この面は複数の意味</p>
  </div></div>
 <script>__JS__
 const B=$('btns');
 __WORDS__.forEach(w=>{const b=document.createElement('button');b.textContent=w;
   b.onclick=()=>save('word',w);B.appendChild(b);});
 [['自由入力',free],['まとまりでない',()=>save('not_cluster','')],
+ ['この面は複数の意味(m)',omerge],
  ['このコマは終わり',()=>save('panel_done','')]].forEach(([t,fn])=>{
   const b=document.createElement('button');b.textContent=t;b.onclick=fn;B.appendChild(b);});
 load(__CUR__);
@@ -493,7 +545,8 @@ class H(BaseHTTPRequestHandler):
                 S['done'][r['tag']] = [x for x in cur if x.get('cid') != int(d['cid'])]
             else:
                 ch = d['choice']
-                kind = 'panel_done' if ch == 'panel_done' else 'cluster'
+                kind = ('panel_done' if ch == 'panel_done' else
+                        'overmerged' if ch == 'overmerged' else 'cluster')
                 cid = 1 + max([x.get('cid', 0) for x in cur] or [0])
                 idx = {k: f for k, f in enumerate(r['faces'], 1)}
                 fs = [int(i) for i in d.get('faces', [])]
@@ -506,6 +559,10 @@ class H(BaseHTTPRequestHandler):
                     n_faces=len(fs), area=sum(idx[i]['area'] for i in fs),
                     face_words=[idx[i]['word'] for i in fs],
                     annotator='author')
+                if kind == 'overmerged':
+                    # **空は「意味が無い」ではなく「書かなかった」。** 分けて記録する
+                    ws = [w for w in re.split(r'[、,\s/／・]+', d.get('word', '')) if w]
+                    row.update(words=ws, n_words=len(ws), words_given=bool(ws))
                 S['done'][r['tag']].append(row)
             with open(S['save'], 'a', encoding='utf-8') as fh:
                 fh.write(json.dumps(row, ensure_ascii=False) + '\n')
@@ -553,8 +610,16 @@ def main():
              if any(x.get('kind') == 'panel_done' for x in S['done'][r['tag']]))
     ncl = sum(len([x for x in S['done'][r['tag']] if x.get('kind') == 'cluster'])
               for r in S['q'])
+    nom = sum(len([x for x in S['done'][r['tag']] if x.get('kind') == 'overmerged'])
+              for r in S['q'])
+    nomw = sum(len([x for x in S['done'][r['tag']]
+                    if x.get('kind') == 'overmerged' and x.get('words_given')])
+               for r in S['q'])
     print(f'  保存の読み込み: **終わったコマ {nd} / まとまり {ncl}**'
           f'(鍵は `tag`。`order` では引かない。T144)')
+    # **両方の壊れ方を、名前を付けて数える**(規律9)。印だけの行も隠さない
+    print(f'  **複数の意味が入っている面の印 {nom}**'
+          f'(うち中身が書かれている {nomw} / 印だけ {nom - nomw})')
     for w, c in S['why'].items():
         print(f'    {c}  {w}')
     if not S['why']:
