@@ -15684,3 +15684,33 @@ claude のプロセスは1つも無かった。作業木は clean、未 push 0�
 SessionStart の器具が**立場・法の鮮度・条例 1,949 字**を出す。
 **残り2手はこの木の手**: **`/hooks` を一度開く**(設定監視はセッション開始時に在った設定しか
 見ないので、次のセッションから効く)/ **push**(外向きの承認は track 自身のもの)。
+
+---
+
+## 2026-10-30 07:55 —— **残り2手のうち push を済ませた。フックが基盤の木の外で走ることを、この木で確かめた**
+
+**push 完了**: `6c1af52..baaddf7` → `origin/census`(commit `baaddf7`、07:34:18 +0900)。
+**1 commit / 15 ファイル / +1,317 −133 行。** 中身は**文書と器具だけ** ——
+`.claude/settings.json`(hooks 3本 + 許可 35件)/ `tools/hooks/` 5本 /
+`CLAUDE.md` / `doc/initial_notice.md`(条例)/ `doc/ordinance_spec.md`(新設)/
+`tools/check_public_artifacts.py` / 許可表 +24行 / `tools/catch_up.py` / `doc/work_log.md`。
+**画像・重み・原稿由来の納品物は1バイトも無い。**
+
+**置き場の案 (a) が基盤の木の外で効くことの確認**(これが今日の確認の中身):
+
+- **SessionStart が走って心拍を残した** —— `.claude/hook_last_run.log` に
+  `2026-10-30T07:50:27+09:00 SessionStart exit=0`。立場(track)と条例が文脈に入った
+- **Stop の器具は在って、印字 0 文字 / 終了コード 0**(= 指摘なし)。`exit=127` ではない。
+  **心拍の指標が「印字したかどうか」なのは、この器具が設計上いつも 0 を返すから**
+- **道を `git rev-parse --show-toplevel` で解く作りが効いている** ——
+  この木の `tools/hooks/` が走り、基盤の木のものを見にいっていない
+
+**門**: `check_public_artifacts.py` は許可表 22 行 / **見た木 53**(index + 手元 26 + `origin` 26)で
+**表に無い監視対象 計 0 件**(画像 0 / 重み 0)、**消えた行 0**、原稿の中身 0 件。
+5MB 超の追跡ファイル 3件(`checkpoints/shape1/*.pth` 169.7 MB)は**許可表に在る行**で、
+**門の出力であって違反ではない**。**push の前にこれを回し、`origin/census` を含む全木が 0 であることを見た。**
+
+**まだ入れていないもの**(そちらの保留のまま): **止める H1/H2** / **`git add -f` の門** ——
+`tools/hooks/guard_forced_add.py` は木に在るが `.claude/settings.json` の hooks に繋いでいない。
+
+**基盤へ1通**: `outbox/reply_census_law_and_hooks_pushed_20261030.md` → `../lineart/inbox/`。
