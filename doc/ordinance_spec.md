@@ -143,13 +143,15 @@ commit そのもの。** この器具の最初の版は名前で比べて `linea
 ```bash
 # 0. 作業中のものを片付ける(`git status --porcelain` が空になるまで)
 # 1. 法の版を見る(**読み取りのみ。何も書き換えない**)
-./venv/bin/python ../lineart/tools/catch_up.py
+#    **`venv` はこの木に無いことが在る**(2026-10-30: 6木のうち3木に無い)。
+#    無ければ基盤の実体を絶対パスで: /home/sh1/deepl/lineart/venv/bin/python
+/home/sh1/deepl/lineart/venv/bin/python /home/sh1/deepl/lineart/tools/catch_up.py
 # 2. 印字された per-file の命令を回す(自分の側の変更が在るファイルだけ先に diff で読む)
 # 3. `.claude/settings.json` を取ったら **`/hooks` を一度開く**(でなければ効かない)
 # 4. `doc/initial_notice.md` に `## 条例` 節を書く(この文書の型。写しを置かず指し手だけ)
 # 5. 確かめる
-./venv/bin/python tools/check_public_artifacts.py      # 期待 exit 0
-./venv/bin/python ../lineart/tools/catch_up.py         # 期待「追いついている」
+/home/sh1/deepl/lineart/venv/bin/python tools/check_public_artifacts.py   # 期待 exit 0
+/home/sh1/deepl/lineart/venv/bin/python tools/catch_up.py                # 期待「追いついている」
 # 6. commit して push(**push は track 自身**)。基盤に1行返す(条例の字数)
 ```
 
@@ -157,6 +159,17 @@ commit そのもの。** この器具の最初の版は名前で比べて `linea
 `doc/CURRENT.md`(4,400 行)と `doc/work_log.md`(16,500 行)を連れてくる ——
 **`ops-review` の枝で、衝突が1つも出ないまま作業ログが 16,391 → 530 行に潰れる形が実証済み。**
 **「衝突が無いこと」は「安全であること」ではない。** だからファイル指定で取る。
+
+**器具は引数が無ければ「いま居る木」を見る**(`git rev-parse --show-toplevel`)。
+2026-10-30 に直した —— それまでは**器具が在る木**を見ていたので、基盤の実体を絶対パスで
+呼ぶと**基盤自身を点検して「追いついている」と答えた。** 呼んだ人は自分の木について
+聞いたと読む。**別の木を見たいときだけ道を渡す**(`catch_up.py <道> ...`、読み取りのみ)。
+
+**`.gitignore` は、取る前に必ずその木の行を読む。** 2026-10-30 に基盤が Track M で踏んだ ——
+M の `.gitignore` には **`labels/*.jsonl.orig`(作者の答の別名化の前の控え。原稿の固有名を含む)**
+が在り、**基盤の版にはそれが無かったので、取った瞬間に保護が外れた**(実体が7件、
+`git status` に現れた)。**`git diff <法の sha> -- .gitignore` の自分側の行を読む。**
+落ちるものが在れば**取らずに基盤へ上げる**(この件は正本へ上げたので、いまは取ってよい)。
 
 **自分の側の変更が在るファイルは、取る前に読む。** `catch_up.py` は「分岐」までしか言えない
 (**木の大半がこの状態**)。見分けるのは `git log <法の sha>..HEAD -- <道>` ——

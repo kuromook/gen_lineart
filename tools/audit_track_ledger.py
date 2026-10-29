@@ -261,7 +261,18 @@ def attachment(path, worktrees):
 
 # Files the foundation maintains inside every track tree. A commit touching only
 # these is housekeeping done *from* the foundation, not work done *by* the track.
-FOUNDATION_FILES = ("doc/CURRENT.md", "CLAUDE.md")
+# **法のファイルは `tools/catch_up.py` の `LAW_FILES` が正本。** ここで書き写すと、
+# 法が増えたときに片方だけ古くなる —— 2026-10-30 にその形で踏んだ: この表が
+# `doc/CURRENT.md` と `CLAUDE.md` の2つしか知らなかったので、基盤が別クローン2本の
+# `.gitignore` を直した commit が**その track 自身の未報告の仕事として報告された**
+# (gap 2d → 6d)。docstring が「自分の掃除を track の結果として報告した」と書いている
+# 2026-10-23 の故障の再発で、**原因は法が2ファイルから 13 に増えたこと**である。
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from catch_up import LAW_FILES as _LAW_FILES
+    FOUNDATION_FILES = tuple(_LAW_FILES) + ("doc/CURRENT.md",)
+except Exception:  # 器具が無い木でも audit は走る。黙らずに狭い表で続ける
+    FOUNDATION_FILES = ("doc/CURRENT.md", "CLAUDE.md")
 
 
 def last_commit(path, own_work_only=False):
@@ -612,6 +623,14 @@ def notice_senders(head):
     names = re.findall(r"`(lineart-[A-Za-z0-9._-]+)`", head[:600])
     if names:
         return names
+    # Third: a notice that signs itself with the bare branch name and an arrow,
+    # `<topic>` -> 基盤. Added 2026-10-30, after `aesthetic-judge` sent two notices
+    # the same day and the gap still read 25d: the track had said who it was, in the
+    # title, and the check was looking for one spelling of it. The arrow is required
+    # so a notice that merely mentions another track is not read as coming from it.
+    arrow = re.findall(r"`([a-z0-9][a-z0-9._-]*)`\s*(?:→|->)\s*(?:共通)?基盤", head[:600])
+    if arrow:
+        return ["lineart-" + b for b in arrow]
     return [
         "lineart-" + b
         for b in re.findall(r"branch\s+`([a-z0-9][a-z0-9._-]*)`", head[:600])
@@ -957,6 +976,21 @@ def main():
                 f"with `f7372e6`, the 2026-10-23 incident's own fix)"
             )
 
+    # 13's quiet counterpart: a stopped tree without an ordinance is a record, not
+    # a finding, so it is counted rather than reported. The count is what a resuming
+    # session needs -- it says `catch_up.py` is owed before any work in that tree.
+    dormant_no_ordinance = []
+    for name in sorted(disk):
+        path = SIBLINGS / name
+        if not ledger_status.get(name):
+            continue
+        briefing = path / "doc" / "initial_notice.md"
+        try:
+            if "\n## 条例" not in briefing.read_text(encoding="utf-8"):
+                dormant_no_ordinance.append(name)
+        except OSError:
+            pass
+
     if not args.quiet:
         print(f"Track ledger audit -- {now.astimezone().strftime('%Y-%m-%d %H:%M %Z')}")
         print(f"foundation: {FOUNDATION}")
@@ -975,11 +1009,19 @@ def main():
         print()
 
     if findings:
+        if dormant_no_ordinance:
+            print(f"stopped trees with no `## 条例` section (not findings -- a record; "
+                  f"`tools/catch_up.py` is owed before any work resumes there): "
+                  f"{len(dormant_no_ordinance)} -- {', '.join(dormant_no_ordinance)}")
+            print()
         print(f"{len(findings)} finding(s):")
         for f in findings:
             print(f"  - {f}")
         return 1
 
+    if dormant_no_ordinance and not args.quiet:
+        print(f"stopped trees with no `## 条例` section: {len(dormant_no_ordinance)} -- "
+              f"{', '.join(dormant_no_ordinance)} (a record, not a finding)")
     print("no findings: ledger, filesystem and notices agree")
     return 0
 
