@@ -1,0 +1,55 @@
+{
+  "schema": "judge_protocol/1",
+  "_why": "**人の判定の取り方の型**(条例2)。収集を始める前に埋め、`tools/judge_protocol.py` を通す。通らないものは集めない —— 作者の目は最も高い資源で、集め直しが一番高い。null は「未登録」として落ちる(黙って通さない)。",
+  "name": null,
+  "_name": "この収集の名前。合格したら錨の名前になる(例 anchor-20261115)",
+  "registered_on": null,
+  "collection_starts_on": null,
+  "_dates": "**登録が収集より前であること**を器具が見る(規律9-5: 後から動かした棒は動かした棒)",
+
+  "question": null,
+  "_question": "判定者に見せる問いの文そのもの。要約ではなく文面",
+  "unit_on_screen": null,
+  "_unit_on_screen": "**画面に書く「何について答えるのか」の文面**(2026-10-26)。要るのは文面で、「書いた」という申告ではない",
+  "composite_stimulus": null,
+  "layers_shown": null,
+  "marked_target": null,
+  "_composite": "合成画像を見せるなら `composite_stimulus: true`。そのとき**合成前の各層を並べ**(`layers_shown`)、**問う対象に印を付ける**(`marked_target`)",
+
+  "judge": null,
+  "n_judges": null,
+  "_judge": "判定者は構成の一部(規律1)。**2人以上なら取り直しではなく別の錨**",
+
+  "arms": null,
+  "common_source": null,
+  "_arms": "`common_source: true` = 全腕が同じ元画像の加工(劣化)である。そのとき lesson 11 が効く",
+  "damage_measure": null,
+  "_damage_measure": "`common_source` なら腕ごとの損傷量を測って入れる({腕: 値})。**損傷が腕を分けているなら、返るのは劣化量の順位で、人に聞く意味が無い**(lesson 11)",
+
+  "computable_axes": null,
+  "_computable_axes": "**人に頼む前に、選好を予測する計算可能な軸を測る**(2026-10-04 に確立)。[{name, measured_on, separation_auc, note}]。`separation_auc` は腕どうしをその軸だけで分けたときの AUC。**null は未測定で落ちる**",
+  "axis_separation_limit": 0.8,
+  "_axis_separation_limit": "この値以上で分かれる軸が在れば落ちる —— 計算で答が出ているので人の時間を使わない。**先に登録する値**",
+
+  "n_items": null,
+  "repeats": null,
+  "_repeats": "**再掲は必須。** 本人内一貫性が採点器の上限で、それを測らない収集は上限の無い収集になる。anchor-20261004 は再掲0でこれを満たしていない",
+  "undecidable_option": null,
+  "forced_choice_reason": null,
+  "_undecidable": "「どちらとも言えない」/「保留」を選べること。選べない形にするなら理由を `forced_choice_reason` に書く(二値の絶対判定はこちら)",
+
+  "stratification": null,
+  "_stratification": "時点・群・タイルをどう層化したか。片方が常に白い等の手がかりで選べる組を作らない",
+  "tile_overlap_across_arms": null,
+  "overlap_bias_note": null,
+  "_overlap": "腕の間でタイルを共有するか。**共有するなら偏りの向きを書く**(anchor-20261004 は共有していて、綺麗なGTを見た後の削除腕を押し下げうる)",
+
+  "anchor_legs": null,
+  "same_session": null,
+  "_legs": "**錨脚を同梱し、同一セッションで取る**(条例1)。いまの脚は config/judge_anchor_registry.json の anchors[].retake.legs",
+
+  "bar": null,
+  "stopping_rule": null,
+  "read_order": null,
+  "_bar": "合格条件・停止則・**読む順**を先に書く。2026-10-04 は読む順(計器チェックを最初に読む)が結論を決めた"
+}

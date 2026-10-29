@@ -6441,3 +6441,123 @@ readouts `judgement_readout_pairs_s.json`, `judgement_readout_pairs_v.json`,
 `judgement_readout_pairs.json`. The artifact
 https://claude.ai/artifact/SxvR6wa6nMNAmr6FXR4hV3 was deleted afterwards at the
 user's instruction; the export above is the only remaining copy.
+
+## 2026-10-30 Reopened to fill discipline 10: instruments, not an experiment
+
+The track was held, not closed, on 2026-10-04, and the reopening notice
+(`inbox/reply_judge_reopened_20261030.md`) is explicit that the reason is **not**
+new counter-evidence. The foundation added `CLAUDE.md`'s 第1条 and discipline 10
+(a moving anchor registers when and on what condition it moves, before it moves)
+and the ledger's own entry says the rule is **thin**: how the re-take period is
+chosen rests on one measurement, there is no settled form for how a human
+judgement is taken, and where two disagreeing bars leave older results is
+undrawn. That one measurement is this track's (15 tiles x 4 arms, 2026-10-04),
+so the three gaps are this track's to fill. Nothing below is an experiment.
+
+### Caught up with the law first
+
+`catch_up.py` reported this tree **diverged** -- its own commits on `CLAUDE.md`
+and `.gitignore`, and 11 law files absent. The per-file diffs were read before
+overwriting (the spec requires it: a tree's own `.gitignore` line can be the only
+copy of a rule). Both of this tree's edits were already carried by the
+foundation's newer version, so nothing was lost by taking it. After the 13
+`git checkout`s: `catch_up.py` **caught up / exit 0**,
+`check_public_artifacts.py` **exit 0** (3 tracked artifacts, 169.7 MB, all on the
+allowlist; 0 manuscript-content files).
+
+### 1. How the re-take period is decided -- by event, not by calendar
+
+Registered in `config/judge_anchor_registry.json`, read by
+`tools/judge_anchor.py status`. **The period is derived from discipline 2, not
+invented**: a new measurement must contain one known cell, and for a human
+judgement the known cell is the anchor leg. Since there is one judge, a
+between-session difference *is* the standard moving, and it is confounded with
+the difference between arms -- so the legs (`gt`, `rough`) are re-taken **in the
+same session** as any new arm. The triggers are events: a new claim riding on the
+human bar, a change of unit, or the author restating the standard.
+
+**No calendar period is registered, and the reason is measured.** The legs are
+pinned -- `rough` 0/15 at the floor, `gt` 14/15 whose single failure is the blank
+GT it was right to reject -- so a calendar re-take can only confirm. The registry
+records what would make a calendar period meaningful (an arm in the interior,
+`usable` strictly between 0 and n) and the instrument prints which legs are
+pinned, recomputed from the records rather than read from the registry.
+
+**Cost, so that nobody shortens the period out of thrift**: the 60 items of
+2026-10-04 were judged in **82.1 s** end to end (median gap 1.28 s, max 2.8 s --
+one sitting, no interruption), recomputed from the `ts` fields on 2026-10-30. The
+two legs alone are 30 items, about **41 s**. Time is not a reason to move a
+period in either direction.
+
+### 2. The form for taking a human judgement -- a gate run before collecting
+
+`tools/judge_protocol.py` against `config/judge_protocol_template.json`. It
+refuses a collection that does not state the question's unit **on screen** (the
+2026-10-26 rule, with the pre-composite layers and a marked target for a
+composite stimulus), that has not measured the computable axes that separate the
+arms (and refuses outright when one separates them at or above the registered
+limit -- lesson 11's own cheap check, moved before the material is built), that
+has no repeats (intra-rater consistency is the ceiling on any scorer), that hides
+the undecidable option without a reason, that leaves stratification or tile
+overlap undeclared, that omits the anchor legs or the same-session clause, or
+whose bar, stopping rule and read order are not written first. Dropped items are
+printed **by reason and counted**, not stopped at the first one (discipline 9).
+
+**Run against the current anchor, described retrospectively, it fails three
+items**: the axis separation was never measured for the absolute arms, the damage
+measure mixes an arm at 0 (`rough`) with arms at 0.227, and there are **no
+repeats** (arm x tile duplicates: 0, checked on 2026-10-30 -- the 0.750 on record
+is the *comparison* set's). **That is not a retraction**: anchor-20261004 was
+correct against the bar of its date, and the gate applies to the next collection
+(ordinance 3). It is also the first concrete answer to "how is a human judgement
+taken here": the existing one would not pass.
+
+### 3. Where two disagreeing bars leave the older results
+
+A result is re-read only if **all three** hold: the claim rode on the human bar
+(not the lower, preprocessor bar), the new anchor moved in a direction that could
+flip it, and the arms still exist to re-score. Otherwise it **stands with its
+anchor tag**, in a form the registry carries verbatim: *"<claim> -- against
+anchor-<date> (taken / judge / population / unit)"*. Old rows are never deleted;
+a new row is added and both carry a tag (disciplines 10 and 1).
+`judge_anchor.py reread <old> <new>` walks the four registered claims and sorts
+them into re-read / stands-with-tag / un-rescorable / not-on-this-bar, and
+`judge_anchor.py bars <A> <B>` prints both bars side by side with their names,
+per arm, never pooled, with `**未測定**` where an arm is missing on one side and
+no difference printed for that row.
+
+### Controls run (both instruments)
+
+| control | expected | result |
+|---|---|---|
+| registry number vs recomputed record (`classifier` 3/15 vs 0/15) | mismatch, exit 1 | o |
+| re-take clause removed (`who`) on a bar anchor | **"未登録"**, exit 1 | o |
+| `is_bar` removed | flagged -- a bar is not inferred from the role's wording | o |
+| records path broken | **"記録が無い"** counted as a finding, exit 1 | o |
+| closed non-bar anchor (`-cmp`) | clauses **対象外**, not "未登録"; exit 0 | o |
+| two anchors, `classifier` 0/15 -> 4/15 (synthetic) | E1 re-read, E2 stands, E3/E4 off this bar | o |
+| empty protocol template | **17 items dropped**, exit 1 | o |
+| filled plausible protocol | **passes**, exit 0 (a gate nothing passes is not a gate) | o |
+| one axis separating arms at AUC 0.96 | dropped, naming the axis | o |
+| damage 0.227-0.521 across arms | dropped (1.5x rule) | o |
+| **all arms at damage 0** | passes, "not a degradation family" | o |
+
+Two defects surfaced *from* the controls and were fixed: the bars table printed
+the difference with the sign reversed (old minus new), and the damage check
+printed "within 1.5x" whenever one arm sat at 0 -- a silent pass on the case
+where the arms are *perfectly* separated, which is exactly the shape lesson 11
+describes. The standing-sentence generator also hardcoded "未測定" for the new
+anchor; it now fills in from the recomputed records (`gt` 14/15 reads as
+unchanged, not unmeasured).
+
+### The handoff
+
+`doc/initial_notice.md` **366 -> 109 lines**, with a `## 条例` section to the
+spec's shape (pointers to the higher law, the unit of judgement, 5 numbered items
+each carrying a refutation condition, and 4 numbers that may not be quoted).
+**1,596 characters, inside the 2,000 budget**; `session_brief.py` extracts it
+(1,630 by its own count) and law freshness prints "caught up". The 2026-10-04
+history was not deleted -- it is in this log, and the handoff points at the
+section names instead of carrying them. The four artifact URLs it used to list
+are all still in this log; the two instrument traps it carried are the ledger's
+`T45` and `T47`, so they are pointers now.
