@@ -21,6 +21,44 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp", ".g
 # 重みの公開はユーザーの承認が要る (2026-10-26)。表に無い追跡重みは終了コード1。
 WEIGHT_SUFFIXES = {".pth", ".pt", ".ckpt", ".safetensors", ".onnx", ".bin", ".h5", ".pb"}
 BIG_FILE_MB = 5.0
+# **原稿の中身そのもの。追跡されていたら無条件で失敗させる —— 許可表では解除しない**
+# (表は「選んだものの表」で、原稿の中身は選ばない)。2026-10-23 に 99MB の DB を public repo
+# に上げた事故の規則。`census` が 2026-10-28 に自分の木の器具へ足し、2026-10-30 に正本へ採った。
+# **定数は役割ごとに引き直した(規律9)**: census の版は `.jsonl` も無条件で落とすが、
+# **作者の判断を記録した `labels/*.jsonl` が3 branch で 13 件、意図して追跡されている**
+# (最大 243KB、2026-10-30 に実測)。借りた定数をそのまま入れると材料を一種類まるごと黙って
+# 消すので、**DB は無条件、`.jsonl` は 1MB 超だけ**を落とす。
+CORPUS_SUFFIXES = {".duckdb", ".db", ".sqlite", ".sqlite3"}
+CORPUS_BY_SIZE_SUFFIXES = {".jsonl"}
+CORPUS_SIZE_MB = 1.0
+
+
+def corpus_in(ref):
+    """その木で追跡されている原稿の中身。`(道, MB, 理由)` を返す。"""
+    hits = []
+    if ref is None:  # index: 大きさは作業木の実体から
+        for path in git("ls-files").splitlines():
+            suffix = Path(path).suffix.lower()
+            if suffix not in CORPUS_SUFFIXES | CORPUS_BY_SIZE_SUFFIXES:
+                continue
+            f = ROOT / path
+            mb = (f.stat().st_size / 1048576) if f.exists() else 0.0
+            if suffix in CORPUS_SUFFIXES:
+                hits.append((path, mb, "DB"))
+            elif mb >= CORPUS_SIZE_MB:
+                hits.append((path, mb, f"{CORPUS_SIZE_MB:g}MB 超の jsonl"))
+        return hits
+    for line in git("ls-tree", "-r", "-l", ref, check=False).splitlines():
+        parts = line.split(None, 4)
+        if len(parts) != 5 or not parts[3].isdigit():
+            continue
+        path, mb = parts[4], int(parts[3]) / 1048576
+        suffix = Path(path).suffix.lower()
+        if suffix in CORPUS_SUFFIXES:
+            hits.append((path, mb, "DB"))
+        elif suffix in CORPUS_BY_SIZE_SUFFIXES and mb >= CORPUS_SIZE_MB:
+            hits.append((path, mb, f"{CORPUS_SIZE_MB:g}MB 超の jsonl"))
+    return hits
 
 
 def git(*args, check=True):
@@ -104,6 +142,20 @@ def main():
         print(f"      {mb:8.1f} MB  {path}")
     print(f"  計 {len(big)} 件 / {sum(mb for mb, _ in big):.1f} MB")
 
+    # 原稿の中身。**どの木でも**見る —— 公開されているのは origin の全 branch である
+    corpus = {}
+    for label, ref in refs:
+        for path, mb, why in corpus_in(ref):
+            corpus.setdefault((path, why), []).append(label)
+    print(f"\n原稿の中身(DB は無条件 / jsonl は {CORPUS_SIZE_MB:g}MB 超。"
+          f"**許可表では解除しない**): {len(corpus)} 件")
+    for (path, why), labels in sorted(corpus.items()):
+        print(f"      {path}  [{why}]  {len(labels)} 木: {', '.join(labels[:4])}")
+
+    if corpus:
+        print("\n**原稿の中身が追跡されている。** 置き場を作業木の外に移すこと "
+              "—— **許可表では解除しない**", file=sys.stderr)
+        return 1
     if unlisted:
         print("\n表に無い追跡画像・追跡重み(公開にはユーザーの承認が要る):", file=sys.stderr)
         for p in unlisted:
