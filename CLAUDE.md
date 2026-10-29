@@ -148,8 +148,8 @@ sed -n '1,40p' doc/CURRENT.md                   # 4. 台帳の冒頭(いまど�
 
 ## 5. track に触るとき
 
-- **触る前に生存確認。** `ListAgents` と `ps aux | grep claude` で、その worktree に
-  別セッションが座っていないか確認する。ブランチは座っている者のもの
+- **触る前に生存確認。** `ListAgents` と **`pgrep -x claude`** で座っている者を見る
+  (`ps|grep claude` は**自分のシェルに当たる**。T-M8 族)。ブランチは座っている者のもの
 - **push は track 自身がやる。** 基盤は `foundation` だけ。例外は休止・終了して誰も
   座っていない tree のみ。**条件の解除は承認ではない**(外向きの承認はユーザーのもの)
 - track の文書は2本だけ: `doc/initial_notice.md`(引き継ぎ、短く保つ、履歴を溜めない)と
