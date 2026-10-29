@@ -71,6 +71,7 @@ of each track; this table records only where each one physically lives, because
 | `lineart-fill-region` | `fill-region` | worktree of `lineart`, **Track L**, opened 2026-10-23 |
 | `lineart-colour-manuscripts` | `colour-manuscripts` | worktree of `lineart`, **Track M**, opened 2026-10-24 |
 | `lineart-external-standard` | `external-standard` | worktree of `lineart`, **Track N**, opened 2026-10-30 |
+| `lineart-ops-review` | `ops-review` | worktree of `lineart`, **not a track** (no letter) — the operating-rules stocktake, opened 2026-10-30. Output is proposed diffs only; **the foundation edits the source of truth** |
 | `lineart-panel-generation` | `panel-generation` | **separate clone** of the same remote |
 | `lineart-face-words` | `face-words` | worktree **of that clone**, not of `lineart` |
 
