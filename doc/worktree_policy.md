@@ -62,7 +62,7 @@ of each track; this table records only where each one physically lives, because
 | `lineart-stroke-selection` | `stroke-selection` | worktree of `lineart` |
 | `lineart-pair-signal` | `pair-signal` | worktree of `lineart` |
 | `lineart-stroke-grammar` | `stroke-grammar` | worktree of `lineart` |
-| `lineart-aesthetic-judge` | `aesthetic-judge` | worktree of `lineart` |
+| `lineart-aesthetic-judge` | `aesthetic-judge` | worktree of `lineart`, **Track E**, **active again 2026-10-30** — fills discipline 10's thin places (the human bar) |
 | `lineart-stroke-topology` | `stroke-topology` | worktree of `lineart`, **Track K**, opened 2026-10-16 |
 | `lineart-controlnet-sd15-refine` | `controlnet-sd15-refine` | worktree of `lineart` |
 | `lineart-controlnet-sdxl-fidelity` | `controlnet-sdxl-fidelity` | worktree of `lineart` |

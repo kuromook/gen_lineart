@@ -1686,6 +1686,7 @@ work, and the stated expectation is that the pieces make each other easier.
   ordered**, since adding pages after reading the result is widening the exposure.
 
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
+  **active again from 2026-10-30** (the user's decision), after being
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
   and the conditioning map disagree could be settled by preference rather than
@@ -1709,6 +1710,24 @@ work, and the stated expectation is that the pieces make each other easier.
   running only if someone disputes the finding. Its diagnosis is what points at the
   words line -- interpretability has to be produced before preference can be
   measured. UI and pairs are kept at `results/comparison_pairs_20260916/`.
+
+  **Reopened 2026-10-30 to fill discipline 10's thin places** (the user's
+  decision, from `ops-review`'s stocktake). `CLAUDE.md` 第1条 now says what gives
+  the work its direction is human judgement and that the human standard moves,
+  and discipline 10 says a moving anchor registers when and on what condition it
+  moves -- but the material behind that rule is **one measurement**, and it is
+  this track's (15 tiles x 4 arms, absolute judgement, 2026-10-04). **This is the
+  only track that holds a human bar**, so raising it is not a side errand: it is
+  the upkeep of what 第1条 calls the real bar, while the preprocessor baseline is
+  now only the lower one. Three things to produce, none of them an experiment
+  first: **how the re-take period is chosen**, **a settled form for how a human
+  judgement is taken** (the unit of the question is written on the screen --
+  2026-10-26), and **where two disagreeing bars leave results read against the
+  older one** (discipline 10 says those results are not retracted; the bar's
+  version is part of the configuration). It is also the **first client of
+  `tools/catch_up.py`**: this tree's `CLAUDE.md` is a 148-line copy frozen at
+  branch time, its briefing is 366 lines with no `## 条例` section, and the
+  Claude-side hooks do not reach it until it catches up.
 
 ### Opened since the reconciliation
 

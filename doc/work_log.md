@@ -16434,3 +16434,35 @@ Track N の方はもう一歩あって、**句点を1つ足した** —— claim
 「a model that has **never** seen this author」まで伸びて、`NON_CLAIM` が**その track の
 問いそのものを「この木は無い」という否定として読んでいた**(audit 自身の docstring が
 書いている「散文を語で走査する点検は、別の意味で使われた語に当たる」の4例目)。
+
+### 2026-10-30 基盤: 条例の型を4本に配り、**Track E を開け直した**(ユーザーの決定4件)
+
+**ユーザーが決めたこと**: **push する** / **H1・H2 は1日動かしてから** /
+**`moat` はまだ入れ替えない** / **`aesthetic-judge` は通達を出して始める**。
+
+**push 済み**(`667b509..5cdb65e`)。前に押したのが古かったので **27 commit** 行った。
+門を先に回した —— 許可表 **表に無い 0 件**、**この push で新しく載る画像・重みは 0**
+(`checkpoints/shape1/*.pth` 3件 169.7MB は以前から `origin` に在る)。
+`.claude/settings.json` は**これで匿名に読める** —— 中身は許可の文型と道だけ。
+
+**条例の移行を4本に配った**(`census` / `colour-manuscripts` / `external-standard` /
+`fill-region`、同文)。**型は `doc/ordinance_spec.md` で、書くのは track 自身。**
+型を正本に迎え、**`doc/worktree_policy.md § Documentation Rules` から指した** ——
+肝は**基本法の写しを置かず指し手だけにする**こと(写しは branch 時点で凍る。
+`fill-region` の条例はいま、見えない基本法に対する差分を手で維持している)。
+休止中の2本は再開時、**終了した9本は触らない**(記録。T92)。
+
+**Track E(`aesthetic-judge`)を開け直した。** 理由は新しい法の側にある ——
+**規律10 の材料は 15 タイル × 4 腕の1回分だけ**で、それを持っているのはこの track だけ。
+第1条が「向きを与えるのは人の判定」と決めた以上、**強化はそのまま「本当の棒」の整備**になる。
+作らせるのは**実験ではなく器具と型**の3件(取り直す周期 / 人の判定の取り方の型 /
+前後の棒が食い違ったときにどの結果を読み直すかの線)。**lesson 10 は撤回しない** ——
+変わったのは、あれが本当の棒の唯一の実測だということ。
+台帳の項と `doc/worktree_policy.md` の表を **active again** に直した。
+**これで audit が 18 → 20 finding** になった(通達の空き 19日と `CLAUDE.md` の写しの古さ)——
+**開け直した track は追いついていないので、出るのが正しい。** 消し方は通達に書いた
+(`tools/catch_up.py` の最初の客。`/hooks` を一度開くまで Claude 側の3本は効かない)。
+
+`ops-review` には取った結果を返した(`reply_taken_by_path_20261030.md`)。
+**残っているユーザーの手**: `/hooks` を一度開く / 口座の `autoMode.environment` の
+Trusted repo が `lineart-pair-signal`(終了した track)を指している —— `~/.claude/` は基盤も書かない。
