@@ -495,3 +495,36 @@ Stop(綺麗=沈黙 / 指摘あり 320字 / 器具なし 119字)/ PostToolUse(150
 **残っているのは merge と、merge 後の2つの後始末**:
 基盤の `settings.local.json` を空にする(35 件が2箇所に在る状態を消す)/
 条例の移行を動いている4 track に配る。
+
+## 2026-10-30 3通目を出した。**そして「丸ごと merge」が危険だと分かった**
+
+「試験は済んだ、merge してよい」と書こうとして、`git diff --stat foundation..HEAD` の
+**16,332 deletions** が気になったので中身を特定した。**特定してよかった。**
+
+**`doc/work_log.md`** —— 枝を開いた commit(`22509af`、基盤自身が作ったもの)が
+**track 用の短い作業ログに差し替えている**。片側しか触っていないので
+**git は衝突を出さず喜んで merge し、基盤の正本 16,391 行を 497 行にする(15,894 行が消える)**。
+`doc/initial_notice.md`(この枝だけのもの)も基盤に持ち込まれる。
+
+**使い捨て worktree で本番の向きに merge して確かめた**: 衝突なし・exit 0、
+`doc/CURRENT.md` 4,392 行と `doc/worktree_policy.md` 374 行は保たれ、
+**作業ログだけが静かに潰れた。「衝突が無いこと」は「安全であること」ではない。**
+
+**安全な手順はファイル指定**で、これも使い捨て worktree で試した:
+
+```bash
+git checkout ops-review -- .claude/settings.json .gitignore \
+  doc/ordinance_spec.md doc/ops_review_proposal_20261030.md \
+  tools/catch_up.py tools/hooks/
+```
+
+結果: 作業ログ **16,391 → 16,391 行(無傷)** / `initial_notice.md` は持ち込まれない /
+`.claude/settings.json` は許可 35 + hooks 3本で追跡される /
+`settings.local.json` は生き残り ignore のまま / `pre-commit` と `catch_up.py` が走る。
+
+**便を出した**: `outbox/reply_ready_to_take_20261030.md` → `../lineart/inbox/`(着弾確認済み)。
+冒頭に **`git merge ops-review` を回さないこと**を置き、取り方・後始末2件
+(`settings.local.json` を空にする / `/hooks` を開く)・4本の実地発火・
+試験で見つけた欠陥7件・取った後に効くこと効かないこと・基盤への依頼6件。
+
+**これで基盤へ出した便は3通**(型と器具 / 決定とフック / 取ってよい)。
