@@ -623,6 +623,14 @@ def notice_senders(head):
     names = re.findall(r"`(lineart-[A-Za-z0-9._-]+)`", head[:600])
     if names:
         return names
+    # Third: a notice that signs itself with the bare branch name and an arrow,
+    # `<topic>` -> 基盤. Added 2026-10-30, after `aesthetic-judge` sent two notices
+    # the same day and the gap still read 25d: the track had said who it was, in the
+    # title, and the check was looking for one spelling of it. The arrow is required
+    # so a notice that merely mentions another track is not read as coming from it.
+    arrow = re.findall(r"`([a-z0-9][a-z0-9._-]*)`\s*(?:→|->)\s*(?:共通)?基盤", head[:600])
+    if arrow:
+        return ["lineart-" + b for b in arrow]
     return [
         "lineart-" + b
         for b in re.findall(r"branch\s+`([a-z0-9][a-z0-9._-]*)`", head[:600])
