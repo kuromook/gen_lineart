@@ -6561,3 +6561,64 @@ history was not deleted -- it is in this log, and the handoff points at the
 section names instead of carrying them. The four artifact URLs it used to list
 are all still in this log; the two instrument traps it carried are the ledger's
 `T45` and `T47`, so they are pointers now.
+
+## 2026-10-30 (same day) The ordinance draft, adopted with edits
+
+A second notice arrived (`inbox/reply_judge_ordinance_draft_20261030.md`) carrying
+the procedure and a **draft ordinance (1,772 chars)**, explicitly leaving the
+adoption and the edits to this tree.
+
+**Its step 1 was already done, and by more than it asked.** The notice names the
+law as `b34e09c853` and this tree as 14 files behind. `git merge-base
+--is-ancestor b34e09c853 foundation` is true: that commit is **four commits
+behind** the `dfa8b64` this tree took earlier today (`d6ca006`, `01d0c01`,
+`6adf764`, `dfa8b64` sit on top of it), so the notice was written against a
+version the foundation has since advanced. `catch_up.py` reads "caught up", every
+law file "same". Nothing to take. The draft's own instruction to read
+`.gitignore`'s own-side lines before taking was followed this morning.
+
+### What the draft had that this tree's first ordinance did not
+
+The first version (1,596 chars, written before the draft arrived) carried the
+anchor and gate rules but had turned the old `## 運用ルール` section into
+pointers. The draft kept more, and it was right to: **items 3, 4, 5, 8 and 9 of
+the merged text came from it** -- the exact-path-beside-the-number rule, the
+shared-tiles contamination with "say so when you cannot bound what it could have
+manufactured", *do not hide a small n* (`0/15` is "under 20%", a binary scale
+cannot say "close"), the no-retraining scope, and **"an instrument check names
+what it responds to"**, whose instance is this track's own 2026-10-04 correction.
+Two of its four un-quotable numbers were missing here as well: the deletion
+oracle's f1 ceiling **0.7425**, and the comparison ranking itself.
+
+### What was changed
+
+- **Merged, not appended**: the draft's items 1, 2 and 6 are the rules this
+  morning's instruments implement, so each now carries its instrument path --
+  item 1 the gate, item 6 the registry plus the by-event period and the
+  same-session clause with its refutation condition, item 7 the three-condition
+  re-read line and the standing-sentence form.
+- **Kept from this tree's version**: `0.750` may not be quoted as the absolute
+  anchor's intra-rater consistency (it is the comparison set's; the anchor has no
+  repeats), and `14/15` may not be read as the scale failing.
+- **Dropped as copies of higher law** (the spec forbids them, and the budget is
+  what made it concrete): the draft's item 9 (do not pool across pools, do not
+  judge progress by training loss, measure the conditioning even in training
+  pairs -- `CLAUDE.md` §3 and lessons 7/8), the "do not read this tree's frozen
+  copies" line (`CLAUDE.md` §0), the second-hop pointer to `moat`, and the
+  smoke-test / Mon-Thu batch item (§6), which is named in `## 器具の罠` as a
+  pointer rather than restated.
+- **`## 器具の罠` kept as its own section**, as the draft proposed, with two of
+  the four replaced by ledger pointers (`T47` skeletonize, `T45`
+  `bipartite_match_f1`). **The `pkill -f` self-kill is not in the ledger** --
+  grepped `doc/tool_traps.md` and `doc/CURRENT.md` on 2026-10-30 -- so this
+  section is its only instance and says so.
+
+### Budget
+
+The merge first came out at **2,147 characters**, over the 2,000 budget. Rather
+than warn and leave it, the copies above were converted to pointers, which is
+what the spec says an over-budget ordinance means (a drafting defect, and
+`fill-region`'s overflow was copies). Measured with the instrument that enforces
+it rather than by hand -- `session_brief.py` counts `len(body)` including
+newlines, 42 more than a character count without them -- the section is now
+**1,955 characters and prints no warning**. `doc/initial_notice.md` is 129 lines.
