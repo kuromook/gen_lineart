@@ -192,8 +192,22 @@ def check(tree, want):
     return 1
 
 
+def default_tree():
+    """引数が無いときに見る木。**いま居る木であって、この器具が在る木ではない。**
+
+    2026-10-30 に基盤が踏んだ: track の木には `venv` も `tools/catch_up.py` も無いことが
+    在るので、**基盤の器具を絶対パスで呼ぶ**のが普通の使い方になる。そのとき
+    `__file__` の親を見ると**基盤自身を点検して「追いついている」と答える** ——
+    呼んだ人は自分の木について聞いたと読む。器具の docstring は最初から
+    「いま居る木を見る」と書いていたので、**言っていたことに合わせた。**
+    (`names_are_not_checks` の形。点検が別の対象を見ていても、返事は信じられる形で返る。)
+    """
+    code, top, _ = git(Path.cwd(), "rev-parse", "--show-toplevel")
+    return Path(top.strip()) if code == 0 and top.strip() else Path.cwd()
+
+
 def main():
-    trees = sys.argv[1:] or [Path(__file__).resolve().parent.parent]
+    trees = sys.argv[1:] or [default_tree()]
     want = truth()
     worst = 0
     for t in trees:
