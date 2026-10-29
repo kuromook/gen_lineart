@@ -16708,3 +16708,22 @@ Stop の器具が exit 0・印字 0 /「道を `git rev-parse --show-toplevel` �
   測る自分の `bash -c` の行に `claude` が入る**ので、空席の木が「座っている」と出る
   (`stroke-selection` で1回出て、PID が直後に消えたので気付いた)。**T-M8 の族。**
   **`pgrep -x claude` なら実セッションだけ**(いま6本)。`CLAUDE.md` §5 を直した(170 行のまま)
+
+### 2026-10-30 基盤: 別クローン2本に `pre-commit` の殻を置いた(**1つで2本に効く**)
+
+ユーザーが承認(「pre-commit まかせる」)。**置き場は1つで足りた** ——
+`face-words` の `.git` は**ファイル**(gitdir のポインタ)で、
+**common-dir は `lineart-panel-generation/.git`** だった。
+**`face-words` は別クローンではなく、panel-generation クローンの worktree** で、
+**2本が `.git/hooks` を共有している**(台帳の表記どおり。最初の `cp` は
+`.git/hooks/` をディレクトリだと思って `Not a directory` で落ちた)。
+
+**対照**(殻を実際に回した): `panel-generation` → **「この木に器具が無い。点検していない。
+追いつかせるには `tools/catch_up.py`」と言って exit 0**(止めない)/
+`face-words`(cwd をそこにして同じ殻を回す。git が解くのと同じ道)→ **同じ文で exit 0、
+ただし道は `lineart-face-words/tools/hooks/pre-commit` と、その木の名前で出る** ——
+**`git rev-parse --show-toplevel` で解く作りが、共有された殻でも木ごとに正しく効いている**。
+
+**これで「再開を忘れない」の3層目が 16 木すべてを覆った。** 残るのは
+**`aesthetic-judge`(下書き配達済み)と別クローン2本の条例**で、どちらも
+**書くのは再開する者**(型は `doc/ordinance_spec.md`)。
