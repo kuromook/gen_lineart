@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# git の pre-commit。**Claude の hook より下の層の門。**
+#
+# なぜ両方要るか: Claude の hook は **Claude が打った道具呼び出し**しか見ない。
+# ユーザーが端末で打った `git commit`、別のセッション、`!` 前置きの実行は通る。
+# この層は **16 の作業木が共有する** `/home/sh1/deepl/lineart/.git/hooks` に1つ置けば
+# 全部の木に効く(`git rev-parse --git-common-dir` が同じ所を指す)。
+#
+# **これも門ではない:** `git commit --no-verify` は素通りする。**別クローン2つ**
+# (`lineart-panel-generation` / `lineart-face-words`)は `.git` が別なので、
+# それぞれに入れる必要がある。**`.git/hooks` は git が追跡しないので、
+# clone しても付いて来ない。** そこが弱点で、だから Claude 側の hook も要る。
+#
+# 入れ方(ユーザーの承認の後):
+#   ln -s ../../tools/hooks/pre-commit /home/sh1/deepl/lineart/.git/hooks/pre-commit
+# 外し方:
+#   rm /home/sh1/deepl/lineart/.git/hooks/pre-commit
+set -u
+
+root="$(git rev-parse --show-toplevel)"
+fail=0
+
+# 1. `data/` 配下 —— 原稿由来の納品物。**絶対にコミットしない**(ユーザーの常設の制約)
+staged_data="$(git diff --cached --name-only --diff-filter=AM | grep -E '(^|/)data/' || true)"
+if [ -n "$staged_data" ]; then
+  echo 'pre-commit: **`data/` 配下が staged されている。原稿由来の納品物は絶対にコミットしない。**' >&2
+  echo "$staged_data" | sed 's/^/  /' >&2
+  echo "  外す: git rm --cached <道>" >&2
+  fail=1
+fi
+
+# 2. 許可表 —— 表に無い追跡画像・追跡重み(器具が判定する。ここは回すだけ)
+checker="$root/tools/check_public_artifacts.py"
+if [ -x "$checker" ] || [ -f "$checker" ]; then
+  out="$(python3 -I "$checker" 2>&1)"; code=$?
+  if [ "$code" -ne 0 ]; then
+    if [ "$code" -eq 1 ]; then
+      echo "pre-commit: **表に無い追跡画像か追跡重みが在る**(公開はユーザーの承認)。" >&2
+      echo "$out" | grep -vE '表に無い 0|計 0 件' | head -12 | sed 's/^/  /' >&2
+      fail=1
+    else
+      # **走れなかったことを「一致」と読ませない。** 止めはしないが、黙らない
+      echo "pre-commit: 許可表の門が走れなかった(終了コード $code)。**点検していない。**" >&2
+    fi
+  fi
+else
+  echo "pre-commit: 許可表の門が $checker に無い。**点検していない。**" >&2
+fi
+
+[ "$fail" -eq 0 ] || {
+  echo "" >&2
+  echo "pre-commit: 上の指摘を直してから commit する。" >&2
+  echo "どうしても通すなら --no-verify だが、**それは承認ではない**(外向きの承認はユーザーのもの)。" >&2
+  exit 1
+}
+exit 0
