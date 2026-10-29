@@ -258,3 +258,35 @@ item 5(montage skill を repo 側へ移すか)を**取り下げ** —— §6 の
   (いまの `aesthetic-judge` は 366 行の引き継ぎ、条例の節なし、`CLAUDE.md` は branch 時点の写し)
 
 **コミット前に門を2つ回した**: 許可表の門 exit 0 / 自分で書いた `pre-commit` exit 0。
+
+## 2026-10-30 フック 1〜4 を**入れた**(ユーザーの承認)
+
+止めないもの3本 + git の `pre-commit`。**止める H1/H2 はまだ入れていない。**
+
+**前提の作業**: `.gitignore:7` の `.claude/` を **`.claude/*` + `!.claude/settings.json`** に。
+**`.claude/` の形では中の否定が読まれない**(ディレクトリを丸ごと除外するため。
+このファイルが `venv` のスラッシュで既に注を書いている族)。確かめた ——
+`settings.json` **追跡される** / `settings.local.json`(許可 78 件)**ignore のまま** /
+`worktrees/` **ignore のまま**。
+
+**入れたもの**:
+- **H4 `SessionStart`** → `session_brief.py`(立場 + `foundation` なら audit + **条例の注入**)
+- **H5 `PostToolUse`**(`Edit|Write`、`if: Edit(CLAUDE.md)`)→ 151 行で鳴る
+- **H6 `Stop`** → 許可表の門(warn)。**経路を問わず**追跡画像の増加を言う
+- **H3 git `pre-commit`** → `/home/sh1/deepl/lineart/.git/hooks/pre-commit` に殻を1つ。
+  **16 の作業木が共有する**。殻は `git rev-parse --show-toplevel` で**その木の branch に在る
+  器具**を走らせ、**器具が無い木では止めずに「点検していない」と言う**
+
+**リスク①(相対の道)は設計で消した** —— `command` は `$(git rev-parse --show-toplevel)` で
+道を解くので、作業ディレクトリに依らない。器具が無ければ `systemMessage` で
+「**点検していない**」と言う形も3本すべてに入れた。
+
+**回した対照**: 3本を JSON から取り出してそのまま実行(SessionStart 917 字を返す /
+Stop 沈黙 / PostToolUse 沈黙 = 150 行ちょうど)/ `pre-commit` の殻は器具が在る木で exit 0、
+**器具が無い木(`stroke-selection`)で「点検していない」と言って exit 0** /
+**そして `data/` を staged して本物の commit を試み、止まった(exit 1、何も入らなかった)。**
+
+**効き始めについての注意**: Claude Code の設定監視は**セッション開始時に設定ファイルが
+在ったディレクトリ**しか見ない。この作業木に `.claude/` は**セッション開始時に存在しなかった**ので、
+**H4/H5/H6 はこのセッションでは効かない。** `/hooks` を一度開くか、セッションを入れ直すと効く。
+**H3(git 側)は今すぐ効いている**(上の対照がそれ)。

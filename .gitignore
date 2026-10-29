@@ -4,7 +4,13 @@ __pycache__/
 # to this one, and `venv/` does not match a symlink (found 2026-10-24, when
 # importing this file into the dormant trees left the symlink untracked).
 venv
-.claude/
+# `.claude/*` without the trailing-slash form on purpose: `.claude/` excludes the
+# directory wholesale and git never reconsiders the negations inside it (same family
+# as the `venv` note above). Only `settings.json` is tracked -- it carries the hooks,
+# so the law's enforcement arm travels with the branch. `settings.local.json` holds
+# this machine's permissions and stays ignored.
+.claude/*
+!.claude/settings.json
 
 checkpoints/*
 !checkpoints/README.md

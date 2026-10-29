@@ -1,0 +1,51 @@
+{
+  "_comment": [
+    "法の執行機関。**このファイルだけが `.claude/` の中で追跡されている**ので、",
+    "hooks は枝と一緒に配られる(置き場の案 (a)、ユーザー採択 2026-10-30)。",
+    "器具は `tools/hooks/`。道は `git rev-parse --show-toplevel` で解くので、",
+    "どの作業木でもその木の器具が走る。**器具が無ければ黙らずに「点検していない」と言う。**",
+    "入れたのは 1〜4(止めないもの + git の pre-commit)。**止める H1/H2 はまだ入れていない** ——",
+    "誤発火でユーザーの作業が止まるのが最悪なので、止めないものを先に通す。",
+    "設計と対照は `doc/ops_review_proposal_20261030.md` §3、条例の型は `doc/ordinance_spec.md`。"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); s=\"$r/tools/hooks/session_brief.py\"; if [ -f \"$s\" ]; then python3 -I \"$s\" ; else printf '{\"systemMessage\":\"立場と条例の器具が %s に無い。**点検していない。**\"}\\n' \"$s\"; fi",
+            "timeout": 30,
+            "statusMessage": "立場・点検・条例"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); s=\"$r/tools/hooks/guard_public_artifacts.py\"; if [ -f \"$s\" ]; then python3 -I \"$s\" warn; else printf '{\"systemMessage\":\"許可表の門の器具が %s に無い。**点検していない。**\"}\\n' \"$s\"; fi",
+            "timeout": 20,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel) && n=$(wc -l < \"$r/CLAUDE.md\") && { [ \"$n\" -le 150 ] || printf '{\"systemMessage\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\"}\\n' \"$n\"; }",
+            "if": "Edit(CLAUDE.md)",
+            "timeout": 10,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ]
+  }
+}
