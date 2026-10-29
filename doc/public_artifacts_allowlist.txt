@@ -26,3 +26,27 @@ test/rough/sample_face.jpg  # 同上
 checkpoints/shape1/best.pth       # 56.6 MB
 checkpoints/shape1/epoch010.pth   # 56.6 MB
 checkpoints/shape1/epoch020.pth   # 56.6 MB
+
+# --- 見本の画像 (fill-region branch) ---
+# 2026-10-26 にユーザーが承認。CLAUDE.md が以前から「作者が見本として残したいもの」と
+# 記録していた4枚で、この承認はその明文化。
+results/explain/a_raster.png                 # ラスタのベタ
+results/explain/b_production.png             # 制作のベタ
+results/explain/c_missing.png                # 取りこぼし
+results/explain/raster_vs_production_fill.png
+
+# --- 比較モンタージュ (cleanup-refiner / diffusion-controlnet branch) ---
+# 2026-08-01〜04 に作られ、以後公開されたまま。2026-10-26 にユーザーが承認。
+# `results/lessons/**` は .gitignore から明示的に外されているので、意図して追跡された
+# ものである。いずれも複数の出力を並べた合成シートで、原稿由来の画素を含む。
+results/lessons/compare_blend_ep25ep55.png                                   # 2880x4104
+results/lessons/compare_combined_koma_selfanchor_ep25_msgan_20260804.png     # 2400x4104
+results/lessons/compare_combined_koma_unet_skip0_finegrid_20260803_trajectory.png  # 3840x4104
+results/lessons/compare_direct_unet_ep060_vecpost.png                        # 1920x4104
+results/lessons/compare_combined_koma_direct_unet_100ep_20260801.png         # 2400x4104
+results/lessons/compare_combined_koma_direct_unet_200ep_20260801.png         # 2880x4104
+results/lessons/compare_combined_koma_direct_unet_200ep_20260801_trajectory.png    # 3840x4104
+results/lessons/compare_combined_koma_direct_unet_20260801.png               # 2400x4104
+results/lessons/compare_combined_koma_direct_unet_dense_28ep_20260801.png    # 2400x4104
+results/lessons/compare_combined_koma_direct_unet_finegrid_20260802_trajectory.png # 3840x4104
+results/lessons/crop_compare_finegrid_20260802.png                           # 4320x2250 (切り出しの比較)

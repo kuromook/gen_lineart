@@ -927,6 +927,26 @@ def main():
                     log_findings(log_text, name, args.log_days, now.date())
                 )
 
+        # 13: a running track whose briefing has no ordinance section. The form was
+        # adopted on 2026-10-30 (`doc/ordinance_spec.md`), and the SessionStart hook
+        # injects exactly one section name -- `## 条例`. A track without it reads its
+        # rules from its own frozen `CLAUDE.md` copy instead, which is T84/T92. A
+        # finished tree is a record and is left alone.
+        if not finished:
+            briefing = path / "doc" / "initial_notice.md"
+            try:
+                has_ordinance = "\n## 条例" in briefing.read_text(encoding="utf-8")
+            except OSError:
+                has_ordinance = None
+            if has_ordinance is False:
+                findings.append(
+                    f"`{name}`'s briefing has no `## 条例` section -- the ordinance "
+                    f"form adopted 2026-10-30 (`doc/ordinance_spec.md`). Without it "
+                    f"the SessionStart hook injects nothing and the track reads its "
+                    f"rules from its own frozen `CLAUDE.md` copy. The track writes "
+                    f"it; the foundation only hands over the form"
+                )
+
         # 9: the manuscript deliveries are one `git add -A` from a public repo.
         if ignores_data(path) is False:
             ref, behind = foundation_ref(path)
