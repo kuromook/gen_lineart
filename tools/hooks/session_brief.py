@@ -8,6 +8,10 @@
   - **規律4(台帳を開いたら audit を回す)** —— `foundation` のときだけ回す。
     **track の木で回すとその track を基盤と見るので無意味**(器具は自分の親を基盤と見る)
   - **許可表の門** —— 件数だけ。詳細は `tools/check_public_artifacts.py` を自分で回す
+  - **法の鮮度**(track のみ)—— `tools/catch_up.py` を読み取りで回し、**基盤の版と食い違う
+    法のファイルの件数**を言う。これが「法整備をまわす」の実体である: 配るのは基盤だが、
+    **取り込みはその木に座っている者しかできない**ので、**座った時に件数が目に入る**形にする。
+    **命令は印字しない**(14 行の `git checkout` を毎回貼るのは注意力の無駄で、器具を回せば出る)
   - **条例**(track のみ)—— `doc/initial_notice.md` の `## 条例` 節**だけ**を注入する。
     これが唯一の格上げ経路である: 条例は「基本法 §0 が読めと命じている文書」の層に在り、
     skill にすると「モデルが関係ありそうだと判断したら読む」層に**下がる**。
@@ -62,6 +66,29 @@ def ordinance():
     return [head, body]
 
 
+def law_freshness(py):
+    """基盤の版と食い違う法のファイルの件数。**器具が無ければ「点検していない」と言う。**
+
+    `catch_up.py` は何も書き換えず、終了コードは 0(追いついている/先にいる)/
+    1(遅れている)/ 2(走れない)。**「分岐」は 0 で返るが食い違いは在る**ので、
+    件数は出力から読む —— 終了コードだけ見ると、木の大半が占める状態を見落とす。
+    """
+    tool = ROOT / "tools" / "catch_up.py"
+    if not tool.exists():
+        return ["**法の鮮度を点検していない**(この木に `tools/catch_up.py` が無い)。"
+                "基盤の木から `../lineart/tools/catch_up.py` を読み取りで回せる。"]
+    r = run(py + [str(tool)])
+    if r.returncode == 2:
+        return [f"**法の鮮度の点検が走れなかった(終了コード {r.returncode})** —— 一致は不明。"]
+    line = next((x for x in r.stdout.splitlines() if "食い違っている" in x), "")
+    n = re.search(r"(\d+) 件が食い違っている", line)
+    if not n:
+        return ["**法**: 基盤の版に追いついている。"]
+    return [f"**法のファイルが基盤の版と {n.group(1)} 件食い違っている。** 取り込みはこの木に"
+            "座っている者しかできない —— `./venv/bin/python ../lineart/tools/catch_up.py` が "
+            "per-file の命令を印字する(読み取りのみ。**何も書き換えない**)。"]
+
+
 def main():
     sys.stdin.read()
     br = branch()
@@ -85,12 +112,13 @@ def main():
                        "**点検していない**。一致は不明。")
     else:
         notice = ROOT / "doc" / "initial_notice.md"
-        out.append(f"立場: **track**。**`CLAUDE.md` §1〜§4 は自分の役割ではない。**"
-                   f"{'`doc/initial_notice.md` から始め' if notice.exists() else '引き継ぎ書が無い —— 基盤に問う'}、"
-                   "§5〜§7 だけ従う。")
+        out.append(f"立場: **track**。"
+                   f"{'`doc/initial_notice.md` と その `## 条例` から始める' if notice.exists() else '引き継ぎ書が無い —— 基盤に問う'}。"
+                   "**`CLAUDE.md` §1 と §5 は基盤の役割。§2〜§4 と §6 は自分にも効く。**")
         out.append("手元の `CLAUDE.md` と `doc/CURRENT.md` は **branch 時点で凍った複製**。"
                    "通達と `../lineart/doc/CURRENT.md` が正本。")
 
+        out += law_freshness(py)
         out += ordinance()
 
     g = run(py + [str(ROOT / "tools" / "check_public_artifacts.py")])
