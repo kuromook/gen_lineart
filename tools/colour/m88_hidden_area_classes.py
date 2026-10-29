@@ -110,6 +110,10 @@ def panel(base_rgb, outline, cap=CAP):
 def strip(panels, font, head, sub, gap=10):
     hh = max(p.shape[0] for p in panels)
     ww = sum(p.shape[1] for p in panels) + gap * (len(panels) - 1)
+    # **問いの文が切れないように板より広く取る** —— 最初の版は板の幅で
+    # 文字を切っていて、**画面に書いた問いが読めなかった**
+    need = max(int(font.getbbox(t)[2]) for t in list(head) + list(sub)) + 24
+    ww = max(ww, need)
     body = np.full((hh, ww, 3), 18, np.uint8)
     x = 0
     for p in panels:
