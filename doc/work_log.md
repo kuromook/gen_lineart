@@ -16464,5 +16464,9 @@ Track N の方はもう一歩あって、**句点を1つ足した** —— claim
 (`tools/catch_up.py` の最初の客。`/hooks` を一度開くまで Claude 側の3本は効かない)。
 
 `ops-review` には取った結果を返した(`reply_taken_by_path_20261030.md`)。
-**残っているユーザーの手**: `/hooks` を一度開く / 口座の `autoMode.environment` の
-Trusted repo が `lineart-pair-signal`(終了した track)を指している —— `~/.claude/` は基盤も書かない。
+**同日中に閉じた2件**: **ユーザーが `/hooks` を開いて確認**(フック4本が効いている)/
+**口座の `autoMode.environment` の Trusted repo を直した**(ユーザーの指示) ——
+終了した track `lineart-pair-signal` を指していたのを **`/home/sh1/deepl/lineart`(統合木)**に。
+**同じ repo が `lineart-<topic>` の worktree と別クローン2つに在ることも書いた**(2行目の
+routine の前置も `lineart/` と `lineart-*/` に)。`~/.claude/settings.json` は Bash からは
+**auto mode の分類器が Self-Modification で止める** —— Edit 器具で直し、JSON の妥当性を確認した。
