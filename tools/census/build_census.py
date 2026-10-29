@@ -84,7 +84,10 @@ POPULATION_METRICS = {
 ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "db_files", "db_distinct", "db_layers", "lip_files",
                        "db_all_layers", "body_initcolor", "priority65",
-                       "delivery_png", "clip_files", "grad_v1_v2")
+                       "delivery_png", "clip_files", "grad_v1_v2",
+                       # **まだ1頁も入っていない母集団**(ユーザーの決定 2026-10-30)——
+                       # **鍵を先に通しておく**。行は 0 件で立ち、`needs` が何を待つか書く
+                       "comicstudio_pages")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d",
                        # **フォルダーの2種は、マスクの便にしか出てこない**(2026-10-28)——
@@ -558,7 +561,8 @@ def emit_canvas(outdir: str, a33_rows, units=None):
                       "canvas_unit_resolved", "why"], rows)
 
 
-def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
+def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = "",
+                    patch_path: str = ""):
     """依頼3のマスクの被覆(便 2026-10-26、16,273行・766頁)。
 
     **この便が答えるのは、本体の側と同じ問いのマスク版である** ——
@@ -583,11 +587,41 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
 
     **「ずれている層」と「マスクの寸法が画布と違う層」は別の述語である** ——
     後者は前者を含意しないし、含意されない。**両方を列に出す。**
+
+    **2026-10-30 に、ずれていた行が直った便で来た**(抽出側の器具 `1d3909a`。
+    合計の位置にマスクを置く)。**古い便を書き替えず、鍵で差し替える** ——
+    **差し替えた行数と、値が動いた行数を器具が毎回印字する**(規律9)。
+    **動いた行が「合計が 0 でない層」と一致するかを、走行ごとに確かめる** ——
+    **一致しなければ、直しが別のことをしている印である。**
     """
     if not os.path.exists(path):
         print(f"  [マスクの被覆] **便が無い**({path})")
         return {}
     rows = list(csv.DictReader(open(path, encoding="utf-8")))
+
+    # **直した便で鍵ごとに差し替える**(2026-10-30)。**古い便は書き替えない** ——
+    # **差し替えの効果は、器具が毎走行で印字する量である**
+    patched, patch_total, patch_absent = set(), 0, 0
+    moved, moved_cover, cover_delta = set(), 0, []
+    if patch_path and os.path.exists(patch_path):
+        by_key = {(r["page_path"], r["layer_id"].strip()): r for r in rows}
+        for q in csv.DictReader(open(patch_path, encoding="utf-8")):
+            key = (q["page_path"], q["layer_id"].strip())
+            patch_total += 1
+            r = by_key.get(key)
+            if r is None:
+                patch_absent += 1
+                continue
+            before = dict(r)
+            r.update(q)
+            if any((before.get(c) or "") != (r.get(c) or "") for c in r):
+                moved.add(key)
+                a, b = before["mask_cover"].strip(), r["mask_cover"].strip()
+                if a != b:
+                    moved_cover += 1
+                    if a and b:
+                        cover_delta.append(float(b) - float(a))
+            patched.add(key)
 
     # **マスクの原点がずれている層の鍵**(抽出側の便。合計が 0 でない層)。
     # **無ければ空集合で、印字は「材料が無い」と書く** —— 0 と書かない
@@ -662,7 +696,8 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
         ["bound_class", "meaning", "n_layers", "n_pages",
          "n_cover_zero", "n_cover_full", "median_mask_cover", "reading",
          "population", "measured_by", "as_of"],
-        [r + [pop("req3_layer_kind"), "抽出側(um350)", "2026-10-26"]
+        [r + [pop("req3_layer_kind"), "抽出側(um350)",
+              "2026-10-26(**原点を直した 383 行は 2026-10-30**)"]
          for r in out_cls])
 
     out_kind = []
@@ -682,7 +717,8 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
          "n_mask_dims_differ", "n_mask_origin_shifted", "median_mask_cover",
          "share_cover_zero", "share_cover_full",
          "population", "measured_by", "as_of"],
-        [r + [pop("req3_layer_kind"), "抽出側(um350)", "2026-10-26"]
+        [r + [pop("req3_layer_kind"), "抽出側(um350)",
+              "2026-10-26(**原点を直した 383 行は 2026-10-30**)"]
          for r in out_kind])
     n_dims = sum(kind_dims.values())
     n_folder_rows = sum(1 for r in rows if r["folder"].strip() == "1")
@@ -695,6 +731,35 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
           f"`255 + 保存0` の {cls_full.get('255 + 保存0', 0)}/{cls_n.get('255 + 保存0', 0)} が被覆 1.000、"
           f"`0 + 保存0` の {cls_zero.get('0 + 保存0', 0)}/{cls_n.get('0 + 保存0', 0)} が 0.000"
           f"(**どちら向きの例外も 0 なら、この列は下限ではない**)")
+    if not patch_path:
+        print(f"      **直した便を渡していない** —— "
+              f"**この表の被覆は、原点を 0 に置いて読んだ値である**")
+    elif not patched:
+        print(f"      **直した便が無い**({patch_path})—— "
+              f"**差し替えた行数は印字できない**(0 ではない)")
+    else:
+        cover_delta.sort()
+        print(f"      **直した便で差し替えた行 {len(patched):,}"
+              f"({len(patched) / len(rows):.2%})/ "
+              f"{len({k[0] for k in patched}):,}頁** —— "
+              f"**便の行 {patch_total:,} / 旧い便に鍵が無かった行 {patch_absent}**"
+              f"(**鍵が増えたら差し替えでなく別の走行である**)")
+        same_as_shifted = (moved == {k for k in patched if k in shifted}) if shifted else None
+        print(f"      **値が動いた行 {len(moved):,}** —— "
+              f"**うち被覆が動いた {moved_cover:,}、"
+              f"被覆は同じで内訳だけ動いた {len(moved) - moved_cover:,}。** "
+              + (f"**動いた行は「合計が 0 でない層」と{'一致した' if same_as_shifted else '食い違う'}**"
+                 if shifted else "**一覧が無いので突き合わせられない**")
+              + ("(**一致しなければ直しが別のことをしている印**)"
+                 if same_as_shifted else "(**食い違いを先に説明すること**)"))
+        if cover_delta:
+            print(f"      **向きが分かった** —— **増 "
+                  f"{sum(1 for d in cover_delta if d > 0):,} / 減 "
+                  f"{sum(1 for d in cover_delta if d < 0):,}、"
+                  f"中央 {cover_delta[len(cover_delta) // 2]:+.4f}、"
+                  f"幅 {cover_delta[0]:+.4f}〜{cover_delta[-1]:+.4f}。** "
+                  f"**「向きは不明」はもう書かない** —— "
+                  f"**直す前と後を並べたので、両向きに動いたと測れている**")
     if not shifted:
         print(f"      **マスクの原点がずれている層の一覧が無い** —— "
               f"**ずれている行の数は印字できない**(0 ではない)")
@@ -702,8 +767,8 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = ""):
         print(f"      **マスクの原点がずれている行 {shifted_rows:,}"
               f"({shifted_rows / len(rows):.2%})/ {len(shifted_pages):,}頁** —— "
               f"**一覧 {shifted_total:,}層との重なり。** "
-              f"**この行の被覆の値は、ずれた位置で読んだ値である**"
-              f"(向きは不明 —— 位置の誤りに大小の向きは無い)。"
+              f"**この行の被覆の値は、2026-10-30 の便で直った行である**"
+              f"(直す前は、原点を 0 に置いて読んだ値だった)。"
               f"**種別ごとは `n_mask_origin_shifted` の列に在る**")
     print(f"      **別の述語を並べる**: **マスクの寸法が画布と違う層 {n_dims:,}**"
           f"({n_dims / len(rows):.1%})—— "
@@ -2105,7 +2170,8 @@ def main() -> int:
     pub.update(emit_folded_totals(args.public_out, folded_by_year, folded_aux))
     pub.update(emit_mask_cover(
         args.public_out, "inbox/mask_cover_request3_20261026.csv", drops_dl,
-        "inbox/mask_offset_sum_nonzero_20261029.csv"))
+        "inbox/mask_offset_sum_nonzero_20261029.csv",
+        "inbox/mask_cover_request3_maskorigin55_20261030.csv"))
     pub["canvas_declared.csv"] = emit_canvas(
         args.public_out, a33_rows, canvas_units)
     pub.update(emit_full_population(args.public_out))
