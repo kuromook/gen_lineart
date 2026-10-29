@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); n=$(wc -l < \"$r/CLAUDE.md\"); c=0; [ \"$n\" -le 150 ] || { c=1; printf '{\"systemMessage\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\",\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\"}}\\n' \"$n\" \"$n\"; }; printf \"%s PostToolUse exit=%s\\n\" \"$(date -Iseconds)\" \"$c\" >> \"$r/.claude/hook_last_run.log\" 2>/dev/null; exit 0",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); n=$(wc -l < \"$r/CLAUDE.md\"); c=0; [ \"$n\" -le 170 ] || { c=1; printf '{\"systemMessage\":\"CLAUDE.md が %s 行。**予算 170 行**(目安 150 + 第1条 20、2026-10-30 のユーザーの決定)を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\",\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"CLAUDE.md が %s 行。**予算 170 行**(目安 150 + 第1条 20、2026-10-30 のユーザーの決定)を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\"}}\\n' \"$n\" \"$n\"; }; printf \"%s PostToolUse exit=%s\\n\" \"$(date -Iseconds)\" \"$c\" >> \"$r/.claude/hook_last_run.log\" 2>/dev/null; exit 0",
             "if": "Edit(CLAUDE.md)",
             "timeout": 10,
             "onFailure": "continue"
