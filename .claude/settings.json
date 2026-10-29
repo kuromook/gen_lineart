@@ -7,7 +7,8 @@
     "入れたのは 1〜4(止めないもの + git の pre-commit)。**止める H1/H2 はまだ入れていない** ——",
     "誤発火でユーザーの作業が止まるのが最悪なので、止めないものを先に通す。",
     "設計と対照は `doc/ops_review_proposal_20261030.md` §3、条例の型は `doc/ordinance_spec.md`。",
-    "許可は 2026-10-30 に 78 → 49 件に整理してここへ移した(ユーザーの承認)。**ここは追跡されるので 16 の作業木すべてで効く**(前は基盤の木だけだった)。**追跡される = `origin` から匿名で読める。** 内訳と落とした理由は `doc/ops_review_proposal_20261030.md` §5。新しい許可は `.claude/settings.local.json`(ignore)に溜まるので、時々ここへ上げる。"
+    "許可は 2026-10-30 に 78 → 49 → 35 件に整理してここへ移した(ユーザーの承認)。**ここは追跡されるので 16 の作業木すべてで効く**(前は基盤の木だけだった)。**追跡される = `origin` から匿名で読める。** 内訳と落とした理由は `doc/ops_review_proposal_20261030.md` §5。新しい許可は `.claude/settings.local.json`(ignore)に溜まるので、時々ここへ上げる。",
+    "2026-10-30 追記(ユーザーの判断): 2026-07-31 の実験スクリプト向けの一度しか使わない仕込み 14 件(`chmod +x`/`bash -n`/`nohup` × 4 と `mkdir -p dataset/…` 2)を落とした。スクリプトは実在するので、また回すときは聞かれる。"
   ],
   "hooks": {
     "SessionStart": [
@@ -70,20 +71,6 @@
       "Bash(rm -rf dataset/regions_*)",
       "Bash(rm -rf results/test_regress*)",
       "Bash(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv)",
-      "Bash(mkdir -p dataset/unpaired_rough_raw)",
-      "Bash(mkdir -p dataset/unpaired_rough/skima)",
-      "Bash(chmod +x experiments/run_combined_koma_hed_v3_epoch10_20260731.sh)",
-      "Bash(bash -n experiments/run_combined_koma_hed_v3_epoch10_20260731.sh)",
-      "Bash(nohup experiments/run_combined_koma_hed_v3_epoch10_20260731.sh)",
-      "Bash(chmod +x experiments/run_combined_koma_attn_20260731.sh)",
-      "Bash(bash -n experiments/run_combined_koma_attn_20260731.sh)",
-      "Bash(nohup experiments/run_combined_koma_attn_20260731.sh)",
-      "Bash(chmod +x experiments/run_combined_koma_lucy_mild_unpaired_skima_20260731.sh)",
-      "Bash(bash -n experiments/run_combined_koma_lucy_mild_unpaired_skima_20260731.sh)",
-      "Bash(nohup experiments/run_combined_koma_lucy_mild_unpaired_skima_20260731.sh)",
-      "Bash(chmod +x experiments/run_combined_koma_lucy_mild_unpaired_skima_w003_20260731.sh)",
-      "Bash(bash -n experiments/run_combined_koma_lucy_mild_unpaired_skima_w003_20260731.sh)",
-      "Bash(nohup experiments/run_combined_koma_lucy_mild_unpaired_skima_w003_20260731.sh)",
       "Bash(pip list *)",
       "Bash(./venv/bin/pip freeze *)",
       "Read(//tmp/**)",
