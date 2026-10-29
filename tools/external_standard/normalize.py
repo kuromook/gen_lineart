@@ -47,6 +47,6 @@ def load_normalized(path):
 
 
 def save_jpeg(gray, path):
-    Image.fromarray(gray, mode="L").save(
+    Image.fromarray(gray).save(
         path, format="JPEG", quality=JPEG_QUALITY, subsampling=JPEG_SUBSAMPLING
     )
