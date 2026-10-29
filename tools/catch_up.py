@@ -18,7 +18,21 @@
   catch_up.py                 # いま居る木を見る
   catch_up.py <木への道> ...   # 他の木を見る(読み取りのみ。基盤からの一覧用)
 
-終了コード: 0 = 追いついている / 1 = 遅れている物が在る / 2 = 器具が走れない
+**状態は3つある。2つで書くと事故になる。** 2026-10-30、merge のリハーサルで
+この器具の2番目の版が **merge 済みの木を「遅れている」と言い、`.gitignore` を元に戻す
+命令を印字した** —— その木は遅れておらず先にいた。回したら仕事が消える。
+3番目の版はそれを直したが、**今度は分岐した木(自分の commit を持ち、かつ法の commit を
+持っていない)を「先にいる」と誤判定した**。木の大半はこの状態になる。
+
+  - **遅れている**(HEAD が法の commit に含まれる)→ `git checkout <sha> -- <道>` を出す
+  - **先にいる**(HEAD が法の commit を含む)→ 違いはこの木の仕事。**命令は出さない**
+  - **分岐している**(どちらでもない。**木の大半はこれ**)→ 違いがこの木の変更か古い写しか、
+    この器具では区別できない。**法のファイルは基盤が著者なので、普通は写しが古い** ——
+    だから per-file の命令を出す(基盤の audit もそう薦めている)。
+    **例外は、その木が法を起草している場合**(`ops-review` がそれ)。両方印字し、
+    **見分け方を書く** —— 選ぶのは座っている者
+
+終了コード: 0 = 追いついている(先にいる場合も) / 1 = 遅れている物が在る / 2 = 器具が走れない
 **何も書き換えない。** 印字した命令を回すのは、その木に座っている者。
 """
 import subprocess
@@ -75,6 +89,15 @@ def resolve_ref(tree, want):
                   "それでも入らなければ基盤の木から直接写す" % want[:10])
 
 
+def standing(tree, want):
+    """"behind" / "ahead" / "diverged" のどれか。**2値で書くと事故になる。**"""
+    code, _, _ = git(tree, "merge-base", "--is-ancestor", want, "HEAD")
+    if code == 0:
+        return "ahead"
+    code, _, _ = git(tree, "merge-base", "--is-ancestor", "HEAD", want)
+    return "behind" if code == 0 else "diverged"
+
+
 def blob(tree, ref, path):
     code, out, _ = git(tree, "rev-parse", f"{ref}:{path}")
     return out if code == 0 else None
@@ -98,7 +121,11 @@ def check(tree, want):
         print(f"  {note}")
         print(f"  **一件ずつの比較は出さない。** 出すと「同じ」が嘘になる")
         return 1
-    print(f"  法の現在の版: `{ref[:10]}`(基盤の木の `foundation`)")
+    how = standing(tree, ref)
+    label = {"ahead": "**この木はそれを含んでいる(遅れていない)**",
+             "behind": "**この木は遅れている**",
+             "diverged": "**分岐している** —— 自分の commit を持ち、法の commit を持っていない"}[how]
+    print(f"  法の現在の版: `{ref[:10]}`(基盤の木の `foundation`)—— {label}")
 
     findings = []
     for path in LAW_FILES:
@@ -109,12 +136,19 @@ def check(tree, want):
             if here is None:
                 continue          # どちらにも無い = まだ存在しない法。黙る
         elif here is None:
-            state = "**無い**"
-            findings.append(path)
+            state = "この木で消してある" if how == "ahead" else "**無い**"
+            if how != "ahead":
+                findings.append(path)
         elif there is None:
             state = "基盤の版が読めない"
         elif here == there:
             state = "同じ"
+        elif how == "ahead":
+            # 法を含んでいる木で中身が違う = **この木の仕事**。戻させてはいけない
+            state = "この木で変えてある"
+        elif how == "diverged":
+            state = "**分岐**"
+            findings.append(path)
         else:
             state = "**違う**"
             findings.append(path)
@@ -129,8 +163,23 @@ def check(tree, want):
             findings.append("doc/initial_notice.md § 条例")
 
     if not findings:
-        print("  **追いついている。**")
+        print("  **追いついている。**"
+              + ("**この木で変えた物は基盤へ上げる側**(`outbox` 経由)。"
+                 if how == "ahead" else ""))
         return 0
+
+    if how == "diverged":
+        print(f"  **{len(findings)} 件が食い違っている。** この木の変更か古い写しか、"
+              f"この器具では区別できない。**見分け方は1つ: この木は法を起草しているか。**")
+        print(f"  **していない(track は普通こちら)** —— 法の著者は基盤なので写しが古い:")
+        for path in findings:
+            if path.endswith("§ 条例"):
+                print(f"    # `doc/initial_notice.md` に `## 条例` 節を作る(型: doc/ordinance_spec.md)")
+            else:
+                print(f"    git checkout {ref} -- {path}")
+        print(f"  **している(`ops-review` がそれ)** —— 上を回すと自分の仕事が消える。代わりに:")
+        print(f"    git merge {ref}        # 法を取り込み、衝突だけ手で読む")
+        return 1
 
     print(f"  **{len(findings)} 件遅れている。** 回す命令(この木で):")
     for path in findings:
