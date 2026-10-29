@@ -37,13 +37,15 @@ process.on('unhandledRejection', e => { REJ = REJ || e; });
 
 (async () => {
   const els = {}, posted = [];
+  // `prompt` の戻り値は試験の途中で差し替える(**取り消し / 空 / 語**の3分岐を見るため)
+  const P = {fn: () => '試験の語'};
   const sb = {console, JSON, Math, Date, setTimeout, Set, Array, Object, String, Number,
     document: {getElementById: k => (els[k] = els[k] ||
                  (k === 'im' ? mkEl(it.sel_w, it.sel_h) : mkEl())),
                createElement: () => mkEl(), addEventListener: () => {}},
     window: {}, addEventListener: () => {}, location: {href: ''},
     encodeURIComponent: encodeURIComponent,
-    prompt: () => '試験の語', confirm: () => true, alert: m => posted.push('alert:' + m),
+    prompt: (...a) => P.fn(...a), confirm: () => true, alert: m => posted.push('alert:' + m),
     fetch: async (u, o) => {
       if (o && o.method === 'POST') { posted.push(JSON.parse(o.body)); }
       if (u.indexOf('/hit') >= 0) { HITS.push(u); }
@@ -115,6 +117,28 @@ process.on('unhandledRejection', e => { REJ = REJ || e; });
               断りが出た: posted.some(x => typeof x === 'string' && x.indexOf('1つだけ') >= 0)};
   } catch (e) { oErr = e; }
 
+  // ---- **面を選んだまま「このコマは終わり」**(2026-10-30、作者の裁定で門を足した)。
+  // 3分岐を押して記録が飛ぶまで見る —— **取り消しは1行も書かない**のが条件。
+  let dErr = null, dCancel = null, dDrop = null, dKeep = null;
+  try {
+    const n0 = posted.length;
+    ctx.toggle(it.faces[0].i);                       // (1) 取り消し
+    P.fn = () => null;
+    await ctx.pdone(); await new Promise(r => setTimeout(r, 15));
+    dCancel = {書いた行: posted.length - n0};
+    P.fn = () => '';                                 // (2) 空のまま OK = 捨てる
+    await ctx.pdone(); await new Promise(r => setTimeout(r, 25));
+    const pd = posted.filter(x => x && x.choice === 'panel_done').pop() || null;
+    dDrop = pd && {面: pd.faces.length};
+    ctx.toggle(it.faces[0].i); ctx.toggle(it.faces[1].i);   // (3) 語を入れる
+    P.fn = () => '束ねる語';
+    await ctx.pdone(); await new Promise(r => setTimeout(r, 40));
+    const cl = posted.filter(x => x && x.choice === 'cluster_on_done').pop() || null;
+    const pd2 = posted.filter(x => x && x.choice === 'panel_done').pop() || null;
+    dKeep = cl && {面: cl.faces.length, 語: cl.word,
+                   後に終わりが出た: !!pd2 && pd2.faces.length === 0};
+  } catch (e) { dErr = e; }
+
   const out = {err: err && String(err), 握り潰された誤り: REJ && String(REJ.stack || REJ), 面: nf, 札: nb, 一覧: nl,
                選択前: selTxt0, 札を押した後: selTxt1, 選択中の札: onCnt,
                一覧も押した後: selTxt2,
@@ -122,15 +146,22 @@ process.on('unhandledRejection', e => { REJ = REJ || e; });
                縮んだ画像を押す: hitOk, 縮めた倍率: SHRINK,
                押した誤り: hErr && String(hErr),
                複数の意味の印: oPost && {面: oPost.faces, 語: oPost.word},
-               一面だけという制限: oAlert, 印の誤り: oErr && String(oErr)};
+               一面だけという制限: oAlert, 印の誤り: oErr && String(oErr),
+               選択を残して終わり_取り消し: dCancel, 選択を残して終わり_捨てる: dDrop,
+               選択を残して終わり_束ねる: dKeep, 終わりの門の誤り: dErr && String(dErr)};
   console.log(JSON.stringify(out, null, 1));
   const TOL = 3;   // 丸めの許容(画素)
   const bad = err || REJ || tErr || lErr || hErr || oErr || nb !== nf || nl !== nf ||
               selTxt1 === selTxt0 || onCnt !== 1 || selTxt2 === selTxt1 ||
               !hitOk || hitOk.ずれ[0] > TOL || hitOk.ずれ[1] > TOL ||
               !oPost || oPost.faces.length !== 1 ||
-              !oAlert || oAlert.二面でも送った || !oAlert.断りが出た;
+              !oAlert || oAlert.二面でも送った || !oAlert.断りが出た ||
+              dErr || !dCancel || dCancel.書いた行 !== 0 ||
+              !dDrop || dDrop.面 !== 0 ||
+              !dKeep || dKeep.面 !== 2 || dKeep.語 !== '束ねる語' ||
+              !dKeep.後に終わりが出た;
   console.log(bad ? '**選べない。止める**'
-                  : '選べる(札・一覧の両方)。**複数の意味の印も押せる**');
+                  : '選べる(札・一覧の両方)。**複数の意味の印も押せる**。'
+                    + '**選択を残して終わりを押すと聞く**(取り消し/捨てる/束ねる)');
   process.exit(bad ? 1 : 0);
 })();

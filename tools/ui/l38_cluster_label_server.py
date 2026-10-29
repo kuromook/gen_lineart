@@ -394,12 +394,40 @@ function hit(e){
     .then(r=>r.json()).then(d=>{ if(d.i>0) toggle(d.i); else
       $('dn').textContent='そこには面がありません(面の外を押した)'; });
 }
+function post(body){
+  return fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)}).then(r=>r.json());
+}
 function save(choice,word){
   if(choice!=='panel_done' && SEL.size===0){ alert('面が選ばれていません'); return; }
-  fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({order:ST.order,faces:[...SEL].sort((a,b)=>a-b),
-                         choice:choice,word:word||''})})
-    .then(r=>r.json()).then(d=>{ if(d.next!==undefined) load(d.next); else load(ST.order); });
+  return post({order:ST.order,faces:[...SEL].sort((a,b)=>a-b),
+               choice:choice,word:word||''})
+    .then(d=>{ if(d.next!==undefined) load(d.next); else load(ST.order); });
+}
+// **面を選んだまま「このコマは終わり」を押したら聞く**(2026-10-30)。
+// それまで門は `choice!=='panel_done'` のときだけ当たっていたので、選択は
+// **語なしで `panel_done` の行に載り、まとまりとしては数えられなかった** ——
+// 「最後の1まとまりを入れたつもり」と「選択が残ったまま進んだ」が記録から分かれない。
+// **作者の裁定: 既に在る3行は操作ミス**(2026-10-30)。**行は消さない**(規律7)ので、
+// 測る側では「語の無い `panel_done` の面」として理由別に数えて落とす。
+// まとまりにした場合の `choice` は **`cluster_on_done`** —— この道から来たと分かるように。
+function pdone(){
+  if(SEL.size===0){ save('panel_done',''); return; }
+  const w=prompt('面が '+SEL.size+' 面 選ばれたままです。\n'
+    +'まとまりにするなら語を入力して OK。\n'
+    +'捨ててこのコマを終わりにするなら、空のまま OK。\n'
+    +'(どちらでもないなら キャンセル —— 1行も書きません)');
+  if(w===null) return;                       // 取り消し: 1行も書かない
+  if(w.trim()!==''){                         // まとまりにしてから、コマを終わりにする
+    post({order:ST.order,faces:[...SEL].sort((a,b)=>a-b),
+          choice:'cluster_on_done',word:w.trim()})
+      .then(()=>{ SEL=new Set();
+        return post({order:ST.order,faces:[],choice:'panel_done',word:''}); })
+      .then(d=>load(d.next!==undefined?d.next:ST.order));
+    return;
+  }
+  SEL=new Set();                             // 捨てて進む(面の無い panel_done になる)
+  save('panel_done','');
 }
 function undo(cid){
   fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -419,7 +447,7 @@ function omerge(){
 }
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
-  if(e.key==='Enter')save('panel_done','');
+  if(e.key==='Enter')pdone();
   else if(e.key==='c'||e.key==='C'){NAT=!NAT;draw();}
   else if(e.key==='n')load(Math.min(ST.order+1,ST.n-1));
   else if(e.key==='b')load(Math.max(ST.order-1,0));
@@ -475,7 +503,7 @@ __WORDS__.forEach(w=>{const b=document.createElement('button');b.textContent=w;
   b.onclick=()=>save('word',w);B.appendChild(b);});
 [['自由入力',free],['まとまりでない',()=>save('not_cluster','')],
  ['この面は複数の意味(m)',omerge],
- ['このコマは終わり',()=>save('panel_done','')]].forEach(([t,fn])=>{
+ ['このコマは終わり',pdone]].forEach(([t,fn])=>{
   const b=document.createElement('button');b.textContent=t;b.onclick=fn;B.appendChild(b);});
 load(__CUR__);
 </script></html>'''
