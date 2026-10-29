@@ -1604,6 +1604,8 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # マスクの被覆(便 2026-10-26)
                "n_cover_zero", "n_cover_full", "n_with_value",
                "n_mask_dims_differ",
+               # **マスクの原点がずれている層**(`n_mask_dims_differ` とは別の述語)
+               "n_mask_origin_shifted",
                # **畳んだ後の頁数。** 畳む前(`n_pages`)とは別の量で、差は量ではない
                "n_pages_folded")
 # 形式の列(白名簿は下の `allow` で宣言する)

@@ -126,6 +126,7 @@ COLUMN_CAVEATS = {
     "n_cover_zero": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_cover_full": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_mask_dims_differ": ["`mask_cover`(**読み手が本体の側と逆である**)"],
+    "n_mask_origin_shifted": ["`mask_cover`(**読み手が本体の側と逆である**)"],
     "n_files": ["ファイル数 / 異なり数"],
     "n_pages_folded": ["`n_pages_folded` / `share_kept`(**重複を畳んだ後の合計。年ごとには割らない**)",
                        "ファイル数 / 異なり数"],
