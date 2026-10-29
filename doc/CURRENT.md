@@ -528,9 +528,9 @@ for archived history or audit material.
 
 ## Track Ledger
 
-**2026-10-30 -- `ops-review` opened, and it is deliberately not a track**: no letter, no experiment, worktree `/home/sh1/deepl/lineart-ops-review`, branched from `foundation` at `a3dfd5a`. It takes stock of the operating rules themselves -- `CLAUDE.md`, `doc/worktree_policy.md`, the settings files, hooks, and where the skills live -- and **its only output is proposed diffs**, because §3 of `CLAUDE.md` makes that file the source of truth and says to fix it first. **The finding that justified opening it was measured before the branch was cut: there is no `hooks` key in any settings file**, so nothing at all is enforced by the harness, and the rules that depend on Claude remembering to run something are precisely the load-bearing ones -- the public-artifact allowlist check, discipline 4's ledger audit, *never commit `data/`*, and *`.gitignore` is not a gate*. Two of those four have an instrument that nobody is obliged to run; the other two have no instrument at all. **Every one of them fails silently**, which is this project's own registered trap about the name of a check being the most dangerous name. Seeded alongside it: `CLAUDE.md` sits exactly at its own 150-line ceiling, the project permission allowlist has reached 78 entries with visible debris, `experiment-montage-hygiene` is project-specific but installed account-wide where it reaches every other project, and the installed `moat` is a frozen copy in which **discipline 9, *judgement withheld is an honest conclusion* and *exposure and population are part of the bar* do not appear at all** -- `CLAUDE.md`'s bullet list is still their only instance. The briefing says to re-measure all of it rather than quote it.
+- `../lineart-ops-review` (branch `ops-review`, **not a track**) -- **opened 2026-10-30, and it is deliberately not a track**: no letter, no experiment, worktree `/home/sh1/deepl/lineart-ops-review`, branched from `foundation` at `a3dfd5a`. It takes stock of the operating rules themselves -- `CLAUDE.md`, `doc/worktree_policy.md`, the settings files, hooks, and where the skills live -- and **its only output is proposed diffs**, because §3 of `CLAUDE.md` makes that file the source of truth and says to fix it first. **The finding that justified opening it was measured before the branch was cut: there is no `hooks` key in any settings file**, so nothing at all is enforced by the harness, and the rules that depend on Claude remembering to run something are precisely the load-bearing ones -- the public-artifact allowlist check, discipline 4's ledger audit, *never commit `data/`*, and *`.gitignore` is not a gate*. Two of those four have an instrument that nobody is obliged to run; the other two have no instrument at all. **Every one of them fails silently**, which is this project's own registered trap about the name of a check being the most dangerous name. Seeded alongside it: `CLAUDE.md` sits exactly at its own 150-line ceiling, the project permission allowlist has reached 78 entries with visible debris, `experiment-montage-hygiene` is project-specific but installed account-wide where it reaches every other project, and the installed `moat` is a frozen copy in which **discipline 9, *judgement withheld is an honest conclusion* and *exposure and population are part of the bar* do not appear at all** -- `CLAUDE.md`'s bullet list is still their only instance. The briefing says to re-measure all of it rather than quote it.
 
-**2026-10-30 -- Track N (`external-standard`) opened by the user, branched from `foundation` at `1e1d5ea`, worktree `/home/sh1/deepl/lineart-external-standard`.** Its question is whether the axes this project calls 線画らしさ separate this author's lineart from lineart drawn by a model that has never seen this author -- answerable "no", and a "no" says those axes measure *is this lineart* rather than *is this this author*, so optimizing them cannot deliver the author. **Every yardstick for 線画らしさ currently comes from the author's own manuscripts**, which is why nothing so far separates author-specific properties from lineart in general; an outside model is stronger than the manuscripts on this one point and on no other. The draft registration is `doc/prereg_external_standard_draft_20261030.md` (arms, per-axis AUC as the primary value, the 2026-08-05 known cell, five negative controls, the bars and the undecided band). **It is a draft, not a registration**: seven blanks remain, and two of them -- the external pool's size and which author-side pool is used -- need the user, because population and exposure are part of the bar. Three things decide whether this track stays honest and all three are written in its briefing: **the instrument already exists** (`tools/evaluation/measure_lineart_profile.py`, built 2026-08-05 *for comparing real line-art tiles against unconditional diffusion samples*), **`stroke_decomposition.py` cannot be used at all here** because it defines A/B/C from a pair and an external standard has none, and **the per-tile CSV that would yield the primary value is already on disk** (`results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`, 1,506 rows) **and was deliberately not read while the bars were being written**. The first gate is IC1: reproduce the seven 2026-08-05 medians over the 1,489 `combined_koma_20260729` tiles, printing `|Δ|` and not a level (T149), **before one external image is generated** -- generation is cheap here, Forge is resident with an API, and cheapness is the usual reason a registration gets skipped.
+- `../lineart-external-standard` (branch `external-standard`, **Track N**) -- **opened 2026-10-30 by the user**. Branched from `foundation` at `1e1d5ea`, worktree `/home/sh1/deepl/lineart-external-standard`.** Its question is whether the axes this project calls 線画らしさ separate this author's lineart from lineart drawn by a model that has never seen this author -- answerable "no", and a "no" says those axes measure *is this lineart* rather than *is this this author*, so optimizing them cannot deliver the author. **Every yardstick for 線画らしさ currently comes from the author's own manuscripts**, which is why nothing so far separates author-specific properties from lineart in general; an outside model is stronger than the manuscripts on this one point and on no other. The draft registration is `doc/prereg_external_standard_draft_20261030.md` (arms, per-axis AUC as the primary value, the 2026-08-05 known cell, five negative controls, the bars and the undecided band). **It is a draft, not a registration**: seven blanks remain, and two of them -- the external pool's size and which author-side pool is used -- need the user, because population and exposure are part of the bar. Three things decide whether this track stays honest and all three are written in its briefing: **the instrument already exists** (`tools/evaluation/measure_lineart_profile.py`, built 2026-08-05 *for comparing real line-art tiles against unconditional diffusion samples*), **`stroke_decomposition.py` cannot be used at all here** because it defines A/B/C from a pair and an external standard has none, and **the per-tile CSV that would yield the primary value is already on disk** (`results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`, 1,506 rows) **and was deliberately not read while the bars were being written**. The first gate is IC1: reproduce the seven 2026-08-05 medians over the 1,489 `combined_koma_20260729` tiles, printing `|Δ|` and not a level (T149), **before one external image is generated** -- generation is cheap here, Forge is resident with an API, and cheapness is the usual reason a registration gets skipped.
 
 Reconciled 2026-09-30 by reading every track's own files, after this file had
 fallen 13 days behind. Each track keeps its own briefing in
@@ -2947,6 +2947,31 @@ incident that actually happened here.
    name.** Whether CLAUDE.md 3's one-line form of discipline 9 should carry the
    narrowing clause is the user's call, not a peer's; it is raised and unmade.
 
+10. **A moving anchor registers when and on what condition it moves, before it
+   moves.** Added 2026-10-30 with `CLAUDE.md`'s 第1条, which states that the human
+   standard moves. That makes re-taking a human judgement legitimate, and
+   discipline 9-5 already says a bar moved after the result is read is a bar
+   moved whichever way it went -- so **the only honest form is to declare the
+   re-take in advance**. A registration that rides on a human bar therefore names
+   **when it is re-taken, who is asked, and that both bars are printed with their
+   names when it is**. The third clause is the one that earns the rule: **past
+   results are not retracted when the bar moves** -- the bar's version is part of
+   the configuration (discipline 1), so a result reads as *correct against the bar
+   of its date*, instead of forcing the choice between retracting everything and
+   silently keeping everything each time the standard moves. **This rule is in no
+   branch of `moat`** -- installed `main` and `provisional-selection` were both
+   grepped on 2026-10-30 -- so `CLAUDE.md` 3's bullet and this entry are its only
+   instances, and the count of disciplines `moat` does not cover went from three
+   to four. Consequence recorded the same day: **the preprocessor baseline is
+   demoted to the lower bar and the human judgement becomes the real one.** That
+   withdraws nothing; there are now two bars, and beating a fixed bar is no longer
+   evidence of approaching the purpose. **Thin, and being filled by raising
+   `aesthetic-judge` rather than by writing more here** (the user's decision,
+   2026-10-30): how the re-take period is chosen rests on one measurement (15
+   tiles x 4 arms, 2026-10-04), there is no settled form for how a human
+   judgement is taken, and where two disagreeing bars leave the results read
+   against the older one is undrawn.
+
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
 understanding), reconcile the index against the filesystem, then walk the numbers
@@ -3182,6 +3207,21 @@ never the constraint.
   oracle it bounds the mechanism rather than demonstrating a score.
 
 ## Active Goal
+
+**The purpose clause is not here any more.** On 2026-10-30 the author stated what
+the project is for and the user put it in `CLAUDE.md` as 第1条, which is the only
+document always in context: *uncover what the representation called line art
+conveys, and make it usable; generation is the means, the drawing is the uncovered
+image itself but only when a human reads it as line art; what gives the work its
+direction is human judgement, not another number out of the same pipeline; the
+human standard moves, so the end is not a condition met once but keeping up with
+it; where they conflict, uncovering wins.* **This section is where the work is
+moving, not what it is for** -- the sentence below is the readable-representation
+framing it is reached through, and it was the only statement of purpose on record
+until 2026-10-30, on line 3,182 of a file this project's own law says not to read
+in full. `ops-review` measured that and named the mechanism: the law's first line
+said to write only procedure and roles, so the basic law was forbidden by its own
+drafting rule from holding a purpose.
 
 **Build a representation of line art that a human can read, then generate from
 it.** Work happens in the tracks listed above, not here; this tree is the common
