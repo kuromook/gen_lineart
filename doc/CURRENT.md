@@ -1,6 +1,8 @@
 # Current Project State
 
-Updated: 2026-10-24 JST (early). Items 1-5 are 2026-10-23: **the day Track J's
+Updated: 2026-10-30 JST. **Item 7 is 2026-10-30 and a reset session reads it
+first**: the basic law now has a purpose clause, an enforcement arm the harness
+runs, and a per-tree ordinance. Items 1-5 are 2026-10-23: **the day Track J's
 slot closed, Track L opened and produced a result, and the foundation put the
 author's artwork on a public repository.** Item 6 is this file's own compression,
 done 2026-10-24. In order of what a reset session needs:
@@ -526,11 +528,43 @@ current decisions, and next actions. Chronological details live in
 Do not read files under `archive/` directories unless the user explicitly asks
 for archived history or audit material.
 
+**7. The law has a purpose, an enforcement arm and per-tree ordinances (2026-10-30).**
+Three layers were missing and all three were filled in one day, on `ops-review`'s
+stocktake and the user's decisions. **Purpose**: the author stated what the project
+is for, and it is `CLAUDE.md`'s `## 第1条` -- uncover what the representation called
+line art conveys and make it usable; generation is the means; the drawing is the
+uncovered image, but only when a human reads it as line art; **what gives the work
+its direction is human judgement, not another number out of the same pipeline**; the
+human standard moves, so the end is keeping up rather than a condition met once. The
+clause could not go in until the file's own first line changed from "write only
+procedure and roles": **the basic law was forbidden by its own drafting rule from
+holding a purpose**, which is why the one sentence of purpose had been sitting on
+line 3,182 of a file this law says not to read in full. 150 -> 170 lines, the
+guideline deliberately exceeded by the user's decision. **Enforcement**: hooks exist
+for the first time -- `SessionStart` (standing, law freshness, the tree's ordinance),
+`Stop` (the allowlist gate), `PostToolUse` (CLAUDE.md's line budget) and a git
+`pre-commit` shell that all sixteen trees share; `.claude/settings.json` is the one
+file under `.claude/` that is tracked, so the arm travels with the branch, and
+`tools/catch_up.py` fills the trees that do not rebase. All three Claude-side hooks
+write a heartbeat line, because **a check whose normal output is silence cannot be
+distinguished from a check that never ran**. **Ordinances**: each track's briefing
+carries one fixed section, `## 条例`, holding a pointer at the higher law rather than
+a copy -- the form is `doc/ordinance_spec.md`, the budget 2,000 characters, and the
+section is what `SessionStart` injects. Six trees have one (L 1,754 / M 1,653 /
+census 1,949 / judge 1,955 / N 1,474 / C 1,994), all five active trees are caught up
+and pushed, and the two separate clones get theirs when they resume. **New
+disciplines from the same day**: 10 (a moving anchor registers when and on what
+condition it moves; past results are not retracted), 11 and 12 (Track M, measured).
+**What this costs to maintain is now visible rather than remembered**: the audit
+counts stopped trees with no ordinance in one line, and `catch_up.py` reports law
+freshness at every session start.
+
+
 ## Track Ledger
 
 - `../lineart-ops-review` (branch `ops-review`, **not a track**) -- **opened 2026-10-30, and it is deliberately not a track**: no letter, no experiment, worktree `/home/sh1/deepl/lineart-ops-review`, branched from `foundation` at `a3dfd5a`. It takes stock of the operating rules themselves -- `CLAUDE.md`, `doc/worktree_policy.md`, the settings files, hooks, and where the skills live -- and **its only output is proposed diffs**, because §3 of `CLAUDE.md` makes that file the source of truth and says to fix it first. **The finding that justified opening it was measured before the branch was cut: there is no `hooks` key in any settings file**, so nothing at all is enforced by the harness, and the rules that depend on Claude remembering to run something are precisely the load-bearing ones -- the public-artifact allowlist check, discipline 4's ledger audit, *never commit `data/`*, and *`.gitignore` is not a gate*. Two of those four have an instrument that nobody is obliged to run; the other two have no instrument at all. **Every one of them fails silently**, which is this project's own registered trap about the name of a check being the most dangerous name. Seeded alongside it: `CLAUDE.md` sits exactly at its own 150-line ceiling, the project permission allowlist has reached 78 entries with visible debris, `experiment-montage-hygiene` is project-specific but installed account-wide where it reaches every other project, and the installed `moat` is a frozen copy in which **discipline 9, *judgement withheld is an honest conclusion* and *exposure and population are part of the bar* do not appear at all** -- `CLAUDE.md`'s bullet list is still their only instance. The briefing says to re-measure all of it rather than quote it.
 
-- `../lineart-external-standard` (branch `external-standard`, **Track N**) -- **opened 2026-10-30 by the user**. Branched from `foundation` at `1e1d5ea`, worktree `/home/sh1/deepl/lineart-external-standard`.** Its question is whether the axes this project calls 線画らしさ separate this author's lineart from lineart drawn by a model that has never seen this author -- answerable "no", and a "no" says those axes measure *is this lineart* rather than *is this this author*, so optimizing them cannot deliver the author. **Every yardstick for 線画らしさ currently comes from the author's own manuscripts**, which is why nothing so far separates author-specific properties from lineart in general; an outside model is stronger than the manuscripts on this one point and on no other. The draft registration is `doc/prereg_external_standard_draft_20261030.md` (arms, per-axis AUC as the primary value, the 2026-08-05 known cell, five negative controls, the bars and the undecided band). **It is a draft, not a registration**: seven blanks remain, and two of them -- the external pool's size and which author-side pool is used -- need the user, because population and exposure are part of the bar. Three things decide whether this track stays honest and all three are written in its briefing: **the instrument already exists** (`tools/evaluation/measure_lineart_profile.py`, built 2026-08-05 *for comparing real line-art tiles against unconditional diffusion samples*), **`stroke_decomposition.py` cannot be used at all here** because it defines A/B/C from a pair and an external standard has none, and **the per-tile CSV that would yield the primary value is already on disk** (`results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`, 1,506 rows) **and was deliberately not read while the bars were being written**. The first gate is IC1: reproduce the seven 2026-08-05 medians over the 1,489 `combined_koma_20260729` tiles, printing `|Δ|` and not a level (T149), **before one external image is generated** -- generation is cheap here, Forge is resident with an API, and cheapness is the usual reason a registration gets skipped.
+- `../lineart-external-standard` (branch `external-standard`, **Track N**) -- **opened 2026-10-30 by the user**. Branched from `foundation` at `1e1d5ea`, worktree `/home/sh1/deepl/lineart-external-standard`.** Its question is whether the axes this project calls 線画らしさ separate this author's lineart from lineart drawn by a model that has never seen this author -- answerable "no", and a "no" says those axes measure *is this lineart* rather than *is this this author*, so optimizing them cannot deliver the author. **Every yardstick for 線画らしさ currently comes from the author's own manuscripts**, which is why nothing so far separates author-specific properties from lineart in general; an outside model is stronger than the manuscripts on this one point and on no other. The draft registration is `doc/prereg_external_standard_draft_20261030.md` (arms, per-axis AUC as the primary value, the 2026-08-05 known cell, five negative controls, the bars and the undecided band). **It is a draft, not a registration**: seven blanks remain, and two of them -- the external pool's size and which author-side pool is used -- need the user, because population and exposure are part of the bar. Three things decide whether this track stays honest and all three are written in its briefing: **the instrument already exists** (`tools/evaluation/measure_lineart_profile.py`, built 2026-08-05 *for comparing real line-art tiles against unconditional diffusion samples*), **`stroke_decomposition.py` cannot be used at all here** because it defines A/B/C from a pair and an external standard has none, and **the per-tile CSV that would yield the primary value is already on disk** (`results/lineart_profile_koma_ref_vs_domain_lora_line_20260805.csv`, 1,506 rows) **and was deliberately not read while the bars were being written**. The first gate is IC1: reproduce the seven 2026-08-05 medians over the 1,489 `combined_koma_20260729` tiles, printing `|Δ|` and not a level (T149), **before one external image is generated** -- generation is cheap here, Forge is resident with an API, and cheapness is the usual reason a registration gets skipped. **Law and ordinance as of 2026-10-30**: it caught itself up without being asked, wrote its own `## 条例` (**1,474 of 2,000 characters**), is byte-identical to the canonical law on all seven files, and **pushed for the first time** -- re-derived here, that push added **no image and no weight** (six `.py` and two `.md` against `foundation`), and the 914 external images stay untracked under `results/`. Its own commits record IC3 passed and NC2 run before the primary value; **those are its claims, not re-derived by the foundation.** Discipline 11 lands directly on this track: the primary value is a per-axis AUC, so "separates on every axis" is a conjunctive bar and is judged on the worst axis.
 
 Reconciled 2026-09-30 by reading every track's own files, after this file had
 fallen 13 days behind. Each track keeps its own briefing in
@@ -1727,7 +1761,20 @@ work, and the stated expectation is that the pieces make each other easier.
   version is part of the configuration). It is also the **first client of
   `tools/catch_up.py`**: this tree's `CLAUDE.md` is a 148-line copy frozen at
   branch time, its briefing is 366 lines with no `## 条例` section, and the
-  Claude-side hooks do not reach it until it catches up.
+  Claude-side hooks do not reach it until it catches up. **Done the same day, and it went
+  past what was asked**: the law is byte-identical to the canonical copy on every
+  file checked, the briefing is **366 -> 128 lines**, the ordinance is **1,955 of
+  2,000 characters**, and the branch is pushed. It built instruments rather than
+  running an experiment -- `config/judge_anchor_registry.json` with
+  `tools/judge_anchor.py`, a collection gate, and the ordinance -- and **derived the
+  re-take period from discipline 2 instead of inventing one**: the anchor leg is the
+  known cell, so the legs are re-taken in the same session as any new arm, **by event
+  rather than by calendar**, which answers the thin place that rested on a single
+  measurement. It also improved on the foundation's draft -- its own first version had
+  folded the operating rules into pointers, the draft kept more and was right to --
+  and the two numbers it refuses are its own: **`0.750` is not the anchor's
+  within-subject consistency** (it belongs to 203 comparison judgements, and the
+  anchor holds no repeats) and **`14/15` is not a failure of the scale**.
 
 ### Opened since the reconciliation
 
@@ -3180,6 +3227,11 @@ withdrawal.
 - **T96** Measure the resolution of the numbers you were handed before counting dirt in them. Track M nearly reported **167 layers with over 5% relative error** when `drawn_ratio` was merely **rounded to six decimals**; the same evening the extraction side's `ink_ratio` turned out to be rounded the same way, which puts up to `page_px x 5e-7` (5-25 px) per layer into any count converted back to pixels, and they re-ran to print exact `ink_px`. **Two independent instances in one evening**: resolution is a property of the instrument and it lands in the same digits as the defect.
 - **T94** A content fingerprint identifies content, not the page it came from, so it cannot be the join key. The foundation advised joining the panel corpus to the manuscripts on `content_fingerprint` instead of a name transform; the extraction side checked and the advice was wrong. The fingerprint is computed from the **output** line/rough JPEGs (not the `.clip`), and **132 of 248 panels -- 35 of the 65 pages -- resolve to more than one `.clip`** (`ako6\done4\ako6-14.clip` beside `done5`, `2019\ako7\...\page0068.clip` beside `2019b`), so the fingerprint is one-to-many there: 116 panels hit one source, 128 hit two, 4 hit four. The name-based join was *consistent* with it (the named page was among the candidates for 248/248) but the fingerprint cannot decide between duplicates. **The key stays `page_path`.** Two further readings: **duplicate-content sources are the majority case in this corpus, not an exception** (over half these pages), which is a fact for any work that has to say which version was used; and the check file's own `fp_page_equal` column is True on only 116 of 248 because it means *uniquely resolves*, while the claim it supports is *is among the candidates* -- a boolean travelling without its definition, the shape of discipline 1.
 - **T93** The remedy quoted the sentence it removed, so the check flagged its own fix. The pointer files that replaced the frozen ledgers explain that the old copy said *"this file is the first document to read"* -- which is exactly what check 8 searched for; a date clause hid it until a ledger commit on 2026-10-25 lit up ten repaired trees at once. A check whose predicate is a quoted string matches the text about the problem as readily as the problem.
+- **T153** A whole-branch merge needs no conflict to destroy a file: `ops-review` had replaced `doc/work_log.md` with a track-sized log, only one side had touched it, so merging would have taken theirs and dropped 15,894 lines silently. Law files are taken **by path**, and "no conflict" is not "safe" (2026-10-30, caught by the branch itself before the foundation ran it)
+- **T154** Taking a law file can remove a rule the canonical copy never had: Track M's `.gitignore` carried `labels/*.jsonl.orig`, the pre-anonymization backups of the author's answers, which hold the manuscript's proper names. Seven surfaced in `git status` the moment the foundation replaced the file. **Read your own lines in a law file before taking it; what would drop goes up to the foundation instead** (2026-10-30, the foundation's own)
+- **T155** A check that excludes "the foundation's housekeeping" has to know what the foundation maintains: `FOUNDATION_FILES` knew two files while the law had grown to thirteen, so a `.gitignore`-only commit in two clones was reported as those tracks' unreported results. The list now comes from `catch_up.py`'s `LAW_FILES`. Same shape as the 2026-10-23 failure the function was written to fix (2026-10-30)
+- **T156** The liveness check matched its own shell: `pgrep -f claude` plus a cwd test hits the Bash tool's `bash -c` line, which carries the claude snapshot path, so an empty tree reads as occupied. `pgrep -x claude` lists only sessions. T-M8's family -- **a waiter that greps for a name finds itself** (2026-10-30)
+- **T157** A track had said who it was and the check knew one spelling: notices are attributed by `発信: \`lineart-<topic>\`` or a backticked directory name, and `aesthetic-judge` signed its title `` `aesthetic-judge` → 基盤 ``, so two notices sent that day left the gap reading 25 days. A bare branch name with an arrow is now a third fallback (2026-10-30)
 
 ### 素材の性質と外部標準(塗り)
 
