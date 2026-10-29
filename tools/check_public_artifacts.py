@@ -154,7 +154,8 @@ def main():
 
     if corpus:
         print("\n**原稿の中身が追跡されている。** 置き場を作業木の外に移すこと "
-              "—— **許可表では解除しない**", file=sys.stderr)
+              "(控えの書き方は `census` の `doc/db_snapshot.md` —— 数・日時・sha256 だけで、"
+              "原稿の固有名を書かない)—— **許可表では解除しない**", file=sys.stderr)
         return 1
     if unlisted:
         print("\n表に無い追跡画像・追跡重み(公開にはユーザーの承認が要る):", file=sys.stderr)
