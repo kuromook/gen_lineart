@@ -1,0 +1,95 @@
+{
+  "_comment": [
+    "法の執行機関。**このファイルだけが `.claude/` の中で追跡されている**ので、",
+    "hooks は枝と一緒に配られる(置き場の案 (a)、ユーザー採択 2026-10-30)。",
+    "器具は `tools/hooks/`。道は `git rev-parse --show-toplevel` で解くので、",
+    "どの作業木でもその木の器具が走る。**器具が無ければ黙らずに「点検していない」と言う。**",
+    "入れたのは 1〜4(止めないもの + git の pre-commit)。**止める H1/H2 はまだ入れていない** ——",
+    "誤発火でユーザーの作業が止まるのが最悪なので、止めないものを先に通す。",
+    "設計と対照は `doc/ops_review_proposal_20261030.md` §3、条例の型は `doc/ordinance_spec.md`。",
+    "許可は 2026-10-30 に 78 → 49 → 35 件に整理してここへ移した(ユーザーの承認)。**ここは追跡されるので 16 の作業木すべてで効く**(前は基盤の木だけだった)。**追跡される = `origin` から匿名で読める。** 内訳と落とした理由は `doc/ops_review_proposal_20261030.md` §5。新しい許可は `.claude/settings.local.json`(ignore)に溜まるので、時々ここへ上げる。",
+    "2026-10-30 追記(ユーザーの判断): 2026-07-31 の実験スクリプト向けの一度しか使わない仕込み 14 件(`chmod +x`/`bash -n`/`nohup` × 4 と `mkdir -p dataset/…` 2)を落とした。スクリプトは実在するので、また回すときは聞かれる。",
+    "**3本すべてが `.claude/hook_last_run.log`(ignore 配下)に1行残す。** 沈黙が正常動作の点検は、走っていない点検と区別できない —— だから心拍を付けた。`exit=0` は指摘なし、`exit=1` は指摘あり、`exit=127` は器具が無い。",
+    "**心拍の指標は器具ごとに違う。** `guard_public_artifacts.py` は設計上いつも終了コード 0 を返す(止めるのは JSON でやる)ので、`Stop` は**印字したかどうか**を指標にする。2026-10-30 に対照で見つけた —— 終了コードで揃えると「指摘あり」が exit=0 と記録された。",
+    "**警告の経路は2本にする。** `systemMessage`(人の画面へ)と `additionalContext`(モデルの文脈へ)。1本だけだと、その経路が描画されないとき誰も気づかない —— `systemMessage` が出たかはモデルからは見えず、静かに成功したフックは画面にも出ない。"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); s=\"$r/tools/hooks/session_brief.py\"; if [ -f \"$s\" ]; then python3 -I \"$s\" ; c=$?; else printf '{\"systemMessage\":\"立場と条例の器具が %s に無い。**点検していない。**\"}\\n' \"$s\"; c=127; fi; printf \"%s SessionStart exit=%s\\n\" \"$(date -Iseconds)\" \"$c\" >> \"$r/.claude/hook_last_run.log\" 2>/dev/null; exit 0",
+            "timeout": 30,
+            "statusMessage": "立場・点検・条例"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); s=\"$r/tools/hooks/guard_public_artifacts.py\"; if [ -f \"$s\" ]; then o=$(python3 -I \"$s\" warn); c=0; [ -n \"$o\" ] && { c=1; printf \"%s\\n\" \"$o\"; }; else printf '{\"systemMessage\":\"許可表の門の器具が %s に無い。**点検していない。**\"}\\n' \"$s\"; c=127; fi; printf \"%s Stop exit=%s\\n\" \"$(date -Iseconds)\" \"$c\" >> \"$r/.claude/hook_last_run.log\" 2>/dev/null; exit 0",
+            "timeout": 20,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel 2>/dev/null); n=$(wc -l < \"$r/CLAUDE.md\"); c=0; [ \"$n\" -le 150 ] || { c=1; printf '{\"systemMessage\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\",\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\"}}\\n' \"$n\" \"$n\"; }; printf \"%s PostToolUse exit=%s\\n\" \"$(date -Iseconds)\" \"$c\" >> \"$r/.claude/hook_last_run.log\" 2>/dev/null; exit 0",
+            "if": "Edit(CLAUDE.md)",
+            "timeout": 10,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(./venv/bin/python *)",
+      "Bash(time ./venv/bin/python *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(mkdir -p *)",
+      "Bash(wc -l *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(du -sh *)",
+      "Bash(unzip -l *)",
+      "Bash(unzip -t *)",
+      "Bash(rm -f results/test_*)",
+      "Bash(rm -rf dataset/regions_*)",
+      "Bash(rm -rf results/test_regress*)",
+      "Bash(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv)",
+      "Bash(pip list *)",
+      "Bash(./venv/bin/pip freeze *)",
+      "Read(//tmp/**)",
+      "Bash(nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu --format=csv,noheader)",
+      "Bash(/home/sh1/deepl/lineart/venv/bin/pip show *)",
+      "Bash(/home/sh1/deepl/lineart/venv/bin/py-spy dump *)",
+      "Bash(cd *)",
+      "Bash(ps *)",
+      "Bash(nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader)",
+      "WebFetch(domain:esslab.jp)",
+      "Read(//home/sh1/deepl/lineart-cleanup-refiner/logs/**)",
+      "Bash(nvidia-smi --query-gpu=memory.used,memory.total --format=csv)",
+      "WebSearch",
+      "WebFetch(domain:www.cs.princeton.edu)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:cs.brown.edu)"
+    ]
+  }
+}
