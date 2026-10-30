@@ -1656,6 +1656,9 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **画素の数は件数であって割合ではない** —— 割合は `frac_*` の列に分ける
                "n_layers_with_pixels", "n_px_alpha_gt0", "n_px_alpha_255",
                "n_px_ink", "n_px_pure_black",
+               # **線画の名前の述語に当たった層を持つ頁。** `n_pages` とは別の述語で、
+               # **引き算して「線画の無い頁」と呼ばない** —— 述語が取りこぼした頁も差に入る
+               "n_pages_with_line_layer",
                "ext_clip", "ext_lip",
                "sum_n_layers_incl_folders", "sum_n_folders",
                "sum_n_text_layers", "sum_n_image_material_layers",
