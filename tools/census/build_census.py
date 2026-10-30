@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import collections
 import csv
+import itertools
 import re
 import hashlib
 import statistics
@@ -81,6 +82,11 @@ POPULATION_METRICS = {
 }
 
 # 公開してよい次元の値(**白名簿。** 宣言外の値は点検が指摘する)
+# **画素の形式の基の値。** 供給元の `pixel_formats` 列(1画素のバイト数)と、
+# **面が無い / 色だけ** の2つ。**畳んだ行の名札はこれを `+` で繋いだもの**
+PIXEL_FORMAT_BASE = ("1", "2", "5", "なし", "用紙の色")
+# **もう1台のドライブの札。** **構造 DB に1行も無い**ので、DB を歩いて出る語彙には入らない
+OTHER_DRIVE_LABELS = ("2025", "2025b")
 ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "db_files", "db_distinct", "db_layers", "lip_files",
                        "db_all_layers", "body_initcolor", "priority65",
@@ -1666,6 +1672,15 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
               # **`不明` は「作品に番号が無い」ではなく「名前の綴りから取れなかった」**
               # (T126 の家族)—— 範囲・総集編・DL 版・連番でない呼び名が入る
               "arc_no_from_name", "arc_no_unknown",
+              # **もう1台のドライブとの突き合わせ。** **ファイルの数と異なり数は別の量**
+              # (T96 の形)。**「双子を持つファイル」と「双子を持つ異なり」も別の量**
+              "n_distinct_files", "n_duplicate_files",
+              "n_files_with_twin_in_population", "n_distinct_with_twin_in_population",
+              "n_distinct_twin_hashes", "n_bytes",
+              # **墨の濃さ2段目: `alpha=255` の画素の輝度で分けた層の数。**
+              # **層の数は少なく、画素の数は多い** —— 両方を列にする
+              "n_layers_with_alpha255", "n_layers_black_at_alpha255",
+              "n_layers_white_at_alpha255", "n_px_alpha_255_white",
                # **編ごとの作品フォルダーの組の数。** `n_works` とは別の述語 ——
                # **こちらは(年の札, 作品)の組**で、同じ名前が2つの札に在れば2つ数える
                "n_work_folders",
@@ -1706,7 +1721,12 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # **墨の濃さの割合。** 件数ではないので小数が正しい。
               # `mirror_deviation` は **輝度ヒストと alpha ヒストの鏡像からのずれ** ——
               # 絵の具が純黒なら合成後は `gray = 255 - alpha` で、2つは鏡像になる
-              "frac_alpha255", "frac_pure_black_among_ink", "mirror_deviation")
+              "frac_alpha255", "frac_pure_black_among_ink", "mirror_deviation",
+              # **鏡像のずれの分解**(2026-10-31。**事前登録に無い。結果を見てから足した**)
+              # —— **白のビンが大きいときは「絵の具が灰色」ではなく「白い絵の具」**。
+              # **中のビンが大きいときだけ、灰色の絵の具に近づく**
+              "mirror_dev_white_bin", "mirror_dev_black_bin", "mirror_dev_mid_bins",
+              "share_px_alpha255_white")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1798,7 +1818,13 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
     matcher = ProseMatcher(long_words)
     allow = {
         "population": set(ALLOWED_POPULATIONS) | {"population"},
-        "year_label": set(ALLOWED_PUBLIC_TOKENS) | {"year_label", ""},
+        # **`ALLOWED_PUBLIC_TOKENS` は構造 DB を歩いて出た札**(F ドライブだけ)。
+        # **もう1台のドライブの札は、そこに入らない** —— **DB に1行も無い**ので、
+        # **別に宣言する。** 出所は作者の言明と抽出側のディレクトリー歩行であって、
+        # **この集計が数えた母集団ではない**(`other_drive_files` の行)。
+        # **ここで鳴ったのは正しい** —— 2026-10-31 に、宣言せずに書こうとして止まった
+        "year_label": (set(ALLOWED_PUBLIC_TOKENS) | {"year_label", "ALL", ""}
+                       | set(OTHER_DRIVE_LABELS)),
         "calendar_year": {"calendar_year", ""},     # 残りは数字として見る
         "v_layer_kind": set(ALLOWED_LAYER_KINDS) | {"v_layer_kind", ""},
         "layer_type": {"layer_type", ""},          # 残りは数字として見る
@@ -1832,7 +1858,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                                  "**食い違い**", "no", "yes", ""},
         "quantity": {"quantity", "n_files", "n_distinct", "excess",
                      "files_in_clusters", "clusters", ""},
-        "format": {"format", "clip", "lip", "both", ""},
+        "format": {"format", "clip", "lip", "both", "ALL", ""},
         "bound_class": {"bound_class", *{c for c, _, _ in BOUND_CLASSES}, ""},
         "occluder_class": {"occluder_class", occluders.BASELINE_KEY,
                            *{k for k, _, _, _ in occluders.CLASSES},
@@ -1851,7 +1877,11 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "stratum": {"stratum", "L1", "L2", "C1", "C2", ""},
         # **作者の語のまま。** census が付けた分類ではない(2026-10-30)
         "arc": {"arc", "学祭編", "fanbox編", "依頼作品", "**未裁定**", ""},
-        "pixel_format": {"pixel_format", "2", "5", "2+5", "用紙の色", "なし", ""},
+        # **基の値は供給元が出す5つ**(1画素のバイト数 1/2/5、面が無い、色だけ)。
+        # **畳んだ行は `+` で繋ぐ**ので、**その組み合わせも宣言する**(鍵は並び順)
+        "pixel_format": ({"pixel_format", "ALL", ""} | set(PIXEL_FORMAT_BASE)
+                         | {"+".join(c) for n in range(2, 6)
+                            for c in itertools.combinations(PIXEL_FORMAT_BASE, n)}),
         # **16刻みのビンの名前。** 中央値そのものは材料に無い
         "median_gray_ink_bin": ({"median_gray_ink_bin", ""}
                                 | {f"{i*16}-{i*16+15}" for i in range(16)}),
