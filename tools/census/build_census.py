@@ -1652,6 +1652,10 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_read_error", "n_pages_with_layers",
                "n_drawn_gt0", "n_drawn_zero", "n_drawn_blank", "n_has_image_material",
                "n_pages_without_work", "n_works", "n_rows",
+               # **墨の濃さ(1段目)。** 層の数と、画素の数。
+               # **画素の数は件数であって割合ではない** —— 割合は `frac_*` の列に分ける
+               "n_layers_with_pixels", "n_px_alpha_gt0", "n_px_alpha_255",
+               "n_px_ink", "n_px_pure_black",
                "ext_clip", "ext_lip",
                "sum_n_layers_incl_folders", "sum_n_folders",
                "sum_n_text_layers", "sum_n_image_material_layers",
@@ -1685,7 +1689,11 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               "share_ancestor_hidden",
               # **残る割合** = 畳んだ後 ÷ 畳む前。件数ではないので小数が正しい
               "share_kept",
-              "median_mask_cover", "share_cover_zero", "share_cover_full")
+              "median_mask_cover", "share_cover_zero", "share_cover_full",
+              # **墨の濃さの割合。** 件数ではないので小数が正しい。
+              # `mirror_deviation` は **輝度ヒストと alpha ヒストの鏡像からのずれ** ——
+              # 絵の具が純黒なら合成後は `gray = 255 - alpha` で、2つは鏡像になる
+              "frac_alpha255", "frac_pure_black_among_ink", "mirror_deviation")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1698,9 +1706,18 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "probe", "first_year_label", "last_year_label",
             # **`scope` と `grain` は別の列である** —— 同じ列名に2つの量を入れない(T138)。
             # `scope` は前方割合を測った群(頁 / 親)、`grain` は母集団の表の行の粒度
-            "matched_on", "scope", "grain")
+            "matched_on", "scope", "grain",
+            # **墨の濃さ(1段目)の次元。** `work_id` は**匿名の作品番号** ——
+            # **作品名は公開物に出さない**(段 A)。対応は `data/census_full/` 側にしか無い。
+            # `median_gray_ink_bin` は**ビンの名前であって中央値ではない**(ヒストが16刻み)
+            "work_id", "stratum", "pixel_format", "median_gray_ink_bin")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
-PROSE_COLS = ("predicate", "caveat", "needs", "note", "answers", "not_answers",
+# **ヒストグラムの列は1セルに16個の数を入れた文字列。** 件数の列の規則(数字か空欄)には
+# 当たらないので、**より厳しい側**(散文 = 固有名の部分一致)に宣言する。
+# **宣言しないと「種類が宣言されていない列」で鳴る** —— 2026-10-30 に手書きで通して踏んだ
+HIST_COLS = ("hist_gray_alpha_gt0", "hist_alpha")
+PROSE_COLS = (*HIST_COLS,
+              "predicate", "caveat", "needs", "note", "answers", "not_answers",
               "detail", "drawn_ratio_usable_why", "column", "trap", "by", "as_of",
               "measured_by", "source", "supplier", "sha256",
               "meaning", "evidence", "content", "direction", "material_kind", "why",
@@ -1813,6 +1830,13 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "gap_bucket": {"gap_bucket", *{b for _, b in faint.GAP_BUCKETS}, ""},
         "probe": occluders.probe_tokens(),
         # **年の札は `occluder_vocab_full.csv` を書くときに形を強制して入れる**
+        # **匿名の作品番号。** 段 A は作品名を出さないので、番号そのものが次元である
+        "work_id": {"work_id", "ALL", ""} | {f"W{i}" for i in range(1, 1000)},
+        "stratum": {"stratum", "L1", "L2", "C1", "C2", ""},
+        "pixel_format": {"pixel_format", "2", "5", "2+5", "用紙の色", "なし", ""},
+        # **16刻みのビンの名前。** 中央値そのものは材料に無い
+        "median_gray_ink_bin": ({"median_gray_ink_bin", ""}
+                                | {f"{i*16}-{i*16+15}" for i in range(16)}),
         "first_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"first_year_label", ""},
         "last_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"last_year_label", ""},
     }
