@@ -3064,6 +3064,12 @@ incident that actually happened here.
    N3 grid went 107x1 -> 10x14, so **N3's win or loss cannot be compared across
    units.**
 
+   **Its sibling, raised by the same track the same day (T158): equal totals are not the
+   same members.** Two populations of 7,663 pages each passed a sum-only check while 8 pages
+   differed, 4 on each side with no overlap. **A sum is the weakest form of a range** -- it
+   has no extremes to inspect at all, so it cannot show which rows moved. `census`'s rule to
+   name each population separately is what made it readable.
+
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
 understanding), reconcile the index against the filesystem, then walk the numbers
@@ -3183,6 +3189,7 @@ withdrawal.
 - **T54** `cluster_set`'s unit is built from proximity alone, so it mixes parts and silently drops strokes.
 - **T56** A summary statistic taken over *all* ink is a reading of the solid areas whenever fills are present.
 - **T61** A fill can be white, and an instrument that counts ink cannot see it.
+- **T158** Two populations can total the same number without holding the same members, so a gate on the sum alone passes while the membership differs. Track M, 2026-10-30, measured on its own materials and copied here at M's request as the sibling of discipline 12: the inventory's coverage and the pixel run **both came to 7,663** pages, so the check 「the total is 7,663」 passed -- and **8 pages differ**, 4 on each side with **no overlap** (inventory ∩ pixels = 7,659; 4 sit directly under a year, outside the inventory's unit; 4 sit inside a work folder the pixel run never reached, and those were excluded in advance as having no layers by `doc/prereg_occlusion_20261027.md`). The gap became visible only because `census` had required the two populations to be **named separately** -- the naming rule was what made the difference readable, not a new measurement. **The counts are M's, and the identity of manuscript pages is `census`'s to rule on (CLAUDE.md §4); the foundation records the mechanism only.** **Refutation condition: the intersection is printed beside both totals, and each side's excess is counted with its reason.**
 
 ### 道具の実装とバグ
 
