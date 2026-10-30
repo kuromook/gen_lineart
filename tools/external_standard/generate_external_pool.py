@@ -28,6 +28,13 @@ CFG = 6.0
 SIZE = 1024
 SEED_BASE = 20261030000
 
+# Third angle (2026-10-30, the user's ruling "新しいシードでやってみて"): the
+# external arm is drawn again so that this angle's external side is not the
+# pixels whose axis values were already read in the first two versions. Only
+# the seed base moves; the checkpoints, the prompt bundle, the negative and
+# every setting above stay as section 9-3 registered them.
+SEED_BASE_SECOND_DRAW = 20261031000
+
 # Second registration (2026-10-30, user's ruling to match the image pipelines).
 # The author's tiles come from panels that were downscaled before the 480 window
 # was cut; the first run's external side was never downscaled, which showed up
@@ -56,7 +63,7 @@ CHECKPOINTS = {
 }
 
 
-def generate(checkpoint, prompt, negative, seed, timeout):
+def generate(checkpoint, prompt, negative, seed, timeout, hires=False):
     payload = {
         "prompt": prompt,
         "negative_prompt": negative,
@@ -69,7 +76,7 @@ def generate(checkpoint, prompt, negative, seed, timeout):
         "seed": seed,
         "override_settings": {"sd_model_checkpoint": checkpoint},
         "override_settings_restore_afterwards": False,
-        **HIRES,
+        **(HIRES if hires else {}),
     }
     request = urllib.request.Request(
         API,
@@ -90,6 +97,18 @@ def main():
     parser.add_argument("--tag", default="", help="suffix for the output dirs (smoke test)")
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--retries", type=int, default=3)
+    parser.add_argument(
+        "--seed-base",
+        type=int,
+        default=SEED_BASE,
+        help=f"registered seed base; the second draw uses {SEED_BASE_SECOND_DRAW}",
+    )
+    parser.add_argument(
+        "--hires",
+        action="store_true",
+        help="2048 ESRGAN pass -- OFF by default: the second registration ruled "
+        "the 2048 rebuild off, so the registered exposure is 1024 with no pass",
+    )
     args = parser.parse_args()
 
     spec = json.load(open(args.prompt_set))
@@ -108,7 +127,10 @@ def main():
         log.flush()
         print(f"{stamp} {line}", flush=True)
 
-    say(f"=== start: {len(prompts)} prompts x {len(CHECKPOINTS)} checkpoints ===")
+    say(
+        f"=== start: {len(prompts)} prompts x {len(CHECKPOINTS)} checkpoints "
+        f"| seed_base={args.seed_base} hires={args.hires} size={SIZE} ==="
+    )
     counts = collections.Counter()
     started = time.time()
 
@@ -117,14 +139,16 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
         say(f"[{name}] -> {out_dir}")
         for i, prompt in enumerate(prompts):
-            seed = SEED_BASE + i
+            seed = args.seed_base + i
             path = out_dir / f"external_{name}_{i:04d}_seed{seed}.png"
             if path.exists():
                 counts[f"{name}/skipped_present"] += 1
                 continue
             for attempt in range(args.retries):
                 try:
-                    image = generate(checkpoint, prompt, negative, seed, args.timeout)
+                    image = generate(
+                        checkpoint, prompt, negative, seed, args.timeout, args.hires
+                    )
                     path.write_bytes(image)
                     counts[f"{name}/written"] += 1
                     break
