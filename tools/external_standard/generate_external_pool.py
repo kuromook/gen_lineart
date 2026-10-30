@@ -28,6 +28,27 @@ CFG = 6.0
 SIZE = 1024
 SEED_BASE = 20261030000
 
+# Second registration (2026-10-30, user's ruling to match the image pipelines).
+# The author's tiles come from panels that were downscaled before the 480 window
+# was cut; the first run's external side was never downscaled, which showed up
+# as half the line width and twenty times the pure black. So the external side
+# is now made at 2048 and downscaled before the window is cut.
+#
+# The user judged the three candidates by eye and picked the ESRGAN pass: the
+# direct-2048 render was read as having frayed strokes and the Latent pass as
+# having coloured fringes. That choice is recorded with its cost -- an ESRGAN
+# upscale carries 1024px worth of stroke detail into a 2048px canvas, so
+# downscaling it returns roughly to where it started. The history is matched
+# only halfway, and the registration says so.
+HIRES = {
+    "enable_hr": True,
+    "hr_scale": 2.0,
+    "hr_upscaler": "R-ESRGAN 4x+ Anime6B",
+    "hr_second_pass_steps": 14,
+    "denoising_strength": 0.40,
+    "hr_additional_modules": [],  # forge requires this key or the call 500s
+}
+
 # Registered checkpoints (section 9-1).
 CHECKPOINTS = {
     "animagine_xl_31": "animagine-xl-3.1.safetensors",
@@ -48,6 +69,7 @@ def generate(checkpoint, prompt, negative, seed, timeout):
         "seed": seed,
         "override_settings": {"sd_model_checkpoint": checkpoint},
         "override_settings_restore_afterwards": False,
+        **HIRES,
     }
     request = urllib.request.Request(
         API,
