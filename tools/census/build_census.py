@@ -87,7 +87,10 @@ ALLOWED_POPULATIONS = ("req3_layer_kind", "added33_structure",
                        "delivery_png", "clip_files", "grad_v1_v2",
                        # **まだ1頁も入っていない母集団**(ユーザーの決定 2026-10-30)——
                        # **鍵を先に通しておく**。行は 0 件で立ち、`needs` が何を待つか書く
-                       "comicstudio_pages")
+                       "comicstudio_pages",
+                       # **母集団の外に在ると分かっている原稿**(作者 2026-10-30)——
+                       # **ファイルの数だけ届いた。頁として同定していない**
+                       "other_drive_files")
 ALLOWED_LAYER_KINDS = ("raster", "mask_fill", "image_material", "other", "text",
                        "paper", "story_info", "filter", "gradation", "vector", "3d",
                        # **フォルダーの2種は、マスクの便にしか出てこない**(2026-10-28)——
@@ -1659,6 +1662,10 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **線画の名前の述語に当たった層を持つ頁。** `n_pages` とは別の述語で、
                # **引き算して「線画の無い頁」と呼ばない** —— 述語が取りこぼした頁も差に入る
                "n_pages_with_line_layer",
+              # **編の中の通し番号が入った組と、入らなかった組。**
+              # **`不明` は「作品に番号が無い」ではなく「名前の綴りから取れなかった」**
+              # (T126 の家族)—— 範囲・総集編・DL 版・連番でない呼び名が入る
+              "arc_no_from_name", "arc_no_unknown",
                # **編ごとの作品フォルダーの組の数。** `n_works` とは別の述語 ——
                # **こちらは(年の札, 作品)の組**で、同じ名前が2つの札に在れば2つ数える
                "n_work_folders",
@@ -2040,6 +2047,12 @@ def write_provenance(outdir: str, as_of: str):
         rows.append([v["column"], "**値が動く予定の列**", "抽出側(um350)", as_of,
                      v["n_affected_in_req3"], "", "yes",
                      f'{v["scope"]}: {v["what"]} —— {v["why"]}。{v["note"]}'])
+    # **作者から直接受けた属性。** **便そのものが材料で、CSV ではない** ——
+    # **行の数は層でも頁でもなく言明の数である。** sha256 の列は空けてある
+    # (**便は markdown で、数を1つも運んでいない**)
+    for a in sources.AUTHOR_NOTICES:
+        rows.append([a["source"], "**作者から直接受けた属性**", a["supplier"],
+                     a["as_of"], a["n_rows"], "", "", a["note"]])
     return write_csv(os.path.join(outdir, "provenance.csv"), header, rows)
 
 
