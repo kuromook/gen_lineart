@@ -1659,6 +1659,9 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **線画の名前の述語に当たった層を持つ頁。** `n_pages` とは別の述語で、
                # **引き算して「線画の無い頁」と呼ばない** —— 述語が取りこぼした頁も差に入る
                "n_pages_with_line_layer",
+               # **編ごとの作品フォルダーの組の数。** `n_works` とは別の述語 ——
+               # **こちらは(年の札, 作品)の組**で、同じ名前が2つの札に在れば2つ数える
+               "n_work_folders",
                "ext_clip", "ext_lip",
                "sum_n_layers_incl_folders", "sum_n_folders",
                "sum_n_text_layers", "sum_n_image_material_layers",
@@ -1713,7 +1716,10 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             # **墨の濃さ(1段目)の次元。** `work_id` は**匿名の作品番号** ——
             # **作品名は公開物に出さない**(段 A)。対応は `data/census_full/` 側にしか無い。
             # `median_gray_ink_bin` は**ビンの名前であって中央値ではない**(ヒストが16刻み)
-            "work_id", "stratum", "pixel_format", "median_gray_ink_bin")
+            "work_id", "stratum", "pixel_format", "median_gray_ink_bin",
+            # **編(シリーズ)。作者の裁定 2026-10-30。** フォルダーの属性で、頁の属性ではない。
+            # **鍵は(年の札, 作品フォルダー)の組** —— 同じ名前が2つの編に在るので名前では割れない
+            "arc")
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 # **ヒストグラムの列は1セルに16個の数を入れた文字列。** 件数の列の規則(数字か空欄)には
 # 当たらないので、**より厳しい側**(散文 = 固有名の部分一致)に宣言する。
@@ -1836,6 +1842,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # **匿名の作品番号。** 段 A は作品名を出さないので、番号そのものが次元である
         "work_id": {"work_id", "ALL", ""} | {f"W{i}" for i in range(1, 1000)},
         "stratum": {"stratum", "L1", "L2", "C1", "C2", ""},
+        # **作者の語のまま。** census が付けた分類ではない(2026-10-30)
+        "arc": {"arc", "学祭編", "fanbox編", "依頼作品", "**未裁定**", ""},
         "pixel_format": {"pixel_format", "2", "5", "2+5", "用紙の色", "なし", ""},
         # **16刻みのビンの名前。** 中央値そのものは材料に無い
         "median_gray_ink_bin": ({"median_gray_ink_bin", ""}
