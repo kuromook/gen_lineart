@@ -3070,6 +3070,39 @@ incident that actually happened here.
    has no extremes to inspect at all, so it cannot show which rows moved. `census`'s rule to
    name each population separately is what made it readable.
 
+13. **A column may not stand in for the author's classification until it is shown
+   to reproduce it.** Proposed by Track M 2026-10-31 at the user's initiative, and
+   adopted here with the number. **The same tree measured both sides on the same
+   day**: for mask layers the column `draw_color_enable == 1` reproduced the
+   author's labelling exactly (**104/104** `MASK` on the base, **0** `MASK` among
+   the 48 that are not), while for line-art layers seven candidate columns and
+   their combinations produced **no exact match -- best hit rate 0.620 with 5
+   misses** (`sat_mean`, `preview_dark`, `black_among_drawn`, `drawn_gray_mean`,
+   `drawn_ratio` and pairs of them). So the rule is not "do not identify with
+   columns": it is **show the reproduction before substituting, and if it does not
+   reproduce, judge by eye or ask `census` for the column**. The author said the
+   same thing the same day -- *"there is at present no mechanism that decides a
+   line-art layer from statistics, so it has to be judged by eye"* -- so
+   **"there is no automatic rule" stands as an honest conclusion** (the
+   judgment-withheld clause above).
+   **The check that shows it is working: wherever identification is done by a
+   column, the agreement with the author's classification is printed -- hit rate
+   and misses, both named.**
+   Already paid for twice. Track L's gate `preview_dark >= 0.5` **dropped 45
+   layers the author had named `線画`** (5,798,333 px, 2026-10-26; L found it by
+   looking at native crops, and the cause was M's T-M3). And
+   `black_among_drawn` / `drawn_gray_mean` / `preview_dark` **cannot see a
+   coloured line layer at all**, so the hole in the columns is not only "a
+   coloured base is invisible" but also "a coloured line is invisible".
+   The delivered `v_layer_kind` does not separate line layers either, so the
+   column has to be **asked for, not derived** -- and asking is `census`'s domain
+   (CLAUDE.md 4), which is where M's ordinance 10 already sent manuscript facts.
+   **This generalises that ordinance from manuscript facts to the identification
+   of a kind.** Its neighbours: discipline 6 says the author decides what a
+   picture depicts, and this says the author's classification is also the ground
+   truth for **which layer is which**; T106 is the same failure on the naming
+   side, so the pair is **name and column**.
+
 **When you suspect the knowledge has already muddled**, stop producing results
 and run these in order: re-run the anchors (separates a broken tool from a broken
 understanding), reconcile the index against the filesystem, then walk the numbers
