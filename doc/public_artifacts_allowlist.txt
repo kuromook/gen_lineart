@@ -50,3 +50,14 @@ results/lessons/compare_combined_koma_direct_unet_20260801.png               # 2
 results/lessons/compare_combined_koma_direct_unet_dense_28ep_20260801.png    # 2400x4104
 results/lessons/compare_combined_koma_direct_unet_finegrid_20260802_trajectory.png # 3840x4104
 results/lessons/crop_compare_finegrid_20260802.png                           # 4320x2250 (切り出しの比較)
+
+# --- A0 の5段 (colour-manuscripts branch / Track M) ---
+# Track M が 2026-10-31 14:15 の 9004111 で追跡に入れた
+# (「作者の承認を得た」と commit に記録)。**表への追記は 2026-10-31 にユーザーが承認**
+# (Track N のセッションで、門に止められたのをきっかけに)。
+# 原寸の切り出しと、その段階ごとの中間像。原稿由来の画素を含む。
+results/lessons/m95_a0_stages/P0151_W07_a_input.png        # 入力
+results/lessons/m95_a0_stages/P0151_W07_b_quantised.png    # 量子化
+results/lessons/m95_a0_stages/P0151_W07_c_components.png   # 連結成分
+results/lessons/m95_a0_stages/P0151_W07_d_floor.png        # 床
+results/lessons/m95_a0_stages/P0151_W07_e_faces.png        # 面
