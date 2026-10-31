@@ -96,6 +96,12 @@ def fetch(con):
                    f" and l.name like '{RENDER_LIKE}')"),
         gates[6]: "p.page_path not in (" + ",".join(
             "'" + x.replace("'", "''") + "'" for x in PILOTS) + ")",
+        # **母集団の中にも重複が在る。** **代表は「最も早い札」**(作者の裁定 2026-10-28:
+        # **時期は最も早い札で数え、上限であると書く**)。**mtime はコピー時刻で使えない**
+        gates[7]: ("p.page_path in (select page_path from ("
+                   " select page_path, row_number() over ("
+                   "   partition by f_sha256 order by year, page_path) rn"
+                   " from file_hashes join pages using(page_path)) where rn = 1)"),
     }
     prev = None
     for g in gates:
@@ -137,6 +143,21 @@ def fetch(con):
                  prev - len(pool)])
     prev = len(pool)
 
+    # **同じ作品名を2つの札から取らない。** **双子ではない**(hash が違う)が、
+    # **同じ頁名・ほぼ同じ彩度の組が在り、8枠のうち2枠を同じ絵に使うことになる。**
+    # **残すのは最も早い札**(作者の裁定の向き。2026-10-28)
+    seen_work = set()
+    deduped = []
+    for c in sorted(pool, key=lambda c: (c[2], c[1], c[0])):
+        if c[2] in seen_work:
+            continue
+        seen_work.add(c[2])
+        deduped.append(c)
+    pool = deduped
+    rows.append([gates[gi + 2], len(pool), len({(c[1], c[2]) for c in pool}),
+                 prev - len(pool)])
+    prev = len(pool)
+
     # **年の札ごとに `PER_YEAR_CAP` 頁まで。** **年代が偏らないため**(条件5:
     # **世代もプールである** —— 制作工程は年で移り変わる)
     per_year = collections.Counter()
@@ -147,7 +168,7 @@ def fetch(con):
         per_year[c[1]] += 1
         sent.append(c)
     sent.sort(key=lambda c: (c[1], -c[3]))
-    rows.append([gates[gi + 2], len(sent), len({(c[1], c[2]) for c in sent}),
+    rows.append([gates[gi + 3], len(sent), len({(c[1], c[2]) for c in sent}),
                  prev - len(sent)])
     return rows, cands, pool, sent
 
