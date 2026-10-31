@@ -1,5 +1,6 @@
 delivery_group_a,delivery_group_b,content_match,n_png_names
 カラー原稿,カラー原稿,same,109
+カラー原稿,カラー原稿(書き足し),same,58
 ベタのマスク,ベタのマスク,different,46
 作品ごとの層の一括納品,優先65頁のグラデ,different,152
 作品ごとの層の一括納品,優先65頁のグラデ,same,3

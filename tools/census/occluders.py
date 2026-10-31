@@ -40,6 +40,8 @@ import json
 import os
 import re
 
+import delivery      # **納品フォルダーの名簿を共有する**(門を1つにするため)
+
 ROOT_DEFAULT = "/home/sh1/deepl/lineart/data/incoming_manuscript"
 
 # **3D は経路が2つある**(作者の言明、2026-10-27):
@@ -93,6 +95,13 @@ def load_named_layers(root: str, drops):
     """
     pages = collections.defaultdict(list)
     for path in sorted(glob.glob(os.path.join(root, "*", "*.json"))):
+        # **PNG の表と同じ名簿を当てる。** **当てていなかったので、
+        # 2026-10-31 の書き足し納品がこちらだけに入り、`undecidable` が
+        # 307 → 456 に動いた** —— 同じ木に2つの門が在ると、片方は黙って通す
+        folder = os.path.relpath(path, root).split(os.sep)[0]
+        if folder not in delivery.GROUPS:
+            drops.drop(f"宣言していない納品フォルダー(manifest): {folder}")
+            continue
         try:
             d = json.load(open(path, encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as e:

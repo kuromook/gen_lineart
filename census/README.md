@@ -53,6 +53,11 @@
 | `arc_numbering.csv` | **編の中の通し番号。** 42組のうち入ったのは 16組で、**名前の綴りから取った値** —— **`不明` は「番号が無い」ではなく「名前から取れなかった」** |
 | `other_drive_overlap.csv` | **もう1台のドライブ(母集団の外)との被り。** 1,185 ファイルのうち **385 が母集団と1バイトも同じ**。**同じ絵かには届かない**(描き直しは別の hash) |
 | `other_drive_twin_years.csv` | 双子が母集団のどの札に在るか。**札ごとの数は足せない**(同じ hash が複数の札の下に在る) |
+| `page_notes.csv` | **頁1枚ごとの但し書き。常設の欄**(作者の指示 2026-10-31)。**「悪い原稿」の印ではない** —— 作者:**「工程が確定しない時期や忙しくて拙速になることはある」。** **1つの頁に複数付き得る。** **「工程のフローを守れているか」は列にならない**(作者が「仕方ない」と裁定)—— **計算で判定せず、この欄を読んで判断する**。固有名は**番号つきで伏せてある** |
+| `author_process.csv` | **制作の方式**(作者の記入式の表 2026-10-31、Track N 経由)。**下絵と線画は別の列** —— **下絵は11組すべてアナログで分散がゼロ。** **時期の効果として読めない**(アナログ線画の3組はすべて 2024 系の札)。**空欄は「デジタル」ではない**(母集団 320組のうち裁定は 11組) |
+| `colour_ratio_vs_author.csv` | **`color_ratio` は作者の「カラーか」の分類を再現しない** —— 裁定の在る6頁で**最良 5/6**。**モノクロと裁定された頁 0.0646 > カラーの頁 0.0274。** **規律13 の点検の印字である** |
+| `colour_ratio_by_author_class.csv` | 作者の分類ごとの `color_ratio` の幅。**幅が重なっている** —— それが「再現しない」の実体 |
+| `colour_pilot_gates.csv` | **カラーイラスト頁の候補を選ぶ門**(Track M の依頼2)。**各行は前の行まで通ったものに次の条件を当てた数で、落ちた数を隣に書く**(規律9)。**行を足さない**(入れ子) |
 | `caveats.csv` | **各列の「答えない問い」。** この集計の本体 |
 | `provenance.csv` | 受領 CSV の sha256 と、**値が動く予定の列** |
 
@@ -137,6 +142,14 @@
 ## 点検(**走らせずに commit しない**)
 
 ```bash
+# **先に部分の器具を回す**(どれも `census/` に表を書く。回さないと前の走行の表が残る)
+./venv/bin/python tools/census/page_notes.py        # 頁の但し書き(常設の欄)
+./venv/bin/python tools/census/author_process.py    # 制作の方式(作者の裁定)
+./venv/bin/python tools/census/colour_pilot.py      # カラー頁の候補 + 規律13 の点検
+./venv/bin/python tools/census/arcs.py              # 編の表(転記の点検つき)
+./venv/bin/python tools/census/other_drive.py       # もう1台のドライブとの被り
+./venv/bin/python tools/census/ink_darkness.py      # 墨の濃さ 1段目・2段目
+
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)
 ./venv/bin/python tools/census/known_cell_supplier_table.py # 供給元の手書きの表と突き合わせ
