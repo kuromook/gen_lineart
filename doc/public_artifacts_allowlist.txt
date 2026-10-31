@@ -50,3 +50,15 @@ results/lessons/compare_combined_koma_direct_unet_20260801.png               # 2
 results/lessons/compare_combined_koma_direct_unet_dense_28ep_20260801.png    # 2400x4104
 results/lessons/compare_combined_koma_direct_unet_finegrid_20260802_trajectory.png # 3840x4104
 results/lessons/crop_compare_finegrid_20260802.png                           # 4320x2250 (切り出しの比較)
+
+# --- A0 の5段 (colour-manuscripts branch / Track M) ---
+# **2026-10-31 にユーザーが承認**:「この5枚は外部公開 OK とする」。
+# 器具 `tools/colour/m95_show_a0_stages.py` が描いた目視用の5段 (測定ではない)。
+# 窓は W07 / P0151、原寸 1024x1024。原稿由来の画素を含む。
+# `results/lessons/**` は .gitignore から明示的に外されているので、意図して追跡されたもの
+# (`results/m95_a0_stages/` の元の5枚は ignore のまま。追跡するのはこちらの写しだけ)。
+results/lessons/m95_a0_stages/P0151_W07_a_input.png        # 入力 (CanvasPreview を原寸へ)
+results/lessons/m95_a0_stages/P0151_W07_b_quantised.png    # 8段の量子化
+results/lessons/m95_a0_stages/P0151_W07_c_components.png   # 等値の8連結成分 (床の前、2,860)
+results/lessons/m95_a0_stages/P0151_W07_d_floor.png        # 床で落ちる画素 (赤、7.77%)
+results/lessons/m95_a0_stages/P0151_W07_e_faces.png        # 残った 137面の境界 1px
