@@ -44,6 +44,13 @@ def branch():
 # (選別は測定である)。収まらない条例は起草の欠陥で、実行時の条件ではない。
 ORDINANCE_BUDGET = 2000
 HEADING = "## 条例"
+# **節は行頭の見出しだけを採る。** 2026-10-30 に基盤が自分で踏んだ: 休止木の引き継ぎの先頭に
+# 「次に `## 条例` を読む」という案内を1行足したところ、素の `in` と `split` がその**案内**に
+# 当たり、案内から次の見出しまでの前置きを条例として注入した(実体は 307 行目に在った)。
+# 案内を持つだけで節が無い木では、**「無い」と言う枝も通らなくなる** —— 無いことを無いと
+# 言えなくなるのが最も悪い壊れ方である(`names_are_not_checks`)。T160。
+HEADING_RE = re.compile(r"^## 条例\s*$", re.M)
+SECTION_END_RE = re.compile(r"^## ", re.M)
 
 
 def ordinance():
@@ -52,12 +59,13 @@ def ordinance():
     if not f.exists():
         return ["**引き継ぎ書が無い**(`doc/initial_notice.md`)—— 基盤に問う。"]
     text = f.read_text(encoding="utf-8")
-    if HEADING not in text:
+    m = HEADING_RE.search(text)
+    if m is None:
         return [f"**この track に `{HEADING}` 節が無い。** 条例は引き継ぎの中に散っている可能性が"
                 f"ある。型は基盤の `doc/ordinance_spec.md`。**無いことを無いと言う** —— "
                 "節が無いのは「規則が無い」ではない。"]
-    body = text.split(HEADING, 1)[1]
-    body = body.split("\n## ", 1)[0].strip()
+    body = text[m.end():]
+    body = SECTION_END_RE.split(body, maxsplit=1)[0].strip()
     body = re.sub(r"<!--.*?-->", "", body, flags=re.S).strip()  # 編集者向けの注は入れない
     n = len(body)
     head = f"**条例**({n} 字"
