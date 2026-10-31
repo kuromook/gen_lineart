@@ -35,6 +35,7 @@
 終了コード: 0 = 追いついている(先にいる場合も) / 1 = 遅れている物が在る / 2 = 器具が走れない
 **何も書き換えない。** 印字した命令を回すのは、その木に座っている者。
 """
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -156,7 +157,9 @@ def check(tree, want):
 
     f = tree / "doc" / "initial_notice.md"
     if f.exists():
-        has = "## 条例" in f.read_text(encoding="utf-8")
+        # **行頭の見出しだけ。** 引き継ぎの中の「`## 条例` を読む」という案内に当たると、
+        # 節が無い木を「在る」と報告する(T160。注入の器具が同じ形で壊れていた)
+        has = re.search(r"^## 条例\s*$", f.read_text(encoding="utf-8"), re.M) is not None
         print(f"    {'同じ' if has else '**無い**':<18} doc/initial_notice.md § 条例"
               f"{'' if has else '  ← 型は doc/ordinance_spec.md'}")
         if not has:
