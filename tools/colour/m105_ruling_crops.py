@@ -27,7 +27,10 @@
 
 **出力は `results/`(gitignore)。原稿の画素なので追跡しない。`SendUserFile` で直接送る。**
 
-  <venv>/python tools/colour/m105_ruling_crops.py
+**`--full`**: **窓を切らず、画布全体を原寸で出す**(作者の求め。**切り出しの元**)。
+**縮小しない。** 名前は `_full_` を挟む。**窓の位置は印字した座標で読む。**
+
+  <venv>/python tools/colour/m105_ruling_crops.py [--full] [--only <頁の一部>]
 """
 import collections
 import json
@@ -75,11 +78,14 @@ def clamp(cx, cy, grid):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    full = '--full' in sys.argv
+    only = (sys.argv[sys.argv.index('--only') + 1]
+            if '--only' in sys.argv else None)
     kinds = m102.load_kinds()
     byp = m16.page_rows()
     pages = json.load(open(m12.MANIFEST, encoding='utf-8'))['pages']
     for p in pages:
-        if p['page'] not in ANCHOR:
+        if p['page'] not in ANCHOR or (only and only not in p['page']):
             continue
         how, arg = ANCHOR[p['page']]
         rows_vis, _ = m77.visible_rows(byp[p['source']])
@@ -189,25 +195,30 @@ def main():
                 cx, cy = int(cent[big][0]), int(cent[big][1])
                 why += f'(面 {big}、{int(st[big, cv2.CC_STAT_AREA])} 画素)'
             x0, y0 = clamp(cx, cy, grid)
-            sub = lab[y0:y0 + WIN, x0:x0 + WIN]
+            w = grid[1] if full else min(WIN, grid[1])
+            h = grid[0] if full else min(WIN, grid[0])
+            if full:
+                x0 = y0 = 0
+            sub = lab[y0:y0 + h, x0:x0 + w]
             here = [i for i in closed if (sub == i).any()]
-            img = np.full((min(WIN, grid[0]), min(WIN, grid[1]), 3), 255, np.uint8)
-            img[edge[y0:y0 + WIN, x0:x0 + WIN]] = GREY
+            img = np.full((h, w, 3), 255, np.uint8)
+            img[edge[y0:y0 + h, x0:x0 + w]] = GREY
             for j, i in enumerate(sorted(here, key=lambda i: -int(st[i, cv2.CC_STAT_AREA]))):
                 img[sub == i] = PALETTE[j % len(PALETTE)]
-            img[ink[y0:y0 + WIN, x0:x0 + WIN]] = (0, 0, 0)
+            img[ink[y0:y0 + h, x0:x0 + w]] = (0, 0, 0)
             if add is not None:
-                img[add[y0:y0 + WIN, x0:x0 + WIN]] = RED
-            cv2.imwrite(str(OUT / f'{p["page"]}_faces_{tag}_native.png'), img)
+                img[add[y0:y0 + h, x0:x0 + w]] = RED
+            fx = '_full' if full else ''
+            cv2.imwrite(str(OUT / f'{p["page"]}{fx}_faces_{tag}_native.png'), img)
             # 墨だけ(同じ窓)
             ib = np.full_like(img, 255)
-            ib[ink[y0:y0 + WIN, x0:x0 + WIN]] = (0, 0, 0)
+            ib[ink[y0:y0 + h, x0:x0 + w]] = (0, 0, 0)
             if add is not None:
-                ib[add[y0:y0 + WIN, x0:x0 + WIN]] = RED
-                cv2.imwrite(str(OUT / f'{p["page"]}_ink_with3d_native.png'), ib)
+                ib[add[y0:y0 + h, x0:x0 + w]] = RED
+                cv2.imwrite(str(OUT / f'{p["page"]}{fx}_ink_with3d_native.png'), ib)
             else:
-                cv2.imwrite(str(OUT / f'{p["page"]}_ink_native.png'), ib)
-            print(f'{p["page"]:44s} {tag} 窓 ({x0},{y0}) {WIN}x{WIN} / '
+                cv2.imwrite(str(OUT / f'{p["page"]}{fx}_ink_native.png'), ib)
+            print(f'{p["page"]:44s} {tag} 窓 ({x0},{y0}) {w}x{h} / '
                   f'画布 {grid[1]}x{grid[0]} / 窓の中の閉じた面 {len(here)} / '
                   f'頁全体 {len(closed)} / 窓の決め方: {why}', flush=True)
         del ink, ink3d, edge3, edge4, lab, st
