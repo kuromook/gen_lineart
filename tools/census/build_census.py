@@ -1704,7 +1704,25 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **マスクの原点がずれている層**(`n_mask_dims_differ` とは別の述語)
                "n_mask_origin_shifted",
                # **畳んだ後の頁数。** 畳む前(`n_pages`)とは別の量で、差は量ではない
-               "n_pages_folded")
+               "n_pages_folded",
+               # **但し書きの通し番号。** 行の数は層でも頁でもなく「但し書き」の数 ——
+               # **1つの頁に複数付き得る**(作者の決めた運用。`page_notes.py`)
+               "note_id",
+               # **公開する文面から伏せた固有名の箇所。** 0 でない行は、
+               # **全量側に番号と語の対応が在る**(`page_notes_redactions.csv`)
+               "n_redacted",
+               # **門ごとに落ちた頁。** 選別は測定である(規律9)——
+               # **残った数と落ちた数を両方、名前を付けて印字する**
+               "n_dropped",
+               # **列が作者の分類を再現するかの点検**(規律13)。
+               # **的中と取りこぼしは別の量** —— 引き算で片方を出さない
+               "n_author_class", "n_hit", "n_missed",
+               # **`線画` を名前に含む可視の葉**と、`rendering_*` の層。
+               # **名前の述語で数えた層であって、中身の確認ではない**(T106)
+               "n_lineart_visible", "n_rendering_layers",
+               # **的中と取りこぼしに加えて、誤って通した数**(規律13 の点検)——
+               # **3つは別の量。引き算で出さない**
+               "n_false_positive")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1726,7 +1744,11 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # —— **白のビンが大きいときは「絵の具が灰色」ではなく「白い絵の具」**。
               # **中のビンが大きいときだけ、灰色の絵の具に近づく**
               "mirror_dev_white_bin", "mirror_dev_black_bin", "mirror_dev_mid_bins",
-              "share_px_alpha255_white")
+              "share_px_alpha255_white",
+              # **プレビューの彩度の割合**(抽出側が測った列。条例5)。
+              # **床は「カラーの境」ではなく「候補を広げる篩」である** ——
+              # **この列は作者の分類を再現しない**(`colour_ratio_vs_author.csv`)
+              "floor_color_ratio", "color_ratio_min", "color_ratio_max")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1746,7 +1768,33 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "work_id", "stratum", "pixel_format", "median_gray_ink_bin",
             # **編(シリーズ)。作者の裁定 2026-10-30。** フォルダーの属性で、頁の属性ではない。
             # **鍵は(年の札, 作品フォルダー)の組** —— 同じ名前が2つの編に在るので名前では割れない
-            "arc")
+            "arc",
+            # **但し書きの付いた頁の匿名の番号**(`PN<n>`)。登録簿は
+            # `data/census_full/page_keys.csv`。**走行をまたいで動かない**(`keys.py`)
+            "page_key",
+            # **制作の段階ごとの方式**(作者の記入式の表、2026-10-31)。
+            # **下絵と線画は別の列である** —— 1列にすると**2段が同じ札に潰れる**
+            # (下絵は11作すべてアナログで、分散がゼロ)
+            "stage_rough", "stage_lineart", "device_note",
+            # **選別の門の名前**(`colour_pilot.py`)と、**作者の分類**(規律13 の点検)
+            "gate", "author_class")
+
+# **カラーイラスト頁を選ぶ門の名前**(Track M の依頼2、2026-10-31)。
+# **順番が意味を持つ** —— 各行は「前の行まで通ったもの」に次の条件を当てた数である。
+# **宣言をここに置く理由**: `colour_pilot.py` は `build_census` を読むので、
+# 逆向きに読むと循環する。**白名簿は点検の側に在るべき**(点検が宣言を知らないと鳴れない)
+COLOUR_PILOT_GATES = (
+    "母集団(全ファイル)",
+    "`.clip` のみ",
+    "彩度の測りが在る(`status=ok`)",
+    "`color_ratio` >= 0.30",
+    "`線画` を含む可視の葉 >= 1",
+    "`rendering_*` の層が 0",
+    "既存のパイロット8頁でない",
+    "作品フォルダーごとに最も彩度の高い1頁",
+    "パイロットと同じ作品フォルダーでない",
+    "年の札ごとに1頁まで(**年代が偏らないため**)",
+)
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 # **ヒストグラムの列は1セルに16個の数を入れた文字列。** 件数の列の規則(数字か空欄)には
 # 当たらないので、**より厳しい側**(散文 = 固有名の部分一致)に宣言する。
@@ -1887,6 +1935,17 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
                                 | {f"{i*16}-{i*16+15}" for i in range(16)}),
         "first_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"first_year_label", ""},
         "last_year_label": set(ALLOWED_PUBLIC_TOKENS) | {"last_year_label", ""},
+        # **但し書きの付いた頁の匿名の番号。** 登録簿は `data/census_full/page_keys.csv`
+        "page_key": {"page_key", ""} | {f"PN{i}" for i in range(1, 1000)},
+        # **作者の語のまま。** census が付けた分類ではない(2026-10-31、Track N 経由)
+        "stage_rough": {"stage_rough", "アナログ", "デジタル", "**未裁定**", ""},
+        "stage_lineart": {"stage_lineart", "アナログ", "デジタル", "**未裁定**", ""},
+        # **「書かれていない」を「そうではない」と読まない** ——
+        # 作者は4作にだけ `ipad` と書いた。残りは**未記載**であって「iPad ではない」ではない
+        "device_note": {"device_note", "ipad と明記", "未記載", ""},
+        "gate": {"gate", *COLOUR_PILOT_GATES, ""},
+        # **作者が頁ごとに下した分類**(2026-10-31)。**census の判定ではない**
+        "author_class": {"author_class", "カラー", "モノクロ漫画", "**裁定なし**", ""},
     }
     hits = []
     n_cells = n_files = 0
