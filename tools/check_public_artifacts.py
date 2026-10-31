@@ -9,6 +9,20 @@ CLAUDE.md §4 の器具。**木**を見る(差分ではない) —— 差分を�
 通っているのに他の3 branch に表に無い画像15件が公開されていた)。既定で
 **手元の全 branch と origin の全 branch** を見る。
 
+**表は正本と手元の和を取る**(2026-10-31、Track N の便とユーザーの指示)。
+2026-10-31 14:15 に Track M が承認済みの画像5枚を追跡に入れ、基盤が **14:31 に正本の表へ
+採った**。それでも **14:40 に Track N の無関係な commit が落ちた** —— 見る範囲は全54木なのに、
+表は「いま座っている木の複製」1つしか読んでいなかったからである。**承認は正本に在ったのに、
+9分後の別の木がそれを使えなかった。** 1件の承認を16回書かせるのは配り方の欠陥で、
+規則の強さの話ではない(T161)。いまは **正本(基盤の木の `foundation`、無ければ
+`origin/foundation`)+ この木の表**の和で判定し、**どちらから読んだかと件数を必ず印字する**。
+**和を取っても規則は緩まない** —— 足せるのはユーザーの承認が記録された行だけで、
+**この木にだけ在る行は「正本へ上げる」として数えて印字する**。
+
+**落ちたら、誰の何かを言う**(同じ便の (イ)(ウ))。各ファイルについて **入れた commit /
+在る木の数 / 既に `origin` に在るか**を出す。**`origin` に在るものは既に匿名で読める** ——
+止めても公開は取り消されないので、文を変える。**止める効果は圧力であって保護ではない。**
+
 終了コード: 0 = 表と一致 / 1 = 表に無い追跡画像か追跡重みが在る / 2 = 器具自身が走れない
 """
 import subprocess
@@ -16,7 +30,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ALLOWLIST = ROOT / "doc" / "public_artifacts_allowlist.txt"
+CANON_PATH = "doc/public_artifacts_allowlist.txt"
+ALLOWLIST = ROOT / CANON_PATH
+# **正本の木。** 承認は1回で足り、配るのは機械である(T161)。読めなければ手元の表に落ちる
+FOUNDATION_TREE = Path("/home/sh1/deepl/lineart")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp", ".gif", ".psd", ".clip"}
 # 重みの公開はユーザーの承認が要る (2026-10-26)。表に無い追跡重みは終了コード1。
 WEIGHT_SUFFIXES = {".pth", ".pt", ".ckpt", ".safetensors", ".onnx", ".bin", ".h5", ".pb"}
@@ -61,6 +78,39 @@ def corpus_in(ref):
     return hits
 
 
+def parse_table(text):
+    """許可表の行。`#` 以降は注。"""
+    out = set()
+    for line in text.splitlines():
+        entry = line.split("#", 1)[0].strip()
+        if entry:
+            out.add(entry)
+    return out
+
+
+def canonical_table():
+    """正本の表と、どこから読んだか。読めなければ `(None, 理由)`。"""
+    r = subprocess.run(["git", "-C", str(FOUNDATION_TREE), "show", f"foundation:{CANON_PATH}"],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        return parse_table(r.stdout), f"基盤の木の `foundation`({FOUNDATION_TREE})"
+    r = subprocess.run(["git", "-C", str(ROOT), "show", f"origin/foundation:{CANON_PATH}"],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        return parse_table(r.stdout), "この木の `origin/foundation`(基盤の木が読めなかった)"
+    return None, "**正本が読めない。この木の表だけで判定した** —— 件数は信じる前に引き直す"
+
+
+def provenance(path, labels):
+    """`(既に公開されている木, 入れた commit の1行)`。**誰の何かを言う**(T161 の (イ))。"""
+    public = [l for l in labels if l.startswith("origin/")]
+    r = subprocess.run(["git", "-C", str(ROOT), "log", "--all", "--diff-filter=A", "-1",
+                        "--format=%h %cd %s", "--date=format:%m-%d %H:%M", "--", path],
+                       capture_output=True, text=True)
+    line = r.stdout.strip().splitlines()
+    return public, (line[0][:96] if line else "(入れた commit が辿れない)")
+
+
 def git(*args, check=True):
     r = subprocess.run(["git", "-C", str(ROOT), *args],
                        capture_output=True, text=True, check=check)
@@ -90,19 +140,33 @@ def refs_to_scan():
 
 
 def main():
+    # **この木に表が無くても、正本が読めるなら点検できる**(別クローン2本に表が無い。
+    # 2026-10-31)。どちらも無いときだけ「点検していない」と言って 2 を返す
+    local = parse_table(ALLOWLIST.read_text(encoding="utf-8")) if ALLOWLIST.exists() else set()
+    canon, where = canonical_table()
     if not ALLOWLIST.exists():
-        print(f"許可表が無い: {ALLOWLIST}", file=sys.stderr)
-        return 2
-
-    allowed = set()
-    for line in ALLOWLIST.read_text(encoding="utf-8").splitlines():
-        entry = line.split("#", 1)[0].strip()
-        if entry:
-            allowed.add(entry)
+        if canon is None:
+            print(f"許可表がこの木に無く({ALLOWLIST})、正本も読めない。**点検していない**",
+                  file=sys.stderr)
+            return 2
+        print(f"**この木に許可表が無い**({CANON_PATH})。正本だけで判定する —— {where}")
+    only_local = []
+    if canon is None:
+        allowed = set(local)
+        print(f"許可表: この木 {len(local)} 行だけ。{where}")
+    else:
+        allowed = local | canon
+        only_local = sorted(local - canon)
+        print(f"許可表: 和 {len(allowed)} 行 —— 正本 {len(canon)} 行({where})"
+              f" + この木 {len(local)} 行 / 正本だけに在る {len(canon - local)} 件"
+              f" / この木だけに在る {len(only_local)} 件")
+        if only_local:
+            print("  **この木だけに在る承認。正本の著者は基盤なので上げる**(T161):")
+            for path in only_local:
+                print(f"      {path}")
 
     refs = refs_to_scan()
-    print(f"許可表 {len(allowed)} 行 / 見る木 {len(refs)}"
-          f"(index + 手元の branch + origin の branch)\n")
+    print(f"見る木 {len(refs)}(index + 手元の branch + origin の branch)\n")
 
     per_ref = {}
     seen = set()
@@ -159,8 +223,27 @@ def main():
         return 1
     if unlisted:
         print("\n表に無い追跡画像・追跡重み(公開にはユーザーの承認が要る):", file=sys.stderr)
+        where_from = {}
+        for label, bad in per_ref.items():
+            for path in bad:
+                where_from.setdefault(path, []).append(label)
         for p in unlisted:
+            labels = where_from.get(p, [])
+            public, first = provenance(p, labels)
+            tail = " …" if len(labels) > 4 else ""
             print(f"      {p}", file=sys.stderr)
+            print(f"        入れた commit: {first}", file=sys.stderr)
+            print(f"        在る木 {len(labels)}: {', '.join(labels[:4])}{tail}", file=sys.stderr)
+            if public:
+                print("        **既に origin に在る = 匿名で読める。止めても公開は取り消されない**"
+                      " —— 表に記録するか、取り下げるかを決める", file=sys.stderr)
+            else:
+                print("        まだ origin に無い。**ここで止めれば公開は防げる**", file=sys.stderr)
+        print("\n  **承認はユーザーのもの。Claude は表に自分で足さない。**", file=sys.stderr)
+        print(f"  承認が出たら、基盤の木の `{CANON_PATH}` に1行足す —— "
+              "**和を取るので各木に写す必要は無い**(T161)", file=sys.stderr)
+        print("  取り下げるなら、入れた木で `git rm --cached <道>` と ignore —— "
+              "**origin に在る分はそれでは消えない**", file=sys.stderr)
         return 1
     return 0
 
