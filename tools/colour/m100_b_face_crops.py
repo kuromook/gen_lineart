@@ -142,9 +142,16 @@ def main():
                               start=1):
             m = (sub == i)
             marked[m] = PALETTE[(k - 1) % len(PALETTE)]
-            ys, xs = np.nonzero(m)
-            labels.append((k, int(xs.min()), int(ys.min()),
+            # **番号は面の<ins>内側</ins>に置く** —— 外接箱の角に置くと、面から離れた
+            # 白地に数字が浮き、**どれについて答えるのかが曖昧になる**(初版がそれ)。
+            # 最も内側の点は距離変換の最大。**縁に0を1列足す**(T-M2: 背景画素が無いと壊れる)
+            pad = np.zeros((m.shape[0] + 2, m.shape[1] + 2), np.uint8)
+            pad[1:-1, 1:-1] = m
+            d = cv2.distanceTransform(pad, cv2.DIST_L2, 3)
+            cy, cx = np.unravel_index(int(d.argmax()), d.shape)
+            labels.append((k, int(cx) - 1, int(cy) - 1,
                            PALETTE[(k - 1) % len(PALETTE)]))
+            del pad, d
             a_win = int(m.sum())
             sheet.append((p['page'], k, int(st[i, cv2.CC_STAT_AREA]), a_win,
                           x0, y0))
@@ -155,8 +162,8 @@ def main():
         for k, tx, ty, col in labels:
             t = str(k)
             (tw, th), _ = cv2.getTextSize(t, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
-            ox = max(2, min(tx, marked.shape[1] - tw - 4))
-            oy = max(th + 4, ty - 4)
+            ox = max(2, min(tx - tw // 2, marked.shape[1] - tw - 4))
+            oy = max(th + 4, min(ty + th // 2, marked.shape[0] - 4))
             cv2.rectangle(marked, (ox - 2, oy - th - 3), (ox + tw + 2, oy + 3),
                           (255, 255, 255), -1)
             cv2.putText(marked, t, (ox, oy), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
