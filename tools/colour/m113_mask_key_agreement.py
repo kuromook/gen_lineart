@@ -34,16 +34,26 @@ MASKFILL = 'mask_fill'
 FLAT_FORMATS = {'2', '1', '1bit_alpha'}
 
 
-def keyset(rows, kinds, src, *, vis_rule='and1', leaves_only=True):
-    """鍵ごとに選ばれた層の `layer_id` の集合。**落とした数も返す**(規律9)。"""
+def keyset(rows, kinds, src, *, vis_rule='standard', leaves_only=True):
+    """鍵ごとに選ばれた層の `layer_id` の集合。**落とした数も返す**(規律9)。
+
+    **可視の規則は `m77.visible_rows` を呼ぶ。自分で書き直さない** ——
+    最初の版では層自身の `visibility & 1` だけを見て**祖先の非表示を見落とし**、
+    門 IC2(K7 が 86 ≠ 61)と IC3(`mask_fill` が 2 ≠ 0)が落ちた。**罠 `T-M37`**。
+    `vis_rule='eq1'` は **NC2 の誤り**(`visibility == 1` だけを可視とする)を作るための
+    分岐であって、既定ではない。
+    """
     drop = collections.Counter()
+    # **NC2 は述語だけを差し替える。祖先の検査は残す** ——
+    # 最初の実装は祖先の検査も外してしまい、**2つの誤りを同時に入れていた**ので
+    # 登録に書いた期待(どの鍵でも減る)が当たらなかった。**罠 `T-M38`**
+    pred = None if vis_rule == 'standard' \
+        else (lambda r: int(r['visibility'] or 0) == 1)
+    vis, dr = m77.visible_rows(rows, pred)
+    for k, v in dr.items():
+        drop[k] += v
     body = []
-    for r in rows:
-        v = int(r['visibility'] or 0)
-        ok = (v & 1) if vis_rule == 'and1' else (v == 1)
-        if not ok:
-            drop['非表示'] += 1
-            continue
+    for r in vis:
         if leaves_only and r['folder'] == 'True':
             drop['フォルダー'] += 1
             continue
@@ -75,10 +85,15 @@ def keyset(rows, kinds, src, *, vis_rule='and1', leaves_only=True):
         'K4': {lid(r) for r in body if flat(r)},
         'K5': {lid(r) for r in body if (r['formats'] or '') in FLAT_FORMATS},
         'K6': {lid(r) for r in body if 'MASK' in nm(r).upper() and flat(r)},
+        # **`m104` の IC11 と同じ式**(`RESIDUE_NAMES` に `.strip()` で厳密一致)
         'K7': {lid(r) for r in body
-               if r['clip'] != '1' and nm(r) in ('color', 'MASK')},
+               if r['clip'] != '1' and nm(r).strip() in m104.RESIDUE_NAMES},
     }
-    K['NC1'] = K['K7'] | {lid(r) for r in body if 'color' in nm(r).lower()}
+    # **NC1 の訂正**: 基準は **K4**(無彩色・単色)。
+    # 最初の版は基準を K7 に置いたが、**層238 の名前はちょうど `color` なので
+    # K7 は最初から層238 を含む**(追補172 §C に書いてある)。
+    # **登録の NC1 は基準を書いていなかった ——登録の不備である。**
+    K['NC1'] = K['K4'] | {lid(r) for r in body if 'color' in nm(r).lower()}
     return K, drop, body
 
 
@@ -118,11 +133,18 @@ def main():
     print(f'IC3 `{EXCLUDED}`(**母集団の外。門として当てる**) '
           + ' / '.join(f'{k} 期待 {v} 実測 {len(e[k])}' for k, v in IC3.items())
           + ('  PASS' if ic3 else '  **FAIL**'))
-    nc1 = NC1_LAYER in e['NC1'] and NC1_LAYER not in e['K7']
-    print(f'NC1 「名前に `color` を含む」を混ぜると層{NC1_LAYER} が入る '
-          f'(K7 に {"在る" if NC1_LAYER in e["K7"] else "無い"} / '
-          f'NC1 に {"在る" if NC1_LAYER in e["NC1"] else "無い"})'
+    nc1 = NC1_LAYER in e['NC1'] and NC1_LAYER not in e['K4']
+    print(f'NC1(**訂正済み。基準は K4**)「名前に `color` を含む」を混ぜると'
+          f'層{NC1_LAYER} が入る: K4 に {"在る" if NC1_LAYER in e["K4"] else "無い"} / '
+          f'NC1 に {"在る" if NC1_LAYER in e["NC1"] else "無い"}'
           + ('  PASS' if nc1 else '  **FAIL**'))
+    print(f'    **登録(追補177)の NC1 は基準を書いていなかった。** 最初の実装は基準を '
+          f'K7 に置いたが、**層{NC1_LAYER} の名前はちょうど `color` なので K7 は'
+          f'最初から含む**(追補172 §C)。**基準を K4 に訂正した。'
+          f'点数は1つも見ていない時点での訂正である**')
+    print(f'    参考: 層{NC1_LAYER} は K7 に '
+          f'{"在る" if NC1_LAYER in e["K7"] else "無い"}'
+          f'(**裁定の鍵はパターンブラシを除かない**。追補173 §C)')
     if not (k7 == IC2_K7_5PAGES and ic3 and nc1):
         print('**門または対照が落ちた。以降の行は読まない**')
         return 1

@@ -31,12 +31,18 @@ def truthy(v):
     return str(v).strip().lower() not in ('', '0', 'false', 'none')
 
 
-def visible_rows(rows):
-    """**表示の層だけ**(自身の1の位が立ち、祖先のフォルダーも全部立つ)。"""
+def visible_rows(rows, vis=None):
+    """**表示の層だけ**(自身の1の位が立ち、祖先のフォルダーも全部立つ)。
+
+    `vis` に別の述語を渡すと**それを自身と祖先の両方に当てる**。
+    **負の対照を作るための口である**(例: `visibility == 1` だけを可視とする誤り)。
+    **既定の `None` では規則は一切変わらない。**
+    """
     idx = {r['layer_id']: r for r in rows}
 
-    def vis(r):
-        return bool(int(r['visibility'] or 0) & 1)
+    if vis is None:
+        def vis(r):
+            return bool(int(r['visibility'] or 0) & 1)
 
     keep, drop = [], collections.Counter()
     for r in rows:
