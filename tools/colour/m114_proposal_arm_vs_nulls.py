@@ -286,9 +286,14 @@ def main():
     print('  NC3 提案を左右反転する(誤り。位置が合わなくなる)')
     for pg, nm_, _, f1 in nc_rows:
         base = by[(pg, nm_)][f'F1@{MAIN}']
+        # **正位置が既に 0 の頁では、この対照は定義できない。**
+        # 最初の版は「点数が位置を見ていない」と印字した —— **誤りである**
+        verdict = ('  **正位置が 0.000 なので、この対照は定義できない(判定保留)**'
+                   if base == 0.0 else
+                   '  **下がった。PASS**' if f1 < base else
+                   '  **下がらない。点数が位置を見ていない。FAIL**')
         print(f'    {pg[-11:]:<12} {nm_:<4} 正位置 {base:.3f} → 反転 {f1:.3f}'
-              + ('  **下がった。PASS**' if f1 < base else
-                 '  **下がらない。点数が位置を見ていない**'))
+              + verdict)
     print('  NC1 閾値を 0.3 に緩める = §C の左列。**どの腕でも recall が上がるはず**')
     for nm_ in KEYS + NULLS:
         a = min(by[(p['page'], nm_)][f'R@{THR[0]}'] for p in pages)
@@ -304,6 +309,22 @@ def main():
                   for p in pages for n in ref)]
     print(f'  C1 全5頁で N1・N2・N3・N5 のすべてに勝つ鍵: '
           f'**{" ".join(win) if win else "無し"}**')
+    # **C1 の形の欠点を印字する**: 腕と帰無値が両方 0.000 の頁では
+    # 「厳密に勝つ」が成り立たないので、C1 はその頁で必ず落ちる
+    flat = [p['page'] for p in pages
+            if max(by[(p['page'], a)][f'F1@{MAIN}'] for a in KEYS + ref) == 0.0]
+    if flat:
+        print(f'    **ただし C1 の形には欠点が在る** —— 腕も帰無値も全部 0.000 の頁が '
+              f'{len(flat)}/{len(pages)} 在り、そこでは「厳密に勝つ」が成り立たない。'
+              f'**C1 はその頁で必ず落ちる**: ' + ' / '.join(x[-11:] for x in flat))
+        sub = [p for p in pages if p['page'] not in flat]
+        w2 = [k for k in KEYS
+              if all(by[(p['page'], k)][f'F1@{MAIN}']
+                     > by[(p['page'], n)][f'F1@{MAIN}']
+                     for p in sub for n in ref)]
+        print(f'    点の付く {len(sub)} 頁だけで読むと、勝つ鍵: '
+              f'**{" ".join(w2) if w2 else "無し"}**'
+              f'(**これは登録した C1 ではない。隣に置く値である**)')
     perpage = {}
     for p in pages:
         b = max(KEYS, key=lambda k: by[(p['page'], k)][f'F1@{MAIN}'])
