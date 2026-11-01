@@ -44,12 +44,17 @@ GROUPS = {
 
 # **納品の木に在るが、まだ宣言していないフォルダー。**
 # **「0件だった」ではなく「見ていない」** —— 宣言すると PNG の表の数が動くので、
-# **動かす前にその納品を読む。** 2026-11-01 の時点で3つ:
-#   `colour_request10` / `priority65_grad_v3` / `priority65_tone_v3`
+# **動かす前にその納品を読む。** 2026-11-01 の時点で4つ:
+#   `colour_request10` / `priority65_grad_v3` / `priority65_tone_v3` /
+#   **`dataset_colour_pilot_masks_20261101`**(同日 20:03 に増えた。**宛先は Track M** ——
+#   **5頁のレイヤーマスクのラスタ 111枚。** **便は置き場を
+#   `colour_pilot_masks_20261101/` と書いているが、実際の名前は `dataset_` が付く** ——
+#   **名前で突き合わせる器具が在れば落ちる形なので、こちらの名前を正本にする**)
 # **manifest の歩行器(`occluders.load_named_layers`)にも同じ名簿を当てた** ——
 # **2つの歩行器が同じ木に別の門を持っていて、書き足し納品が片方だけに入った**
 # (2026-11-01 に実測: `undecidable` が 307 → 456)
-UNDECLARED_KNOWN = ("colour_request10", "priority65_grad_v3", "priority65_tone_v3")
+UNDECLARED_KNOWN = ("colour_request10", "priority65_grad_v3", "priority65_tone_v3",
+                    "dataset_colour_pilot_masks_20261101")
 
 # ファイル名の末尾の項目語 → 段 A の札。**`preview` は層ではない**
 ITEMS = {
