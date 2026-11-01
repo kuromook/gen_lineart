@@ -103,10 +103,16 @@ def build(p, byp, kinds, extras=None):
             if m6 is None:
                 del m
                 continue
-            E |= m99.inner_edge(m6)
+            e = m99.inner_edge(m6)
             del m6
         else:
-            E |= m99.inner_edge(m)
+            e = m99.inner_edge(m)
+        E |= e
+        if extras is not None and 'on_edge' in extras:
+            # **縁を出した層を1枚ずつ外へ渡す**(`E` に畳む前の姿)。
+            # 呼ばれる順序も枚数も `E` の組み立てと同一である
+            extras['on_edge'](r, e)
+        del e
         n_edge += 1
         del m
     if extras is not None:
