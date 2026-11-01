@@ -38,8 +38,14 @@ PAGE = 'page0005'
 IC = {'closed': 482, 'med': 0.0000, 'lt05': 344, 'under': 5075}
 
 
-def build(p, byp, kinds):
-    """`m104` の前段を同じ順序で呼ぶ。返すのは墨と `T4` の境界。"""
+def build(p, byp, kinds, extras=None):
+    """`m104` の前段を同じ順序で呼ぶ。返すのは墨と `T4` の境界。
+
+    `extras` に辞書を渡すと、**返り値は変えずに** `T5`(R7b)を組むための部品を
+    詰める: `E`(遮蔽物の縁の生の図。`om` をまだ当てていない)/ `ink5`(R7b の墨)/
+    `n_r7b`(墨に入れた `rendering_lineart` の枚数)。
+    **既定の `extras=None` では一切動きが変わらない**(`m107` の門はそのまま通る)。
+    """
     rows_vis, _ = m77.visible_rows(byp[p['source']])
     roots, kids = m16.build_tree(rows_vis)
     cbase = m87.clip_base_map(rows_vis)
@@ -103,6 +109,27 @@ def build(p, byp, kinds):
             E |= m99.inner_edge(m)
         n_edge += 1
         del m
+    if extras is not None:
+        # **`m104` の墨の組み立てをそのまま当てる**(§墨 の分岐と同じ順序)。
+        # `ink5` はフォルダーを入れない —— `ink` は入れるので**包含関係は無い**
+        ink5 = np.zeros(grid, bool)
+        n_r7b = 0
+        for r in body:
+            nm = (r['name'] or '').lower()
+            line = m99.is_line(r)
+            if not line and m104.RENDER_ANY not in nm:
+                continue
+            if line and m102.is_sketch(r):
+                continue
+            a = m87.alpha_of(r['layer_id'], files, grid, cache)
+            if a is None:
+                continue
+            if r['folder'] == 'True':
+                continue
+            if line or m104.RENDER_LINE in nm:
+                ink5[:a.shape[0], :a.shape[1]] |= a
+                n_r7b += (m104.RENDER_LINE in nm and not line)
+        extras.update(E=E, ink5=ink5, n_r7b=n_r7b)
     cache.clear()
     om = m104.open_from(ink)
     return ink, (ink | (E & om)), floor_px, n_line, n_edge
