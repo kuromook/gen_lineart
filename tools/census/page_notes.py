@@ -235,11 +235,20 @@ def main() -> int:
     with open(full, "w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["page_key", "page_path", "year_label", "format", "n_notes"])
+        n_sub = 0
+        # **登録簿は他の表とも共有しているので、**この表の頁だけ**書く** ——
+        # **但し書きが 0 件の頁を `n_notes = 0` で並べると、
+        # 「見たが何も無かった頁」に見える**(実際は別の表のために鍵を配っただけ)。
+        # **鍵と頁のパスの対応の正本は `page_keys.csv`** である
         for path, key in sorted(reg.map.items(), key=lambda kv: kv[1]):
+            if not per_page[key]:
+                continue
             year, fmt = in_db[path]
             w.writerow([key, path, year, fmt, per_page[key]])
+            n_sub += 1
     print(f"    page_notes.csv {n_pub}行 / page_keys.csv {n_keys}行"
-          f" / page_notes_subjects.csv {len(reg.map)}行")
+          f" / page_notes_subjects.csv {n_sub}行"
+          f"(**登録簿の {len(reg.map)} のうち、但し書きの在る頁だけ**)")
     return 0
 
 

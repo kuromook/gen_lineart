@@ -43,11 +43,34 @@ COLUMN_CAVEATS = {
                 "ファイル数 / 異なり数"],
     "n_layers": ["層数(集計どうしの比較)"],
     "layer_type": ["layer_type", "layer_type の2の位(コマ枠フォルダー)"],
+    # **種別の列にフォルダーが1行も無い理由**(2026-11-01、Track M の問い)
+    "v_layer_kind": [
+        "layers_by_year_kind_type.v_layer_kind(**フォルダーが1行も無い理由**)"],
     "layer_type_and_2": ["layer_type の2の位(コマ枠フォルダー)",
                          "マスクの向き(`InitColor`)"],
     "n_drawn_blank": ["drawn_ratio(空欄)"],
     "drawn_ratio_usable": ["drawn_ratio"],
     "has_mask": ["has_mask"],
+    # **マスクで形を持つ層の枚数**(`mask_material.csv`、2026-11-01)
+    "n_leaf_has_mask": ["mask_material.n_leaf_has_mask", "has_mask"],
+    "n_leaf_visible": ["mask_material.n_leaf_has_mask"],
+    "n_hm_no_pixels": ["mask_material.n_leaf_has_mask"],
+    "n_hm_pixels_unknown": ["mask_material.n_leaf_has_mask"],
+    "n_hm_full_alpha": ["mask_material.n_leaf_has_mask", "drawn_ratio"],
+    "n_folder_has_mask": ["mask_material.n_leaf_has_mask", "has_mask"],
+    # **読み手の2つ目の不具合**(`reader_defect.csv`、2026-11-01)
+    "n_layers_body_wrong": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
+    "n_layers_mask_wrong": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
+    "n_blocks_wrong_body": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
+    "n_blocks_wrong_mask": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
+    "n_pages_in_defect": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
+    "n_px_bound": [
+        "reader_defect.n_layers_body_wrong(**読み手の2つ目の不具合**)"],
     "init": ["InitColor(本体のブロックの埋め値)", "マスクの向き(`InitColor`)"],
     "kind": ["InitColor(本体のブロックの埋め値)"],
     "rc_bucket": ["raster_cover"],

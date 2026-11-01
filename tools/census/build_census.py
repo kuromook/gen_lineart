@@ -1722,7 +1722,23 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_lineart_visible", "n_rendering_layers",
                # **的中と取りこぼしに加えて、誤って通した数**(規律13 の点検)——
                # **3つは別の量。引き算で出さない**
-               "n_false_positive")
+               "n_false_positive",
+               # **マスクで形を持つ層の枚数**(Track M の発注、2026-11-01)。
+               # **`n_hm_no_pixels`(色の表に行が在って `formats` が空)と
+               # `n_hm_pixels_unknown`(色の表に行が無い)は別の量** ——
+               # **「一覧に無い」を「存在しない」と読まない**(条例6)。
+               # **フォルダーの枚数は葉と別に数える**(フォルダーは葉ではない)
+               "n_leaf_visible", "n_leaf_has_mask",
+               "n_hm_type2", "n_hm_type3", "n_hm_other",
+               "n_hm_no_pixels", "n_hm_pixels_unknown", "n_hm_full_alpha",
+               "n_folder_has_mask",
+               # **読み手の不具合の当たり**(`reader_defect.py`、2026-11-01)。
+               # **本体とマスクは別の面なので別の列** —— 足すと
+               # 「どちらが測りに効くか」が消える(census は効き方を知らない)。
+               # **`n_px_bound` は上界であって、失った画素の数ではない**
+               "n_layers_body_wrong", "n_layers_mask_wrong",
+               "n_blocks_wrong_body", "n_blocks_wrong_mask",
+               "n_pages_in_defect", "n_px_bound")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1777,7 +1793,12 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             # (下絵は11作すべてアナログで、分散がゼロ)
             "stage_rough", "stage_lineart", "device_note",
             # **選別の門の名前**(`colour_pilot.py`)と、**作者の分類**(規律13 の点検)
-            "gate", "author_class")
+            "gate", "author_class",
+            # **その行がどの役で表に在るか**(`mask_material.py`)と、
+            # **既知セルとの突き合わせの結果**。**不一致は印字する**(T132)
+            "role", "known_cell",
+            # **読み手の不具合の表の材料の名前と、公開表に効くか**(`reader_defect.py`)
+            "material", "feeds_public_table")
 
 # **カラーイラスト頁を選ぶ門の名前**(Track M の依頼2、2026-10-31)。
 # **順番が意味を持つ** —— 各行は「前の行まで通ったもの」に次の条件を当てた数である。
@@ -1797,6 +1818,27 @@ COLOUR_PILOT_GATES = (
     "同じ作品名を2つの札から取らない(**最も早い札**)",
     "年の札ごとに1頁まで(**年代が偏らないため**)",
 )
+# **読み手の2つ目の不具合(zlib の頭の取り違え)を当てる材料の名前**
+# (`reader_defect.py`、2026-11-01)。**宣言をここに置く理由は `COLOUR_PILOT_GATES` と同じ**
+# —— **器具は `build_census` を読むので、逆向きに読むと循環する。**
+# **白名簿は点検の側に在るべき**(点検が宣言を知らないと鳴れない)
+READER_DEFECT_MATERIALS = (
+    "墨の濃さ2段目(主結論の母集団)",
+    "墨の濃さ2段目(全部)",
+    "墨の濃さ1段目",
+    "依頼3の層の種別",
+    "薄いアルファの帯",
+    "マスクの被覆",
+    "マスクの被覆(原点を直した55頁)",
+    "本体の InitColor",
+    "グラデーションの版の対",
+    "調査中の候補",
+    "1ビットの影響一覧",
+    "`_v2` でまだ空の28層",
+    "構造の全層",
+    "`.lip` の層",
+)
+
 # 手で書いた散文。**ここが実際に名前が漏れる場所**なので部分一致で見る
 # **ヒストグラムの列は1セルに16個の数を入れた文字列。** 件数の列の規則(数字か空欄)には
 # 当たらないので、**より厳しい側**(散文 = 固有名の部分一致)に宣言する。
@@ -1812,7 +1854,10 @@ PROSE_COLS = (*HIST_COLS,
               "population_note", "corroboration",
               # **作者の判断を測定の列に混ぜない。** 別の列にして、散文として点検する
               "author_reading",
-              "reading", "kinds_of_layers")
+              "reading", "kinds_of_layers",
+              # **`has_mask` の層の種別の内訳**(`種別:数` を `;` で繋いだ1セル)。
+              # **件数の列の規則(数字か空欄)には当たらないので、散文として点検する**
+              "hm_kinds")
 
 
 def check_column_classes() -> None:
@@ -1948,6 +1993,15 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "gate": {"gate", *COLOUR_PILOT_GATES, ""},
         # **作者が頁ごとに下した分類**(2026-10-31)。**census の判定ではない**
         "author_class": {"author_class", "カラー", "モノクロ漫画", "**裁定なし**", ""},
+        # **行の役**(`mask_material.py`)。**候補と既知セルを同じ列で分ける**
+        "role": {"role", "候補(作者が見て選ぶ)", "既知セル(Track M)", ""},
+        # **読み手の不具合の表の材料。** 名簿は下の `READER_DEFECT_MATERIALS`
+        "material": {"material", *READER_DEFECT_MATERIALS, ""},
+        "feeds_public_table": {"feeds_public_table", "yes", "no", ""},
+        # **既知セルとの突き合わせ。** 宣言するのは一致と「—」だけ ——
+        # **不一致の行は食い違った列名を並べるので、ここで鳴る。それが正しい**
+        # (**食い違ったまま公開物に載せない**)
+        "known_cell": {"known_cell", "一致", "—", ""},
     }
     hits = []
     n_cells = n_files = 0
