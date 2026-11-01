@@ -72,8 +72,8 @@ def main():
         return 1
 
     # `T4` の遠い面 → `T5` のどの面か(**画素の重なり。純度も印字する**)
-    n4, lab4, st4, _ = cv2.connectedComponentsWithStats((~bnd4).astype(np.uint8), 4)
-    n5, lab5, _, _ = cv2.connectedComponentsWithStats((~bnd5).astype(np.uint8), 4)
+    n4, lab4, st4, _ = cv2.connectedComponentsWithStats((~bnd4).astype(np.uint8), connectivity=4)
+    n5, lab5, _, _ = cv2.connectedComponentsWithStats((~bnd5).astype(np.uint8), connectivity=4)
     info5 = {r['face']: r for r in rows5}
     far = [r for r in rows4 if r['d_ink'] >= FAR]
     keep = np.zeros(n4, bool)
