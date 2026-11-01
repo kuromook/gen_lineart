@@ -1,0 +1,22 @@
+page_key,year_label,format,role,n_leaf_visible,n_leaf_has_mask,n_hm_type2,n_hm_type3,n_hm_other,n_hm_no_pixels,n_hm_pixels_unknown,n_hm_full_alpha,n_folder_has_mask,hm_kinds,known_cell,by,as_of,source,note
+PN6,2022,clip,候補(作者が見て選ぶ),32,1,0,0,1,1,0,0,0,filter:1,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN7,2017,clip,候補(作者が見て選ぶ),66,42,42,0,0,42,0,0,2,mask_fill:42,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN8,2016,clip,候補(作者が見て選ぶ),29,1,1,0,0,1,0,0,4,mask_fill:1,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN9,2019,clip,候補(作者が見て選ぶ),22,1,1,0,0,1,0,0,0,mask_fill:1,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN10,2018,clip,候補(作者が見て選ぶ),85,15,15,0,0,15,0,0,0,mask_fill:15,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN11,2022b,clip,候補(作者が見て選ぶ),34,3,0,0,3,3,0,0,0,filter:3,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN12,2019b,clip,候補(作者が見て選ぶ),39,2,0,0,2,0,0,0,0,filter:2,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN13,2015,clip,候補(作者が見て選ぶ),41,11,11,0,0,11,0,0,0,mask_fill:11,—,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN2,2017,clip,既知セル(Track M),117,65,65,0,0,65,0,0,3,mask_fill:65,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN1,2017,clip,既知セル(Track M),52,14,9,5,0,9,0,5,0,mask_fill:9;raster:5,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN14,2018,clip,既知セル(Track M),18,0,0,0,0,0,0,0,0,,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN3,2018,clip,既知セル(Track M),89,2,0,2,0,0,0,0,1,raster:2,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN15,2018,clip,既知セル(Track M),121,1,0,1,0,0,0,0,0,raster:1,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+PN16,2018,clip,既知セル(Track M),114,5,1,2,2,1,0,0,0,filter:2;mask_fill:1;raster:2,一致,Track M の発注 / census track が構造 DB から数えた,2026-11-01,note_m_order_mask_counts_for_candidates_20261101.md,
+,,,,,,,,,,,,,,,,,,**`has_mask` は構造の欄で、ラスタではない。** **白紙のマスクも True になり得る** —— **マスクの既定値(全面通すか全面遮るか)は抽出側へ照会中**(Track M の Q5、2026-11-01)。**だからこの表の枚数は材料の上界である**
+,,,,,,,,,,,,,,,,,,"**`n_hm_no_pixels` と `n_hm_pixels_unknown` は別の量である** —— 前者は**色の表に行が在って `formats` が空**(画素のブロックが無い)、後者は**色の表に行が無い**(測られていない)。**`layer_colour` は 72,839層・872頁だけ**なので、**「一覧に無い」を「存在しない」と読まない**(条例6)"
+,,,,,,,,,,,,,,,,,,"**可視は `visibility & 1` かつ祖先のフォルダーも全部立つ。** **`visibility == 1` だけで引くと `3`(表示・マスクあり)を落とす** —— **マスクを持つ層はまさに `3`** なので、この取り違えはこの表を無意味にする(条例3)。**根は `layer_type = 256`(名前は空、1頁に1つ、9,649頁)**"
+,,,,,,,,,,,,,,,,,,**`layer_type` の分けは Track M の求め** —— `2` は塗りつぶし/グラデーションで**画素を持たず**、`3` は**画素を持つがアルファが全面**。**どちらも形はマスクの側だが、納品の状態が違う**(Track M の実測、2026-11-01)
+,,,,,,,,,,,,,,,,,,**フォルダーの `has_mask` は葉と別に数えた。** **フォルダーのマスクが子孫にどう効くかは census は未測定** —— **抽出側の領分**(Track M の Q と同じ問い)。**効くなら、葉の枚数だけでは材料を数え落とす**
+,,,,,,,,,,,,,,,,,,**既知セル6頁は Track M が別に数えた値**(この器具が作っていない入力。T132)。**届く範囲は可視の規則と結合の取り違えまで** —— **両方が同じ構造 DB から出ているので、壊れた DB でも一致する**
+,,,,,,,,,,,,,,,,,,"**T87(`has_mask` は全層 True で何も運ばない)の射程を測り直した** —— **全 437,561層では True 135,164 / False 302,397** に分かれる。**T87 の 2,963層は Track L の納品の範囲**で、**条例3 がそれを「全層」と書いていた**(2026-11-01、この表を作って気づいた)。**点検の名前は、その射程より広く書かれていた**(T132 の規則そのもの)"

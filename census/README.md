@@ -58,6 +58,8 @@
 | `colour_ratio_vs_author.csv` | **`color_ratio` は作者の「カラーか」の分類を再現しない** —— 裁定の在る6頁で**最良 5/6**。**モノクロと裁定された頁 0.0646 > カラーの頁 0.0274。** **規律13 の点検の印字である** |
 | `colour_ratio_by_author_class.csv` | 作者の分類ごとの `color_ratio` の幅。**幅が重なっている** —— それが「再現しない」の実体 |
 | `colour_pilot_gates.csv` | **カラーイラスト頁の候補を選ぶ門**(Track M の依頼2)。**各行は前の行まで通ったものに次の条件を当てた数で、落ちた数を隣に書く**(規律9)。**行を足さない**(入れ子) |
+| `mask_material.csv` | **マスクで形を持つ層の枚数**(Track M の発注、作者の承認つき)。**14頁 = 候補8点 + Track M の既知セル6頁。** **`has_mask` はラスタではない** —— **白紙のマスクも True になり得るので、枚数は材料の上界。** **`n_hm_no_pixels`(色の表に行が在って `formats` が空)と `n_hm_pixels_unknown`(色の表に行が無い)を足さない。** **既知セル6頁は8列すべて一致** |
+| `reader_defect.csv` | **読み手の2つ目の不具合(zlib の頭の取り違え)がどの材料に当たるか。** **主結論の母集団(L1 形式2 の 40,323層)で本体に当たる層は 0** ——**2段目の全部でも本体2層で、どちらも形式5 = すでに外してある側。** **効くのは `faint_alpha_gap` と `mask_cover_*` と依頼3の層の種別。** **`n_px_bound` は上界で、失った画素の数ではない** |
 | `caveats.csv` | **各列の「答えない問い」。** この集計の本体 |
 | `provenance.csv` | 受領 CSV の sha256 と、**値が動く予定の列** |
 
@@ -149,6 +151,8 @@
 ./venv/bin/python tools/census/arcs.py              # 編の表(転記の点検つき)
 ./venv/bin/python tools/census/other_drive.py       # もう1台のドライブとの被り
 ./venv/bin/python tools/census/ink_darkness.py      # 墨の濃さ 1段目・2段目
+./venv/bin/python tools/census/mask_material.py     # マスクの枚数 + 既知セル6頁の突き合わせ
+./venv/bin/python tools/census/reader_defect.py     # 読み手の不具合の当たり + 既知セル
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)
