@@ -25,7 +25,7 @@ import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from compute_auc import AXES  # noqa: E402
-from multivariate_transfer import F9, digest_mod, load  # noqa: E402
+from multivariate_transfer import CV_FOLDS, F9, digest_mod, load  # noqa: E402
 from ako_series_auc import boot_band, multi_cv, pair_pool  # noqa: E402
 
 BAND_MAX = 0.30
@@ -127,11 +127,32 @@ def one_sided_p(null, real):
     return float((np.sum(null >= real) + 1) / (len(null) + 1))
 
 
+def measurable(pl):
+    """Can multi_cv fit this pair at all? (amendment 1, 2026-11-02)
+
+    Mirrors the fold rules of multi_cv (outer) and select_C (inner): every
+    usable outer fold must leave at least one inner fold with both labels,
+    otherwise select_C returns C=None. Decided from the groups alone.
+    """
+    folds = np.array([digest_mod(g, CV_FOLDS) for g in pl.g])
+    outer = 0
+    for f in range(CV_FOLDS):
+        tr, te = folds != f, folds == f
+        if len(set(pl.y[tr])) < 2 or len(set(pl.y[te])) < 2:
+            continue
+        outer += 1
+        if not any(len(set(pl.y[tr & (folds != h)])) == 2
+                   and len(set(pl.y[tr & (folds == h)])) == 2
+                   for h in range(CV_FOLDS)):
+            return False
+    return outer > 0
+
+
 def run_arm(name, how, pools, facts, works, analogue, rng, t0, out, cols):
     p = out.append
     p("")
     p(f"### {name}")
-    rows = {}
+    rows, dropped_cv = {}, []
     for w in works:
         X, g = pools[w]
         mask, bics = split_work(X, g, how, rng, cols)
@@ -141,11 +162,16 @@ def run_arm(name, how, pools, facts, works, analogue, rng, t0, out, cols):
         pool_works = [a for a in analogue if a != w]
         PX = np.concatenate([pools[a][0] for a in pool_works])
         Pg = np.concatenate([pools[a][1] for a in pool_works])
+        pls = [pair_pool((X[h], g[h]), (PX, Pg)) for h in (mask, ~mask)]
+        if not all(measurable(pl) for pl in pls):
+            p(f"  {w:20s} 山 {int(mask.sum())}/{int((~mask).sum())}枚 —— "
+              "**山が群の5分割で測れない → 外す**(修正1)")
+            dropped_cv.append(w)
+            continue
         aucs, bands = [], []
-        for half in (mask, ~mask):
+        for half, pl in zip((mask, ~mask), pls):
             print(f"[{time.time()-t0:7.1f}s] {name} {w} 半分 {int(half.sum())}枚",
                   file=sys.stderr, flush=True)
-            pl = pair_pool((X[half], g[half]), (PX, Pg))
             m, oof, _nf, _c = multi_cv(pl)
             aucs.append(m)
             bands.append(boot_band(pl, oof, rng))
@@ -179,12 +205,15 @@ def run_arm(name, how, pools, facts, works, analogue, rng, t0, out, cols):
         null.append(float(np.median(gaps[m]) - np.median(gaps[~m])))
     null = np.array(null)
     pv = one_sided_p(null, read)
+    p(f"  山が測れず外した作品(修正1) {len(dropped_cv)}: {', '.join(dropped_cv) or 'なし'}"
+      f" / 帰無に残った作品 {len(ws)}(混在 {n_mix})")
     p(f"  交換の帰無 {len(null)}+外し{drop} 通り: 中央 {np.median(null):+.4f}"
       f" / 97.5% {np.percentile(null, 97.5):+.4f} / 片側 p = {pv:.4f}")
     wide_mixed = sum(1 for w, r in rows.items()
                      if r["wide"] and facts[w]["rough"] == "混在")
     p(f"  帯が足りない作品: 混在 {wide_mixed} / 全 {sum(r['wide'] for r in rows.values())}")
     return {"rows": rows, "read": read, "p": pv, "wide_mixed": wide_mixed,
+            "dropped_cv": dropped_cv,
             "null_975": float(np.percentile(null, 97.5)),
             "mixed_median": float(np.median(mixed)) if mixed else None,
             "analogue_median": float(np.median(anal)) if anal else None}
