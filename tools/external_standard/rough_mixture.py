@@ -123,6 +123,29 @@ def split_work(X, g, how, rng, cols, k=2):
     return np.array([table[x] == 0 for x in g]), (bic1 - bic2, bic2 - bic3)
 
 
+def nc5_matched(X, g, cols, m, draws, rng):
+    """NC5 with the sample size held fixed (2026-11-03, for the NEXT registration).
+
+    The registered NC5 compares BIC(2) and BIC(3) on every group of a work, so
+    a work with 194 groups prefers more components almost by size alone. Here
+    each work is cut down to the same m groups, `draws` times, and the share of
+    draws where three components beat two is returned. Not used by any verdict
+    of the 2026-11-01 registration.
+    """
+    gs, M = group_means(X, g, cols)
+    if len(gs) < m:
+        return float("nan")
+    wins = 0
+    for _ in range(draws):
+        pick = rng.choice(len(gs), m, replace=False)
+        Z = M[pick]
+        Z = (Z - Z.mean(0)) / (Z.std(0) + 1e-12)
+        _l2, bic2, _ = gmm_diag(Z, 2, rng)
+        _l3, bic3, _ = gmm_diag(Z, 3, rng)
+        wins += bic3 < bic2
+    return wins / draws
+
+
 def one_sided_p(null, real):
     return float((np.sum(null >= real) + 1) / (len(null) + 1))
 
@@ -227,6 +250,8 @@ def main():
     ap.add_argument("--line", default="results/process_stage2_20261101/profile_s2.csv")
     ap.add_argument("--line-manifest", default="data/author_process_20261101/pool_manifest.csv")
     ap.add_argument("--out", default="results/rough_mixture_20261101/rough_mixture.txt")
+    ap.add_argument("--nc5-matched", type=int, default=0,
+                    help="draws for the size-matched NC5 (0 = off, the registered run)")
     args = ap.parse_args()
 
     t0 = time.time()
@@ -310,6 +335,17 @@ def main():
     p(f"  読み方(登録): 半分を超えたら「2つの山」という読みを取り下げる"
       f" → {'**取り下げる**' if len(better) > len(works)/2 else '取り下げない'}")
     summary["NC5"] = {"better_with_3": better}
+    if args.nc5_matched:
+        m_g = min(len(set(pools[w][1])) for w in works)
+        p("")
+        p(f"## NC5b(次の登録用。**この登録の判定には使わない**)—— 群を {m_g} に揃えて"
+          f" {args.nc5_matched} 回")
+        shares = {}
+        for w in works:
+            shares[w] = nc5_matched(*pools[w], F9_IDX, m_g, args.nc5_matched, rng)
+            p(f"  {w:20s} 群 {len(set(pools[w][1])):4d}  3成分が勝つ割合 {shares[w]:.2f}")
+        summary["NC5b_matched"] = {"groups": m_g, "draws": args.nc5_matched,
+                                   "share": shares}
 
     # verdict
     m, nc3, nc4, raw = (summary["main_norm"], summary["NC3_parity"],

@@ -260,13 +260,19 @@ def main():
               f" / 片側 p = {pv:.4f}")
             bands = [res[f"{ws[i]} 対 {ws[j]}"]["judged"]
                      for i, j in zip(tab[0][keep], tab[1][keep])]
-            p(f"  {'':12s} 帯が足りない対 {bands.count(False)} / {len(bands)}")
+            # C5 reads the different-label pairs only (registration §C5:
+            # "読む側のセル(B の距離0 10対 / C の matched 8対)"). Until
+            # 2026-11-03 this counted the whole cell; see result §3 C5.
+            bands_diff = [ok for ok, sm in zip(bands, same) if not sm]
+            p(f"  {'':12s} 帯が足りない対 {bands.count(False)} / {len(bands)}"
+              f"(うち「ちがう」対 {bands_diff.count(False)} / {len(bands_diff)})")
             rec[rname] = {"d": d_real, "p": pv, "n_same": n_same, "n_diff": n_diff,
                           "null_975": float(np.percentile(nul, 97.5)),
                           "null_median": float(np.median(nul)),
                           "ways": len(nul), "dropped": drop,
                           "era_same": med_e_same, "era_diff": med_e_diff,
-                          "unjudged": bands.count(False)}
+                          "unjudged": bands_diff.count(False),
+                          "unjudged_whole_cell": bands.count(False)}
         summary[title] = rec
 
     # --- identification NC: ako3 and ako3B may be the same work ---
