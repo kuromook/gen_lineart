@@ -53,8 +53,22 @@ GROUPS = {
 # **manifest の歩行器(`occluders.load_named_layers`)にも同じ名簿を当てた** ——
 # **2つの歩行器が同じ木に別の門を持っていて、書き足し納品が片方だけに入った**
 # (2026-11-01 に実測: `undecidable` が 307 → 456)
+# **2026-11-02 に7つ増えた**(どれも読み手の直し `a1131bc` の後の作り直しか、新しい発注):
+#   `colour_pilot2`(Track M の採用4頁 + マスク21枚。**この便は `dataset_` が付かない**)/
+#   `colour_zlib_20261102`(`colour_request4_rest` の17層の差し替え —— **同じ名前**)/
+#   `priority65_all_layers_zlib_20261102` / `priority65_tone_zlib_20261102` /
+#   `priority65_koma_zlib_20261102`(優先65頁の差し替え —— **同じ名前**)/
+#   `ako6_fill_v2_20261102` / `ako7_fill_v2_20261102`(**番号がずれた8枚が在る** ——
+#   **同じファイル名で中身が別の層**。宣言すると名前の表が黙って嘘をつく)
+# **差し替えの便は「同じ名前のファイルを置き換えてください」と書く** ——
+# **宣言すると「2つ以上の納品に同じ名前」の数が動く。** だから読むまで控えに置く
 UNDECLARED_KNOWN = ("colour_request10", "priority65_grad_v3", "priority65_tone_v3",
-                    "dataset_colour_pilot_masks_20261101")
+                    "dataset_colour_pilot_masks_20261101",
+                    "colour_pilot2", "colour_zlib_20261102",
+                    "priority65_all_layers_zlib_20261102",
+                    "priority65_tone_zlib_20261102",
+                    "priority65_koma_zlib_20261102",
+                    "ako6_fill_v2_20261102", "ako7_fill_v2_20261102")
 
 # ファイル名の末尾の項目語 → 段 A の札。**`preview` は層ではない**
 ITEMS = {

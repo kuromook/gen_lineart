@@ -48,6 +48,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_census as bc  # noqa: E402
 import db as census_db  # noqa: E402
 import keys as census_keys  # noqa: E402
+import colour_pilot  # noqa: E402
+import exclusions  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # 候補8点。**`colour_pilot.py` の全量側の出力から読む**(手で書き写さない)
@@ -88,9 +90,14 @@ select v.layer_id, v.folder, l.layer_type, l.has_mask, k.v_layer_kind,
 """
 
 NOTE = [
-    "**`has_mask` は構造の欄で、ラスタではない。** **白紙のマスクも True になり得る** —— "
-    "**マスクの既定値(全面通すか全面遮るか)は抽出側へ照会中**"
-    "(Track M の Q5、2026-11-01)。**だからこの表の枚数は材料の上界である**",
+    "**【2026-11-02】候補は Track M が採用した4頁だけにした**(作者が8点を目で見て裁定し、"
+    "Track M が発注を絞った)。**採用されなかった4点は数えていない。** "
+    "**11-01 の表(14行)は撤回しない** —— 8点の行の値は同じ構造 DB の同じ数え方で、"
+    "**行を外しただけである**(前の版は git の履歴に在る)",
+    "**`has_mask` は構造の欄で、ラスタではない。** **白紙のマスクも True になる** —— "
+    "**抽出側の答え(Q5、11-01 夜)**: **初期値はマスクごとに違う**(255 = 全面通す / 0 = 全面隠す)。"
+    "**Track M の測り**: 既知セルの `PN2` の `mask_fill` 65枚のうち**形が在るのは 19枚**で、"
+    "**46枚は初期値 0 で何も描かれていない。** **だからこの表の枚数は材料の上界である**",
     "**`n_hm_no_pixels` と `n_hm_pixels_unknown` は別の量である** —— "
     "前者は**色の表に行が在って `formats` が空**(画素のブロックが無い)、"
     "後者は**色の表に行が無い**(測られていない)。"
@@ -101,12 +108,18 @@ NOTE = [
     "**マスクを持つ層はまさに `3`** なので、この取り違えはこの表を無意味にする(条例3)。"
     "**根は `layer_type = 256`(名前は空、1頁に1つ、9,649頁)**",
     "**`layer_type` の分けは Track M の求め** —— `2` は塗りつぶし/グラデーションで"
-    "**画素を持たず**、`3` は**画素を持つがアルファが全面**。"
-    "**どちらも形はマスクの側だが、納品の状態が違う**(Track M の実測、2026-11-01)",
+    "**画素を持たず**、`3` は**マスクのあるラスタ**(葉では例外なく。抽出側 11-02)。"
+    "**「`3` ならアルファが全面」は Track M の6頁での実測で、全数では言えない**"
+    "(抽出側:「全面かどうかは測っていない」)",
     "**フォルダーの `has_mask` は葉と別に数えた。** "
-    "**フォルダーのマスクが子孫にどう効くかは census は未測定** —— "
-    "**抽出側の領分**(Track M の Q と同じ問い)。"
-    "**効くなら、葉の枚数だけでは材料を数え落とす**",
+    "**抽出側の答え(Q2、11-02)**: **フォルダーのマスクは配下の絵を全部切り抜く**"
+    "(コマ枠フォルダーが典型)。**だから葉の `has_mask` の枚数は、祖先のフォルダーのマスクで"
+    "形を持つ層を数え落としている** —— **この表の葉の列はその取りこぼしを含む。** "
+    "**ただし効くのは見える範囲で、層自身の画素は変わらない**",
+    "**採用4頁にも外から来た数が1つ在る** —— **抽出側が `colour_pilot2` の納品で数えた"
+    "「マスクを持つ層」21枚(頁ごとに 1 / 4 / 4 / 12)と、こちらが可視を問わず数えた `has_mask` が"
+    "4頁とも一致した**(2026-11-02)。**この表の葉の列が計 17 なのは可視の規則で4枚落ちたから**で、"
+    "**フォルダーの `has_mask` はこの4頁に 0**",
     "**既知セル6頁は Track M が別に数えた値**(この器具が作っていない入力。T132)。"
     "**届く範囲は可視の規則と結合の取り違えまで** —— "
     "**両方が同じ構造 DB から出ているので、壊れた DB でも一致する**",
@@ -121,7 +134,10 @@ HAS_MASK_NOTE = (
 
 
 def candidates():
-    """候補8点を全量側の出力から読む。**手で書き写さない。**"""
+    """候補8点を全量側の出力から読む。**手で書き写さない。**
+
+    **11-01 の表を読む**(作者に送った8点の記録)。11-02 の表は除外の門を足した後の選びで、
+    **送った8点と同じではない**"""
     path = os.path.join(ROOT, CANDIDATES)
     with open(path, encoding="utf-8") as fh:
         rows = [r for r in csv.DictReader(fh) if r["to_author"] == "yes"]
@@ -173,7 +189,22 @@ def main() -> int:
         print(f"    **`has_mask` の射程**: 全 {hm_t + hm_f} 層で"
               f" True {hm_t} / False {hm_f}(**T87 は 2,963層の範囲の言明だった**)")
 
-        order = [(r["page_path"], "候補(作者が見て選ぶ)") for r in cands]
+        # **【2026-11-02】Track M が発注を採用4頁に絞った**(作者が8点を裁定した)。
+        # **外した4点は理由別に印字する**(規律9)が、**公開物では理由を分けない** ——
+        # **分けると、作者の恒久の除外がどの頁かが分かる**
+        excluded = exclusions.load()
+        kept, dropped = [], collections.Counter()
+        for r in cands:
+            if r["page_path"] in excluded:
+                dropped["作者の恒久の除外(Track M:「数えないでください」)"] += 1
+            elif r["page_path"] not in colour_pilot.ADOPTED_BY_M:
+                dropped["Track M が採用しなかった(作者の分類がカラーでない)"] += 1
+            else:
+                kept.append(r)
+        print(f"    候補8点 → **Track M が採用した {len(kept)} 点**")
+        for why, n in sorted(dropped.items()):
+            print(f"      外した {n} —— {why}")
+        order = [(r["page_path"], "候補(Track M が採用)") for r in kept]
         order += [(p, "既知セル(Track M)") for p, *_ in KNOWN_CELLS]
         missing = [p for p, _ in order if p not in in_db]
         if missing:
@@ -212,7 +243,8 @@ def main() -> int:
                          ";".join(f"{k}:{n}" for k, n in sorted(kinds.items())),
                          verdict,
                          "Track M の発注 / census track が構造 DB から数えた",
-                         "2026-11-01", SOURCE, ""])
+                         "2026-11-02" if role.startswith("候補") else "2026-11-01",
+                         SOURCE, ""])
         reg.report("頁の鍵")
         n_keys = reg.close()
         for why, n in sorted(drops_all.items()):

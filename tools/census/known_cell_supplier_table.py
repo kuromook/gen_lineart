@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_census as bc  # noqa: E402
 
 NOTICE = "inbox/deliver_f_request3_layer_kind_20261026.md"
+SUPPLIER_TABLE_VERSION = "inbox/f_request3_layer_kind_rendered_20261026.csv"
 ROW = re.compile(r"^\|\s*([A-Za-z_0-9]+)\s*\|\s*([\d,]+)\s*\|\s*([\d,]+)\s*\|\s*([\d,]+)\s*\|")
 
 
@@ -44,7 +45,11 @@ def main() -> int:
         print(f"納品書が無い: {NOTICE} —— **この既知セルは回せない**")
         return 2
     supplier = parse_notice(NOTICE)
-    rows, pages, _ = bc.load_req3(bc.sources.by_key("req3_layer_kind")["path"])
+    # **納品書の表は 10-26 の版について書かれた。** だから突き合わせる CSV も 10-26 の版に固定する ——
+    # **2026-11-02 に材料を `_v2` に替えたら、この点検は3種別で鳴った**(other → raster 1,276行は
+    # DB の種別の変更、`drawn_ratio` は読み手の直し)。**鳴ったのは版が違うからで、器具の誤りではない。**
+    # **`_v2` の検証は `material_versions.py` が受け持つ**(供給元が `_v2` の便に書いた数が既知セル)
+    rows, pages, _ = bc.load_req3(SUPPLIER_TABLE_VERSION)
 
     mine = {}
     for r in rows:

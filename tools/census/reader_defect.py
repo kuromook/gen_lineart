@@ -60,17 +60,17 @@ MATERIALS = (
      "inbox/ink_darkness_stage1_20261030.csv", "yes",
      "6フォルダーの 4,063層(L1 3,773 / C1 288 / C2 2)", None),
     ("依頼3の層の種別",
-     "inbox/f_request3_layer_kind_rendered_20261026.csv", "yes",
+     "inbox/f_request3_layer_kind_rendered_20261026.csv", "no",
      "872頁のフォルダー以外の全層 56,576層 —— "
      "**`layers_by_year_kind_type.csv` の `drawn_ratio` 由来の列がこれに乗る**", None),
     ("薄いアルファの帯",
-     "inbox/faint_alpha_905_20261027.csv", "yes",
+     "inbox/faint_alpha_905_20261027.csv", "no",
      "905頁の 62,105層(`faint_alpha_gap.csv`)", None),
     ("マスクの被覆",
-     "inbox/mask_cover_request3_20261026.csv", "yes",
+     "inbox/mask_cover_request3_20261026.csv", "no",
      "766頁の 16,273層(`mask_cover_by_kind.csv` / `mask_cover_bound.csv`)", None),
     ("マスクの被覆(原点を直した55頁)",
-     "inbox/mask_cover_request3_maskorigin55_20261030.csv", "yes",
+     "inbox/mask_cover_request3_maskorigin55_20261030.csv", "no",
      "55頁の 1,501層", None),
     ("本体の InitColor",
      "inbox/body_initcolor_delivered_20261026.csv", "yes",
@@ -99,6 +99,12 @@ MATERIALS = (
 )
 
 NOTE = [
+    "**【2026-11-02】この表は「11-01 時点の材料の当たり」の記録である** —— "
+    "**依頼3の層の種別・薄いアルファ・マスクの被覆(と原点の直し)の4つは、`_v2` に替わった**"
+    "ので `feeds_public_table` を `no` にした(**公開表は `_v2` を読む**)。"
+    "**当たった鍵の数は動かない**(同じ層が同じ不具合に当たっていた記録)。"
+    "**前後の突き合わせは `material_versions.csv`** —— 動いた行は全部この表の当たりか1ビットで説明が付いた。"
+    "**墨の濃さ2段目は札 2019 だけ `_v2` に替わり、他の5札は前の版のまま**(本体の当たりが 0)",
     "**この表は「直す前」の側である。** **器具の破損の直しは棒の外**だが"
     "(`CLAUDE.md` §3)、**前後の数を両方、名前を付けて印字する**のが要求 —— "
     "**直した読み手で作り直した材料が届いたら、同じ列で「後」を並べる**",

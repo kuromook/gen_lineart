@@ -51,6 +51,17 @@ COLUMN_CAVEATS = {
     "n_drawn_blank": ["drawn_ratio(空欄)"],
     "drawn_ratio_usable": ["drawn_ratio"],
     "has_mask": ["has_mask"],
+    # **作り直された材料の前後**(`material_versions.csv`、2026-11-02)
+    "n_rows_moved": ["material_versions(**作り直された材料の前後**)"],
+    "n_rows_unexplained": ["material_versions(**作り直された材料の前後**)"],
+    "n_rows_cause": ["material_versions(**作り直された材料の前後**)"],
+    # **線画の層のアルファが2値か**(`line_binary_alpha.csv`、Track N の照会)
+    "share_layers_binary_alpha": ["line_binary_alpha.share_layers_binary_alpha"],
+    "n_layers_binary_alpha": ["line_binary_alpha.share_layers_binary_alpha"],
+    "share_px_partial_alpha": ["line_binary_alpha.share_layers_binary_alpha"],
+    "n_pages_all_binary": ["line_binary_alpha.share_layers_binary_alpha"],
+    # **後知恵の仮説の点検**(`lineart_count_vs_author.csv`、Track M の依頼4)
+    "max_n_lineart_visible": ["lineart_count_vs_author.n_hit"],
     # **マスクで形を持つ層の枚数**(`mask_material.csv`、2026-11-01)
     "n_leaf_has_mask": ["mask_material.n_leaf_has_mask", "has_mask"],
     "n_leaf_visible": ["mask_material.n_leaf_has_mask"],

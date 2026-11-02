@@ -571,7 +571,7 @@ def emit_canvas(outdir: str, a33_rows, units=None):
 
 
 def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = "",
-                    patch_path: str = ""):
+                    patch_path: str = "", v2_path: str = ""):
     """依頼3のマスクの被覆(便 2026-10-26、16,273行・766頁)。
 
     **この便が答えるのは、本体の側と同じ問いのマスク版である** ——
@@ -631,6 +631,19 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = "",
                     if a and b:
                         cover_delta.append(float(b) - float(a))
             patched.add(key)
+
+    # **【2026-11-02】読み手の直しの後の `_v2`**(元の版 + 10-30 の直し + 11-02 の作り直し)。
+    # **鍵と順が上の重ねた結果と同じであることを確かめてから、値をこの便に替える** ——
+    # **10-30 の差し替えの印字は残す**(規律10)。前後の突き合わせは `material_versions.py`
+    v2_moved = None
+    if v2_path:
+        v2 = list(csv.DictReader(open(v2_path, encoding="utf-8")))
+        if ([(r["page_path"], r["layer_id"].strip()) for r in v2]
+                != [(r["page_path"], r["layer_id"].strip()) for r in rows]):
+            raise SystemExit(f"**被覆の `_v2` の鍵か順が前の版と違う** —— 差し替えではない({v2_path})")
+        v2_moved = sum(1 for a, b in zip(rows, v2)
+                       if any((a.get(c) or "") != (b.get(c) or "") for c in a))
+        rows = v2
 
     # **マスクの原点がずれている層の鍵**(抽出側の便。合計が 0 でない層)。
     # **無ければ空集合で、印字は「材料が無い」と書く** —— 0 と書かない
@@ -706,7 +719,7 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = "",
          "n_cover_zero", "n_cover_full", "median_mask_cover", "reading",
          "population", "measured_by", "as_of"],
         [r + [pop("req3_layer_kind"), "抽出側(um350)",
-              "2026-10-26(**原点を直した 383 行は 2026-10-30**)"]
+              "2026-10-26(**原点を直した 383 行は 2026-10-30、読み手を直した 113 行は 2026-11-02**)"]
          for r in out_cls])
 
     out_kind = []
@@ -727,12 +740,17 @@ def emit_mask_cover(outdir: str, path: str, drops, shifted_path: str = "",
          "share_cover_zero", "share_cover_full",
          "population", "measured_by", "as_of"],
         [r + [pop("req3_layer_kind"), "抽出側(um350)",
-              "2026-10-26(**原点を直した 383 行は 2026-10-30**)"]
+              "2026-10-26(**原点を直した 383 行は 2026-10-30、読み手を直した 113 行は 2026-11-02**)"]
          for r in out_kind])
     n_dims = sum(kind_dims.values())
     n_folder_rows = sum(1 for r in rows if r["folder"].strip() == "1")
     print(f"  [マスクの被覆] {len(rows):,}層 / {len({r['page_path'] for r in rows}):,}頁"
           f" / 値が無い {n_err}(供給元の error)")
+    if v2_moved is None:
+        print("      **`_v2` を渡していない** —— **読み手の2つの不具合を直す前の値である**")
+    else:
+        print(f"      **`_v2` で値が動いた行 {v2_moved:,}**(供給元の便は 113)—— "
+              "**表の値は `_v2` のもの**")
     print(f"      **この便はフォルダーの行を含む {n_folder_rows:,}** —— "
           f"**依頼3の層の便はフォルダーを落としている。** "
           f"**同じ依頼でも材料ごとに母集団が違うので、層数を引き算しない**(T138)")
@@ -1738,7 +1756,15 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **`n_px_bound` は上界であって、失った画素の数ではない**
                "n_layers_body_wrong", "n_layers_mask_wrong",
                "n_blocks_wrong_body", "n_blocks_wrong_mask",
-               "n_pages_in_defect", "n_px_bound")
+               "n_pages_in_defect", "n_px_bound",
+               # **作り直された材料の前後**(`material_versions.py`、2026-11-02)
+               "n_rows_before", "n_rows_after", "n_rows_added", "n_rows_removed",
+               "n_rows_moved", "n_rows_cause", "n_rows_unexplained",
+               # **線画の層のアルファが2値か**(`line_binary_alpha.py`、Track N の照会)
+               "n_layers_binary_alpha", "n_pages_with_binary_layer", "n_pages_all_binary",
+               # **後知恵の仮説の点検**(`colour_pilot.py`、Track M の依頼4)。
+               # **名前で数えた層の数の上限**で、件数そのもの
+               "max_n_lineart_visible")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1764,7 +1790,10 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # **プレビューの彩度の割合**(抽出側が測った列。条例5)。
               # **床は「カラーの境」ではなく「候補を広げる篩」である** ——
               # **この列は作者の分類を再現しない**(`colour_ratio_vs_author.csv`)
-              "floor_color_ratio", "color_ratio_min", "color_ratio_max")
+              "floor_color_ratio", "color_ratio_min", "color_ratio_max",
+              # **アルファが2値の層の割合**(Track N の照会)。件数ではないので小数が正しい
+              "share_layers_binary_alpha", "share_px_on_binary_layers",
+              "share_px_partial_alpha")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "drawn_ratio_usable", "volatile",
@@ -1798,7 +1827,8 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             # **既知セルとの突き合わせの結果**。**不一致は印字する**(T132)
             "role", "known_cell",
             # **読み手の不具合の表の材料の名前と、公開表に効くか**(`reader_defect.py`)
-            "material", "feeds_public_table")
+            "material", "feeds_public_table",
+            "material_rebuilt", "planes_read", "same_page_order", "in_n_query", "judged_scope")
 
 # **カラーイラスト頁を選ぶ門の名前**(Track M の依頼2、2026-10-31)。
 # **順番が意味を持つ** —— 各行は「前の行まで通ったもの」に次の条件を当てた数である。
@@ -1812,6 +1842,7 @@ COLOUR_PILOT_GATES = (
     "`線画` を含む可視の葉 >= 1",
     "`rendering_*` の層が 0",
     "既存のパイロット8頁でない",
+    "作者の恒久の除外の名簿に無い(**2026-11-02 に足した門**。名簿は `data/` の側)",
     "母集団の双子を畳んだ代表の頁だけ(**最も早い札**。作者の裁定)",
     "作品フォルダーごとに最も彩度の高い1頁",
     "パイロットと同じ作品フォルダーでない",
@@ -1822,6 +1853,13 @@ COLOUR_PILOT_GATES = (
 # (`reader_defect.py`、2026-11-01)。**宣言をここに置く理由は `COLOUR_PILOT_GATES` と同じ**
 # —— **器具は `build_census` を読むので、逆向きに読むと循環する。**
 # **白名簿は点検の側に在るべき**(点検が宣言を知らないと鳴れない)
+# **作り直された材料の名前**(`material_versions.py`、2026-11-02)。宣言をここに置く理由は同じ
+MATERIALS_REBUILT = (
+    "依頼3の層の種別",
+    "薄いアルファの帯",
+    "マスクの被覆",
+    "墨の濃さ2段目(札 2019)",
+)
 READER_DEFECT_MATERIALS = (
     "墨の濃さ2段目(主結論の母集団)",
     "墨の濃さ2段目(全部)",
@@ -1857,7 +1895,10 @@ PROSE_COLS = (*HIST_COLS,
               "reading", "kinds_of_layers",
               # **`has_mask` の層の種別の内訳**(`種別:数` を `;` で繋いだ1セル)。
               # **件数の列の規則(数字か空欄)には当たらないので、散文として点検する**
-              "hm_kinds")
+              "hm_kinds",
+              # **作り直された材料の前後**: 前後の版のファイル名・供給元が書いた数・
+              # 動いた理由・動いた列(`列 数` を `/` で繋ぐ)
+              "before", "after", "moved_claimed", "cause", "columns_moved")
 
 
 def check_column_classes() -> None:
@@ -1992,9 +2033,19 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "device_note": {"device_note", "ipad と明記", "未記載", ""},
         "gate": {"gate", *COLOUR_PILOT_GATES, ""},
         # **作者が頁ごとに下した分類**(2026-10-31)。**census の判定ではない**
-        "author_class": {"author_class", "カラー", "モノクロ漫画", "**裁定なし**", ""},
+        "author_class": {"author_class", "カラー", "モノクロ漫画", "**裁定なし**",
+                         # **作者の言葉から**(2026-11-01):「カラーイラストの線画まで入った状態で色がない」
+                         "カラーだが色が入っていない", ""},
         # **行の役**(`mask_material.py`)。**候補と既知セルを同じ列で分ける**
-        "role": {"role", "候補(作者が見て選ぶ)", "既知セル(Track M)", ""},
+        "role": {"role", "候補(作者が見て選ぶ)", "候補(Track M が採用)", "既知セル(Track M)", ""},
+        # **作り直された材料**(`material_versions.MATERIALS` の名前)。**読み手の不具合の表の
+        # 材料の名簿とは別の列名にする**(同じ列名に2つの名簿を入れない。T138)
+        "material_rebuilt": {"material_rebuilt", *MATERIALS_REBUILT, ""},
+        "planes_read": {"planes_read", "body", "mask", ""},
+        "same_page_order": {"same_page_order", "yes", "no", ""},
+        "in_n_query": {"in_n_query", "yes", "no", ""},
+        # **後知恵の仮説を当てた範囲。** `scope`(前方割合の群)とは別の列名にする(T138)
+        "judged_scope": {"judged_scope", "裁定の在る全頁", "仮説を立てるのに使っていない頁", ""},
         # **読み手の不具合の表の材料。** 名簿は下の `READER_DEFECT_MATERIALS`
         "material": {"material", *READER_DEFECT_MATERIALS, ""},
         "feeds_public_table": {"feeds_public_table", "yes", "no", ""},
@@ -2364,7 +2415,8 @@ def main() -> int:
     pub.update(emit_mask_cover(
         args.public_out, "inbox/mask_cover_request3_20261026.csv", drops_dl,
         "inbox/mask_offset_sum_nonzero_20261029.csv",
-        "inbox/mask_cover_request3_maskorigin55_20261030.csv"))
+        "inbox/mask_cover_request3_maskorigin55_20261030.csv",
+        sources.by_key("mask_cover_request3_v2")["path"]))
     pub["canvas_declared.csv"] = emit_canvas(
         args.public_out, a33_rows, canvas_units)
     pub.update(emit_full_population(args.public_out))

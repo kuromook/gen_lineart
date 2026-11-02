@@ -29,6 +29,11 @@ import build_census as bc  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 STAGE1 = "inbox/ink_darkness_stage1_20261030.csv"
 STAGE2_GLOB = "inbox/ink_darkness_stage2_*_20261031.csv"
+# **【2026-11-02】札 2019 だけ `_v2` が来た**(読み手の直し。動いたのは形式5 の `線画` 2層)。
+# **他の5札は本体が当たった層が 0 なので出し直されていない**(抽出側)。**前の版は撤回しない**
+STAGE2_REPLACED = {
+    "ink_darkness_stage2_2019_20261031.csv": "ink_darkness_stage2_2019_v2_20261102.csv",
+}
 NBIN = 16
 
 # **1段目で出た帯**(事前登録 §3。**形式2 の行**)。**結果を見てから動かさない**
@@ -253,6 +258,10 @@ def main() -> int:
     s1 = load(os.path.join(ROOT, STAGE1))
     s2 = []
     for p in sorted(glob.glob(os.path.join(ROOT, STAGE2_GLOB))):
+        rep = STAGE2_REPLACED.get(os.path.basename(p))
+        if rep:
+            print(f"  2段目: {os.path.basename(p)} → **{rep}**")
+            p = os.path.join(os.path.dirname(p), rep)
         s2 += load(p)
     print(f"  1段目 {len(s1)}行 / 2段目 {len(s2)}行")
     # **落としたものを理由別に数える**(規律9)

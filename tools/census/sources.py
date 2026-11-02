@@ -105,10 +105,13 @@ LOCAL_CSV = [
     ),
     dict(
         key="req3_layer_kind",
-        path="inbox/f_request3_layer_kind_rendered_20261026.csv",
+        path="inbox/f_request3_layer_kind_rendered_v2_20261102.csv",
         predicate="依頼3の872頁の、**フォルダー以外の全層**(種別×描画×drawn_ratio)",
-        supplier="抽出側(um350)", as_of="2026-10-26",
-        caveat="**フォルダー層は入っていない。** 層数を added33 の `n_layers` と比べない",
+        supplier="抽出側(um350。器具 `config/b1_rebuild/layer_kind.py`)", as_of="2026-11-02",
+        caveat="**【2026-11-02】`_v2` に替えた**(読み手の2つの直し `a1131bc` の後の作り直し)。**前の版は撤回しない** —— **動いた行は全部、直しか宣言された理由で説明が付き、供給元の数と一致した**(`material_versions.csv`)。"
+               "**`drawn_ratio` が 988行、`v_layer_kind` が other → raster に 1,276行動いた** —— "
+               "**後者は読み手の直しではなく 10-26 17:57 の構造 DB の変更**(`layer_type = 3` を raster と数える)。"
+               "**フォルダー層は入っていない。** 層数を added33 の `n_layers` と比べない",
     ),
     dict(
         key="body_initcolor",
@@ -129,11 +132,14 @@ LOCAL_CSV = [
     ),
     dict(
         key="req3_body_blocks",
-        path="inbox/faint_alpha_905_20261027.csv",
+        path="inbox/faint_alpha_905_v2_20261102.csv",
         predicate="905頁の `body_init` / `body_blocks` / `body_stored` と"
                   "**アルファ≥1 の比**(62,105層。依頼3の 56,576層を全部含む)",
         supplier="抽出側(um350)", as_of="2026-10-27",
-        caveat="**依頼3の3列がこれで埋まった** —— 下限の層が何層かを計数できる。"
+        caveat="**【2026-11-02】`_v2` に替えた**(読み手の2つの直し `a1131bc` の後の作り直し)。**前の版は撤回しない** —— **動いた行は全部、直しか宣言された理由で説明が付き、供給元の数と一致した**(`material_versions.csv`)。"
+               "**動いたのは 1,060行で全部増える向き**(1ビット 971 / 取り違え 89)。"
+               "**薄い画素の数 `alpha_1_25_px` が動いたのは 15行だけ**。"
+               "**依頼3の3列がこれで埋まった** —— 下限の層が何層かを計数できる。"
                "**併せて `drawn_ratio` の閾 26 が落としている薄い画素が見える**",
     ),
     dict(
@@ -232,6 +238,18 @@ LOCAL_CSV = [
                "**この便は 55頁しか無い** —— **766頁の表と行数を比べない**(T138)",
     ),
     dict(
+        key="mask_cover_request3_v2",
+        path="inbox/mask_cover_request3_v2_20261102.csv",
+        predicate="依頼3のマスクの被覆の `_v2`(**16,273行・766頁。元の版 + 10-30 の原点の直し + "
+                  "11-02 の読み手の直し**)",
+        supplier="抽出側(um350。器具は元と同じ `list_mask_cover.py`)", as_of="2026-11-02",
+        caveat="**動いたのは 113行**(取り違え 99 + 1ビットのマスク 14)。**元の版と原点の直しの便は"
+               "そのまま読み、重ねた結果とこの便を鍵で突き合わせてから、この便の値を表に使う** —— "
+               "**10-30 の差し替えの印字(383行)は残す。** "
+               "**取り違えで被覆が減った 59行は全部初期値 255、増えた 32行は全部初期値 0**(抽出側の実測) —— "
+               "**読めなかったブロックは初期値のまま数えられていた**",
+    ),
+    dict(
         key="canvas_px",
         path="inbox/census_n5_added33_canvas_20261027.csv",
         predicate="33頁の `canvas_unit` と**画素の画布**(`v_canvas_px_w/h`)",
@@ -304,8 +322,10 @@ LOCAL_CSV = [
     ),
     dict(
         key="ink_darkness_stage2_2019",
-        path="inbox/ink_darkness_stage2_2019_20261031.csv",
-        predicate="**墨の濃さの2段目、札 2019**(1行1層、6,124層)",
+        path="inbox/ink_darkness_stage2_2019_v2_20261102.csv",
+        predicate="**墨の濃さの2段目、札 2019**(1行1層、6,124層)。"
+                  "**【2026-11-02】`_v2` に替えた** —— **動いたのは形式5 の `線画` 2層だけ**"
+                  "(すでに「調査中」で外してある側。**主結論の母集団は1行も動いていない**)",
         supplier="抽出側(um350。器具 `38f2859`。**1段目と1文字も変えていない**)",
         as_of="2026-10-31",
         caveat="**6札に分かれて届いた1つの納品の一部** —— "
@@ -367,6 +387,53 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(
+        path="inbox/deliver_census_koma_zlib_rebuild_20261102.md",
+        what="**コマ枠の全表 `koma_frames_v2_zlib`**(7,658枠。取り違えがコマ枠のマスクに当たった"
+             "113頁を作り直した。**IoU ≥ 0.99 が 6,528 → 6,551**)。**宛先は census**",
+        why_not_yet="**この集計はコマ枠の表を公開表にしていない**(10-30 の版も未統合のまま)。"
+                    "**sha256 3本一致。** **古い列は1行も動いていない**(先方の言明。引き直していない)",
+    ),
+    dict(
+        path="inbox/deliver_b1_layer_colour_v2_20261102.md",
+        what="**層の色の表 `layer_colour` の作り直し**(依頼3 72,839行 / ol29 / yearroot4。"
+             "**動いた層 1,072**)。**先方は自分の構造 DB の `layer_colour` も置き換えた**",
+        why_not_yet="**こちらの構造 DB は 10-26 17:57 の断面のままで、`layer_colour` は前の版** —— "
+                    "**`mask_material.py` の `formats` はこの古い列を読む。** "
+                    "**断面を取り直すかは、DB を丸ごと受け取るときに決める**(器具は読むだけ)。"
+                    "**依頼3の層の種別の `_v2` だけは公開表に入れた**(`material_versions.csv`)",
+    ),
+    dict(
+        path="inbox/push_h_i_affected_rows_20261102.md",
+        what="**10-23 の調査の表3本と、器具の残っていない表15件の当たり**(抽出側 → 基盤・Track L)",
+        why_not_yet="**この集計は3本のどれも読んでいない**(トーンの全数 / 柔らかい塗り / 塗り・トーンの棚卸し)。"
+                    "**15件のうち census が読むのは `body_initcolor`・`grad_v1_v2_layer_map`・"
+                    "調査中の候補の3件で、当たりは 0 / 0 / マスクの IoU 2枠(区分は変わらない)**",
+    ),
+    dict(
+        path="inbox/deliver_soft_fill_layers_v2_20261102.md",
+        what="**柔らかい塗りの表 `_v2`**(1,754 → 1,758行。**10-26 のマスクの初期値の直しの分も動いた**)",
+        why_not_yet="**この集計は柔らかい塗りの表を読まない**(宛先は基盤・Track L)",
+    ),
+    dict(
+        path="inbox/deliver_beta_ako6_ako7_v2_20261102.md",
+        what="**ベタ2作品の `_v2`**(ベタが 14層増えた。**番号のずれた8枚が在る**)",
+        why_not_yet="**宛先は基盤・Track L。** **納品の木に増えたフォルダー2つは "
+                    "`delivery.UNDECLARED_KNOWN` に入れた**(番号がずれているので、名前で畳む表に入れない)",
+    ),
+    dict(
+        path="inbox/deliver_m_colour_pilot2_four_pages_20261102.md",
+        what="**Track M の採用4頁の層 170枚とマスク 21枚**(`colour_pilot2/`、`dataset_` が付かない)",
+        why_not_yet="**宛先は Track M で、この集計はラスタを読まない**(条例10)。"
+                    "**数だけ引き直した**: 層の数 40 / 50 / 77 / 45 は先方の既知セルと一致、"
+                    "**マスクを持つ層 21 は、こちらが可視を問わず数えた `has_mask` と4頁とも一致**",
+    ),
+    dict(
+        path="inbox/deliver_foundation_priority65_zlib_20261102.md",
+        what="**優先65頁の成果物の作り直し**(層の一覧 151層 / 全層 PNG 2層 / トーン 7面 / コマ枠 6枠)",
+        why_not_yet="**宛先は基盤・Track L。** **納品の木に増えたフォルダー3つは "
+                    "`delivery.UNDECLARED_KNOWN` に入れた**",
+    ),
     dict(
         path="inbox/deliver_occ_full_v3_zlib_20261101.md",
         what="**遮蔽の全数計測 `_v3`**(zlib の頭の取り違えを直した読み手 `a1131bc` で、"

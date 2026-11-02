@@ -153,6 +153,8 @@
 ./venv/bin/python tools/census/ink_darkness.py      # 墨の濃さ 1段目・2段目
 ./venv/bin/python tools/census/mask_material.py     # マスクの枚数 + 既知セル6頁の突き合わせ
 ./venv/bin/python tools/census/reader_defect.py     # 読み手の不具合の当たり + 既知セル
+./venv/bin/python tools/census/material_versions.py # 作り直された材料の前後(供給元の数が既知セル)
+./venv/bin/python tools/census/line_binary_alpha.py # 線画の層のアルファが2値か(Track N の照会)
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)
