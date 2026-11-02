@@ -16770,3 +16770,17 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
 **出した便**: `reply_m_author_verdicts_and_hypothesis_20261102.md`(M、写し基盤)/ `reply_foundation_exclusions_and_v2_switch_20261102.md`
 (基盤、写し M)/ `reply_n_line_binary_alpha_20261102.md` + 層の表(N、写し基盤)/ `push_census_v2_verified_and_answers_received_20261102.md`
 (抽出側、**scp → dir で着弾確認 20:00、6,803 バイト**。写し基盤・M)。
+
+## 2026-11-03 07:20 通達確認(新着4件)
+
+- **抽出側の返事** `reply_census_color_ratio_and_faint_overlap_20261103`(sha256 一致):
+  - **`color_ratio` の定義**: `CanvasPreview` の画素で `max−min >= 24` の割合、分母は全画素(用紙を含む)、床は較正していない。
+    `caveats.py` の `colour_ratio_vs_author.n_hit` の行に「先方が器具を読んだ事実」として書いた。プレビューの形式は Track M の問いなので頼まない
+  - **`faint_alpha_905` の重なり**: 先方は1行、こちらは6行。引き直すと、両方の一覧で**本体**に当たる行が6、
+    取り違えがマスクだけの行(先方の1行)が1 —— 面の違いで、どちらも誤りではない。6行の鍵を先方へ送った
+  - **`sketch set`**: 先方の3器具は層のフォルダーの読みで、中の層は下絵の候補から外れない。非公開の頁の但し書きに書き足した(公開物には書かない)
+- **H の当たりの一覧 `_v2` 2本**(棚卸し / トーンの全数): census の表に効かない。`ARRIVED_NOT_INTEGRATED` に載せた(sha256 4本一致)
+- **基盤の発注**(パターンブラシ、ベクター層の頁の `BrushStyle` の全数、結果は census 宛)を控えた。届いたら「形式に `PatternStyle` が残っている頁」の列として受ける(同定ではない。規律13)
+- 点検: 公開物 指摘0 / 負の対照 exit 0 / 供給元の表 exit 0 / 画面 exit 0 / 許可表 exit 0。
+  公開表の差分は但し書き1行・便2行と、走行日付の列(`as_of`)だけ
+- 便: `push_census_color_ratio_received_and_six_keys_20261103.md` → 抽出側(SCP、着弾 07:20・4,172バイト)+ 基盤・M

@@ -411,6 +411,17 @@ ARRIVED_NOT_INTEGRATED = [
                     "調査中の候補の3件で、当たりは 0 / 0 / マスクの IoU 2枠(区分は変わらない)**",
     ),
     dict(
+        path="inbox/push_h_fill_tone_inventory_affected_v2_20261102.md",
+        what="**塗り・トーンの棚卸しの当たりの一覧 `_v2`**(10,435行。抽出側 → 基盤・Track L)",
+        why_not_yet="**この集計は棚卸しの表を読まない**(先方も「census の表には効かない」と書いた)。"
+                    "**sha256 2本一致**",
+    ),
+    dict(
+        path="inbox/push_h_tone_layers_full_affected_v2_20261103.md",
+        what="**トーンの全数の当たりの一覧 `_v2`**(414行 + 増えた 377行。抽出側 → 基盤・Track L)",
+        why_not_yet="**この集計はトーンの全数の表を読まない。** **sha256 2本一致**",
+    ),
+    dict(
         path="inbox/deliver_soft_fill_layers_v2_20261102.md",
         what="**柔らかい塗りの表 `_v2`**(1,754 → 1,758行。**10-26 のマスクの初期値の直しの分も動いた**)",
         why_not_yet="**この集計は柔らかい塗りの表を読まない**(宛先は基盤・Track L)",
