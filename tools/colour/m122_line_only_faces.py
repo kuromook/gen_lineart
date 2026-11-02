@@ -79,7 +79,7 @@ def score(P, T, keep, thr=THR):
     nT = int((aT[1:] > 0).sum())
     out = {}
     for t in thr:
-        used_s, used_p, hits = set(), set(), []
+        used_s, used_p, hits, pids = set(), set(), [], []
         for j in order:
             if iou[j] < t:
                 break
@@ -88,11 +88,12 @@ def score(P, T, keep, thr=THR):
             used_s.add(int(sid[j]))
             used_p.add(int(pid[j]))
             hits.append(int(sid[j]))
+            pids.append(int(pid[j]))
         h, npr = len(hits), len(keep)
         pr = h / npr if npr else float('nan')
         rc = h / nT if nT else float('nan')
         f1 = 0.0 if (h == 0 or not npr or not nT) else 2 * pr * rc / (pr + rc)
-        out[t] = dict(P=pr, R=rc, F1=f1, hit=h, n_prop=npr, n_true=nT, hits=set(hits))
+        out[t] = dict(P=pr, R=rc, F1=f1, hit=h, n_prop=npr, n_true=nT, hits=set(hits), pids=set(pids))
     return out
 
 
