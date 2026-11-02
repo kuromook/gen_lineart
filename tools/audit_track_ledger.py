@@ -967,7 +967,8 @@ def main():
         if not finished:
             briefing = path / "doc" / "initial_notice.md"
             try:
-                has_ordinance = "\n## 条例" in briefing.read_text(encoding="utf-8")
+                has_ordinance = re.search(
+                    r"^## 条例\s*$", briefing.read_text(encoding="utf-8"), re.M) is not None
             except OSError:
                 has_ordinance = None
             if has_ordinance is False:
@@ -999,7 +1000,7 @@ def main():
             continue
         briefing = path / "doc" / "initial_notice.md"
         try:
-            if "\n## 条例" not in briefing.read_text(encoding="utf-8"):
+            if not re.search(r"^## 条例\s*$", briefing.read_text(encoding="utf-8"), re.M):
                 dormant_no_ordinance.append(name)
         except OSError:
             pass
