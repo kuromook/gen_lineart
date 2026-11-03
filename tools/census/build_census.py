@@ -1783,7 +1783,7 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **下絵の層のフォルダーの中の葉**(`worksheet_folder_reach.py`、2026-11-03)
                "n_leaf",
                # **作品ごとの前後**(`worksheet_folder_reach.py`、2026-11-03 20:30)
-               "n_layers_inside")
+               "n_layers_inside", "n_layers_inside_author_checked", "n_layers_author_excluded")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1804,6 +1804,7 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # **下絵の層のフォルダーの中を外す前後**(`worksheet_folder_reach_by_work.csv`)。
               # **3つは別の量**(全部 / 外 / 中だけ。T138)
               "frac_pure_black_all", "frac_pure_black_outside", "frac_pure_black_inside",
+              "frac_pure_black_author_checked",
               "share_ink_inside",
               # **鏡像のずれの分解**(2026-10-31。**事前登録に無い。結果を見てから足した**)
               # —— **白のビンが大きいときは「絵の具が灰色」ではなく「白い絵の具」**。
@@ -1852,7 +1853,7 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             # **読み手の不具合の表の材料の名前と、公開表に効くか**(`reader_defect.py`)
             "material", "feeds_public_table",
             "material_rebuilt", "planes_read", "same_page_order", "in_n_query", "judged_scope",
-            "worksheet_subset", "ink_stage", "band_all", "band_outside")
+            "worksheet_subset", "ink_stage", "band_all", "band_outside", "band_author_checked")
 
 # **カラーイラスト頁を選ぶ門の名前**(Track M の依頼2、2026-10-31)。
 # **順番が意味を持つ** —— 各行は「前の行まで通ったもの」に次の条件を当てた数である。
@@ -2081,11 +2082,13 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # **前後を名前付きで並べる**(規律10)—— 名前を変えるならこの宣言も直す
         "worksheet_subset": {"worksheet_subset", "全数(除外の頁を含む)", "全数(除外の頁を除く)",
                              "墨の濃さの主結論の母集団(11-02 までの主値)",
-                             "うち下絵の層のフォルダーの中", "うち外(作業用の層を外した値、11-03)", ""},
+                             "うち下絵の層のフォルダーの中", "うち外(作業用の層を外した値、11-03)",
+                             "作者が外すと答えた層だけを外した値(11-03 22:37 の聞き取り)", ""},
         # **墨の濃さの段**(1段目 10-30 / 2段目 10-31)と、**事前登録の帯に対する位置**
         "ink_stage": {"ink_stage", "1", "2", ""},
         "band_all": {"band_all", "below", "inside", "above", ""},
         "band_outside": {"band_outside", "below", "inside", "above", ""},
+        "band_author_checked": {"band_author_checked", "below", "inside", "above", ""},
     }
     hits = []
     n_cells = n_files = 0

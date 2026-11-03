@@ -74,6 +74,10 @@ COLUMN_CAVEATS = {
     "share_ink_inside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
     "band_outside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
     "band_all": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "band_author_checked": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "frac_pure_black_author_checked": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "n_layers_inside_author_checked": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "n_layers_author_excluded": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
     # **後知恵の仮説の点検**(`lineart_count_vs_author.csv`、Track M の依頼4)
     "max_n_lineart_visible": ["lineart_count_vs_author.n_hit"],
     # **マスクで形を持つ層の枚数**(`mask_material.csv`、2026-11-01)

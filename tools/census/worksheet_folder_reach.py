@@ -36,10 +36,29 @@ DB = "/home/sh1/deepl/census_db/manuscripts.duckdb"
 OUT = "census/worksheet_folder_reach.csv"
 OUT_WORK = "census/worksheet_folder_reach_by_work.csv"
 WORK_IDS = "data/census_full/ink_darkness_work_ids.csv"
+# **作者の聞き取り**(2026-11-03 22:37 に記入済み。原稿の名前を含むので `data/` 配下)
+HEARING = "data/census_full/hearing_worksheet_folder_20261103.xlsx"
+# **中の層を外す答え**(「仕上げの線」は数に入れる。「混在」「分からない」は外さず、数を印字する)
+HEARING_EXCLUDE = {"下絵・ラフ", "資料(他の絵を貼った)", "塗りつぶし"}
+
+
+def load_hearing():
+    """**頁ごとの作者の答え** —— `{page_path: answer}`。無ければ空(印字する)。"""
+    path = os.path.join(ROOT, HEARING)
+    if not os.path.exists(path):
+        print("    **作者の聞き取りの表が無い**")
+        return {}
+    import openpyxl
+    ws = openpyxl.load_workbook(path, read_only=True, data_only=True)["頁"]
+    rows = list(ws.iter_rows(values_only=True))
+    head = list(rows[0])
+    ip, ia = head.index("頁(ファイルの場所)"), head.index("この頁の「sketch set」の中にある線画の層は何ですか")
+    return {r[ip]: (r[ia] or "") for r in rows[1:] if r[ip]}
 FOLDER_NAME = "sketch set"
 # **抽出側が便に書いた全数**(`push_sketch_set_author_answer_and_picks_20261103.md` §3)
 SUPPLIER = {"n_pages": 7013, "n_layers": 46327, "n_leaf": 32963}
 MAIN_VALUE = "0.9177"
+LABEL_AUTH = "作者が外すと答えた層だけを外した値(11-03 22:37 の聞き取り)"
 
 
 def inside_keys(con):
@@ -93,9 +112,13 @@ def main() -> int:
     main_pop = [r for r in st2 if r["stratum"] == "L1" and r["pixel_formats"] == "2"]
     ins = [r for r in main_pop if (r["page_path"], int(r["layer_id"])) in keys]
     outs = [r for r in main_pop if (r["page_path"], int(r["layer_id"])) not in keys]
+    hearing = load_hearing()
+    auth = [r for r in main_pop if not ((r["page_path"], int(r["layer_id"])) in keys
+                                       and hearing.get(r["page_path"]) in HEARING_EXCLUDE)]
     for label, rows in (("墨の濃さの主結論の母集団(11-02 までの主値)", main_pop),
                         ("うち下絵の層のフォルダーの中", ins),
-                        ("うち外(作業用の層を外した値、11-03)", outs)):
+                        ("うち外(作業用の層を外した値、11-03)", outs),
+                        (LABEL_AUTH, auth)):
         v, ink = frac(rows)
         print(f"    {label}: 層 {len(rows):,} / 頁 {len({r['page_path'] for r in rows}):,} / "
               f"墨画素 {ink:,} / 墨のうち純黒 {v}")
@@ -116,6 +139,12 @@ def by_work(keys) -> int:
     """**作品フォルダーごとの行**(2026-11-03 20:30、ユーザーの依頼)。**登録上の主値は作品ごとの行**なので、
     畳んだ1行の前後だけでは足りない。**1段目と2段目の両方**、層別 L1 形式2。"""
     print("  [作品ごとの前後]")
+    hearing = load_hearing()
+    answers = collections.Counter(hearing.values())
+    print(f"    **作者の聞き取り** {len(hearing)}頁: " + " / ".join(f"{k or '空'} {v}" for k, v in answers.most_common()))
+    # **規律13**: フォルダーを「仕上げでない」の代わりに使えるか。**聞いた頁で的中率を印字する**
+    hit = sum(1 for a in hearing.values() if a in HEARING_EXCLUDE)
+    print(f"    **フォルダーの中 = 仕上げでない、の的中**: {hit}/{len(hearing)}頁(作者に聞いた頁だけ。聞いていない頁には届かない)")
     ids = {r["work_dir"]: r["work_id"] for r in
            csv.DictReader(open(os.path.join(ROOT, WORK_IDS), encoding="utf-8"))}
     rows = [dict(r, ink_stage="1") for r in
@@ -140,6 +169,13 @@ def by_work(keys) -> int:
             a["n_in"] += 1
             a["ink_in"] += ink
             a["pb_in"] += pb
+            ans = hearing.get(r["page_path"])
+            if ans is not None:
+                a["n_in_checked"] += 1
+            if ans in HEARING_EXCLUDE:
+                a["n_in_author_excluded"] += 1
+                a["ink_x"] += ink
+                a["pb_x"] += pb
     lo, hi = ik.BAND_PURE_BLACK
 
     def f(pb, ink):
@@ -150,6 +186,7 @@ def by_work(keys) -> int:
             return ""
         return "below" if float(v) < lo else "above" if float(v) > hi else "inside"
     out = []
+    tot = collections.Counter()
     moved = collections.Counter()
     for k in sorted(agg, key=lambda k: (k[0], k[1], int(k[2][1:]) if k[2][1:].isdigit() else 0)):
         a = agg[k]
@@ -170,20 +207,41 @@ def by_work(keys) -> int:
             moved["動きが 0.01 未満"] += 1
         if k[0] == "2" and b_all != b_out:
             moved[f"**帯の読みが変わる**({b_all} → {b_out or '値なし'})"] += 1
-        out.append([k[2], k[1], k[0], a["n"], a["n_in"], f"{a['ink_in'] / a['ink']:.3f}",
-                    v_all, v_out, v_in, b_all, b_out, ""])
+        v_auth = f(a["pb"] - a["pb_x"], a["ink"] - a["ink_x"])
+        tot["ink"] += a["ink"]
+        tot["pb"] += a["pb"]
+        tot["ink_x"] += a["ink_x"]
+        tot["pb_x"] += a["pb_x"]
+        out.append([k[2], k[1], k[0], a["n"], a["n_in"], a["n_in_checked"], a["n_in_author_excluded"],
+                    f"{a['ink_in'] / a['ink']:.3f}", v_all, v_out, v_in, v_auth, b_all, b_out,
+                    band(v_auth, k[0]), ""])
     for why, n in sorted(moved.items()):
         print(f"    作品 {n:>3} —— {why}")
-    out += [[""] * 11 + [n] for n in NOTE_WORK]
+    print(f"    **作者が外すと答えた層を外した値(畳んだ行、1段目と2段目)**: "
+          f"{f(tot['pb'], tot['ink'])} → {f(tot['pb'] - tot['pb_x'], tot['ink'] - tot['ink_x'])}")
+    changed = [r for r in out if r[11] != r[8]]
+    for r in changed:
+        print(f"      作者の答えで動く作品: {r[0]} 札 {r[1]}  {r[8]} → {r[11]}(外した層 {r[6]})")
+    out += [[""] * 15 + [n] for n in NOTE_WORK]
     n = bc.write_csv(os.path.join(ROOT, OUT_WORK),
                      ["work_id", "year_label", "ink_stage", "n_layers", "n_layers_inside",
+                      "n_layers_inside_author_checked", "n_layers_author_excluded",
                       "share_ink_inside", "frac_pure_black_all", "frac_pure_black_outside",
-                      "frac_pure_black_inside", "band_all", "band_outside", "note"], out)
+                      "frac_pure_black_inside", "frac_pure_black_author_checked",
+                      "band_all", "band_outside", "band_author_checked", "note"], out)
     print(f"    {os.path.basename(OUT_WORK)} {n}行")
     return 0
 
 
 NOTE_WORK = [
+    "**【11-03 22:37 作者の聞き取り】中を外す値(`_outside`)は、フォルダーを「仕上げでない」の代わりに使った値で、"
+    "その代用は作者の分類を再現しない**(規律13)—— **大きく動く・消える16作品で、中に線画の層が在る 129頁を作者が見た: "
+    "127頁は仕上げの線、2頁は塗りつぶし**(同じ頁の双子。頁全体の塗りつぶしで、用途は不明)。"
+    "**作者: 「ほとんどは完成イラストで、フォルダーの運用ルールは守られず、中で完成まで進めた」。** "
+    "**`_outside` は撤回しないが、外す規則としては使えない**(前後を名前付きで残す。規律10)",
+    "**`frac_pure_black_author_checked` は、作者が「下絵・ラフ / 資料 / 塗りつぶし」と答えた頁の中の層だけを外した値。** "
+    "**聞いたのは16作品の129頁だけ** —— **他の作品の中の層は聞いていないので外していない**(`n_layers_inside_author_checked` で数が分かる)。"
+    "**作者が見たのは線画の層が何かだけ** —— 中に資料の画像が在る頁もあったが、線画の層以外は見ていない(作者)",
     "**作品フォルダーごとの前後**(2026-11-03)。**登録上の主値は作品ごとの行**(`doc/prereg_ink_darkness_20261030.md` §2)"
     "なので、畳んだ1行(0.9177 → 0.9162)の前後だけでは足りない。**層別 L1 形式2、1段目と2段目の両方。** "
     "**`frac_pure_black_all` は公開中の `ink_darkness_stage*.csv` の値と同じ**(撤回しない)。**`_outside` は中の層を外した値、`_inside` は中の層だけ**",
@@ -198,6 +256,12 @@ NOTE_WORK = [
 
 
 NOTE = [
+    "**【11-03 22:37 作者の聞き取り】フォルダーの中の層は「仕上げでない」とは言えなかった** —— "
+    "**中を外すと値が大きく動く・消える16作品で、中に線画の層が在る 129頁を作者が見た: 127頁は仕上げの線、2頁は塗りつぶし。** "
+    "**作者: ほとんどは完成イラストで、フォルダーの運用ルールは守られず、中で完成まで進めた。** "
+    "**だから「うち外」の行(0.9162)は外す規則として使えない**(撤回はしない。規律10)。"
+    "**作者が外すと答えた層だけを外すと 0.9156** —— **外したのは2層(頁全体の塗りつぶし、名前は線画)で、墨画素の 2.4%**。"
+    "**聞いていない頁(他の作品の中の層)は外していない**",
     "**作者の答え(2026-11-03、抽出側経由)**: 下絵を意味する雛形の名前は**層のフォルダー**で、"
     "中は**下絵・ラフと資料**、ほかに**下絵より下の層を隠す塗りつぶし**。**作者の決定: 中の層は遮蔽物ではない**"
     "(仕上げのものではない)。**名前は作品フォルダーの名前と同じ綴りを含むので、公開物では書かない**",
