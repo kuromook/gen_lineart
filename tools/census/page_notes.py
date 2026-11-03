@@ -201,8 +201,10 @@ def main() -> int:
         year, fmt = in_db[r["page_path"]]
         key = reg.key_for(r["page_path"], where=r["_file"])
         content, n_red = redact(r["note_ja"])
-        rows.append([i, key, year, fmt, r["note_class"], content, n_red,
-                     r["note_source"], r["note_date"], r["source_notice"], ""])
+        # **便の名も伏せる**(11-03: 便の名に頁の名が入っていた。点検が `_` で切るようになって鳴った)
+        source_notice, n_red_src = redact(r["source_notice"])
+        rows.append([i, key, year, fmt, r["note_class"], content, n_red + n_red_src,
+                     r["note_source"], r["note_date"], source_notice, ""])
     reg.report("頁の鍵")
     n_keys = reg.close()
 

@@ -72,6 +72,16 @@ SUPPLIER_REPORTED = [
 # 供給元の集計と一致しても独立な確認ではない** —— 転記の一致である。T132)
 LOCAL_CSV = [
     dict(
+        key="brushstyle_patternstyle_pages",
+        path="inbox/clip_brushstyle_patternstyle_pages_20261103.csv",
+        predicate="**形式に `PatternStyle` が残っている頁**(頁ごと1行、9,648行。`.clip` 7,662 は測定、"
+                  "`.lip` 1,986 は開けたかだけ)。**④の同定ではない**",
+        supplier="抽出側(um350。作業用の器具、commit なし)", as_of="2026-11-03",
+        caveat="**sha256 検証済み。** **公開表は `census/pattern_style_pages.csv`** —— "
+               "**供給元の合計と全部一致、構造 DB の `vector_objects > 0` の数と `.clip` 全頁で一致。** "
+               "**納品の `n_vector_layers` はコマ枠の層を含む**(構造 DB の `n_vector_layers` は外す)",
+    ),
+    dict(
         key="zlib_affected",
         path="inbox/zlib_affected_layers_20261101.csv",
         predicate="**zlib の頭を取り違えて画素を失っていた (頁, 層, 面)** —— "
@@ -359,6 +369,10 @@ LOCAL_CSV = [
                "被覆が変わった層が約2万で全部増える向き(減った層は 0)。"
                "だから「低めに出ている」の但し書きはこの表では消えた**(先方の言明)。"
                "**ただし 27頁の 28層は `_v2` でも空のままで、この一覧からも漏れていた** ——"
+               "**【11-03】先方が数え直した「一覧の漏れ 81層・76頁」は、下の 81層と同じ層である** —— "
+               "**census が鍵で引いた: 抜き取り(本体)に在って一覧に無い層 81・76頁、81層とも本体に取り違えが在り、"
+               "一覧に在って抜き取りに無い層 0。** **この一覧で1ビットの層を数えると 81層少なく出る**"
+               "(先方: 11-02 以降の作り直しには効かない)。"
                "**一覧を作った走査で 81層が展開エラーになっていた"
                "(影響は 6,506層・2,777頁ではなく 6,587層・2,804頁)。"
                "28層は全部 zlib の頭の取り違えで、こちらで 28/28 を確かめた**"
@@ -420,6 +434,27 @@ ARRIVED_NOT_INTEGRATED = [
         path="inbox/push_h_tone_layers_full_affected_v2_20261103.md",
         what="**トーンの全数の当たりの一覧 `_v2`**(414行 + 増えた 377行。抽出側 → 基盤・Track L)",
         why_not_yet="**この集計はトーンの全数の表を読まない。** **sha256 2本一致**",
+    ),
+    dict(
+        path="inbox/push_sketch_set_author_answer_and_picks_20261103.md",
+        what="**下絵の層のフォルダーについての作者の答えと、8月の対で下絵に選んだ層の一覧**(1,848対。"
+             "`_v2` は目視の列を埋めたもの)。**宛先は census**",
+        why_not_yet="**作者の答えは但し書きと `worksheet_folder_reach.csv` に取った。** "
+                    "**対の一覧は抽出側の器具の選びの記録で、census の表の材料ではない**(対は作者の決定で作り直しを後回し)。"
+                    "**目視は先方のもの**(下絵 97 / うち位置が合わない 3 / 資料 2。census は見ていない)。sha256 一致",
+    ),
+    dict(
+        path="inbox/push_sketch_set_fill_occlusion_and_eye_check_20261103.md",
+        what="**下絵の層のフォルダーの全面の塗りつぶし 243層が遮蔽の表で遮蔽物になっていた件**(抽出側 → 基盤)",
+        why_not_yet="**遮蔽の採点は基盤の領分**で、この集計は被覆を1列も持っていない。sha256 一致",
+    ),
+    dict(
+        path="inbox/push_occlusion_worksheet_rule_decided_20261103.md",
+        what="**作者の決定: 作業用の層(下絵の層のフォルダーの中と、名前が `調整` の層)は遮蔽物にしない。"
+             "半透明の主値は 10-27 の定義のまま、重みつきの被覆を別の列で足す**。遮蔽の表 `_v4` を測り直し中",
+        why_not_yet="**遮蔽の採点は基盤の領分。** **census の遮蔽物の名前の表(`occluder_*`)は名前の規則で数えた類で、"
+                    "`調整` を類の名前に持たない。** **ただし下絵の層のフォルダーの中の層が類に入っているかは数えていない**"
+                    "(類は層名とフォルダーの鎖で引くので、中に入りうる。条例6)。sha256 一致",
     ),
     dict(
         path="inbox/deliver_soft_fill_layers_v2_20261102.md",

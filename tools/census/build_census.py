@@ -162,6 +162,9 @@ PROSE_EXCEPTIONS = {
     "clip": "ファイルの拡張子(`.clip`)。作品名ではない",
     "lip":  "ファイルの拡張子(`.lip`)。作品名ではない",
     "work": "英単語として使う(「作品が無い」の意)。同名のフォルダーが在るのは偶然",
+    # **11-03 に `_` で切って照合するようにしたら、列名 `n_works` が鳴った。** 同名のサブフォルダー
+    # (作品の下の汎用の名前。作品名ではない)が在る。`work` と同じ扱い
+    "works": "英単語として使う(列名 `n_works` の語)。同名の汎用のサブフォルダーが在るのは偶然",
     "copy": "英単語。同名のフォルダーが在るのは偶然",
     "tmp":  "英単語。同名のフォルダーが在るのは偶然",
     "top":  "英単語。同名のフォルダーが在るのは偶然",
@@ -1640,12 +1643,16 @@ class ProseMatcher:
     素の部分一致では自分で書いた「added33」に当たって全行が鳴る(同日に実際そうなった)。
     日本語の名前には語境界が無いので素の部分一致で見る。
 
-    **届かないもの**: ASCII の名前が英数字や `_` に直接挟まれている形
-    (`x_<名前>_y`)。語境界が立たないので見えない。
+    **【2026-11-03】`x_<名前>_y` の形も見る** —— **英数字以外(`_` を含む)で切った語の単位でも照合する。**
+    それまでは盲点として印字していたが、**便のファイル名(`deliver_beta_<作品>_..._v2.md`)が
+    出所の表に載ったまま公開された**(点検は鳴らなかった)。**切った語が名前に一致するときだけ鳴る**ので、
+    `added33` のような語の一部の一致では鳴らない。**届かないもの**: 英数字に直に続く形
+    (`<名前>2`、`x<名前>`)—— 切っても1語のままなので見えない。
     """
 
     def __init__(self, words):
         ascii_words = sorted((w for w in words if w.isascii()), key=len, reverse=True)
+        self.ascii_set = set(ascii_words)
         self.other = [w for w in words if not w.isascii()]
         self.pat = None
         if ascii_words:
@@ -1659,6 +1666,9 @@ class ProseMatcher:
             m = self.pat.search(text)
             if m:
                 return m.group(0)
+            for tok in re.split(r"[^0-9A-Za-z]+", text):
+                if tok in self.ascii_set:
+                    return tok
         for w in self.other:
             if w in text:
                 return w
@@ -1764,7 +1774,14 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_layers_binary_alpha", "n_pages_with_binary_layer", "n_pages_all_binary",
                # **後知恵の仮説の点検**(`colour_pilot.py`、Track M の依頼4)。
                # **名前で数えた層の数の上限**で、件数そのもの
-               "max_n_lineart_visible")
+               "max_n_lineart_visible",
+               # **形式に `PatternStyle` が残っている頁**(`pattern_style.py`、2026-11-03)。
+               # **④の同定ではない。** `vector_any`(コマ枠を含む)と `vector_nonframe` は別の量(T138)
+               "n_clip_pages", "n_pages_vector_any", "n_pages_vector_nonframe",
+               "n_pages_brushstyle_table", "n_pages_patternstyle_nonzero", "n_patternstyle_rows",
+               "n_pages_first_pattern_image",
+               # **下絵の層のフォルダーの中の葉**(`worksheet_folder_reach.py`、2026-11-03)
+               "n_leaf")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1828,7 +1845,8 @@ DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
             "role", "known_cell",
             # **読み手の不具合の表の材料の名前と、公開表に効くか**(`reader_defect.py`)
             "material", "feeds_public_table",
-            "material_rebuilt", "planes_read", "same_page_order", "in_n_query", "judged_scope")
+            "material_rebuilt", "planes_read", "same_page_order", "in_n_query", "judged_scope",
+            "worksheet_subset")
 
 # **カラーイラスト頁を選ぶ門の名前**(Track M の依頼2、2026-10-31)。
 # **順番が意味を持つ** —— 各行は「前の行まで通ったもの」に次の条件を当てた数である。
@@ -2053,6 +2071,11 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # **不一致の行は食い違った列名を並べるので、ここで鳴る。それが正しい**
         # (**食い違ったまま公開物に載せない**)
         "known_cell": {"known_cell", "一致", "—", ""},
+        # **下絵の層のフォルダーの中の層の部分集合**(`worksheet_folder_reach.py`)。
+        # **前後を名前付きで並べる**(規律10)—— 名前を変えるならこの宣言も直す
+        "worksheet_subset": {"worksheet_subset", "全数(除外の頁を含む)", "全数(除外の頁を除く)",
+                             "墨の濃さの主結論の母集団(11-02 までの主値)",
+                             "うち下絵の層のフォルダーの中", "うち外(作業用の層を外した値、11-03)", ""},
     }
     hits = []
     n_cells = n_files = 0
@@ -2115,7 +2138,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
               + " / ".join(sorted(SYSTEM_LAYER_NAMES)))
         print(f"  **この点検の盲点: 2文字以下の固有名 {len(short_words)} 語** ——"
               f" 件数や生の値と見分けが付かないので見ていない。"
-              f"ASCII の名前は語境界を要求するので `x_名前_y` の形も見えない")
+              f"ASCII の名前は `_` などで切った語でも照合する(11-03 から)が、"
+              f"英数字に直に続く形(`名前2`)は見えない")
         print(f"  検査: {n_files} ファイル / {n_cells} セル"
               f" / 宣言した列の種類: 件数 {len(METRIC_COLS)}・実測値 {len(VALUE_COLS)}"
               f"・次元 {len(DIM_COLS)}・散文 {len(PROSE_COLS)}")
@@ -2210,7 +2234,14 @@ def write_populations(outdir: str, req3_rows, req3_pages, a33_rows, as_of: str,
     return write_csv(os.path.join(outdir, "populations.csv"), header, rows)
 
 
-def write_provenance(outdir: str, as_of: str):
+def masked_source_name(name: str, matcher) -> str:
+    """**便のファイル名に固有名が含まれるなら書かない**(条例10: 落とすのではなく書かない関数を通す)。
+    **sha256 の列で便を引ける**ので、名前を伏せても出所は辿れる。"""
+    return name if matcher is None or matcher.find(name) is None else \
+        "(便の名に固有名を含むので伏せた。sha256 で引ける)"
+
+
+def write_provenance(outdir: str, as_of: str, matcher=None):
     header = ["source", "material_kind", "supplier", "as_of", "n_rows", "sha256",
               "volatile", "note"]
     rows = []
@@ -2230,10 +2261,10 @@ def write_provenance(outdir: str, as_of: str):
             digest = sha256_of(s["path"])
         else:
             n, digest = "", "(不在)"
-        rows.append([os.path.basename(s["path"]), "受領 CSV", s["supplier"], s["as_of"],
+        rows.append([masked_source_name(os.path.basename(s["path"]), matcher), "受領 CSV", s["supplier"], s["as_of"],
                      n, digest, "", s["caveat"]])
     for a in sources.ARRIVED_NOT_INTEGRATED:
-        rows.append([os.path.basename(a["path"]), "**届いているが未統合**",
+        rows.append([masked_source_name(os.path.basename(a["path"]), matcher), "**届いているが未統合**",
                      "抽出側(um350)", as_of,
                      sum(1 for _ in open(a["path"], encoding="utf-8")) - 1
                      if os.path.exists(a["path"]) else "",
@@ -2424,7 +2455,8 @@ def main() -> int:
     sha_by_path = {r["page_path"]: r["sha"] for r in hash_rows}
     pub["populations.csv"] = write_populations(args.public_out, req3_rows, req3_pages,
                                                a33_rows, as_of, sha_by_path)
-    pub["provenance.csv"] = write_provenance(args.public_out, as_of)
+    pub["provenance.csv"] = write_provenance(
+        args.public_out, as_of, ProseMatcher(private_vocabulary(req3_pages, a33_rows)[0]))
     pub["caveats.csv"] = write_caveats(args.public_out)
     for name, n in sorted(pub.items()):
         print(f"    {n:6d} 行  {name}")

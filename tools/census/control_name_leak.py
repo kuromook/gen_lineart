@@ -54,6 +54,8 @@ def main() -> int:
     long_words, short_words = vocab
     leak_name = max(long_words, key=len)
     leak_path = sorted(req3_pages)[0]
+    # **C7 は `_` に挟まれた ASCII の名前**(11-03 に塞いだ盲点。便のファイル名の形)
+    leak_ascii = max((w for w in long_words if w.isascii() and w.isalnum()), key=len)
 
     results = []
     for label, cell, target_col, want_reason in (
@@ -63,6 +65,8 @@ def main() -> int:
         ("C3 作品名を次元の列に1つ", leak_name, "year_label", "宣言外の値"),
         ("C4 件数の列に名前を1つ", leak_name, "n_pages", "数字でない値"),
         ("C5 実測値の列に名前を1つ", leak_name, "canvas_w", "実測値の列に数でない値"),
+        ("C7 `_` に挟まれた名前を散文の列に1つ", f"deliver_x_{leak_ascii}_v2.md", "caveat",
+         "散文に固有名"),
         ("C6 素の出力(何も仕込まない)", None, None, None),
     ):
         tmp = tempfile.mkdtemp(prefix="census_control_")
