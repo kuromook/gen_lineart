@@ -156,7 +156,7 @@
 ./venv/bin/python tools/census/material_versions.py # 作り直された材料の前後(供給元の数が既知セル)
 ./venv/bin/python tools/census/line_binary_alpha.py # 線画の層のアルファが2値か(Track N の照会)
 ./venv/bin/python tools/census/pattern_style.py     # 形式に PatternStyle が残っている頁(④の同定ではない)
-./venv/bin/python tools/census/worksheet_folder_reach.py # 下絵の層のフォルダーの中の層の量 + 主値の前後
+./venv/bin/python tools/census/worksheet_folder_reach.py # 下絵の層のフォルダーの中の層の量 + 主値の前後(畳んだ行と作品ごとの行)
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)

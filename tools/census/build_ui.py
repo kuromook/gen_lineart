@@ -67,6 +67,13 @@ COLUMN_CAVEATS = {
     "n_pages_brushstyle_table": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
     # **下絵の層のフォルダーの中の層**(`worksheet_folder_reach.csv`、2026-11-03)
     "worksheet_subset": ["worksheet_folder_reach.worksheet_subset"],
+    "frac_pure_black_outside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "frac_pure_black_all": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "frac_pure_black_inside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "n_layers_inside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "share_ink_inside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "band_outside": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
+    "band_all": ["worksheet_folder_reach_by_work.frac_pure_black_outside"],
     # **後知恵の仮説の点検**(`lineart_count_vs_author.csv`、Track M の依頼4)
     "max_n_lineart_visible": ["lineart_count_vs_author.n_hit"],
     # **マスクで形を持つ層の枚数**(`mask_material.csv`、2026-11-01)

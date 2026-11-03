@@ -18,6 +18,7 @@
 
     ./venv/bin/python tools/census/worksheet_folder_reach.py
 """
+import collections
 import csv
 import glob
 import os
@@ -33,6 +34,8 @@ import ink_darkness as ik  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB = "/home/sh1/deepl/census_db/manuscripts.duckdb"
 OUT = "census/worksheet_folder_reach.csv"
+OUT_WORK = "census/worksheet_folder_reach_by_work.csv"
+WORK_IDS = "data/census_full/ink_darkness_work_ids.csv"
 FOLDER_NAME = "sketch set"
 # **抽出側が便に書いた全数**(`push_sketch_set_author_answer_and_picks_20261103.md` §3)
 SUPPLIER = {"n_pages": 7013, "n_layers": 46327, "n_leaf": 32963}
@@ -100,12 +103,98 @@ def main() -> int:
     if out[2][5] != MAIN_VALUE:
         print(f"    **主値が {MAIN_VALUE} を再現しない**({out[2][5]})")
         bad += 1
+    bad += by_work(keys)
     out += [[""] * 7 + [n] for n in NOTE]
     n = bc.write_csv(os.path.join(ROOT, OUT),
                      ["worksheet_subset", "n_pages", "n_layers", "n_leaf", "n_px_ink",
                       "frac_pure_black_among_ink", "known_cell", "note"], out)
     print(f"    {os.path.basename(OUT)} {n}行")
     return 1 if bad else 0
+
+
+def by_work(keys) -> int:
+    """**作品フォルダーごとの行**(2026-11-03 20:30、ユーザーの依頼)。**登録上の主値は作品ごとの行**なので、
+    畳んだ1行の前後だけでは足りない。**1段目と2段目の両方**、層別 L1 形式2。"""
+    print("  [作品ごとの前後]")
+    ids = {r["work_dir"]: r["work_id"] for r in
+           csv.DictReader(open(os.path.join(ROOT, WORK_IDS), encoding="utf-8"))}
+    rows = [dict(r, ink_stage="1") for r in
+            csv.DictReader(open(os.path.join(ROOT, ik.STAGE1), encoding="utf-8"))]
+    for p in sorted(glob.glob(os.path.join(ROOT, ik.STAGE2_GLOB))):
+        rep = ik.STAGE2_REPLACED.get(os.path.basename(p))
+        if rep:
+            p = os.path.join(os.path.dirname(p), rep)
+        rows += [dict(r, ink_stage="2") for r in csv.DictReader(open(p, encoding="utf-8"))]
+    agg = {}
+    for r in rows:
+        if r["stratum"] != "L1" or r["pixel_formats"] != "2":
+            continue
+        k = (r["ink_stage"], r["year_label"], ids.get(r["work_dir"], "**名札なし**"))
+        a = agg.setdefault(k, collections.Counter())
+        ins = (r["page_path"], int(r["layer_id"])) in keys
+        ink, pb = int(r["n_px_ink"] or 0), int(r["n_px_pure_black"] or 0)
+        a["n"] += 1
+        a["ink"] += ink
+        a["pb"] += pb
+        if ins:
+            a["n_in"] += 1
+            a["ink_in"] += ink
+            a["pb_in"] += pb
+    lo, hi = ik.BAND_PURE_BLACK
+
+    def f(pb, ink):
+        return f"{pb / ink:.4f}" if ink else ""
+
+    def band(v, stage):
+        if not v or stage != "2":
+            return ""
+        return "below" if float(v) < lo else "above" if float(v) > hi else "inside"
+    out = []
+    moved = collections.Counter()
+    for k in sorted(agg, key=lambda k: (k[0], k[1], int(k[2][1:]) if k[2][1:].isdigit() else 0)):
+        a = agg[k]
+        if not a["ink"]:
+            moved["墨の画素が 0 の作品(値が無い)"] += 1
+            continue
+        v_all = f(a["pb"], a["ink"])
+        v_out = f(a["pb"] - a["pb_in"], a["ink"] - a["ink_in"])
+        v_in = f(a["pb_in"], a["ink_in"])
+        b_all, b_out = band(v_all, k[0]), band(v_out, k[0])
+        if a["n_in"] == 0:
+            moved["中の層が無い(前後が同じ)"] += 1
+        elif not v_out:
+            moved["**全部の層が中に在る(外すと作品ごと消える)**"] += 1
+        elif abs(float(v_out) - float(v_all)) >= 0.01:
+            moved["0.01 以上動く"] += 1
+        else:
+            moved["動きが 0.01 未満"] += 1
+        if k[0] == "2" and b_all != b_out:
+            moved[f"**帯の読みが変わる**({b_all} → {b_out or '値なし'})"] += 1
+        out.append([k[2], k[1], k[0], a["n"], a["n_in"], f"{a['ink_in'] / a['ink']:.3f}",
+                    v_all, v_out, v_in, b_all, b_out, ""])
+    for why, n in sorted(moved.items()):
+        print(f"    作品 {n:>3} —— {why}")
+    out += [[""] * 11 + [n] for n in NOTE_WORK]
+    n = bc.write_csv(os.path.join(ROOT, OUT_WORK),
+                     ["work_id", "year_label", "ink_stage", "n_layers", "n_layers_inside",
+                      "share_ink_inside", "frac_pure_black_all", "frac_pure_black_outside",
+                      "frac_pure_black_inside", "band_all", "band_outside", "note"], out)
+    print(f"    {os.path.basename(OUT_WORK)} {n}行")
+    return 0
+
+
+NOTE_WORK = [
+    "**作品フォルダーごとの前後**(2026-11-03)。**登録上の主値は作品ごとの行**(`doc/prereg_ink_darkness_20261030.md` §2)"
+    "なので、畳んだ1行(0.9177 → 0.9162)の前後だけでは足りない。**層別 L1 形式2、1段目と2段目の両方。** "
+    "**`frac_pure_black_all` は公開中の `ink_darkness_stage*.csv` の値と同じ**(撤回しない)。**`_outside` は中の層を外した値、`_inside` は中の層だけ**",
+    "**`band_*` は事前登録の帯(1段目の形式2 の行で出た 0.5262〜0.9712)に対する位置。2段目の行だけ**"
+    "(1段目の行は帯を作った側なので空)",
+    "**外すと作品ごと消える行が在る**(`frac_pure_black_outside` が空)—— **その作品では名前で選んだ線画の層が全部そのフォルダーの中に在る。** "
+    "**中の層が仕上げの線か下絵・資料かは、この表では届かない**(名前では分けきれない。**絵が何を描いているかは作者が決める**。規律6)",
+    "**大きく動く行は、外に残った少数の層が値を決めている**(例: 外に残った層の墨の大半が純黒でない背景の層)。"
+    "**動いた向きを良し悪しとして読まない**",
+    "**work_id は `ink_darkness_stage*.csv` と同じ匿名の名札**(条例10)。**同じ数の2行は双子(札 2019 と 2019b)。足さない**",
+]
 
 
 NOTE = [
