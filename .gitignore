@@ -42,7 +42,8 @@ config/autoloop_notify.env
 inbox/
 outbox/
 
-# 原稿由来の納品物(抽出ツールからの SCP 受け)。dataset/ と同じ扱いで追跡しない
+# 原稿由来の納品物(抽出ツールからの SCP 受け)。dataset/ と同じ扱いで追跡しない。
+# track によっては、ここにコピーしたペアデータ(~1GB)が入る(`stroke-selection` の注)。
 data/
 
 # **作者の答の別名化の前の控え。原稿の固有名を含むので追跡しない。**
