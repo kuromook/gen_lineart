@@ -35,6 +35,11 @@ SEED_BASE = 20261030000
 # every setting above stay as section 9-3 registered them.
 SEED_BASE_SECOND_DRAW = 20261031000
 
+# CFG angle (doc/prereg_generation_setting_cfg_20261103.md): the same prompts,
+# the same seeds as the second draw, one checkpoint, and only the CFG moves.
+# The registered levels are 4.0 and 9.0; 6.0 stays the default above.
+CFG_ANGLE_LEVELS = (4.0, 9.0)
+
 # Second registration (2026-10-30, user's ruling to match the image pipelines).
 # The author's tiles come from panels that were downscaled before the 480 window
 # was cut; the first run's external side was never downscaled, which showed up
@@ -63,12 +68,12 @@ CHECKPOINTS = {
 }
 
 
-def generate(checkpoint, prompt, negative, seed, timeout, hires=False):
+def generate(checkpoint, prompt, negative, seed, timeout, hires=False, cfg=CFG):
     payload = {
         "prompt": prompt,
         "negative_prompt": negative,
         "steps": STEPS,
-        "cfg_scale": CFG,
+        "cfg_scale": cfg,
         "sampler_name": SAMPLER,
         "scheduler": SCHEDULER,
         "width": SIZE,
@@ -109,6 +114,10 @@ def main():
         help="2048 ESRGAN pass -- OFF by default: the second registration ruled "
         "the 2048 rebuild off, so the registered exposure is 1024 with no pass",
     )
+    parser.add_argument("--cfg", type=float, default=CFG,
+                        help=f"default {CFG}; the CFG angle uses {CFG_ANGLE_LEVELS}")
+    parser.add_argument("--only", default="", choices=["", *CHECKPOINTS],
+                        help="one checkpoint only (the CFG angle draws animagine only)")
     args = parser.parse_args()
 
     spec = json.load(open(args.prompt_set))
@@ -128,13 +137,16 @@ def main():
         print(f"{stamp} {line}", flush=True)
 
     say(
-        f"=== start: {len(prompts)} prompts x {len(CHECKPOINTS)} checkpoints "
-        f"| seed_base={args.seed_base} hires={args.hires} size={SIZE} ==="
+        f"=== start: {len(prompts)} prompts x {1 if args.only else len(CHECKPOINTS)} checkpoints "
+        f"| seed_base={args.seed_base} hires={args.hires} size={SIZE} cfg={args.cfg} "
+        f"only={args.only or 'all'} ==="
     )
     counts = collections.Counter()
     started = time.time()
 
     for name, checkpoint in CHECKPOINTS.items():
+        if args.only and name != args.only:
+            continue
         out_dir = Path(args.out_root) / f"gen_{name}{args.tag}"
         out_dir.mkdir(parents=True, exist_ok=True)
         say(f"[{name}] -> {out_dir}")
@@ -147,7 +159,8 @@ def main():
             for attempt in range(args.retries):
                 try:
                     image = generate(
-                        checkpoint, prompt, negative, seed, args.timeout, args.hires
+                        checkpoint, prompt, negative, seed, args.timeout, args.hires,
+                        args.cfg,
                     )
                     path.write_bytes(image)
                     counts[f"{name}/written"] += 1
