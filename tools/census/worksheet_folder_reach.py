@@ -58,6 +58,9 @@ FOLDER_NAME = "sketch set"
 # **抽出側が便に書いた全数**(`push_sketch_set_author_answer_and_picks_20261103.md` §3)
 SUPPLIER = {"n_pages": 7013, "n_layers": 46327, "n_leaf": 32963}
 MAIN_VALUE = "0.9177"
+OCC_V4_GLOB = "inbox/occ_full_p*_layers_v4_20261103.csv"
+ADJUST_NAME = "調整"
+OCC_V4_LABEL = "遮蔽 _v4 の作業用の層(抽出側の is_worksheet、遮蔽の表の層に限る)"
 LABEL_AUTH = "作者が外すと答えた層だけを外した値(11-03 22:37 の聞き取り)"
 
 
@@ -71,6 +74,32 @@ def inside_keys(con):
         select distinct anc.page_path, anc.layer_id, anc.folder
         from anc join layers f on f.page_path = anc.page_path and f.layer_id = anc.a
         where f.folder and f.name = ?""", [FOLDER_NAME]).fetchall()
+
+
+def occ_v4_cell(con, inside, out) -> int:
+    """**既知セル(別の器具)**: 抽出側の遮蔽 `_v4` の `is_worksheet`(2026-11-04)。
+    **先方の規則は「祖先に sketch set のフォルダーが在る層 + 名前が `調整` の層」**。
+    **こちらは構造 DB の祖先の鎖から引く** —— **遮蔽の表に在る層に限って突き合わせる**(遮蔽の表は全層ではない)。"""
+    files = sorted(glob.glob(os.path.join(ROOT, OCC_V4_GLOB)))
+    if not files:
+        print("    **遮蔽 `_v4` の層の表が無い**(突き合わせない)")
+        return 0
+    tab = {}
+    for f in files:
+        with open(f, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                tab[(r["page_path"], int(r["layer_id"]))] = r["is_worksheet"] == "1"
+    ins = {(p, int(i)) for p, i, _ in inside}
+    adj = {(p, int(i)) for p, i in con.execute(
+        "select page_path, layer_id from layers where name = ?", [ADJUST_NAME]).fetchall()}
+    want = {k for k in tab if k in ins or k in adj}
+    got = {k for k, v in tab.items() if v}
+    same = want == got
+    print(f"    **遮蔽 `_v4` の作業用の層**: 先方 {len(got):,} / ここ {len(want):,}(うち sketch set の中 "
+          f"{len(want & ins):,}・`調整` だけ {len(want - ins):,})/ 先方だけ {len(got - want)} / ここだけ {len(want - got)} "
+          f"—— {'一致' if same else '**不一致**'}(遮蔽の表の {len(tab):,}層に限る)")
+    out.append([OCC_V4_LABEL, len({k[0] for k in got}), len(got), "", "", "", "一致" if same else "—", ""])
+    return 0 if same else 1
 
 
 def frac(rows):
@@ -98,7 +127,8 @@ def main() -> int:
               f"うち葉 {got['n_leaf']:,}  —— 供給元の数と {'一致' if same else '不一致'}")
         out.append([label, got["n_pages"], got["n_layers"], got["n_leaf"], "", "",
                     "一致" if same else "—", ""])
-    if not any(r[6] == "一致" for r in out):
+    bad += occ_v4_cell(con, inside, out)
+    if not any(r[6] == "一致" for r in out[:2]):
         print("    **供給元の数とどちらの行も一致しない**")
         bad += 1
 
@@ -123,8 +153,9 @@ def main() -> int:
         print(f"    {label}: 層 {len(rows):,} / 頁 {len({r['page_path'] for r in rows}):,} / "
               f"墨画素 {ink:,} / 墨のうち純黒 {v}")
         out.append([label, len({r["page_path"] for r in rows}), len(rows), "", ink, v, "", ""])
-    if out[2][5] != MAIN_VALUE:
-        print(f"    **主値が {MAIN_VALUE} を再現しない**({out[2][5]})")
+    main_row = next(r for r in out if r[0] == "墨の濃さの主結論の母集団(11-02 までの主値)")
+    if main_row[5] != MAIN_VALUE:
+        print(f"    **主値が {MAIN_VALUE} を再現しない**({main_row[5]})")
         bad += 1
     bad += by_work(keys)
     out += [[""] * 7 + [n] for n in NOTE]
@@ -271,6 +302,9 @@ NOTE = [
     "**【11-03 23:10 ユーザーの決定】主値は 0.9177(登録した母集団)のまま。作者の答えで外した 0.9156 を名前付きで隣に置く。** "
     "**作者の裁定は点数と独立なので棒ではないが、"
     "母集団を動かすのは棒の一部である**(結果を見る前に決めた裁定であることを記録する)",
+    "**遮蔽 `_v4` の作業用の層の行(2026-11-04)**: **抽出側の遮蔽の器具が付けた `is_worksheet = 1` の層を、"
+    "census が構造 DB の祖先の鎖と名前 `調整` から引いた層と突き合わせた** —— **別の器具どうしで全層一致。** "
+    "**遮蔽の表に在る層に限る**(遮蔽の表は全層ではない)。**`調整` を含むので、上の全数の行とは述語が違う。足さない**",
     "**全数の2行**: **供給元は「除外の1頁を除いた」と書いたが、数は除外の頁を含めた行と一致する。** "
     "**除外の頁を除いた行も出す**(どちらかを消さない)",
     "**`n_pages` は行ごとに述語が違う** —— 全数の2行は「その層のフォルダーが在る頁」、"

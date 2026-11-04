@@ -481,6 +481,14 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/deliver_occ_full_v4_20261103.md",
+        what="**遮蔽の全数計測 `_v4`**(作者の規則: 下絵の層のフォルダーの中の層と `調整` を遮蔽物にしない。"
+             "重みつきの被覆の列を足した。7,662頁・230,264層。除外の1頁を落とした)。**宛先は基盤で、census は写し**",
+        why_not_yet="**遮蔽の採点は基盤の領分。** **sha256 は6本すべて便の先頭16桁と一致。** "
+                    "**census が使ったのは `is_worksheet` の1列だけ** —— 構造 DB の祖先の鎖と `調整` の名前から引いた "
+                    "32,857層と全層一致(`worksheet_folder_reach.csv` の既知セル)",
+    ),
+    dict(
         path="inbox/deliver_occ_full_v3_zlib_20261101.md",
         what="**遮蔽の全数計測 `_v3`**(zlib の頭の取り違えを直した読み手 `a1131bc` で、"
              "944頁を測り直した全頁の表。**巨大な CSV 6本もこちらの inbox に届いている**)。"
