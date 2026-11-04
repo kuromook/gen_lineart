@@ -1783,7 +1783,12 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **下絵の層のフォルダーの中の葉**(`worksheet_folder_reach.py`、2026-11-03)
                "n_leaf",
                # **作品ごとの前後**(`worksheet_folder_reach.py`、2026-11-03 20:30)
-               "n_layers_inside", "n_layers_inside_author_checked", "n_layers_author_excluded")
+               "n_layers_inside", "n_layers_inside_author_checked", "n_layers_author_excluded",
+               # **発注2件の納品**(`layer_extent_face_alpha.py`、2026-11-04)。
+               # **外した理由ごとに別の列**(規律9)。**`n_px_match` と `n_px_differ` は別の量**
+               "n_layers_ok", "n_layers_empty", "n_px_match", "n_px_differ", "n_bbox_inconsistent",
+               "n_layers_format5", "n_layers_no_pixels", "n_layers_mask_unread",
+               "n_layers_counted", "n_layers_all_zero", "n_mask_init_255", "n_mask_init_0")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
@@ -1817,9 +1822,11 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               "floor_color_ratio", "color_ratio_min", "color_ratio_max",
               # **アルファが2値の層の割合**(Track N の照会)。件数ではないので小数が正しい
               "share_layers_binary_alpha", "share_px_on_binary_layers",
-              "share_px_partial_alpha")
+              "share_px_partial_alpha",
+              # **線画の層の範囲の中央値**(`l1_layer_extent.csv`)。件数ではないので小数が正しい
+              "median_bbox_share_of_canvas", "median_fill_of_bbox")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
-DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type",
+DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type", "plane",
             "drawn_ratio_usable", "volatile",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
@@ -2067,6 +2074,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # 材料の名簿とは別の列名にする**(同じ列名に2つの名簿を入れない。T138)
         "material_rebuilt": {"material_rebuilt", *MATERIALS_REBUILT, ""},
         "planes_read": {"planes_read", "body", "mask", ""},
+        # **面の表の行の面**(`face_binary_alpha.csv`)。`planes_read`(読み手の不具合の表)とは別の列
+        "plane": {"plane", "body", "mask", ""},
         "same_page_order": {"same_page_order", "yes", "no", ""},
         "in_n_query": {"in_n_query", "yes", "no", ""},
         # **後知恵の仮説を当てた範囲。** `scope`(前方割合の群)とは別の列名にする(T138)

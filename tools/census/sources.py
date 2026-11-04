@@ -82,6 +82,23 @@ LOCAL_CSV = [
                "**納品の `n_vector_layers` はコマ枠の層を含む**(構造 DB の `n_vector_layers` は外す)",
     ),
     dict(
+        key="l1_layer_bbox",
+        path="inbox/census_l1_layer_bbox_20261104.csv",
+        predicate="**線画の層(墨の濃さの層別 L1)の描かれた画素の範囲**(1行1層、49,786層・1,724頁。恒久除外の頁の 14層を落とした)",
+        supplier="抽出側(um350。器具 `measure_layer_extent.py` `e13cf72`)", as_of="2026-11-04",
+        caveat="**sha256 は便の先頭16桁と一致。** **公開表は `census/l1_layer_extent.csv`** —— "
+               "**鍵の集合は墨の濃さの表から引き直して一致、`n_px_alpha_gt0` は 49,784層で一致**(違う2層は1段目の表が古い側)",
+    ),
+    dict(
+        key="face_layer_alpha_mask",
+        path="inbox/census_face_layer_alpha_mask_20261104.csv",
+        predicate="**面の層の本体のアルファとマスクの面の値**(1行1層 × 面、189,974行・1,724頁)",
+        supplier="抽出側(um350。器具 `measure_layer_extent.py` `e13cf72`)", as_of="2026-11-04",
+        caveat="**sha256 は便の先頭16桁と一致。** **公開表は `census/face_binary_alpha.csv`** —— "
+               "**マスクは `mask_cover_request3_v2`、本体は `faint_alpha_905_v2` と重なる層で全部一致。** "
+               "**形式5 の本体は調査中**",
+    ),
+    dict(
         key="zlib_affected",
         path="inbox/zlib_affected_layers_20261101.csv",
         predicate="**zlib の頭を取り違えて画素を失っていた (頁, 層, 面)** —— "
@@ -479,6 +496,20 @@ ARRIVED_NOT_INTEGRATED = [
         what="**優先65頁の成果物の作り直し**(層の一覧 151層 / 全層 PNG 2層 / トーン 7面 / コマ枠 6枠)",
         why_not_yet="**宛先は基盤・Track L。** **納品の木に増えたフォルダー3つは "
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
+    ),
+    dict(
+        path="inbox/deliver_census_layer_bbox_and_face_alpha_20261104.md",
+        what="**発注2件の納品**(線画の層の範囲 / 面の層のアルファ・マスクの値)。**宛先は census、写しは N・M・基盤**",
+        why_not_yet="**統合した**: 材料は `LOCAL_CSV` の `l1_layer_bbox` / `face_layer_alpha_mask`、"
+                    "公開表は `l1_layer_extent.csv` / `face_binary_alpha.csv`。"
+                    "**N の問い(頁の座標とタイル)への答えは供給元のもので、census は照合していない**",
+    ),
+    dict(
+        path="inbox/reply_census_sketch_set_counts_20261104.md",
+        what="**下絵の層のフォルダーの全数の数え方の答え**: **census の数え方が正しい**"
+             "(便の 7,013頁 / 46,327層 / 32,963 は除外の頁を含めた数。除くと 7,012 / 46,310 / 32,948)",
+        why_not_yet="**数の表ではなく答え。** **こちらの公開表は前から除外の頁を除いた数で、動かない。** "
+                    "**送られた CSV 3本に除外の頁は 0行**(先方の数え直し)",
     ),
     dict(
         path="inbox/deliver_occ_full_v4_20261103.md",

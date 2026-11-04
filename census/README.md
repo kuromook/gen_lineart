@@ -155,6 +155,7 @@
 ./venv/bin/python tools/census/reader_defect.py     # 読み手の不具合の当たり + 既知セル
 ./venv/bin/python tools/census/material_versions.py # 作り直された材料の前後(供給元の数が既知セル)
 ./venv/bin/python tools/census/line_binary_alpha.py # 線画の層のアルファが2値か(Track N の照会)
+./venv/bin/python tools/census/layer_extent_face_alpha.py # 線画の層の範囲 / 面の層のアルファ(発注2件の納品)
 ./venv/bin/python tools/census/pattern_style.py     # 形式に PatternStyle が残っている頁(④の同定ではない)
 ./venv/bin/python tools/census/worksheet_folder_reach.py # 下絵の層のフォルダーの中の層の量 + 主値の前後(畳んだ行と作品ごとの行)
 ./venv/bin/python tools/census/lineart_fill_candidates.py # 名前が線画なのに塗りつぶしの層の候補(作者に聞く表を data/ に作る。公開表は答えの後)

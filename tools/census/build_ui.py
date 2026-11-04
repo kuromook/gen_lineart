@@ -60,6 +60,14 @@ COLUMN_CAVEATS = {
     "n_layers_binary_alpha": ["line_binary_alpha.share_layers_binary_alpha"],
     "share_px_partial_alpha": ["line_binary_alpha.share_layers_binary_alpha"],
     "n_pages_all_binary": ["line_binary_alpha.share_layers_binary_alpha"],
+    # **発注2件の納品**(`layer_extent_face_alpha.py`、2026-11-04)
+    "median_bbox_share_of_canvas": ["l1_layer_extent.median_bbox_share_of_canvas"],
+    "median_fill_of_bbox": ["l1_layer_extent.median_bbox_share_of_canvas"],
+    "n_bbox_inconsistent": ["l1_layer_extent.median_bbox_share_of_canvas"],
+    "n_px_differ": ["l1_layer_extent.median_bbox_share_of_canvas"],
+    "n_layers_format5": ["face_binary_alpha.share_layers_binary_alpha"],
+    "n_layers_all_zero": ["face_binary_alpha.share_layers_binary_alpha"],
+    "n_mask_init_255": ["face_binary_alpha.share_layers_binary_alpha"],
     # **形式に `PatternStyle` が残っている頁**(`pattern_style_pages.csv`、2026-11-03)
     "n_pages_patternstyle_nonzero": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
     "n_pages_vector_any": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
