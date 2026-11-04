@@ -88,4 +88,8 @@ Fast Sketch Cleanup は**別のチームが、別のデータで、同じ種類�
 ## 6. 次の手
 
 **段1 は 2026-11-04 に済んだ**(`doc/survey_krita_fsc_20261104.md`。基盤へ通達済み)。**段2 の登録は 2026-11-04 に固定した**
-(`doc/prereg_krita_stage2_20261104.md`)。**次は登録の「順序」どおり IC から走らせる。** C4(人の判定)はユーザーに聞いてから。
+(`doc/prereg_krita_stage2_20261104.md`)。**走行の途中(2026-11-04)**: 推論は修正 A1(torch/CUDA、IC6 は最大差 1 で通過)で全13腕×292枚が
+`results/krita_stage2_20261104/` に出ている。IC1〜IC4 は回した(**IC3 は 0.316352 で不一致 → f1 の列は読まない**。
+0.3231 の出所を基盤に問う。台帳 766 行に 0.3164)。**Krita の腕の点数はまだ誰も読んでいない。**
+**次**: `/home/sh1/deepl/lineart/venv/bin/python -I tools/krita/krita_stage2_score.py --outputs results/krita_stage2_20261104 --report results/krita_stage2_20261104/_report`
+→ 登録の順(NC1〜NC4 → 表 → C1〜C3)で書く → 基盤へ通達(IC3 の件を含む)。C4(人の判定)はユーザーに聞いてから。
