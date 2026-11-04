@@ -4,8 +4,14 @@ Accumulating log of papers from outside image/illustration/art that might
 have mathematically transferable ideas for this project's line-art
 stroke-continuity/topology problem, the way clDice (originally a
 vessel-segmentation metric) did. See `README.md` for how this file gets
-populated and how to review it. Diffusion-track candidates live in the
-separate `candidates_diffusion.md`.
+populated and how to review it. Line-art-track candidates live in the
+separate `candidates_lineart.md` (the archived diffusion track's in
+`candidates_diffusion.md`).
+
+From 2026-11-04 the track's question is narrower: finding the group of
+gappy lines that bounds an author's region (gap-tolerant contour closure,
+perceptual grouping, figure-ground, node/branch topology). See `prompt.md`.
+Entries before that date were judged against stroke continuity.
 
 Entries are grouped by the date/focus-area of the run that found them.
 

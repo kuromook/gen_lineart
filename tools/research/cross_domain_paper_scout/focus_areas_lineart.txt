@@ -1,0 +1,8 @@
+where people draw lines: human line-drawing studies (Cole et al. 2008 "Where do people draw lines?" and successors)
+perception of line drawings: what lines convey about shape, depth, occlusion and material (vision science)
+stroke statistics, artist attribution and style analysis of drawings
+measuring the differences between generated images and human-made images or drawings
+what generative models encode about lines and contours: interpreting diffusion features, using generation as a probe
+evaluating line drawings in agreement with human judgement: perceptual metrics and the design of human rating studies
+validating image metrics: null baselines, negative controls, and metric sanity checks
+abstraction in sketching: what people keep and what they drop when they simplify a drawing

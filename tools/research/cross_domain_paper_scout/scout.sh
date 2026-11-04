@@ -1,8 +1,9 @@
 #!/bin/bash
-# Cross-domain paper scout: runs `claude -p` in headless mode against a
-# rotating focus field (see focus_areas.txt) to search for mathematically
-# transferable topology/continuity ideas from non-art fields. See
-# README.md for the full design rationale and setup instructions.
+# Paper scout: runs `claude -p` in headless mode against a rotating
+# focus field, alternating two tracks (topology: gap-tolerant grouping and
+# closure ideas from non-art fields; lineart: what line art conveys and
+# how human and generated line drawings differ). See README.md for the
+# full design rationale and setup instructions.
 #
 # Meant to run via cron on an always-on machine, sparse-checked-out from
 # the main dev repo (which isn't always on). Self-contained: no
@@ -35,11 +36,11 @@ RUN_TIMEOUT=${SCOUT_TIMEOUT:-30m}
 WEEK=$((10#$(date -u +%U)))
 
 # Two tracks share the one weekly slot, alternating by week parity: odd
-# ISO week -> topology, even -> diffusion. Override for a manual run with
-# SCOUT_TRACK=topology|diffusion.
+# ISO week -> topology, even -> lineart. Override for a manual run with
+# SCOUT_TRACK=topology|lineart.
 TRACK=${SCOUT_TRACK:-}
 if [ -z "$TRACK" ]; then
-  if [ $((WEEK % 2)) -eq 1 ]; then TRACK=topology; else TRACK=diffusion; fi
+  if [ $((WEEK % 2)) -eq 1 ]; then TRACK=topology; else TRACK=lineart; fi
 fi
 
 case "$TRACK" in
@@ -48,10 +49,10 @@ case "$TRACK" in
     PROMPT_FILE=prompt.md
     CANDIDATES_FILE=candidates.md
     ;;
-  diffusion)
-    FOCUS_AREAS_FILE=focus_areas_diffusion.txt
-    PROMPT_FILE=prompt_diffusion.md
-    CANDIDATES_FILE=candidates_diffusion.md
+  lineart)
+    FOCUS_AREAS_FILE=focus_areas_lineart.txt
+    PROMPT_FILE=prompt_lineart.md
+    CANDIDATES_FILE=candidates_lineart.md
     ;;
   *)
     echo "[$(date -u --iso-8601=seconds)] error: unknown SCOUT_TRACK \"$TRACK\"" >&2

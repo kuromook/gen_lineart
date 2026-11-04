@@ -1,12 +1,19 @@
 # Diffusion Track -- Candidates Log
 
+**Archived 2026-11-04.** No longer appended to: the diffusion track was
+replaced by the line-art track (`candidates_lineart.md`,
+`prompt_lineart.md`). The failure modes and numbers below are from
+2026-08 to 2026-10. They predate the project's current bars and have not
+been re-checked against them. The entries are kept as they were written.
+
 Accumulating log of diffusion papers whose *mechanism* might address the
 specific failure modes of this project's diffusion direction: condition
 adherence (ControlNet output only loosely following the input rough),
 over-inking, fine-tuning on a small paired dataset (~1.5k tiles), caption
 conditioning, and two-stage structure-then-refine formulations. See
 `README.md` for how this file gets populated and how to review it, and
-`prompt_diffusion.md` for the full context handed to each run.
+`prompt_diffusion.md` (now `prompt_lineart.md`, rewritten) for the context
+handed to each run.
 
 Topology/continuity candidates from non-art fields live in the separate
 `candidates.md`.
