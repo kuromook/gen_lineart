@@ -18,7 +18,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-API = "http://127.0.0.1:7860/sdapi/v1/txt2img"
+# 2026-11-06: forge-webui.service now binds the LAN address only
+# (--server-name 192.168.1.34), so loopback no longer answers. Only the
+# address moved; checkpoints, sampler, steps, CFG, size and seeds did not.
+# Forge is exclusive with the ComfyUI services: starting it stops them.
+API = "http://192.168.1.34:7860/sdapi/v1/txt2img"
 
 # Registered generation settings (section 9-3).
 SAMPLER = "DPM++ 2M"

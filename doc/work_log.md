@@ -757,3 +757,10 @@ A1F(塗りの窓)1,222 / A1L(線の窓、元コマは重ならない)343 を A1 
 - 走行 `tools/external_standard/face_scale_angle.py`(30秒)。IC1〜IC3・PC(顔の高さの AUC 0.94 → 0.53)・NC1 すべて通過。
 - A1: **C2 0本 / C1 4本(faint 3軸・deep_black_ratio)/ 他は判定保留**。`components_per_1k_ink_px` は縮む側で棒の手前。
   A2(副)も faint 3軸は C1。集計は変わらず(作者由来 0 / 他 6 / 判定保留 7)。結果 `doc/result_face_scale_20261105.md`。
+
+## 2026-11-06 生成器の宛先を LAN アドレスへ
+
+- ユーザーが画像生成サービスを systemd で排他起動にした(`~/.config/systemd/user/`: forge-webui / comfyui / comfyui-janus が互いに Conflicts)。
+  Forge は `--server-name 192.168.1.34` で待ち受けるので、`generate_external_pool.py` の宛先を `127.0.0.1:7860` → `192.168.1.34:7860` に変えた。
+  **宛先だけ。生成の条件(モデル・サンプラー・step・CFG・解像度・seed)は動いていない。** Forge を起動すると ComfyUI 系は止まる。
+  ComfyUI へ生成器を移すなら、それは生成設定の違いなので角度として登録してから(既存のプールと混ぜない)。
