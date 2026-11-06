@@ -18829,3 +18829,8 @@ ako6・ako7 の約60頁はベタの層の1〜3枚だけで、上の層のマス�
 ## §G 発注先
 - 抽出ツール: 8頁の層ごとの RGBA PNG と、`has_mask` の層のマスクのラスタ(`colour_pilot2` と同じ形)
 - census: 8頁の層の行(`m_colour_page_layers_v2` と同じ列。`tone_enabled` を含む)
+
+## 追補232 の続き(2026-11-07): 引いた8頁と作者の点検
+`m138` の印字: census 7,662頁 → 落とした(トーンを除いた材料 < 3 **6,614** / 標本内 **2** / 版の重複 **97** / 恒久除外 0 —— census の表に初めから無い)→ **母集団 949頁** → seed 0 で8頁(`results/m138_holdout_pages/drawn_pages.csv`)。
+**作者の点検: 「対象外にしたいページはない」 → 外した 0。** 8頁のうちトーンの材料を持たない頁は2頁(no 6・8)。
+発注: 抽出ツール `outbox/push_m_order_holdout8_pages_20261107.md`(SCP、着弾 02:09 を `dir` で確認)/ census `outbox/note_m_order_layer_rows_holdout8_20261107.md`。写しは基盤へ。
