@@ -779,3 +779,9 @@ A1F(塗りの窓)1,222 / A1L(線の窓、元コマは重ならない)343 を A1 
 - IC1〜IC4・PC(0.94 → 0.52)・NC1 すべて通過。**A1 は 12軸すべて判定保留**(C1〜C4 0本)。
   前の走行(250〜600)の C1 4本は 600〜1000 では繰り返さず、faint 2軸はモデルで向きが逆。W: illustrious は語だけで faint 2軸が動く。
   集計は変わらず(作者由来 0 / 他 6 / 判定保留 7)。結果 `doc/result_closeup_20261106.md`、仕分け 追記7。
+
+## 2026-11-06 census へ照会: 工程と時期を分ける
+
+- ユーザーの「だして」。区別に効く4軸(faint 3軸・`deep_black_ratio`)は工程で説明がつくが、`census/author_process.csv` でアナログ線画は 2024 系だけ → 工程と時期が分かれない。
+  依頼 `outbox/note_n_census_process_period_overlap_20261106.md` → `../lineart-census/inbox/`(写し `../lineart/inbox/`)。
+  頼んだもの: A1 5作の work_id と札・工程 / 同じ時期にアナログとデジタルが両方在る候補 / 作者向けの記入式の表。N は列を作らない。
