@@ -49,7 +49,7 @@ results/l38_cluster_ui/queue.json               コマごとの面と、既存�
 ただし **`k` は振らない** —— 振ると L19 の名前が全部ずれて 628件の答が結べなくなる。
 **答を持たない面として、`region` 番号で載せる。**
 """
-import argparse, json, os, sys, csv, collections
+import argparse, json, os, re, sys, csv, collections
 from multiprocessing import Pool
 import numpy as np, cv2
 
@@ -67,6 +67,8 @@ L19Q = f'{ROOT}/results/l19_ui/queue.json'
 L19A = f'{ROOT}/labels/fill_words.jsonl'
 MAXSIDE = 1200
 SEED = 20261028        # **行列の並びの種。** 記録する(途中で止めた分を標本として読むため)
+# **`done*` は作業途中の退避。現行は素の `pageNNNN`**(作者 2026-10-26、2026-11-06 に再度)
+WIP_WORKS = ('ako6', 'ako7')
 # 面の色(BGR、淡い)。番号で見分けるので色は巡回でよい
 PAL = [(245, 215, 215), (215, 245, 215), (215, 225, 250), (245, 235, 205),
        (240, 215, 245), (205, 245, 245), (225, 225, 245), (235, 245, 215),
@@ -178,11 +180,85 @@ def answers_by_crop():
     return out
 
 
+def drop_wip(js, keep_wip):
+    """**`done*` を母集団から外す**(作者の裁定。`ruling_done_folders_are_wip_20261026.md`)。
+
+    作者の逐語(2026-10-26。**言い換えない**):
+
+    > 作業途中の退避だ  バラバラに別のcmc 管理化に作成されたものが最終的にako6, ako7 に
+    > マージされている  この2018/ako6 と 2019/ako7下の done?/*.clip は背景や仕上げがぬけている
+    >
+    > 他のフォルダではdone が別の意味で使われているかもしれないがここでは別の意味となっている
+
+    2026-11-06 に作者が同じ裁定を繰り返し、**「作業途中ファイルを外してOKだ」**と言った。
+
+    **名前で引くのは `WIP_WORKS` の中だけ** —— 作者が「他のフォルダでは別の意味」と
+    明言しているので、**この規則を他の作品に広げない**(裁定 §2-4)。
+    規律13(近い列で代用しない)に抵触しない理由: **ここでは名前そのものが作者の基準**で、
+    種別を推定する代用列ではない。**その代わり、何頁をどちらに振ったかを印字する。**
+
+    **この器具は 10-28 に作られ、裁定はその2日前に届いていた。** それでも 65頁すべてで
+    行列を作った —— **便は在り、従っているかを見る点検が無かった**(条例4)。
+    この関数がその点検である。
+    """
+    keep, cut = [], collections.Counter()
+    for job in js:
+        pid, work = job[0], job[1]
+        if work not in WIP_WORKS:
+            cut[f'この規則の外の作品(`{work}`。名前で引かない)'] += 1
+            keep.append(job)
+        elif re.search(r'page\d+$', pid):
+            keep.append(job)
+        else:
+            cut['**`done*` = 作業途中の退避**(背景や仕上げが抜けている)'] += 1
+    if keep_wip:
+        print(f'  **`--keep-wip`。`done*` を残した**(裁定に反する側。'
+              f'外れるはずだった {sum(cut.values())} 頁)')
+        return js
+    print(f'  母集団: {len(js)} 頁 -> **{len(keep)} 頁**(現行の素 `pageNNNN`)')
+    for k, v in cut.most_common():
+        print(f'    外した {v}  {k}')
+    if not cut:
+        print('    外した 0  (**この点検は空ではない**: 上の頁数を数えている)')
+    return keep
+
+
+def wip_answers_leaving(js_keep):
+    """**外した頁に付いている作者の答を、消さずに数えて印字する**(規律9・規律7)。
+
+    行は `labels/region_cluster.jsonl` に残る。**画面から見えなくなるだけ**である。
+    10-28 に入れた「作者が既に触れた札は外さない」という既定の規則は、
+    **この裁定より弱い** —— ただし黙って上回らせない。**数を出す。**
+    """
+    sp = f'{ROOT}/labels/region_cluster.jsonl'
+    if not os.path.exists(sp):
+        return
+    live = {f'{w}_{pid}' for pid, w in ((j[0], j[1]) for j in js_keep)}
+    cnt = collections.Counter()
+    for ln in open(sp, encoding='utf-8'):
+        if not ln.strip():
+            continue
+        r = json.loads(ln)
+        tag = r.get('tag') or ''
+        if any(tag.startswith(k) for k in live):
+            continue
+        cnt[r.get('kind') or '?'] += 1
+    tot = sum(cnt.values())
+    print(f'  **外した頁に付いていた作者の行 {tot}**'
+          '(**消さない**。`region_cluster.jsonl` に残り、画面から出なくなるだけ)')
+    for k, v in cnt.most_common():
+        print(f'    {v}  kind={k}')
+    if not cnt:
+        print('    0  (**この点検は空ではない**: 保存の全行を走っている)')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--limit', type=int, default=0, help='頁を切る(煙試験)')
     ap.add_argument('--keep-single', action='store_true',
                     help='面が1つだけのコマも行列に残す(既定は外す。作者の判断 2026-10-28)')
+    ap.add_argument('--keep-wip', action='store_true',
+                    help='`done*`(作業途中の退避)も残す。**既定は外す**(作者の裁定 2026-10-26/11-06)')
     a = ap.parse_args()
     os.makedirs(f'{OUT}/panels', exist_ok=True)
     print('L38: **面のまとまり**の待ち行列。標準は `arms(\'gated\')` '
@@ -190,6 +266,8 @@ def main():
     zz = zmap()
     fill, line = arms('gated')
     js = jobs(zz, fill, line)
+    js = drop_wip(js, a.keep_wip)
+    wip_answers_leaving(js)
     if a.limit:
         js = js[:a.limit]
     print(f'頁 {len(js)}', flush=True)
@@ -319,7 +397,13 @@ def main():
              order_note='最初の24コマは頁の順で答えられた。以降がこの種での無作為',
              n_panel_all=int(n0), dropped_single=int(n0 - len(rows)),
              standard='gated', unit='panel', cross_panel=False,
-             built='l38_build_cluster_queue.py', queue_id='l38_panel_v1',
+             built='l38_build_cluster_queue.py',
+             # **母集団が変わったので `queue_id` も変える** —— 保存の行は `queue` を
+             # 持っているので、**どの母集団の上で答えたか**が後から読める(規律1)
+             queue_id='l38_panel_v2_current40' if not a.keep_wip else 'l38_panel_v1',
+             population=('現行の素 `pageNNNN` のみ。**`done*` = 作業途中の退避は外した**'
+                         '(作者 2026-10-26 / 2026-11-06。背景や仕上げが抜けている)'
+                         if not a.keep_wip else '65頁すべて(`done*` を含む。裁定に反する側)'),
              kc=dict(names_ok=bool(ok2), hit_fatal=int(sum(bad.values())),
                      unclickable=int(unreach), count_mismatch=int(mism)),
              queue=rows)
