@@ -793,3 +793,9 @@ A1F(塗りの窓)1,222 / A1L(線の窓、元コマは重ならない)343 を A1 
 - **A1 の「アナログ」の根拠は作者の作品単位の言明「5作ともアナログ作画が主体のものだ」(10-30)で、線画の段階の裁定ではない。**
   → 「区別に効く4軸は工程で説明がつく」は「作品単位でアナログ主体の工程」までしか言えない。出所を census に返信
   (`outbox/note_n_census_a1_analog_source_20261106.md`)。
+
+## 2026-11-07 census の訂正を受領
+
+- `inbox/reply_n_census_a1_already_held_20261106.md`: 作者の「5作ともアナログ作画が主体」は census の `author_rulings.csv` に 10-30 から在った(前便の「無い」は census の見落とし)。
+  作品単位の「主体」と段階の裁定(`2024b\fitness` だけ)は別の表のまま。`gakuen` はデスクトップの `dennou\gakuen`(.clip 16)、`hamlabi` の2札は 30組中 26組がバイト同一。
+- 申し出に答えて `hamlabikoma` タイルの頁名(13頁・164枚)を送った(`outbox/note_n_census_hamlabi_pages_20261107.md`)。
