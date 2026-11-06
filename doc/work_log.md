@@ -785,3 +785,11 @@ A1F(塗りの窓)1,222 / A1L(線の窓、元コマは重ならない)343 を A1 
 - ユーザーの「だして」。区別に効く4軸(faint 3軸・`deep_black_ratio`)は工程で説明がつくが、`census/author_process.csv` でアナログ線画は 2024 系だけ → 工程と時期が分かれない。
   依頼 `outbox/note_n_census_process_period_overlap_20261106.md` → `../lineart-census/inbox/`(写し `../lineart/inbox/`)。
   頼んだもの: A1 5作の work_id と札・工程 / 同じ時期にアナログとデジタルが両方在る候補 / 作者向けの記入式の表。N は列を作らない。
+
+## 2026-11-06 census の返信(工程と時期)
+
+- `inbox/reply_n_census_process_period_overlap_20261106.md`: A1 5作のうち census の表で線画アナログと裁定済みは `2024b\fitness` の1作だけ。
+  `hamlabi`(2023b/2024b の2札)・`housei` は裁定なし、`gakuen` は構造 DB に無し、`ako5ver2` は母集団外。問い2・3は篩の列を決めてから。
+- **A1 の「アナログ」の根拠は作者の作品単位の言明「5作ともアナログ作画が主体のものだ」(10-30)で、線画の段階の裁定ではない。**
+  → 「区別に効く4軸は工程で説明がつく」は「作品単位でアナログ主体の工程」までしか言えない。出所を census に返信
+  (`outbox/note_n_census_a1_analog_source_20261106.md`)。
