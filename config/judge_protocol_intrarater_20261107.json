@@ -1,0 +1,80 @@
+{
+  "schema": "judge_protocol/1",
+  "_what": "**脚だけを再掲つきで取り直し、本人内一貫性を測る登録**(2026-11-07 起草)。中間の腕を待たずに走れる唯一の収集で、出るのは**採点器の上限**(条例8 の合格条件が本人内一貫性に乗っている)。anchor-20261004 は再掲0でこれを持っていない。",
+
+  "name": "anchor-20261107-legs-intrarater",
+  "registered_on": "2026-11-07",
+  "collection_starts_on": "2026-11-08",
+  "_dates": "**最短の日**を書いてある(登録が収集より前であることの宣言)。実際に取った日は取ったときに書き換える —— 動かすのは「後ろへ」だけで、前へは動かさない",
+
+  "question": "この画像は線画として使えますか。 使える / 使えない",
+  "_question": "2026-10-04 の設計の問いは `is this usable as line art` と記録に在るが、**画面に出ていた日本語の文面は残っていない**(UI は削除済み)。だからこの文面は**この収集のもの**で、前回の文面の復元ではない。",
+  "unit_on_screen": "いま見えている1枚(480px のタイル1枚)についてだけ答えてください。他の画像や元の絵とは比べません。",
+  "composite_stimulus": false,
+
+  "purpose": "intra_rater",
+  "claims_about_arms": false,
+  "_purpose": "測るのは**同じ画像を2回見せたときに同じ答が返る率**だけ。腕の差について何も主張しない —— 脚の通過率が前回と同じかどうかは**確認**であって棒ではない(条例6: 床と天井に張り付いた脚で暦の取り直しをしても確認しか返らない)。",
+
+  "normalisation": "全画像を JPEG quality 95 の経路に通してから見せ、同じ経路の画素で軸を測る(`tools/measure_axis_separation.py --jpeg-roundtrip 95`)。理由は gt が `.jpg`、腕の描画が `.png` で出ていること(Track N 2026-10-30 の必須条件)。**この材料では軸はほぼ動かなかった**(`near_white_frac` 0.937 → 0.939)が、宣言は走る前に書く。",
+
+  "judge": "作者(単独)",
+  "n_judges": 1,
+
+  "arms": ["gt", "rough"],
+  "common_source": false,
+  "common_source_reason": "gt は元の線画そのもので加工ではない。rough は同じ絵のラフで、gt を削ったものではなく別の工程の産物。**どちらも「同じ元画像を削ったもの」ではない**ので lesson 11 の順位問題は立たない。削除の腕(classifier / oracle)はこの収集に入れない —— 入れた瞬間に劣化の族になる。",
+  "damage_measure": null,
+
+  "computable_axes": [
+    {
+      "name": "near_white_frac",
+      "measured_on": "holdout_lineart_family 192タイル × 腕(gt 対 rough)、JPEG q95 の経路",
+      "separation_auc": 0.939,
+      "note": "**脚は分かれている。当たり前である** —— 床と天井として選んだのだから。目的が intra_rater なのでこれは落とす理由にならない。",
+      "reproduces_verdicts": {
+        "records": "results/trackc_judge_20261004/absolute_ratings.json(60件)",
+        "instrument": "tools/axis_vs_verdicts.py --jpeg-roundtrip 95",
+        "threshold": 0.9194,
+        "hit_rate": 0.429,
+        "miss_rate": 0.571,
+        "false_pass_rate": 0.087,
+        "reproduces": false,
+        "note": "**閾値は同じ60件に合わせて選んだので、出る数は上限。** それでも14件の『使える』のうち8件を落とし、oracle の3件を誤って通す。**分離 0.939 は作者の判定を再現しない。**"
+      }
+    },
+    {
+      "name": "mean_ink",
+      "measured_on": "同上",
+      "separation_auc": 0.794,
+      "note": "限界 0.8 を下回る。",
+      "reproduces_verdicts": {
+        "records": "results/trackc_judge_20261004/absolute_ratings.json(60件)",
+        "instrument": "tools/axis_vs_verdicts.py --jpeg-roundtrip 95",
+        "threshold": 0.0942,
+        "hit_rate": 0.143,
+        "miss_rate": 0.857,
+        "false_pass_rate": 0.022,
+        "reproduces": false
+      }
+    }
+  ],
+  "axis_separation_limit": 0.8,
+
+  "n_items": 38,
+  "repeats": 8,
+  "_items": "脚2本 × 15タイル = 30件 + 再掲8件 = 38件。**実測の速さ 60件/82.1秒 から 52秒**(条例6 の脚30件≈41秒と同じ測り方)。再掲は同じ画像を離して2回出す。",
+  "undecidable_option": false,
+  "forced_choice_reason": "二値のまま取る —— 選択肢を増やすと anchor-20261004 と比べられない(選択肢は構成の一部、規律1)。**保留を足すなら別の錨として登録する。** 条例5 の『判定保留は正直な結論』は結論の書き方の話で、選択肢を増やす許可ではない。",
+
+  "stratification": "gt_ink の五分位で層化し、脚の間でタイルを重ねない(`tools/build_absolute_ratings.py` の既存の割り当て。**seed は新しくする** —— 同じ seed だと前回と同じタイルになり、再掲と区別がつかない)。",
+  "tile_overlap_across_arms": false,
+  "overlap_bias_note": null,
+
+  "anchor_legs": ["gt", "rough"],
+  "same_session": true,
+
+  "bar": "測るのは再掲8組の一致率(本人内一貫性)。**帰無値は 0.5**(二値で当てずっぽう)。**0.750 は比較判定203件の数でこの錨のものではないので、棒として引かない。** この値が条例8 の合格条件(hold-out 一致率 ≥ 本人内一貫性 × 0.85)の右辺になる —— いま右辺が無いので条例8 は走れない。**低く出てもそれが上限で、撤回ではない。**",
+  "stopping_rule": "38件を一度で取り切る(推定52秒)。途中で止まったら取った分を印字し、**『部分』として登録して破棄しない**。足りない分を別のセッションで足さない —— 同一セッション条件が壊れる(条例6)。",
+  "read_order": "① 再掲の一致率(本人内一貫性)→ ② 脚の通過率を前回と並べて印字(`tools/judge_anchor.py bars anchor-20261004 anchor-20261107-legs-intrarater`)→ ③ 最後に軸の読み。**順序を先に書く理由**: 2026-10-04 は読む順が結論を決めた(計器チェックを先に読んで撤回に至った)。"
+}

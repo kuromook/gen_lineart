@@ -16,20 +16,28 @@
   "marked_target": null,
   "_composite": "合成画像を見せるなら `composite_stimulus: true`。そのとき**合成前の各層を並べ**(`layers_shown`)、**問う対象に印を付ける**(`marked_target`)",
 
+  "purpose": null,
+  "claims_about_arms": null,
+  "_purpose": "**何のための収集か**を先に宣言する。`compare_arms`(腕の差を読む)/ `intra_rater`(本人内一貫性だけを測る。**登録簿の脚以外の腕を入れられない**し `claims_about_arms: false` が要る)。軸の規則は compare_arms にだけ効く —— 脚が分かれているのは当たり前で、それは落とす理由にならない",
+
+  "normalisation": null,
+  "_normalisation": "**全腕を通す経路を走る前に書く。** 作者側は JPEG、外部側は PNG で出てくるので、通さないと**一番効く軸が圧縮を読む**(Track N 2026-10-30)。器具は `measure_axis_separation.py --jpeg-roundtrip <Q>`。**この木の 2026-10-04 の材料では q95 で軸はほぼ動かなかった**(0.937→0.939)が、それはこのプールについての実測で、外部の PNG 材料には当たらない",
+
   "judge": null,
   "n_judges": null,
   "_judge": "判定者は構成の一部(規律1)。**2人以上なら取り直しではなく別の錨**",
 
   "arms": null,
   "common_source": null,
-  "_arms": "`common_source: true` = 全腕が同じ元画像の加工(劣化)である。そのとき lesson 11 が効く",
+  "common_source_reason": null,
+  "_arms": "`common_source: true` = 全腕が同じ元画像の加工(劣化)である。そのとき lesson 11 が効く。**`false` と書くなら理由を `common_source_reason` に書く** —— 偽の宣言で点検を丸ごと飛ばせると、沈黙が合格と見分けがつかない",
   "damage_measure": null,
   "_damage_measure": "`common_source` なら腕ごとの損傷量を測って入れる({腕: 値})。**損傷が腕を分けているなら、返るのは劣化量の順位で、人に聞く意味が無い**(lesson 11)",
 
   "computable_axes": null,
-  "_computable_axes": "**人に頼む前に、選好を予測する計算可能な軸を測る**(2026-10-04 に確立)。[{name, measured_on, separation_auc, note}]。`separation_auc` は腕どうしをその軸だけで分けたときの AUC。**null は未測定で落ちる**",
+  "_computable_axes": "**人に頼む前に、選好を予測する計算可能な軸を測る**(2026-10-04 に確立)。[{name, measured_on, separation_auc, note, reproduces_verdicts}]。`separation_auc` は腕どうしをその軸だけで分けたときの AUC。**null は未測定で落ちる**。**分離が限界以上でも、それだけでは落とさない(2026-11-07 に改めた)** —— 分離は腕の違いを言うだけで、作者の判定を再現するとは言っていない。限界以上の軸には `reproduces_verdicts: {records, hit_rate, miss_rate, reproduces}` を付ける(器具 `tools/axis_vs_verdicts.py`、規律13)。**再現するなら落ちる**(計算で答が出る)、**再現しないなら通る**。この改めの根拠: anchor-20261004 の脚は `near_white_frac` で 0.939 分かれるのに、その軸の的中率は 0.429・取りこぼし 0.571(閾値を60件に合わせた上限値)で作者の分類を再現しない。古い規則のままだと **lesson 10 を出した収集自身が止まっていた**",
   "axis_separation_limit": 0.8,
-  "_axis_separation_limit": "この値以上で分かれる軸が在れば落ちる —— 計算で答が出ているので人の時間を使わない。**先に登録する値**",
+  "_axis_separation_limit": "**先に登録する値。** この値以上で分かれる軸は**引き金**で、そこから先は規律13 の読み(`reproduces_verdicts`)が決める —— 2026-11-07 までは「以上なら落ちる」だったが、分離だけで落とす規則は lesson 10 の収集自身を止める形だと実測で分かった",
 
   "n_items": null,
   "repeats": null,

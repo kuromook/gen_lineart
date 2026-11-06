@@ -6718,3 +6718,124 @@ instruments -- **went to the user**, because the basic law has a line budget and
 anything added there has to displace the same number of lines. Nothing to do here
 until that comes back. The foundation also recorded the screening (ledger Track O,
 trap `T164`) and the unit-qualified correction (ledger Track E).
+
+## 2026-11-07 (night) Next step 1: two registrations, and the gate's own rule was wrong
+
+The handoff's first next step was to **design a collection with an interior arm**
+and write it so the gate passes. Writing it found something bigger: **the gate's
+axis rule, as implemented, would have stopped the collection that produced
+lesson 10.**
+
+### What the rule said, and what the material says
+
+Condition 1's gate read a pairwise separation AUC and failed any axis at or above
+the pre-registered limit of 0.8, on the reasoning that a computable axis which
+separates the arms has already answered the question. Measured on the anchor's own
+material -- all 192 holdout tiles, four arms, `tools/measure_axis_separation.py`:
+
+| pair | axis | separation AUC |
+|---|---|---:|
+| `gt` vs `rough` (the two legs) | `near_white_frac` | **0.939** |
+| `gt` vs `rough` | `mean_ink` | 0.794 |
+| `gt` vs `oracle` | `near_white_frac` | **0.578** |
+
+So the legs sit above the limit: under the old rule the 2026-10-04 collection
+could not have been registered. And the rule's premise is false here. A new
+instrument, `tools/axis_vs_verdicts.py`, asks the question discipline 13 asks --
+**does the axis reproduce the author's classification?** -- against the 60
+recorded verdicts, with the threshold fitted on those same 60 records, so every
+number it prints is an **upper bound**:
+
+| axis | threshold | hit rate | miss rate | false pass | accuracy |
+|---|---:|---:|---:|---:|---:|
+| `near_white_frac` | 0.9194 | **0.429** (6/14) | **0.571** (8/14) | 0.087 (4/46) | 0.800 |
+| `mean_ink` | 0.0942 | 0.143 (2/14) | 0.857 (12/14) | 0.022 (1/46) | 0.783 |
+
+The best axis misses **8 of the 14 usable items** and lets 3 `oracle` tiles
+through, and its 0.800 accuracy is mostly the base rate (46/60 = 0.767 unusable).
+The reason is visible in the separations: `gt` and `oracle` differ by only 0.578
+on `near_white_frac`, yet the author called `gt` usable 14/15 and `oracle` 0/15.
+**Thinness does not tell them apart.** A separation says the arms differ; it does
+not say the author's answer is computable.
+
+So the gate changed: **an axis at or above the limit is a trigger, not a
+verdict.** Above the limit the registration must carry the discipline 13 reading
+-- reproduces the verdicts, and it falls; does not reproduce, and separation alone
+no longer stops it. Neither lesson 10 nor `anchor-20261004` is retracted: what
+moved is the gate, not a result.
+
+### The Track O screening, re-read
+
+The 11-07 morning screening's **decisive reason** was "density alone answers it,
+so do not ask the person". That reasoning does not hold any more. Re-run through
+the corrected gate, the Track O draft still falls -- **7 items now** (the two new
+required fields, `purpose` and `normalisation`, plus the axis item restated as
+"no discipline 13 reading"), and the verdict is unchanged: **do not collect.**
+What carries it is (a) the arms separate on *density*, which is the damage axis
+condition 5 explicitly excludes, so this is not "a pair differing on an axis other
+than damage", and (b) every arm is a transform of the same rough with **no damage
+measure** (lesson 11). The old wording stays on record in the registry beside the
+correction -- a retraction is a path, not an item (discipline 3).
+
+### Compression was checked, and does not bite here
+
+Track N's handoff records a required condition: the author's pool is JPEG and
+external material arrives as PNG, so `near_white_frac` can read **ringing**
+instead of the drawing. `measure_axis_separation.py` grew `--jpeg-roundtrip Q`,
+which puts every image through the same JPEG path before the axes are computed,
+and prints the normalisation and each arm's file formats. On this tree's material
+it changes almost nothing (`gt` vs `rough` on `near_white_frac` 0.937 -> 0.939),
+because the arm renders already descend from JPEG tiles. **That is a measurement
+about this pool, not a general exemption** -- external PNG material has to be
+re-measured.
+
+### The two registrations
+
+**`config/judge_protocol_intrarater_20261107.json` -- passes the gate** (0 items
+dropped, 24 passed). Legs only (`gt`, `rough`), 15 tiles each, disjoint, **8
+repeats**, 38 items, **about 52 s** at the measured 60 items / 82.1 s. Its purpose
+is declared `intra_rater` and it states `claims_about_arms: false`; the gate now
+refuses to let an `intra_rater` collection carry any arm that is not a registered
+leg, so the waiver cannot smuggle in an arm. What it produces is the **intra-rater
+consistency the scorer's pass condition needs on its right-hand side** (condition
+8: hold-out agreement >= intra-rater x 0.85). There is no right-hand side today,
+so condition 8 cannot run at all. **This is the only collection that needs no new
+material**; it is blocked only on the author sitting down, which is the user's
+call to make.
+
+**`config/judge_protocol_interior_20261107.json` -- falls on 4 items**, and all
+four are the material: the collection date, the third arm's name, the computable
+axes, and whether the arms share a source. **The other 17 items pass**, so the
+design is done. The registration carries `interior_arm_acceptance`, five
+conditions an arm must meet (not deletion-only; density does not separate it, or
+the axis provably fails to reproduce the verdicts; damage not the separator; the
+unit is one 480px tile; the population is the same holdout), and the three
+candidates with what is wrong with each: the preprocessor's output on the rough
+(expected to fall on the damage condition, which would itself be a result), Track
+N's SD line art (**a different population**, and a session is sitting on that tree
+-- do not move its outputs), and Track O's stage 2 (already dropped).
+
+### Three smaller defects, found by writing a real registration
+
+- **`common_source: false` skipped lesson 11's check in silence.** Now a false
+  declaration requires a written reason; silence is no longer indistinguishable
+  from a pass.
+- **An arm could be blank.** `arms: ["gt", "rough", null]` passed the "arms are
+  listed" check. Now every arm must be named -- no name means no material.
+- **The handoff pointed at the wrong ordinance numbers** in two places (the
+  calendar point is condition 6, not 1; the scorer is condition 8, not 4).
+
+The ordinance took the new clause (**"a large separation alone does not stop
+you"**) and is **1,992 characters** by the instrument's count, which required
+trimming four places first: the sentence template in condition 7 became a pointer
+to the registry, the template path in condition 1 became `--template`, and two
+instances were compressed. At budget again, so the next addition trims first.
+
+**Two checks on the registry's own edit.** Rewriting it through `json.dumps`
+reformatted the whole file, so the diff is 532 lines for a small change. Walking
+every leaf of the old and new versions shows **one leaf removed** (`revised`,
+which became a list whose first element is the old string), **one changed**
+(`material_screenings[0].decisive`, the correction), and 49 added. And the
+pre-correction wording is now kept **verbatim** in
+`decisive_before_correction`, printed by `judge_anchor.py status` -- the first
+version of the correction paraphrased it, which is not what discipline 3 asks for.

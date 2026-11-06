@@ -162,7 +162,51 @@ def cmd_status(reg):
             print(f"   {m['date']}  {m['material']}")
             print(f"     判定: {m['verdict']}  落ちた項目 {m.get('failed_items')} 件")
             print(f"     決め手: {m['decisive']}")
+            if m.get("decisive_before_correction"):
+                print(f"     **直す前の決め手(消さない。規律3)**: {m['decisive_before_correction']}")
+            if m.get("decisive_corrected_on"):
+                print(f"     **決め手を直した**: {m['decisive_corrected_on']}")
+            if m.get("regate_20261107_night"):
+                print(f"     かけ直し: {m['regate_20261107_night']}")
             print(f"     帰結: {m['consequence']}")
+
+    # **軸が作者の判定の代わりになるかの実測**(規律13)。印字しないと、門の規則を
+    # 改めた根拠が JSON に埋もれて「分離が大きいから集めない」が復活する
+    pr = reg.get("axis_as_proxy")
+    if pr:
+        print()
+        print("══ 計算可能な軸は作者の分類を再現するか(規律13)")
+        print(f"   記録: {pr['records']}")
+        print(f"   正規化: {pr['normalisation']}")
+        print(f"   {pr['threshold_note']}")
+        for ax in pr.get("axes", []):
+            print(f"   軸 {ax['name']}: 的中率 {ax['hit_rate']} / 取りこぼし {ax['miss_rate']} / "
+                  f"誤って通した率 {ax['false_pass_rate']} —— "
+                  f"**{'再現する' if ax.get('reproduces') else '再現しない'}**")
+            if ax.get("note"):
+                print(f"     {ax['note']}")
+        sp = pr.get("separation_for_the_same_pair") or {}
+        if sp.get("note"):
+            print(f"   {sp['note']}")
+        print(f"   帰結: {pr['consequence']}")
+        print(f"   撤回ではない: {pr['not_a_retraction']}")
+
+    # **計画中の収集。** 門の結果つきで出す —— 「落ちた」も記録である
+    pc = reg.get("planned_collections") or []
+    if pc:
+        print()
+        print("══ 計画中の収集(門にかけた結果つき)")
+        for c in pc:
+            print(f"   {c['name']}  —— 門: {c['gate']}")
+            print(f"     目的: {c['purpose']}")
+            print(f"     登録: {c['registration']}")
+            for k, label in (("why_it_can_run_now", "いま走れる理由"), ("fills", "埋まるもの"),
+                             ("cost", "費用"), ("note", "註"), ("candidates", "候補"),
+                             ("blocked_on", "**止まっている先**")):
+                if c.get(k):
+                    print(f"     {label}: {c[k]}")
+            for it in c.get("failed_items", []):
+                print(f"     落ちた: {it}")
     return bad
 
 

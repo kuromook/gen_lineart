@@ -1,243 +1,312 @@
 {
-  "schema": "judge_anchor_registry/1",
-  "track": "aesthetic-judge",
-  "written_on": "2026-10-30",
-  "why": "規律10(動く錨は、動かす時期と条件を先に登録する)の登録簿。人の判定が本当の棒で、前処理器の素の出力は下限の棒(CLAUDE.md 第1条)。**この track が持つのは「絵1枚(タイル)を線画として使えるか」の単位での人の判定で、その単位の実測を持つのはこの木だけ。プロジェクト全体で唯一ではない** —— 面・線の単位では Track M が 2026-11-03 以降くり返し作者の判定を取っている(下の external_human_judgements)。**単位が違うので比較不能で、どちらも相手の棒にはならない。**",
-  "reading_tool": "tools/judge_anchor.py",
-  "period_rule": {
-    "note": "**取り直す周期の決め方**(条例1)。暦ではなく事象で決める。",
-    "driver": "event",
-    "derivation": "規律2(新しい測定は既知セルを1つ含める)を人の判定に写したもの。判定者が1人なので、セッション間の差 = 基準の移動が腕の差と交絡する。だから錨脚は新しい腕と**同じセッション**で取る。これは暦の周期より強い: 腕の差を読む条件そのものである。",
-    "events": [
-      "人の棒に乗る主張を新しく出すとき(腕が1本でも増えたとき)",
-      "判定の単位を変えるとき(タイル→面、二値→3段階など。単位が変われば前の錨と比較不能)",
-      "作者が基準を言い直したとき(第1条: 人の基準は常に動く)"
-    ],
-    "same_session": true,
-    "who": "作者(単独)。**判定者が変わったら取り直しではなく別の錨**(判定者は構成の一部。規律1)。",
-    "legs_rule": "錨脚は新しい腕と必ず同梱する。いまの脚は `gt`(上の脚)と `rough`(下の脚)。",
-    "cost_measured": {
-      "anchor-20261004": "60件を82.1秒で完走(中央値1.28秒/件、最大間隔2.8秒=中断なし。`absolute_ratings.json` の ts から2026-10-30に再計算)",
-      "legs_only": "脚2本30件 ≈ 41秒",
-      "note": "**所要時間は周期を決める理由にならない**(縮める理由にも延ばす理由にも)。測ってあるのは、高いという思い込みで周期を延ばさないため。"
-    },
-    "calendar": null,
-    "calendar_reason": "暦では取り直さない。**下の脚は床に張り付き**(rough 0/15)、**上の脚は実質天井**(gt 14/15 で、落ちた1件は白紙GTを正しく却下したもの)。この脚で暦の取り直しをしても確認しか返らない(動いても読めない)。",
-    "calendar_becomes_meaningful_when": "**削除腕以外の腕が中間に入ったとき**(usable が 1..n-1 に在る腕が1本以上。器具が「中間 = 動く余地あり」と印字する)。そのとき暦の周期をここに登録する。",
-    "refutation": "同じ材料・同じ判定者で、同一セッション内の錨脚が**セッションを跨いだ錨脚と同じ**だと測れたら、同一セッション条項は要らない。その測定は錨脚を2セッションで2回取るだけ(≈82秒)。"
+ "schema": "judge_anchor_registry/1",
+ "track": "aesthetic-judge",
+ "written_on": "2026-10-30",
+ "why": "規律10(動く錨は、動かす時期と条件を先に登録する)の登録簿。人の判定が本当の棒で、前処理器の素の出力は下限の棒(CLAUDE.md 第1条)。**この track が持つのは「絵1枚(タイル)を線画として使えるか」の単位での人の判定で、その単位の実測を持つのはこの木だけ。プロジェクト全体で唯一ではない** —— 面・線の単位では Track M が 2026-11-03 以降くり返し作者の判定を取っている(下の external_human_judgements)。**単位が違うので比較不能で、どちらも相手の棒にはならない。**",
+ "reading_tool": "tools/judge_anchor.py",
+ "period_rule": {
+  "note": "**取り直す周期の決め方**(条例1)。暦ではなく事象で決める。",
+  "driver": "event",
+  "derivation": "規律2(新しい測定は既知セルを1つ含める)を人の判定に写したもの。判定者が1人なので、セッション間の差 = 基準の移動が腕の差と交絡する。だから錨脚は新しい腕と**同じセッション**で取る。これは暦の周期より強い: 腕の差を読む条件そのものである。",
+  "events": [
+   "人の棒に乗る主張を新しく出すとき(腕が1本でも増えたとき)",
+   "判定の単位を変えるとき(タイル→面、二値→3段階など。単位が変われば前の錨と比較不能)",
+   "作者が基準を言い直したとき(第1条: 人の基準は常に動く)"
+  ],
+  "same_session": true,
+  "who": "作者(単独)。**判定者が変わったら取り直しではなく別の錨**(判定者は構成の一部。規律1)。",
+  "legs_rule": "錨脚は新しい腕と必ず同梱する。いまの脚は `gt`(上の脚)と `rough`(下の脚)。",
+  "cost_measured": {
+   "anchor-20261004": "60件を82.1秒で完走(中央値1.28秒/件、最大間隔2.8秒=中断なし。`absolute_ratings.json` の ts から2026-10-30に再計算)",
+   "legs_only": "脚2本30件 ≈ 41秒",
+   "note": "**所要時間は周期を決める理由にならない**(縮める理由にも延ばす理由にも)。測ってあるのは、高いという思い込みで周期を延ばさないため。"
   },
-  "disagreement_rule": {
-    "note": "**前後の棒が食い違ったとき、どれを読み直すか**(条例3)。撤回の規則ではない —— 規律10 は過去の結果を撤回しない。",
-    "stands_as": "<主張> —— anchor-<日付>(<取得日> / <判定者> / <母集団> / <単位>)に対して。anchor-<新>では<未測定|同じ|反転>。",
-    "reread_requires_all_of": [
-      "人の棒に乗っている主張である(下限の棒=前処理器だけに乗る主張は、人の棒が動いても動かない)",
-      "新しい錨が、その主張の判定を**反転させうる向き**に動いた",
-      "腕の実体が残っていて再採点できる"
+  "calendar": null,
+  "calendar_reason": "暦では取り直さない。**下の脚は床に張り付き**(rough 0/15)、**上の脚は実質天井**(gt 14/15 で、落ちた1件は白紙GTを正しく却下したもの)。この脚で暦の取り直しをしても確認しか返らない(動いても読めない)。",
+  "calendar_becomes_meaningful_when": "**削除腕以外の腕が中間に入ったとき**(usable が 1..n-1 に在る腕が1本以上。器具が「中間 = 動く余地あり」と印字する)。そのとき暦の周期をここに登録する。",
+  "refutation": "同じ材料・同じ判定者で、同一セッション内の錨脚が**セッションを跨いだ錨脚と同じ**だと測れたら、同一セッション条項は要らない。その測定は錨脚を2セッションで2回取るだけ(≈82秒)。"
+ },
+ "disagreement_rule": {
+  "note": "**前後の棒が食い違ったとき、どれを読み直すか**(条例3)。撤回の規則ではない —— 規律10 は過去の結果を撤回しない。",
+  "stands_as": "<主張> —— anchor-<日付>(<取得日> / <判定者> / <母集団> / <単位>)に対して。anchor-<新>では<未測定|同じ|反転>。",
+  "reread_requires_all_of": [
+   "人の棒に乗っている主張である(下限の棒=前処理器だけに乗る主張は、人の棒が動いても動かない)",
+   "新しい錨が、その主張の判定を**反転させうる向き**に動いた",
+   "腕の実体が残っていて再採点できる"
+  ],
+  "otherwise": "錨札つきで立ったまま。**古い錨の行は消さない**(規律10)。新しい行を足して両方に錨札を付ける(規律1)。",
+  "unrescorable": "再採点不能と印字して残す。消さない。"
+ },
+ "anchors": [
+  {
+   "name": "anchor-20261004",
+   "taken_on": "2026-10-04",
+   "role": "本当の棒(人の判定)。この track が持つ唯一の実測。",
+   "judge": "作者(単独)",
+   "question": "1枚ずつ「これは線画として使えるか」(二値)",
+   "unit": "タイル1枚(480px)",
+   "population": "holdout_lineart_family の15タイル。**4腕で同じタイルを共有**(腕ごとに重複させない68件の版は作ったが未使用、2026-10-04に削除)",
+   "arms": [
+    "rough",
+    "classifier",
+    "oracle",
+    "gt"
+   ],
+   "n_items": 60,
+   "n_repeats": 0,
+   "ties_allowed": false,
+   "result": {
+    "rough": "0/15",
+    "classifier": "0/15",
+    "oracle": "0/15",
+    "gt": "14/15"
+   },
+   "bar": "gt が usable に出ること(尺度の検証)。削除腕のどれかが usable を出せば削除方向に余地が在る。",
+   "verdict": "削除3腕すべて 0/15(95%CI 0.000-0.204)、gt 14/15。落ちた1件は白紙GT `lineart_003_000` なので**中身のあるGTは14/14**。lesson 10。",
+   "intra_rater": null,
+   "intra_rater_reason": "**この錨には再掲が無い**(arm×tile の重複0件、2026-10-30に確認)。0.750(9/12)は比較判定の方の数字で、この錨のものではない。**取り直すときは再掲を入れる**(条例2)。",
+   "records": "results/trackc_judge_20261004/absolute_ratings.json",
+   "ui": "削除済み(Track C作、2026-10-04)。再作成は tools/build_absolute_ratings.py",
+   "retake": {
+    "registered_on": "2026-10-30",
+    "retro": true,
+    "retro_note": "**錨は2026-10-04、取り直し条件は2026-10-30に書いた。** 事後の登録である。規律10 は「動かす前に登録する」なので、この錨について満たしているのは「**次に動かす前に**書いた」だけ。次の錨は取る前に登録する。",
+    "events": "period_rule.events",
+    "who": "作者(単独)",
+    "legs": [
+     "gt",
+     "rough"
     ],
-    "otherwise": "錨札つきで立ったまま。**古い錨の行は消さない**(規律10)。新しい行を足して両方に錨札を付ける(規律1)。",
-    "unrescorable": "再採点不能と印字して残す。消さない。"
+    "print_both": true,
+    "print_both_how": "tools/judge_anchor.py bars anchor-20261004 <新錨>"
+   },
+   "is_bar": true
   },
-  "anchors": [
-    {
-      "name": "anchor-20261004",
-      "taken_on": "2026-10-04",
-      "role": "本当の棒(人の判定)。この track が持つ唯一の実測。",
-      "judge": "作者(単独)",
-      "question": "1枚ずつ「これは線画として使えるか」(二値)",
-      "unit": "タイル1枚(480px)",
-      "population": "holdout_lineart_family の15タイル。**4腕で同じタイルを共有**(腕ごとに重複させない68件の版は作ったが未使用、2026-10-04に削除)",
-      "arms": [
-        "rough",
-        "classifier",
-        "oracle",
-        "gt"
-      ],
-      "n_items": 60,
-      "n_repeats": 0,
-      "ties_allowed": false,
-      "result": {
-        "rough": "0/15",
-        "classifier": "0/15",
-        "oracle": "0/15",
-        "gt": "14/15"
-      },
-      "bar": "gt が usable に出ること(尺度の検証)。削除腕のどれかが usable を出せば削除方向に余地が在る。",
-      "verdict": "削除3腕すべて 0/15(95%CI 0.000-0.204)、gt 14/15。落ちた1件は白紙GT `lineart_003_000` なので**中身のあるGTは14/14**。lesson 10。",
-      "intra_rater": null,
-      "intra_rater_reason": "**この錨には再掲が無い**(arm×tile の重複0件、2026-10-30に確認)。0.750(9/12)は比較判定の方の数字で、この錨のものではない。**取り直すときは再掲を入れる**(条例2)。",
-      "records": "results/trackc_judge_20261004/absolute_ratings.json",
-      "ui": "削除済み(Track C作、2026-10-04)。再作成は tools/build_absolute_ratings.py",
-      "retake": {
-        "registered_on": "2026-10-30",
-        "retro": true,
-        "retro_note": "**錨は2026-10-04、取り直し条件は2026-10-30に書いた。** 事後の登録である。規律10 は「動かす前に登録する」なので、この錨について満たしているのは「**次に動かす前に**書いた」だけ。次の錨は取る前に登録する。",
-        "events": "period_rule.events",
-        "who": "作者(単独)",
-        "legs": [
-          "gt",
-          "rough"
-        ],
-        "print_both": true,
-        "print_both_how": "tools/judge_anchor.py bars anchor-20261004 <新錨>"
-      },
-      "is_bar": true
+  {
+   "name": "anchor-20261004-cmp",
+   "taken_on": "2026-10-04",
+   "role": "**棒ではない。** 閉じた測定(lesson 11)。記録として登録する —— 棒に使えないことが結論だから。",
+   "judge": "作者(単独)",
+   "question": "2枚並べてどちらが線画として良いか",
+   "unit": "組(同じタイルの2腕)",
+   "population": "Track C の削除出力。画素単位→線分単位→交点統合の3粒度",
+   "arms": [
+    "oracle",
+    "placebo_oracle",
+    "classifier",
+    "placebo",
+    "rough"
+   ],
+   "n_items": 203,
+   "n_repeats": 19,
+   "ties_allowed": true,
+   "result": {
+    "intra_rater": "9/12 = 0.750 (95%CI 0.468-0.911)",
+    "instrument_check_pixel": "17/17 合格(破線に対する分解能)",
+    "instrument_check_stroke": "41/45 = 0.911 引き分け",
+    "instrument_check_junction": "4/4 = 1.000 引き分け"
+   },
+   "bar": "oracle vs placebo_oracle(計器チェック)に通ること。通らなければ下は読まない。",
+   "verdict": "**事前登録の停止則が発火。** 損傷を取り除くほど引き分けが上がる = 損傷が無ければ見るものが何も残らない。lesson 11。",
+   "records": "results/trackc_judge_20261004/comparison_judgements_203.json",
+   "ui": "削除済み(2026-10-04、ユーザー指示)。この JSON が唯一の控え。",
+   "retake": {
+    "registered_on": "2026-10-30",
+    "retro": true,
+    "retro_note": "棒ではないので取り直しの対象ではない。",
+    "events": "取り直さない。**同じ材料では人に聞けない**ことが結論。再開の引き金は材料の側(劣化量以外で差がついている組が現れたとき)。",
+    "who": null,
+    "legs": [],
+    "print_both": false
+   },
+   "is_bar": false,
+   "intra_rater": "9/12 = 0.750 (95%CI 0.468-0.911)",
+   "intra_rater_reason": "再掲19件のうち12件が読める形で、9件一致。**この数は比較判定のもので、絶対判定の錨には無い。**"
+  }
+ ],
+ "claims": [
+  {
+   "id": "E1",
+   "statement": "削除という方向の天井は0。画素オラクルを完璧に当てても線画として使えない(lesson 10)",
+   "rode_on": "anchor-20261004",
+   "flips_if": {
+    "arms": [
+     "oracle",
+     "classifier",
+     "rough"
+    ],
+    "direction": "up",
+    "note": "削除腕のどれかが新しい錨で usable を出したとき"
+   },
+   "artifacts": "results/trackc_judge_20261004/arms",
+   "owner_of_record": "基盤(lesson 10)。この track は錨の側だけを持つ。"
+  },
+  {
+   "id": "E2",
+   "statement": "尺度は検証済み —— 中身のあるGTは14/14で usable",
+   "rode_on": "anchor-20261004",
+   "flips_if": {
+    "arms": [
+     "gt"
+    ],
+    "direction": "down",
+    "note": "新しい錨でGTが落ちたら、尺度か判定者の基準が動いた。腕の比較より先にこれを読む"
+   },
+   "artifacts": "results/trackc_judge_20261004/arms",
+   "owner_of_record": "この track"
+  },
+  {
+   "id": "E3",
+   "statement": "同じ元画像の2つの劣化出力を比べると返るのは劣化量の順位(lesson 11)",
+   "rode_on": "anchor-20261004-cmp",
+   "flips_if": {
+    "arms": [],
+    "direction": "none",
+    "note": "人の棒ではなく**材料**に乗っている主張なので、棒が動いても読み直さない。動かすのは材料(劣化でない出力)。"
+   },
+   "artifacts": "results/trackc_judge_20261004/comparison_judgements_203.json",
+   "owner_of_record": "基盤(lesson 11)"
+  },
+  {
+   "id": "E4",
+   "statement": "+0.0320(対 keep_all)と +0.0273(対インク量一致ランダム削除)は統計としては本物",
+   "rode_on": "lower_bar",
+   "flips_if": {
+    "arms": [],
+    "direction": "none",
+    "note": "f1 signal は人の判定ではないので、人の棒が動いても動かない(規律10)。**ただし「絵としての前進」とは読めない** —— それを言うのは人の棒。"
+   },
+   "artifacts": "../lineart-stroke-selection/results/signal_rescore_20261003",
+   "owner_of_record": "Track C"
+  }
+ ],
+ "revised": [
+  "2026-11-07(外部の人の判定2件と材料の選別1件を追加。「唯一」の言明を単位つきに直した)",
+  "2026-11-07 夜(**条例1 の読み方を改めた** —— 分離 AUC は引き金で判定ではない。計画中の収集2件と、軸が作者の分類を再現しないという実測を追加。Track O の選別の**決め手の文面を直した**(判定は変わらない))"
+ ],
+ "external_human_judgements": [
+  {
+   "name": "trackM-20261103",
+   "owner": "Track M (`../lineart-colour-manuscripts`)",
+   "taken_on": "2026-11-03",
+   "judge": "作者(単独。この track と同じ人)",
+   "unit": "面の分け方(線だけ L4 で見つけた面)",
+   "verdict": "「使える」(その track の第2の棒)。追補206。C1 通る / C2 落ちる / H1 通る",
+   "records": "../lineart-colour-manuscripts/doc/work_log.md 14041 行付近",
+   "bar_for_this_track": false,
+   "why_not": "**単位が違う**(面の分け方 対 絵1枚の線画判定)。規律1 により単位は構成の一部なので、この判定はこの木の棒を上げも下げもしない。**それでも登録する理由**: この木の「唯一の実測」という言明を偽にするから(2026-11-07 に直した)。Track M は 11-03 以降 H1〜H6 でくり返し作者の判定を取っている",
+   "comparable_to_anchor_20261004": false
+  },
+  {
+   "name": "trackO-C4-untaken",
+   "owner": "Track O (`../lineart-krita-cleanup`。2026-11-04 開設→同日休止)",
+   "taken_on": null,
+   "judge": null,
+   "unit": "絵1枚(15タイルを種で固定)—— **この木と同じ単位**",
+   "verdict": "**未実施**。登録はされたがユーザーの判断で行わずに閉じた(「既に十分だな　きり上げるのも一つかと」)",
+   "records": "../lineart-krita-cleanup/doc/result_krita_stage2_20261104.md §5",
+   "bar_for_this_track": false,
+   "why_not": "**取られていないので棒ではない。** 登録しておくのは、同じ単位の収集が1件「設計済み・未実施」で在ることを、後から「人に聞いていない」と読めるようにするため。**取るなら新しい錨で、この木の門を先に通す。**",
+   "comparable_to_anchor_20261004": null
+  }
+ ],
+ "material_screenings": [
+  {
+   "date": "2026-11-07",
+   "material": "Track O 段2 の出力(`../lineart-krita-cleanup/results/krita_stage2_20261104/`、読み取りのみ)",
+   "asked": "次の一手2(材料を待つ)に効くか —— 劣化でない出力の組になっているか",
+   "verdict": "**落ちた。集めない。**",
+   "gate": "tools/judge_protocol.py、下書きは results/judge_axis_check_20261107/protocol_trackO_draft.json(追跡しない。器具で作り直せる)",
+   "failed_items": 5,
+   "decisive": "**条例5 が除いている軸で腕が分かれている** —— lineart 192タイルで `mean_ink` が腕どうしを 0.837 分ける(最大は smooth_inv_s1 対 sketchy_inv_s1)。濃さは劣化量と同じ向きの軸で、条例5 の反証条件は『**劣化量以外の**軸で差がついている組』なので、これは反証にならない。**同じ元のラフの加工なのに腕ごとの損傷量が無い**(lesson 11)のが、独立に効くもう一つの決め手。",
+   "other_failures": "腕ごとの損傷量が未測定(全腕が同じラフの加工。lesson 11)/ 再掲0 / 保留の選択肢の理由なし / 停止則なし",
+   "measured_by_this_track": {
+    "instrument": "tools/measure_axis_separation.py",
+    "csv": "results/judge_axis_check_20261107/axis_separation.csv(追跡しない)",
+    "lineart_arms_vs_arms": {
+     "mean_ink": 0.837,
+     "near_white_frac": 0.715
     },
-    {
-      "name": "anchor-20261004-cmp",
-      "taken_on": "2026-10-04",
-      "role": "**棒ではない。** 閉じた測定(lesson 11)。記録として登録する —— 棒に使えないことが結論だから。",
-      "judge": "作者(単独)",
-      "question": "2枚並べてどちらが線画として良いか",
-      "unit": "組(同じタイルの2腕)",
-      "population": "Track C の削除出力。画素単位→線分単位→交点統合の3粒度",
-      "arms": [
-        "oracle",
-        "placebo_oracle",
-        "classifier",
-        "placebo",
-        "rough"
-      ],
-      "n_items": 203,
-      "n_repeats": 19,
-      "ties_allowed": true,
-      "result": {
-        "intra_rater": "9/12 = 0.750 (95%CI 0.468-0.911)",
-        "instrument_check_pixel": "17/17 合格(破線に対する分解能)",
-        "instrument_check_stroke": "41/45 = 0.911 引き分け",
-        "instrument_check_junction": "4/4 = 1.000 引き分け"
-      },
-      "bar": "oracle vs placebo_oracle(計器チェック)に通ること。通らなければ下は読まない。",
-      "verdict": "**事前登録の停止則が発火。** 損傷を取り除くほど引き分けが上がる = 損傷が無ければ見るものが何も残らない。lesson 11。",
-      "records": "results/trackc_judge_20261004/comparison_judgements_203.json",
-      "ui": "削除済み(2026-10-04、ユーザー指示)。この JSON が唯一の控え。",
-      "retake": {
-        "registered_on": "2026-10-30",
-        "retro": true,
-        "retro_note": "棒ではないので取り直しの対象ではない。",
-        "events": "取り直さない。**同じ材料では人に聞けない**ことが結論。再開の引き金は材料の側(劣化量以外で差がついている組が現れたとき)。",
-        "who": null,
-        "legs": [],
-        "print_both": false
-      },
-      "is_bar": false,
-      "intra_rater": "9/12 = 0.750 (95%CI 0.468-0.911)",
-      "intra_rater_reason": "再掲19件のうち12件が読める形で、9件一致。**この数は比較判定のもので、絶対判定の錨には無い。**"
-    }
+    "lineart_arms_vs_legs": {
+     "near_white_frac": 0.958,
+     "mean_ink": 0.752
+    },
+    "lineart_arms_vs_fade": {
+     "mean_ink": 0.918
+    },
+    "housei_arms_vs_arms": {
+     "mean_ink": 0.876,
+     "near_white_frac": 0.699
+    },
+    "note": "**プールごとに行を分けてある**(規律: プールを跨いで平均しない)。向きは問わず分離だけ読む。**これは Krita についての判定ではなく、材料の性質の測定**。Track O 自身が同じ向きの所見を持っている(モデルなしの一様な減光が主値を再現する、同doc §4)"
+   },
+   "consequence": "**条例5 の反証条件は満たされない** —— 劣化量以外の軸で差がついている組ではない。次の一手2 は引き続き待ち",
+   "decisive_before_correction": "**lineart 192タイルで `mean_ink` が腕どうしを 0.837 分ける**(限界 0.8 は型に先に書いてある値)。最大は smooth_inv_s1 対 sketchy_inv_s1。**濃さだけで答が出る対に人の時間を使わない**(条例1)",
+   "decisive_corrected_on": "2026-11-07 夜。**元の文面は「濃さだけで答が出るので人に聞かない」だった。**同日に `axis_vs_verdicts.py` で測ったところ、この木の材料では分離 0.939 の軸でも作者の分類を再現しない(的中 0.429)。**だから分離だけを決め手にする読みは成り立たない。** 判定(集めない)は変わらない —— 上の2件が独立に支えている。**古い文面は消さずにここに残す**(規律3)",
+   "regate_20261107_night": "新しい門にかけ直すと**落ちた項目は 7 件**(増えたのは `purpose` と `normalisation` の2欄で、軸の項目は『規律13 の読みが無いので区別できない』に変わった)。**判定は同じ。**"
+  }
+ ],
+ "axis_as_proxy": {
+  "_what": "**条例1 の『計算可能な軸』が作者の判定の代わりになるかの実測**(規律13、2026-11-07)。ここに数が在るのは、**分離 AUC だけで人に聞くのを止めてはいけない**と分かったから。",
+  "instrument": "tools/axis_vs_verdicts.py --jpeg-roundtrip 95",
+  "records": "results/trackc_judge_20261004/absolute_ratings.json(60件。正 `usable` 14件)",
+  "normalisation": "全画像を JPEG quality 95 の経路に通した(gt は .jpg、腕の描画は .png)。**この材料では軸はほぼ動かなかった**(near_white_frac の gt 対 rough が 0.937 → 0.939)。**外部の PNG 材料には当たらない** —— プールごとに測り直す",
+  "threshold_note": "**閾値はこの60件に合わせて選んである。だから出る数は上限**(hold-out ではない)",
+  "axes": [
+   {
+    "name": "near_white_frac",
+    "threshold": 0.9194,
+    "hit_rate": 0.429,
+    "miss_rate": 0.571,
+    "false_pass_rate": 0.087,
+    "accuracy": 0.8,
+    "reproduces": false,
+    "note": "14件の『使える』のうち**8件を落とし**、oracle の3件を**誤って通す**。精度 0.800 は『使えない』が46/60=0.767 在ることでほぼ説明がつく"
+   },
+   {
+    "name": "mean_ink",
+    "threshold": 0.0942,
+    "hit_rate": 0.143,
+    "miss_rate": 0.857,
+    "false_pass_rate": 0.022,
+    "accuracy": 0.783,
+    "reproduces": false
+   }
   ],
-  "claims": [
-    {
-      "id": "E1",
-      "statement": "削除という方向の天井は0。画素オラクルを完璧に当てても線画として使えない(lesson 10)",
-      "rode_on": "anchor-20261004",
-      "flips_if": {
-        "arms": [
-          "oracle",
-          "classifier",
-          "rough"
-        ],
-        "direction": "up",
-        "note": "削除腕のどれかが新しい錨で usable を出したとき"
-      },
-      "artifacts": "results/trackc_judge_20261004/arms",
-      "owner_of_record": "基盤(lesson 10)。この track は錨の側だけを持つ。"
-    },
-    {
-      "id": "E2",
-      "statement": "尺度は検証済み —— 中身のあるGTは14/14で usable",
-      "rode_on": "anchor-20261004",
-      "flips_if": {
-        "arms": [
-          "gt"
-        ],
-        "direction": "down",
-        "note": "新しい錨でGTが落ちたら、尺度か判定者の基準が動いた。腕の比較より先にこれを読む"
-      },
-      "artifacts": "results/trackc_judge_20261004/arms",
-      "owner_of_record": "この track"
-    },
-    {
-      "id": "E3",
-      "statement": "同じ元画像の2つの劣化出力を比べると返るのは劣化量の順位(lesson 11)",
-      "rode_on": "anchor-20261004-cmp",
-      "flips_if": {
-        "arms": [],
-        "direction": "none",
-        "note": "人の棒ではなく**材料**に乗っている主張なので、棒が動いても読み直さない。動かすのは材料(劣化でない出力)。"
-      },
-      "artifacts": "results/trackc_judge_20261004/comparison_judgements_203.json",
-      "owner_of_record": "基盤(lesson 11)"
-    },
-    {
-      "id": "E4",
-      "statement": "+0.0320(対 keep_all)と +0.0273(対インク量一致ランダム削除)は統計としては本物",
-      "rode_on": "lower_bar",
-      "flips_if": {
-        "arms": [],
-        "direction": "none",
-        "note": "f1 signal は人の判定ではないので、人の棒が動いても動かない(規律10)。**ただし「絵としての前進」とは読めない** —— それを言うのは人の棒。"
-      },
-      "artifacts": "../lineart-stroke-selection/results/signal_rescore_20261003",
-      "owner_of_record": "Track C"
-    }
-  ],
-  "revised": "2026-11-07(外部の人の判定2件と材料の選別1件を追加。「唯一」の言明を単位つきに直した)",
-  "external_human_judgements": [
-    {
-      "name": "trackM-20261103",
-      "owner": "Track M (`../lineart-colour-manuscripts`)",
-      "taken_on": "2026-11-03",
-      "judge": "作者(単独。この track と同じ人)",
-      "unit": "面の分け方(線だけ L4 で見つけた面)",
-      "verdict": "「使える」(その track の第2の棒)。追補206。C1 通る / C2 落ちる / H1 通る",
-      "records": "../lineart-colour-manuscripts/doc/work_log.md 14041 行付近",
-      "bar_for_this_track": false,
-      "why_not": "**単位が違う**(面の分け方 対 絵1枚の線画判定)。規律1 により単位は構成の一部なので、この判定はこの木の棒を上げも下げもしない。**それでも登録する理由**: この木の「唯一の実測」という言明を偽にするから(2026-11-07 に直した)。Track M は 11-03 以降 H1〜H6 でくり返し作者の判定を取っている",
-      "comparable_to_anchor_20261004": false
-    },
-    {
-      "name": "trackO-C4-untaken",
-      "owner": "Track O (`../lineart-krita-cleanup`。2026-11-04 開設→同日休止)",
-      "taken_on": null,
-      "judge": null,
-      "unit": "絵1枚(15タイルを種で固定)—— **この木と同じ単位**",
-      "verdict": "**未実施**。登録はされたがユーザーの判断で行わずに閉じた(「既に十分だな　きり上げるのも一つかと」)",
-      "records": "../lineart-krita-cleanup/doc/result_krita_stage2_20261104.md §5",
-      "bar_for_this_track": false,
-      "why_not": "**取られていないので棒ではない。** 登録しておくのは、同じ単位の収集が1件「設計済み・未実施」で在ることを、後から「人に聞いていない」と読めるようにするため。**取るなら新しい錨で、この木の門を先に通す。**",
-      "comparable_to_anchor_20261004": null
-    }
-  ],
-  "material_screenings": [
-    {
-      "date": "2026-11-07",
-      "material": "Track O 段2 の出力(`../lineart-krita-cleanup/results/krita_stage2_20261104/`、読み取りのみ)",
-      "asked": "次の一手2(材料を待つ)に効くか —— 劣化でない出力の組になっているか",
-      "verdict": "**落ちた。集めない。**",
-      "gate": "tools/judge_protocol.py、下書きは results/judge_axis_check_20261107/protocol_trackO_draft.json(追跡しない。器具で作り直せる)",
-      "failed_items": 5,
-      "decisive": "**lineart 192タイルで `mean_ink` が腕どうしを 0.837 分ける**(限界 0.8 は型に先に書いてある値)。最大は smooth_inv_s1 対 sketchy_inv_s1。**濃さだけで答が出る対に人の時間を使わない**(条例1)",
-      "other_failures": "腕ごとの損傷量が未測定(全腕が同じラフの加工。lesson 11)/ 再掲0 / 保留の選択肢の理由なし / 停止則なし",
-      "measured_by_this_track": {
-        "instrument": "tools/measure_axis_separation.py",
-        "csv": "results/judge_axis_check_20261107/axis_separation.csv(追跡しない)",
-        "lineart_arms_vs_arms": {
-          "mean_ink": 0.837,
-          "near_white_frac": 0.715
-        },
-        "lineart_arms_vs_legs": {
-          "near_white_frac": 0.958,
-          "mean_ink": 0.752
-        },
-        "lineart_arms_vs_fade": {
-          "mean_ink": 0.918
-        },
-        "housei_arms_vs_arms": {
-          "mean_ink": 0.876,
-          "near_white_frac": 0.699
-        },
-        "note": "**プールごとに行を分けてある**(規律: プールを跨いで平均しない)。向きは問わず分離だけ読む。**これは Krita についての判定ではなく、材料の性質の測定**。Track O 自身が同じ向きの所見を持っている(モデルなしの一様な減光が主値を再現する、同doc §4)"
-      },
-      "consequence": "**条例5 の反証条件は満たされない** —— 劣化量以外の軸で差がついている組ではない。次の一手2 は引き続き待ち"
-    }
-  ]
+  "separation_for_the_same_pair": {
+   "gt_vs_rough_near_white_frac": 0.939,
+   "gt_vs_rough_mean_ink": 0.794,
+   "gt_vs_oracle_near_white_frac": 0.578,
+   "note": "**脚は `near_white_frac` で 0.939 分かれる。それでも作者の分類は再現しない** —— 分離は腕の違いを言うだけである。gt と oracle は 0.578 しか分かれないのに、作者は gt を14/15 使えると言い oracle を0/15 と言った。**薄さでは区別がつかない。**"
+  },
+  "consequence": "**門の規則を改めた**(`tools/judge_protocol.py`、同日)—— 分離が限界以上の軸は**引き金**で、そこから先は規律13 の読みが決める。再現するなら落ちる、再現しないなら分離だけでは落とさない。**古い規則のままだと lesson 10 を出した収集自身が止まっていた**(脚が 0.939 で分かれているから)。",
+  "not_a_retraction": "**lesson 10 も anchor-20261004 も撤回ではない。** 変わったのは門の規則で、結果ではない。2026-11-07 朝の Track O の選別も**判定は変わらない** —— 決め手が『濃さで答が出る』から『**条例5 が除いている劣化の軸で分かれている**』に直った。"
+ },
+ "planned_collections": [
+  {
+   "name": "anchor-20261107-legs-intrarater",
+   "registration": "config/judge_protocol_intrarater_20261107.json",
+   "gate": "**通った**(2026-11-07、落ちた項目 0 / 通った 24)",
+   "purpose": "intra_rater —— 脚だけを再掲つきで取り直し、**本人内一貫性**を測る。腕について何も主張しない",
+   "why_it_can_run_now": "中間の腕を要らないから。**材料待ちでない唯一の収集**である",
+   "fills": "`anchors[anchor-20261004].intra_rater` の空欄 = **条例8 の合格条件の右辺**(hold-out 一致率 ≥ 本人内一貫性 × 0.85)。いま右辺が無いので条例8 は走れない",
+   "cost": "38件 ≈ 52秒(実測 60件/82.1秒 から)",
+   "blocked_on": "**作者が座ること。** 外向きの依頼はユーザーのもの"
+  },
+  {
+   "name": "anchor-interior-01(仮)",
+   "registration": "config/judge_protocol_interior_20261107.json",
+   "gate": "**落ちた**(2026-11-07、落ちた項目 4 / 通った 17)",
+   "purpose": "compare_arms —— **中間の腕を1本持つ収集**(引き継ぎの次の一手1)",
+   "failed_items": [
+    "収集開始日(材料が来た日に書く)",
+    "腕の3本目が空(= 中間の腕の材料が無い)",
+    "計算可能な軸(腕が無いので測れない)",
+    "同一元かどうかの理由(腕が決まるまで書けない)"
+   ],
+   "note": "**落ちた4件は全部材料待ちの欄で、設計の欄は17件とも埋まっている。** 通る腕の形は登録の `interior_arm_acceptance` に5条件で書いてある",
+   "candidates": "前処理器の出力(条件3で落ちる見込み)/ Track N の SD 系(別の母集団)/ Track O 段2(2026-11-07 に落ちた)",
+   "blocked_on": "**材料**(次の一手2)"
+  }
+ ]
 }

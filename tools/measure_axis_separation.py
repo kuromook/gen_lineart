@@ -12,6 +12,7 @@
 終了コード: 0 = 測れた / 2 = 走れない。**棒は判定しない** —— 判定は門が持つ。
 """
 import argparse
+import io
 import sys
 from pathlib import Path
 
@@ -21,8 +22,17 @@ from PIL import Image
 AXES = ("mean_ink", "near_white_frac")
 
 
-def axis_values(path):
-    g = np.asarray(Image.open(path).convert("L"), dtype=np.float32)
+def axis_values(path, jpeg_quality=None):
+    im = Image.open(path).convert("L")
+    if jpeg_quality is not None:
+        # **両側を同じ JPEG の経路に通してから測る**(Track N の必須条件、2026-10-30)。
+        # 作者側は JPEG、外部側は PNG で出てくるので、通さないと**一番効く軸が圧縮を読む**
+        # —— `near_white_frac` はリンギングの faint 画素をそのまま数える
+        buf = io.BytesIO()
+        im.save(buf, format="JPEG", quality=jpeg_quality)
+        buf.seek(0)
+        im = Image.open(buf).convert("L")
+    g = np.asarray(im, dtype=np.float32)
     return {
         "mean_ink": float((255.0 - g).mean() / 255.0),
         "near_white_frac": float((g >= 250).mean()),
@@ -57,6 +67,9 @@ def main():
     ap.add_argument("--arms", required=True, help="腕のディレクトリ名をカンマ区切り(親からの相対)")
     ap.add_argument("--pools", default="lineart,housei")
     ap.add_argument("--csv")
+    ap.add_argument("--jpeg-roundtrip", type=int, default=None, metavar="Q",
+                    help="測る前に全画像を同じ品質の JPEG 経路に通す(作者側 JPEG / 外部側 PNG の"
+                         "混在で圧縮を読まないため。Track N 2026-10-30 の必須条件)")
     a = ap.parse_args()
     root = Path(a.root)
     arms = [s.strip() for s in a.arms.split(",")]
@@ -69,13 +82,25 @@ def main():
         if not d.is_dir():
             print(f"**腕が無い**: {d}", file=sys.stderr)
             return 2
-        for f in sorted(d.glob("*.png")):
+        files = sorted(f for f in d.iterdir()
+                       if f.suffix.lower() in (".png", ".jpg", ".jpeg"))
+        for f in files:
             pool = next((p for p in pools if f.name.startswith(p)), None)
             if pool is None:
                 dropped["プールに属さない名前"] = dropped.get("プールに属さない名前", 0) + 1
                 continue
-            vals[(pool, arm, f.name)] = axis_values(f)
+            vals[(pool, arm, f.name)] = axis_values(f, a.jpeg_roundtrip)
 
+    # **当てた正規化を印字する**(名前は点検ではない —— 黙って通すと、通さなかった走行と見分けがつかない)
+    print(f"正規化: " + (f"全画像を JPEG quality {a.jpeg_roundtrip} の経路に通した"
+                         if a.jpeg_roundtrip is not None else
+                         "**無し** —— 腕の間でファイル形式が違うなら、軸は圧縮を読みうる"))
+    fmts = {}
+    for arm in arms:
+        ex = sorted({f.suffix.lower() for f in (root / arm).iterdir()
+                     if f.suffix.lower() in (".png", ".jpg", ".jpeg")})
+        fmts[arm] = ",".join(ex) or "?"
+    print("形式: " + " / ".join(f"{k} {v}" for k, v in fmts.items()))
     for reason, n in sorted(dropped.items()):
         print(f"落とした: {reason} {n} 枚")
 

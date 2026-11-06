@@ -67,7 +67,21 @@ def check(spec):
     if nj and nj > 1:
         ok.append(("判定者2人以上", "**取り直しではなく別の錨**として登録すること(規律1)"))
 
-    need(filled("arms"), "腕", "腕の一覧が無い")
+    arms_list = spec.get("arms") or []
+    blanks = [i for i, x in enumerate(arms_list) if not (isinstance(x, str) and x.strip())]
+    need(filled("arms") and not blanks, "腕",
+         "腕の一覧が無い" if not filled("arms") else
+         f"一覧の {len(blanks)} 本が空のまま(位置 {blanks}) —— **腕の名前が無い = その腕の材料が無い**")
+
+    # **何のための収集かを先に宣言する。** 軸の規則は「腕の差を主張する収集」にだけ効く ——
+    # 本人内一貫性を測る収集では脚が分かれているのは当たり前で、分離は落とす理由にならない
+    purpose = spec.get("purpose")
+    need(purpose in ("compare_arms", "intra_rater"), "収集の目的",
+         f"`purpose` が compare_arms / intra_rater のどちらでもない({purpose!r})")
+
+    need(filled("normalisation"), "正規化の宣言",
+         "**腕の間でファイル形式や経路が違うと、軸が圧縮を読む**(Track N 2026-10-30)。"
+         "通す経路を走る前に書く")
 
     axes = spec.get("computable_axes")
     if not axes:
@@ -81,8 +95,30 @@ def check(spec):
             if sep is None:
                 bad.append((f"軸 {name}", "測っていない(null)。測るまで集めない"))
             elif limit is not None and sep >= limit:
-                bad.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} —— "
-                                          "**この軸で腕が分かれている。計算で答が出るので人に聞かない**"))
+                # **分離 AUC は引き金で、判定ではない**(2026-11-07 に実測で分かった) ——
+                # anchor-20261004 の脚は `near_white_frac` で 0.939 分かれるのに、
+                # その軸は作者の分類を再現しない(的中 0.429 / 取りこぼし 0.571、閾値を
+                # 60件に合わせた上限値)。**分離は腕の違いを言うだけで、判定の代わりにならない**。
+                # この規則をそのまま当てると、**lesson 10 を出した収集自身が止まっていた**。
+                rv = ax.get("reproduces_verdicts") or {}
+                hit, miss = rv.get("hit_rate"), rv.get("miss_rate")
+                if purpose == "intra_rater":
+                    ok.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} だが、"
+                                             "この収集は**腕の差を主張しない**(目的は本人内一貫性)"))
+                elif hit is None or miss is None:
+                    bad.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} なのに、"
+                                              "**その軸が作者の分類を再現するかの読みが無い**(規律13)。"
+                                              "器具 `tools/axis_vs_verdicts.py`。"
+                                              "読みが無いと、計算で答が出ているのか腕が違うだけなのか区別できない"))
+                elif rv.get("reproduces"):
+                    bad.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} で、"
+                                              f"**作者の分類を再現する**(的中 {hit} / 取りこぼし {miss})"
+                                              " —— 計算で出る答に人の時間を使わない(条例1)"))
+                else:
+                    ok.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} だが、"
+                                             f"**作者の分類を再現しない**(的中 {hit} / 取りこぼし {miss}"
+                                             f"、記録 {rv.get('records', '?')})。"
+                                             "分離は腕の違いで、判定の代わりにはならない(規律13)"))
             else:
                 ok.append((f"軸 {name}", f"separation_auc {sep:.3f} < 限界 {limit}"))
 
@@ -101,6 +137,11 @@ def check(spec):
     else:
         ok.append(("代用の軸", "無し —— 軸は人に聞くかどうかを決めるだけで、判定の代わりには使わない"))
 
+    if not spec.get("common_source"):
+        # **偽の宣言で lesson 11 の点検を丸ごと飛ばせてはいけない**(沈黙が合格と見分けがつかない)
+        need(filled("common_source_reason"), "同一元でない理由",
+             "`common_source: false` と書くなら、**なぜ全腕が同じ元画像の加工でないのか**を書く"
+             " —— 書かないと lesson 11 の点検が黙って飛ぶ")
     if spec.get("common_source"):
         dm = spec.get("damage_measure") or {}
         if not dm:
@@ -150,6 +191,14 @@ def check(spec):
     else:
         missing = [l for l in registered_legs if l not in legs]
         need(not missing, "錨脚", f"登録簿の脚 {missing} が入っていない(条例1)")
+    if purpose == "intra_rater":
+        extra = [x for x in (spec.get("arms") or []) if x not in registered_legs]
+        need(not extra, "本人内一貫性の収集に新しい腕を入れない",
+             f"目的が intra_rater なのに登録簿の脚に無い腕 {extra} が在る —— "
+             "軸の規則を迂回して腕を集めることになる")
+        need(spec.get("claims_about_arms") is False, "腕について主張しないことの明示",
+             "目的が intra_rater なら `claims_about_arms: false` と書く(読む側がそう読めるように)")
+
     need(spec.get("same_session") is True, "同一セッション",
          "錨脚と新しい腕を同一セッションで取らないと、基準の移動が腕の差と交絡する(条例1)")
 
