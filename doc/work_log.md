@@ -6702,3 +6702,19 @@ would have been a lie if quoted. Found by running the gate on a real candidate
 rather than on controls; `need()` now records no reason on success. The ordinance
 stands at exactly **2,000 characters by the instrument's own count** -- at budget,
 so the next addition has to trim first.
+
+### The foundation's answer to the two requests (same day, later)
+
+`inbox/reply_judge_two_requests_20261107.md`. The first is done: the brief's
+allowlist line now **names the branches it found** and says in words whether this
+branch is one of them, so the misreading this tree nearly made cannot be made
+from the line alone. Taken here with `git checkout 96ac8fca69 --
+tools/hooks/session_brief.py` after checking this tree had not authored the file
+(no diff against `c35cf56434`, the version taken earlier the same day) -- the law's
+author is the foundation, so a divergence means the copy is old. `catch_up` is
+caught up again and the brief runs; with every branch at 0 the line does not print.
+The second request -- a pointer from the ledger's discipline 10 to this tree's
+instruments -- **went to the user**, because the basic law has a line budget and
+anything added there has to displace the same number of lines. Nothing to do here
+until that comes back. The foundation also recorded the screening (ledger Track O,
+trap `T164`) and the unit-qualified correction (ledger Track E).

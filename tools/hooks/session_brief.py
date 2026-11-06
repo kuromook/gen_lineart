@@ -132,8 +132,19 @@ def main():
     g = run(py + [str(ROOT / "tools" / "check_public_artifacts.py")])
     if g.returncode == 1:
         n = next((x for x in g.stdout.splitlines() if "表に無い監視対象 計" in x), "").strip()
-        out.append(f"**許可表の門: {n or '表に無いものが在る'}** —— 公開はユーザーの承認。"
-                   "Claude は表に自分で足さない。")
+        # 件数だけだと、座っている者が他の木の指摘を自分のものと読む(Track E、2026-11-07)。
+        # 指摘のある枝を名前で並べ、自分の枝かどうかを言う。
+        here = run(["git", "-C", str(ROOT), "branch", "--show-current"]).stdout.strip()
+        hit = []
+        for x in g.stdout.splitlines():
+            parts = x.split()
+            if len(parts) >= 3 and parts[-2] == "表に無い" and parts[-1].isdigit() and parts[-1] != "0":
+                hit.append(f"`{parts[0]}` {parts[-1]}")
+        mine = any(h.split("`")[1].split("/")[-1] == here for h in hit)
+        where = (f"枝: {' / '.join(hit)}" if hit else "枝: 不明(器具の出力に枝ごとの行が無い)")
+        out.append(f"**許可表の門: {n or '表に無いものが在る'}** —— {where} —— "
+                   f"{'**この枝を含む**' if mine else '**この枝ではない**(持ち主の枝が直す)'}。"
+                   "公開はユーザーの承認。Claude は表に自分で足さない。")
     elif g.returncode != 0:
         out.append(f"**許可表の門が走れなかった(終了コード {g.returncode})** —— 点検していない。")
 
