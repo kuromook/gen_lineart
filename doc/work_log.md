@@ -16928,3 +16928,14 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
   - **既知セル: M の採用4頁(追補194 §B、M が納品のラスタで数えた値)4/4 一致**(`page0025` は札 2022 の方。2022b にも同名の頁が在る)
   - 公開表 `census/mask_material_pages.csv`(札ごと)/ 頁ごとの全量 `data/census_full/mask_material_pages_20261107.csv`(非公開、M と基盤へ写し)
 - 点検: 公開物 指摘0 / 負の対照 PASS / 画面 指摘0 / 許可表 exit 0 / 公開物を今回の頁名で grep して 0。ほかの表の差分は as_of の日付だけ
+
+## 2026-11-07 00:41 作者の版の答えを census の表に取った(ユーザー:「やる」)
+
+- **答えの登録 18件**(`tools/census/version_rulings.py` の `RULINGS`): 10-25 の3件(b 付き / 札の新しい方 / 直下が正)・10-26 の問い A・B・D〜O(C は done の裁定に入る)・10-27 の作者の記入表。**逐語は基盤 `doc/work_log.md` の各節から写し、作品・フォルダー・ファイルの名前だけ〔 〕で伏せた**
+- **ファイルごとの札**: Track M の `results/m78_workbook_applied/version_roles_current.csv`(872行、10-27 23:59、器具 `8044d31`)を `data/census_full/m_version_roles_current_m78_20261027.csv` に写した(sha256 先頭 `3f4dfcb4d443be86`。記入表 `workbook_actions.csv` も写した)。**census は札を作り直さない**
+  - 作者の札 274(`decided_by` が作者の言葉か記入表)/ 機械の札 598。作者の札は全部、登録のどれかに当たった
+  - **既知セル**: M の `wip` 65頁は65頁とも census の作業途中。逆向き30頁は作者の記入表で代表を選んだ札(M の `use` がマージ前 19 / 作者が別の方を選んだ 11、それ以外 0)
+  - 構造 DB の `page_versions`(10-26 17:57)は M の札と 232行違う → 札の正本はこの写し
+- 公開表 `census/version_rulings.csv`(登録 + 札 × 作者/機械 × 登録の数)/ ファイルごと `data/census_full/version_rulings_20261107.csv`(非公開)
+- 札の名前 `illustration` が作品フォルダー名と同じ語で、散文の列で点検が鳴った → 散文は言い換え、札の値は次元の列で宣言
+- 点検: 公開物 指摘0 / 負の対照 PASS / 画面 指摘0 / 許可表 exit 0 / 公開物を作品名で grep して 0

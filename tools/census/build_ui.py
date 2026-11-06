@@ -75,6 +75,10 @@ COLUMN_CAVEATS = {
     "n_material_upper": ["mask_material_pages.n_pages_material_ge3"],
     "n_material_tone": ["mask_material_pages.n_pages_material_ge3"],
     "n_unmeasured": ["mask_material_pages.n_pages_material_ge3"],
+    # **作者の版の答え**(`version_rulings.py`、2026-11-07)
+    "author_words": ["version_rulings.n_pages"],
+    "decided_kind": ["version_rulings.n_pages"],
+    "version_role": ["version_rulings.n_pages"],
     # **形式に `PatternStyle` が残っている頁**(`pattern_style_pages.csv`、2026-11-03)
     "n_pages_patternstyle_nonzero": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
     "n_pages_vector_any": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
