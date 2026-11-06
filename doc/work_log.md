@@ -799,3 +799,13 @@ A1F(塗りの窓)1,222 / A1L(線の窓、元コマは重ならない)343 を A1 
 - `inbox/reply_n_census_a1_already_held_20261106.md`: 作者の「5作ともアナログ作画が主体」は census の `author_rulings.csv` に 10-30 から在った(前便の「無い」は census の見落とし)。
   作品単位の「主体」と段階の裁定(`2024b\fitness` だけ)は別の表のまま。`gakuen` はデスクトップの `dennou\gakuen`(.clip 16)、`hamlabi` の2札は 30組中 26組がバイト同一。
 - 申し出に答えて `hamlabikoma` タイルの頁名(13頁・164枚)を送った(`outbox/note_n_census_hamlabi_pages_20261107.md`)。
+
+## 2026-11-07 Forge → ComfyUI の切り替えと一致の確認
+
+- ユーザー: ComfyUI を優先したい。「何枚か forge で生成してもらい、完了したら切り替える」(切り替えは承認なしで可)。
+- Forge: seed2 の先頭2プロンプト × 2モデル(seed 20261031000・…001)を作り直し → **保存済みのプールと画素単位で同一(4/4)**。
+- `systemctl --user start comfyui`(Conflicts で Forge は停止)。ComfyUI v0.33.3、チェックポイントは Forge と同じファイル(`/home/sh1/disk/checkpoint/Stable-diffusion`)。
+- 新しい器具 `tools/external_standard/generate_external_pool_comfy.py`(素のノードだけ: dpmpp_2m / karras / 28 / CFG 6 / 1024 / 同じ seed・プロンプト・ネガティブ)。
+  **同じ4つの seed で、Forge とは別の画像**(画素の相関 0.008〜0.024。プロンプトの中身は同じだが構図・人物が違う)。初期ノイズの作り方の違いと読む(未検証)。
+  → **ComfyUI の画像は既存のプールと混ぜない。** 使うなら「生成器の違い」を角度として登録してから。並べた絵 `results/external_comfy_check_20261107/forge_vs_comfy_reduced.png`。
+- サービスは ComfyUI のまま。Forge は排他起動で戻せる(既存のプールの作り足しには Forge を使う)。
