@@ -1788,7 +1788,14 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                # **外した理由ごとに別の列**(規律9)。**`n_px_match` と `n_px_differ` は別の量**
                "n_layers_ok", "n_layers_empty", "n_px_match", "n_px_differ", "n_bbox_inconsistent",
                "n_layers_format5", "n_layers_no_pixels", "n_layers_mask_unread",
-               "n_layers_counted", "n_layers_all_zero", "n_mask_init_255", "n_mask_init_0")
+               "n_layers_counted", "n_layers_all_zero", "n_mask_init_255", "n_mask_init_0",
+               # **マスクの面の材料を持つ頁**(`mask_material_pages.py`、Track M の発注 11-06)。
+               # **`n_material` は下限、`n_material_upper` は上界 —— 別の量**。落とした理由ごとに別の列(規律9)
+               "n_visible_has_mask", "n_material", "n_material_upper",
+               "n_drop_hidden", "n_drop_full_pass", "n_drop_full_hide", "n_drop_filter",
+               "n_drop_line_hl_text", "n_unmeasured", "n_unread",
+               "n_pages_measured_all", "n_pages_material_ge3", "n_pages_material_upper_ge3",
+               "n_pages_material_ge3_with_line", "n_pages_material_ge3_without_tone", "n_material_tone")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",

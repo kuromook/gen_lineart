@@ -498,6 +498,22 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/note_m_order_pages_with_mask_material_20261106.md",
+        what="**Track M の発注: マスクの面の材料を持つ頁の一覧**(作者の承認「2と3を一緒にやる １を並行してだす」)",
+        why_not_yet="**答えた**: `census/mask_material_pages.csv`(札ごと)/ 頁ごとの全量は非公開で M と基盤へ写し。"
+                    "**材料 ≥ 3 は下限 1,394頁・上界 2,371頁・トーンを除いて 1,048頁**。既知セル(M の採用4頁)4/4 一致",
+    ),
+    dict(
+        path="inbox/note_n_census_hamlabi_pages_20261107.md",
+        what="**Track N: 2札の作品のタイルの13頁が、バイト同一の組に入るか**",
+        why_not_yet="**答えた**: 13頁とも2札でバイト同一(違う4組には入らない)",
+    ),
+    dict(
+        path="inbox/reply_census_wip_column_received_20261107.md",
+        what="**Track L の受領: 作業途中の列を当てた** —— L の `done*` 25頁は 25頁とも `作業途中`、残した40頁は `裁定なし`",
+        why_not_yet="**返信は要らない形。** L は現行の根拠を `裁定なし` ではなく裁定 R1 に置いている(census の但し書きどおり)",
+    ),
+    dict(
         path="inbox/note_n_census_a1_analog_source_20261106.md",
         what="**Track N: A1「アナログ主体」の出所は作者の 10-30 の言明**(作品単位・主体。段階の裁定ではない)",
         why_not_yet="**既に `author_rulings.csv` の1行目に在った**(10-30)。**census の前便の「裁定なし」は誤り** —— 段階の表だけを見た。"
