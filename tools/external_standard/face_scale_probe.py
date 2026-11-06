@@ -117,7 +117,13 @@ POOLS = {
            "data/external_standard/tiles_animagine_xl_31_seed2/{}.jpg"),
     "i6": (lambda: tiles_ext("norm_illustrious_xl_v01_seed2", "gen_illustrious_xl_v01_seed2"),
            "data/external_standard/tiles_illustrious_xl_v01_seed2/{}.jpg"),
+    # Close-up angle (doc/prereg_closeup_20261106.md): same rule, new pools.
+    "e6c": (lambda: tiles_ext("norm_animagine_xl_31_closeup", "gen_animagine_xl_31_closeup"),
+            "data/external_standard/tiles_animagine_xl_31_closeup/{}.jpg"),
+    "i6c": (lambda: tiles_ext("norm_illustrious_xl_v01_closeup", "gen_illustrious_xl_v01_closeup"),
+            "data/external_standard/tiles_illustrious_xl_v01_closeup/{}.jpg"),
 }
+FIRST_STAGE = ("a1", "a2", "e6", "i6")
 
 
 def load_gray(path):
@@ -127,7 +133,11 @@ def load_gray(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="results/face_scale_20261104")
+    ap.add_argument("--pools", default=",".join(FIRST_STAGE), help="comma list; default = the first stage's four")
+    ap.add_argument("--csv", default="face_px_est.csv")
+    ap.add_argument("--report", default="face_scale_stage1.txt")
     args = ap.parse_args()
+    pools = args.pools.split(",")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     det = FaceDetector()
@@ -141,7 +151,8 @@ def main():
     p(f"# 構図のスケール 第1段(顔の大きさ)。検出器 {REPO}/{MODEL} 閾値 {CONF}")
     p(f"道具確認: 白画像の検出 {white}({'合格' if white == 0 else '不合格'})")
     rows = []
-    for pool, (fn, norm_dir) in POOLS.items():
+    for pool in pools:
+        fn, norm_dir = POOLS[pool]
         tiles = fn()
         # IC: the tile is the crop it claims to be (first 20 tiles).
         errs = []
@@ -180,11 +191,11 @@ def main():
         sh = np.array(src_h)
         p(f"  元の絵に顔があるタイル {int((sh > 0).sum())}/{len(sh)} ({(sh > 0).mean():.1%})  その元の絵の顔の高さ(中央値)px 四分位 {q(sh[sh > 0])}")
         p(f"  顔が窓に入るタイル {int((th > 0).sum())}/{len(th)} ({(th > 0).mean():.1%})  そのタイルの顔の高さ px 四分位 {q(th[th > 0])}")
-    with open(out / "face_px_est.csv", "w", newline="") as f:
+    with open(out / args.csv, "w", newline="") as f:
         wr = csv.DictWriter(f, fieldnames=["pool", "tile", "source", "face_px_est", "source_face_px_est"])
         wr.writeheader()
         wr.writerows(rows)
-    (out / "face_scale_stage1.txt").write_text("\n".join(lines) + "\n")
+    (out / args.report).write_text("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
