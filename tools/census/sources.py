@@ -498,6 +498,17 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/note_m_order_layer_rows_holdout8_20261107.md",
+        what="**Track M の発注: 標本外の8頁の層の行**(抽出側の 11-02 の層の表と同じ64列)",
+        why_not_yet="**答えた**: 構造の19列を構造 DB から作り、画素の45列は空(画素は M が抽出側に発注済み)。"
+                    "**既知セル: 抽出側の 872頁・72,839行と構造の19列が全行一致**。器具 `m_layer_rows.py`、全量は非公開",
+    ),
+    dict(
+        path="inbox/push_m_order_holdout8_pages_20261107.md",
+        what="**Track M → 抽出側の発注の写し**(8頁の層の画素とマスクのラスタ)",
+        why_not_yet="**宛先は抽出側。** census の材料表の数を既知セルに使うと書いてある",
+    ),
+    dict(
         path="inbox/note_m_order_pages_with_mask_material_20261106.md",
         what="**Track M の発注: マスクの面の材料を持つ頁の一覧**(作者の承認「2と3を一緒にやる １を並行してだす」)",
         why_not_yet="**答えた**: `census/mask_material_pages.csv`(札ごと)/ 頁ごとの全量は非公開で M と基盤へ写し。"
