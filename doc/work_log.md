@@ -16897,3 +16897,9 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
 - 今夜の取りこぼしの形: 作者の `done*` の答え(問い I・L、10-26)は**基盤の作業ログには逐語で在った**が、census は自分の木の記録と抽出側だけを探して「答えが無い」と書いた(前便 `reply_l_census_done_is_wip_20261106.md` §3、訂正便 `reply_l_census_wip_column_20261106.md`)
 - **直したこと**: `doc/initial_notice.md` §3 の材料表に「作者の過去の答え」の行を足した —— 基盤の `doc/work_log.md` と会話記録を、作者に聞く前に探す / 見つけた答えは census の表に裁定として取り、作業ログに出所(日時・節)を書く
 - 今夜取った裁定の出所: R1 = 基盤 `ruling_done_folders_are_wip_20261026.md` / R2 = 基盤 work_log「2026-10-26 01:07 問い I」/ R3 = 同「2026-10-26 01:23 問い L」/ R4 = このセッション 2026-11-06(ユーザー「作業途中というあつかいにしてほしい」)
+
+## 2026-11-06 23:29 通達確認: N の A1 の出所 —— census の表に既に在った(前便の訂正)
+
+- N(23:25): A1「アナログ主体」の出所は作者の 10-30 の言明。**census の `author_rulings.csv` 1行目に 10-30 から在った** —— 前便 `reply_n_census_process_period_overlap_20261106.md` §1 の「裁定なし」は誤り(段階の表 `author_process.csv` だけを見た)
+- gakuen(構造 DB の外、デスクトップ `dennou\gakuen`)と hamlabi(2札は同じ内容)の答えも、非公開の `author_rulings_subjects.csv` に在った。hamlabi はバイトでも同名 30組中26組が同一
+- 訂正便 `reply_n_census_a1_already_held_20261106.md` → N(写し: 基盤)。**今夜2件目の同じ形**(L の `done*` と同じ。自分の表を先に引かずに「無い」と書いた)
