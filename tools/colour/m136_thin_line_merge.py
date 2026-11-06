@@ -153,6 +153,11 @@ def run_page(pg, kinds):
         cand = candidates(sw, bord, MIN_PX)
         mp = w_pairs(sw, cand, TAU)
         labW = merge(lab, mp)
+        if name == 'B+P+T':
+            np.save(OUT / f'{key}_tau{TAU:g}_lab.npy', lab)
+            json.dump(dict(merged=[list(map(int, k)) for k in mp], cand=[list(map(int, k)) for k in cand],
+                           width={f'{a}-{b}': float(np.median(sw[(a, b)])) for a, b in cand}),
+                      open(OUT / f'{key}_tau{TAU:g}_pairs.json', 'w'))
         w4 = nfaces(labW) <= nfaces(lab)
         print(f'  隣接の組 {len(sw)} → 境目 {MIN_PX} 画素以上かつ縁に触れない {len(cand)}(落とした: 画素不足 '
               f'{sum(len(v) < MIN_PX for v in sw.values())} / 縁 {sum(len(v) >= MIN_PX for v in sw.values()) - len(cand)})→ 結合 {len(mp)} 組')
@@ -206,19 +211,22 @@ def main():
             return
         allr[pg['key']] = r
         del pg
-    print('\n=== 棒(追補227 §D、土台ごと、最悪の頁で読む)===')
+    tag = '' if TAU == 4.0 else '-標本内'
+    print(f'\n=== 棒(τ = {TAU:g}。{"追補227 §D" if not tag else "追補229 §A、確認として読まない"}。土台ごと、最悪の頁で読む)===')
     for b in ('B', 'B+P', 'B+P+T'):
         wb1 = {k: r[b]['fW'] > r[b]['f0'] for k, r in allr.items()}
         wb2 = {k: r[b]['fW'] > max(r[b]['nw'], r[b]['n1']) for k, r in allr.items()}
         for k, r in allr.items():
             x = r[b]
             print(f'  {b:<6} {k:<9} F1 {x["f0"]:.3f} → +W {x["fW"]:.3f} / NW 最大 {x["nw"]:.3f} / N1 {x["n1"]:.3f}'
-                  f'  WB1 {"はい" if wb1[k] else "いいえ"} / WB2 {"はい" if wb2[k] else "いいえ"}')
+                  f'  WB1{tag} {"はい" if wb1[k] else "いいえ"} / WB2{tag} {"はい" if wb2[k] else "いいえ"}')
         a = lambda d: '通る' if all(d.values()) else '落ちる'  # noqa: E731
-        print(f'  **{b}: WB1 {a(wb1)} / WB2 {a(wb2)}**')
+        print(f'  **{b}: WB1{tag} {a(wb1)} / WB2{tag} {a(wb2)}**')
 
 
-if __name__ == '__main__' and len(sys.argv) == 1:
+if __name__ == '__main__' and (len(sys.argv) == 1 or sys.argv[1] == 'tau6'):
+    if len(sys.argv) > 1:
+        TAU = 6.0   # 追補229 §A(標本内)
     main()
 
 
