@@ -1826,7 +1826,7 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               # **線画の層の範囲の中央値**(`l1_layer_extent.csv`)。件数ではないので小数が正しい
               "median_bbox_share_of_canvas", "median_fill_of_bbox")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
-DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type", "plane",
+DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type", "plane", "ruling",
             "drawn_ratio_usable", "volatile",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
@@ -2076,6 +2076,8 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "planes_read": {"planes_read", "body", "mask", ""},
         # **面の表の行の面**(`face_binary_alpha.csv`)。`planes_read`(読み手の不具合の表)とは別の列
         "plane": {"plane", "body", "mask", ""},
+        # **作業途中の頁の裁定の番号**(`wip_pages.py`。番号と作者の言葉の対応は同じ表の注に在る)
+        "ruling": {"ruling", "R1", "R2", "R3", "R4", ""},
         "same_page_order": {"same_page_order", "yes", "no", ""},
         "in_n_query": {"in_n_query", "yes", "no", ""},
         # **後知恵の仮説を当てた範囲。** `scope`(前方割合の群)とは別の列名にする(T138)

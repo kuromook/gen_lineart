@@ -68,6 +68,8 @@ COLUMN_CAVEATS = {
     "n_layers_format5": ["face_binary_alpha.share_layers_binary_alpha"],
     "n_layers_all_zero": ["face_binary_alpha.share_layers_binary_alpha"],
     "n_mask_init_255": ["face_binary_alpha.share_layers_binary_alpha"],
+    # **作業途中の頁**(`wip_pages.py`、2026-11-06)
+    "ruling": ["wip_pages.n_pages"],
     # **形式に `PatternStyle` が残っている頁**(`pattern_style_pages.csv`、2026-11-03)
     "n_pages_patternstyle_nonzero": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
     "n_pages_vector_any": ["pattern_style_pages.n_pages_patternstyle_nonzero"],
