@@ -501,8 +501,8 @@ ARRIVED_NOT_INTEGRATED = [
         path="inbox/note_n_census_a1_analog_source_20261106.md",
         what="**Track N: A1「アナログ主体」の出所は作者の 10-30 の言明**(作品単位・主体。段階の裁定ではない)",
         why_not_yet="**既に `author_rulings.csv` の1行目に在った**(10-30)。**census の前便の「裁定なし」は誤り** —— 段階の表だけを見た。"
-                    "gakuen(構造 DB の外)と hamlabi(2札は同じ内容)の答えも非公開の対応表に在った。"
-                    "hamlabi はバイトでも 30組中26組が同一(11-06)",
+                    "当たらなかった2作の答え(1作は構造 DB の外、1作は2札が同じ内容)も非公開の対応表に在った。"
+                    "2札の作品はバイトでも同名 30組中26組が同一(11-06)",
     ),
     dict(
         path="inbox/reply_census_done_folder_answer_20261106.md",

@@ -16903,3 +16903,11 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
 - N(23:25): A1「アナログ主体」の出所は作者の 10-30 の言明。**census の `author_rulings.csv` 1行目に 10-30 から在った** —— 前便 `reply_n_census_process_period_overlap_20261106.md` §1 の「裁定なし」は誤り(段階の表 `author_process.csv` だけを見た)
 - gakuen(構造 DB の外、デスクトップ `dennou\gakuen`)と hamlabi(2札は同じ内容)の答えも、非公開の `author_rulings_subjects.csv` に在った。hamlabi はバイトでも同名 30組中26組が同一
 - 訂正便 `reply_n_census_a1_already_held_20261106.md` → N(写し: 基盤)。**今夜2件目の同じ形**(L の `done*` と同じ。自分の表を先に引かずに「無い」と書いた)
+
+## 2026-11-06 23:33 **公開表に作品名が出て push した**(`a737dc6`)—— 直した
+
+- `sources.py` の説明文に作品名を2つ書き、`census/provenance.csv` に出た。**点検は「この出力は commit しない」と鳴ったが、commit と push を同じコマンドで続けていて止まらなかった**
+- **1つは点検の語彙の外**(構造 DB に無い作品名 = もう1つのドライブの外の名前)で、鳴っていない。語彙は構造 DB から作るので、**DB の外の名前は見えない**(点検の盲点に足す)
+- 言い換えて再生成。公開物の全ファイルを今夜の名前で grep して 0。負の対照 PASS
+- **`origin` の履歴には `a737dc6` が残る**(force-push でも消えない。CLAUDE.md §4)。消すかどうかはユーザーの判断
+- **再発防止**: build の終了の印を見ずに commit を連ねない(`build_census.py` の出力末尾が「指摘なし」であることを確かめてから `git add`)
