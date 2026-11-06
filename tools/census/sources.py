@@ -498,6 +498,21 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/note_l_ask_census_done_is_wip_20261106.md",
+        what="**Track L の照会: 「途中のファイル」の列**(作者 11-06「done は途中のファイル … census に問い合わせる必要がある」)",
+        why_not_yet="**列は無い**(`page_versions.version_role` は 872頁・語彙に途中の値が無い。近い列で代用しない、規律13)。"
+                    "**10-26 の問い A〜H は全部作者が答え済み**(基盤の作業記録)。"
+                    "**名前の述語で数えた `done` で始まるフォルダーの頁は 215**(裁定の2作 75 / その外の7作 140。"
+                    "うち札 2019b の同名の作品の 18頁は札 2019 の `done*` とバイト同一)。**同定は作者に聞く**(条例9)",
+    ),
+    dict(
+        path="inbox/note_n_census_process_period_overlap_20261106.md",
+        what="**Track N の依頼: 工程と時期を分けたい**(A1 の5作の作品番号 / 同じ時期のアナログ・デジタルの候補 / 記入式の表)",
+        why_not_yet="**問い1は答えた**: A1 の5作のうち作者の工程の裁定が在るのは1作だけ(札 2024b、アナログ/アナログ)。"
+                    "**2作は裁定なし、1作は構造 DB に頁が無い、1作は母集団の外(札 2025)**。"
+                    "**問い2・3(候補と表)は篩の列を決めてから**",
+    ),
+    dict(
         path="inbox/deliver_census_layer_bbox_and_face_alpha_20261104.md",
         what="**発注2件の納品**(線画の層の範囲 / 面の層のアルファ・マスクの値)。**宛先は census、写しは N・M・基盤**",
         why_not_yet="**統合した**: 材料は `LOCAL_CSV` の `l1_layer_bbox` / `face_layer_alpha_mask`、"
