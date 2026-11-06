@@ -290,13 +290,26 @@ def last_commit(path, own_work_only=False):
         out = run(["git", "log", "-1", "--format=%cI"], cwd=path)
         return _stamp(out)
     log = run(
-        ["git", "log", "--format=%cI%x00%H", "-n", "40"], cwd=path
+        ["git", "log", "--format=%cI%x00%H%x00%B%x1e", "-n", "40"], cwd=path
     )
     if not log:
         return None
-    for line in log.splitlines():
-        stamp, _, sha = line.partition("\x00")
+    for entry in log.split("\x1e"):
+        if not entry.strip():
+            continue
+        stamp, _, rest = entry.strip().partition("\x00")
+        sha, _, body = rest.partition("\x00")
         if not sha:
+            continue
+        # **The committer says so, rather than the file list implying it.** The file
+        # list caught the law files, but the foundation also delivers a line into a
+        # stopped tree's own briefing, and `doc/initial_notice.md` is a track's own
+        # document -- putting it in FOUNDATION_FILES would hide the main signal a
+        # track gives. 2026-10-30, the second instance of T155 in one day: the first
+        # was the list being too short, this one is the list being the wrong
+        # instrument. A commit the foundation made is by definition one the
+        # foundation knows about, so it carries `Foundation-Housekeeping: <why>`.
+        if "Foundation-Housekeeping:" in body:
             continue
         files = run(
             ["git", "show", "--pretty=", "--name-only", sha], cwd=path
@@ -623,6 +636,14 @@ def notice_senders(head):
     names = re.findall(r"`(lineart-[A-Za-z0-9._-]+)`", head[:600])
     if names:
         return names
+    # Third: a notice that signs itself with the bare branch name and an arrow,
+    # `<topic>` -> 基盤. Added 2026-10-30, after `aesthetic-judge` sent two notices
+    # the same day and the gap still read 25d: the track had said who it was, in the
+    # title, and the check was looking for one spelling of it. The arrow is required
+    # so a notice that merely mentions another track is not read as coming from it.
+    arrow = re.findall(r"`([a-z0-9][a-z0-9._-]*)`\s*(?:→|->)\s*(?:共通)?基盤", head[:600])
+    if arrow:
+        return ["lineart-" + b for b in arrow]
     return [
         "lineart-" + b
         for b in re.findall(r"branch\s+`([a-z0-9][a-z0-9._-]*)`", head[:600])
@@ -946,7 +967,8 @@ def main():
         if not finished:
             briefing = path / "doc" / "initial_notice.md"
             try:
-                has_ordinance = "\n## 条例" in briefing.read_text(encoding="utf-8")
+                has_ordinance = re.search(
+                    r"^## 条例\s*$", briefing.read_text(encoding="utf-8"), re.M) is not None
             except OSError:
                 has_ordinance = None
             if has_ordinance is False:
@@ -978,7 +1000,7 @@ def main():
             continue
         briefing = path / "doc" / "initial_notice.md"
         try:
-            if "\n## 条例" not in briefing.read_text(encoding="utf-8"):
+            if not re.search(r"^## 条例\s*$", briefing.read_text(encoding="utf-8"), re.M):
                 dormant_no_ordinance.append(name)
         except OSError:
             pass

@@ -2,7 +2,7 @@
   "schema": "judge_anchor_registry/1",
   "track": "aesthetic-judge",
   "written_on": "2026-10-30",
-  "why": "規律10(動く錨は、動かす時期と条件を先に登録する)の登録簿。人の判定が本当の棒で、前処理器の素の出力は下限の棒(CLAUDE.md 第1条)。この track が持っているのは本当の棒の実測1回分なので、ここが正本になる。",
+  "why": "規律10(動く錨は、動かす時期と条件を先に登録する)の登録簿。人の判定が本当の棒で、前処理器の素の出力は下限の棒(CLAUDE.md 第1条)。**この track が持つのは「絵1枚(タイル)を線画として使えるか」の単位での人の判定で、その単位の実測を持つのはこの木だけ。プロジェクト全体で唯一ではない** —— 面・線の単位では Track M が 2026-11-03 以降くり返し作者の判定を取っている(下の external_human_judgements)。**単位が違うので比較不能で、どちらも相手の棒にはならない。**",
   "reading_tool": "tools/judge_anchor.py",
   "period_rule": {
     "note": "**取り直す周期の決め方**(条例1)。暦ではなく事象で決める。",
@@ -178,6 +178,66 @@
       },
       "artifacts": "../lineart-stroke-selection/results/signal_rescore_20261003",
       "owner_of_record": "Track C"
+    }
+  ],
+  "revised": "2026-11-07(外部の人の判定2件と材料の選別1件を追加。「唯一」の言明を単位つきに直した)",
+  "external_human_judgements": [
+    {
+      "name": "trackM-20261103",
+      "owner": "Track M (`../lineart-colour-manuscripts`)",
+      "taken_on": "2026-11-03",
+      "judge": "作者(単独。この track と同じ人)",
+      "unit": "面の分け方(線だけ L4 で見つけた面)",
+      "verdict": "「使える」(その track の第2の棒)。追補206。C1 通る / C2 落ちる / H1 通る",
+      "records": "../lineart-colour-manuscripts/doc/work_log.md 14041 行付近",
+      "bar_for_this_track": false,
+      "why_not": "**単位が違う**(面の分け方 対 絵1枚の線画判定)。規律1 により単位は構成の一部なので、この判定はこの木の棒を上げも下げもしない。**それでも登録する理由**: この木の「唯一の実測」という言明を偽にするから(2026-11-07 に直した)。Track M は 11-03 以降 H1〜H6 でくり返し作者の判定を取っている",
+      "comparable_to_anchor_20261004": false
+    },
+    {
+      "name": "trackO-C4-untaken",
+      "owner": "Track O (`../lineart-krita-cleanup`。2026-11-04 開設→同日休止)",
+      "taken_on": null,
+      "judge": null,
+      "unit": "絵1枚(15タイルを種で固定)—— **この木と同じ単位**",
+      "verdict": "**未実施**。登録はされたがユーザーの判断で行わずに閉じた(「既に十分だな　きり上げるのも一つかと」)",
+      "records": "../lineart-krita-cleanup/doc/result_krita_stage2_20261104.md §5",
+      "bar_for_this_track": false,
+      "why_not": "**取られていないので棒ではない。** 登録しておくのは、同じ単位の収集が1件「設計済み・未実施」で在ることを、後から「人に聞いていない」と読めるようにするため。**取るなら新しい錨で、この木の門を先に通す。**",
+      "comparable_to_anchor_20261004": null
+    }
+  ],
+  "material_screenings": [
+    {
+      "date": "2026-11-07",
+      "material": "Track O 段2 の出力(`../lineart-krita-cleanup/results/krita_stage2_20261104/`、読み取りのみ)",
+      "asked": "次の一手2(材料を待つ)に効くか —— 劣化でない出力の組になっているか",
+      "verdict": "**落ちた。集めない。**",
+      "gate": "tools/judge_protocol.py、下書きは results/judge_axis_check_20261107/protocol_trackO_draft.json(追跡しない。器具で作り直せる)",
+      "failed_items": 5,
+      "decisive": "**lineart 192タイルで `mean_ink` が腕どうしを 0.837 分ける**(限界 0.8 は型に先に書いてある値)。最大は smooth_inv_s1 対 sketchy_inv_s1。**濃さだけで答が出る対に人の時間を使わない**(条例1)",
+      "other_failures": "腕ごとの損傷量が未測定(全腕が同じラフの加工。lesson 11)/ 再掲0 / 保留の選択肢の理由なし / 停止則なし",
+      "measured_by_this_track": {
+        "instrument": "tools/measure_axis_separation.py",
+        "csv": "results/judge_axis_check_20261107/axis_separation.csv(追跡しない)",
+        "lineart_arms_vs_arms": {
+          "mean_ink": 0.837,
+          "near_white_frac": 0.715
+        },
+        "lineart_arms_vs_legs": {
+          "near_white_frac": 0.958,
+          "mean_ink": 0.752
+        },
+        "lineart_arms_vs_fade": {
+          "mean_ink": 0.918
+        },
+        "housei_arms_vs_arms": {
+          "mean_ink": 0.876,
+          "near_white_frac": 0.699
+        },
+        "note": "**プールごとに行を分けてある**(規律: プールを跨いで平均しない)。向きは問わず分離だけ読む。**これは Krita についての判定ではなく、材料の性質の測定**。Track O 自身が同じ向きの所見を持っている(モデルなしの一様な減光が主値を再現する、同doc §4)"
+      },
+      "consequence": "**条例5 の反証条件は満たされない** —— 劣化量以外の軸で差がついている組ではない。次の一手2 は引き続き待ち"
     }
   ]
 }

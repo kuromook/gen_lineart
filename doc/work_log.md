@@ -6622,3 +6622,83 @@ what the spec says an over-budget ordinance means (a drafting defect, and
 it rather than by hand -- `session_brief.py` counts `len(body)` including
 newlines, 42 more than a character count without them -- the section is now
 **1,955 characters and prints no warning**. `doc/initial_notice.md` is 129 lines.
+
+## 2026-11-07 Resumed: law, two human judgements taken elsewhere, and a candidate material screened out
+
+Reopened on the foundation's 11-07 notice (`inbox/reply_judge_catchup_20261107.md`),
+which is explicit that it is material and not instructions.
+
+### Law, and whose finding the allowlist gate was reporting
+
+Six law files behind `c35cf56434`; every one of this tree's commits on them is an
+import (`7d2ef73`, `bbd1951`, `8e62291`), not authorship, so they were taken by
+path. `catch_up.py` reads "caught up". **The SessionStart gate's "5 tracked
+artifacts not on the allowlist" was not this tree's** -- the newer
+`check_public_artifacts.py` scans every branch, and the five are
+`colour-manuscripts`' `results/lessons/m95_a0_stages/*.png`, which the **user
+approved on 10-31** and the foundation had already added to the allowlist. Taking
+the law file cleared it: `aesthetic-judge` was 0 throughout, and the gate now
+exits 0. Worth noting for the hook's wording: the one-line summary names a count
+without the branch, and the count can belong to another tree.
+
+**Discipline 13** (10-31) went into the gate rather than only into the ordinance:
+a protocol may now declare `axes_used_as_proxy`, and each entry **fails** unless
+it prints a hit rate and a miss rate. The distinction the field keeps visible is
+that this track's axis measurement decides *whether to ask a person*, which is
+discipline 13's own concern only when an axis is used **instead of** the author.
+
+### A claim of this track's went false, and is corrected rather than retracted
+
+The ordinance said the human bar's only measurement is this tree's. **Track M
+took the author's judgement on 2026-11-03** ("使える", its own second bar, 追補206)
+and has gone on taking it through H1-H6. The corrected form carries the unit,
+which is what makes both statements true at once: **this tree holds the only
+human measurement on the unit of one whole drawing**, and the project's human
+judgements are not only this tree's -- M's are on the unit of a face. Units are
+part of the configuration (discipline 1), so **neither is the other's bar**, and
+`judge_anchor.py status` now prints both external entries so the correction
+cannot sit unread in a JSON field. **Track O's C4** -- same unit as this tree's,
+15 tiles fixed by seed -- is registered as **untaken**: the user closed that track
+the day it opened, so it is neither a bar nor an outstanding obligation.
+
+### Track O's stage-2 output, screened with the gate
+
+The notice offered it for "next step 2 (wait for material)": a learned
+non-generative model that **redraws** rather than deletes, so condition 5's
+wording does not exclude it on its face. Measured instead of argued, with
+`tools/measure_axis_separation.py` (new; prints per pool, drops nothing silently,
+ties resolved to mean ranks because ignoring them overstates separation). The
+limit, **0.8, was already written in the template** before any of this was run.
+
+| pool | pair | axis | separation AUC |
+|---|---|---|---:|
+| lineart (192) | arm vs arm (`smooth_inv_s1` vs `sketchy_inv_s1`) | `mean_ink` | **0.837** |
+| lineart | arm vs arm (`sketchy_noinv_s1` vs `smooth_inv_s1`) | `near_white_frac` | 0.715 |
+| lineart | arm vs leg (`smooth_inv_s1` vs `gt`) | `near_white_frac` | **0.958** |
+| lineart | arm vs the no-model fade k=0.5 | `mean_ink` | **0.918** |
+| housei (100) | arm vs arm (`sketchy_noinv_s1` vs `sketchy_inv_s1`) | `mean_ink` | **0.876** |
+
+`judge_protocol.py` on a filled draft registration: **5 items dropped, collect
+nothing.** The decisive one is the first row -- a single density axis separates two
+of the three arms, so the author would be deciding density, which is already
+computed. The others: no per-arm damage measure while every arm is a
+transformation of the same rough (lesson 11), no repeats, no reason for omitting
+the undecidable option, no stopping rule. **This agrees with Track O's own
+reading from the other side** (their §4: a model-free uniform fade reproduces the
+headline value), reached here without using their numbers -- and it is a
+measurement of **the material**, not a verdict on Krita.
+
+So **condition 5's refutation condition is not met** and next step 2 stays open.
+What would pass is now sayable: arms and legs that do **not** separate on density
+or damage, which a person still calls different things. Recorded in the registry
+under `material_screenings`; the draft registration and the CSV are under
+`results/judge_axis_check_20261107/` (untracked -- the instrument rebuilds them).
+
+### One defect in this track's own instrument
+
+`judge_protocol.py` printed the **failure** text beside every item it had
+**passed** ("通った 名前: この収集の名前が無い"). It read as a contradiction and
+would have been a lie if quoted. Found by running the gate on a real candidate
+rather than on controls; `need()` now records no reason on success. The ordinance
+stands at exactly **2,000 characters by the instrument's own count** -- at budget,
+so the next addition has to trim first.

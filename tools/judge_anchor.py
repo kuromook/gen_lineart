@@ -142,6 +142,27 @@ def cmd_status(reg):
                 print(f"     {label:34s}: {val if not isinstance(val, bool) else '○'}")
         if rt.get("retro"):
             print(f"     事後登録: {rt.get('retro_note','')}")
+
+    # **この木の外で取られた人の判定。** 印字しないと「唯一の実測」の訂正が JSON に埋もれる
+    ext = reg.get("external_human_judgements") or []
+    if ext:
+        print()
+        print("══ この木の外の人の判定(**この木の棒ではない**)")
+        for e in ext:
+            role = "**棒ではない**" if not e.get("bar_for_this_track") else "棒"
+            print(f"   {e['name']}  ({e.get('taken_on') or '未実施'} / {e['owner']}) —— {role}")
+            print(f"     単位: {e['unit']}")
+            print(f"     判定: {e['verdict']}")
+            print(f"     理由: {e['why_not']}")
+    scr = reg.get("material_screenings") or []
+    if scr:
+        print()
+        print("══ 材料の選別(門を通したもの)")
+        for m in scr:
+            print(f"   {m['date']}  {m['material']}")
+            print(f"     判定: {m['verdict']}  落ちた項目 {m.get('failed_items')} 件")
+            print(f"     決め手: {m['decisive']}")
+            print(f"     帰結: {m['consequence']}")
     return bad
 
 

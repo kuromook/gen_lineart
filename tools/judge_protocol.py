@@ -42,7 +42,9 @@ def check(spec):
     bad, ok = [], []
 
     def need(cond, label, why):
-        (ok if cond else bad).append((label, why))
+        # **通った側に落ちた側の文面を出さない。** 2026-11-07 に Track O の下書きで露見した ——
+        # 「通った 名前: …が無い」と印字していて、読むと矛盾し、引くと嘘になる
+        ok.append((label, None)) if cond else bad.append((label, why))
 
     def filled(key):
         v = spec.get(key)
@@ -83,6 +85,21 @@ def check(spec):
                                           "**この軸で腕が分かれている。計算で答が出るので人に聞かない**"))
             else:
                 ok.append((f"軸 {name}", f"separation_auc {sep:.3f} < 限界 {limit}"))
+
+    # **規律13**(2026-10-31) —— 近い列で代用しない。軸を作者の判定の**代わり**に使うなら、
+    # その軸が作者の分類を再現すると示し、**的中率と取りこぼしを印字する**まで使わない
+    proxies = spec.get("axes_used_as_proxy")
+    if proxies:
+        for px in proxies:
+            name = px.get("name")
+            hit, miss = px.get("hit_rate"), px.get("miss_rate")
+            if hit is None or miss is None:
+                bad.append((f"代用の軸 {name}",
+                            "**作者の判定の代わりに使うのに、的中率と取りこぼしが無い**(規律13)"))
+            else:
+                ok.append((f"代用の軸 {name}", f"的中率 {hit} / 取りこぼし {miss} を印字済み(規律13)"))
+    else:
+        ok.append(("代用の軸", "無し —— 軸は人に聞くかどうかを決めるだけで、判定の代わりには使わない"))
 
     if spec.get("common_source"):
         dm = spec.get("damage_measure") or {}
@@ -164,7 +181,7 @@ def main():
     if bad:
         print()
     for label, why in ok:
-        print(f"   通った   {label}: {why}")
+        print(f"   通った   {label}" + (f": {why}" if why else ""))
     print()
     if bad:
         print("   **集めない。** 落ちた項目を埋めてから回す —— 集め直しが一番高い")
