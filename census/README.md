@@ -162,6 +162,7 @@
 ./venv/bin/python tools/census/pattern_style.py     # 形式に PatternStyle が残っている頁(④の同定ではない)
 ./venv/bin/python tools/census/worksheet_folder_reach.py # 下絵の層のフォルダーの中の層の量 + 主値の前後(畳んだ行と作品ごとの行)
 ./venv/bin/python tools/census/lineart_fill_candidates.py # 名前が線画なのに塗りつぶしの層の候補(作者に聞く表を data/ に作る。公開表は答えの後)
+./venv/bin/python tools/census/lineart_fill_answers.py    # その表の答え(作者 + ユーザーの指示で census が埋めた行)と、「塗りつぶし」を外した墨の濃さ
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)

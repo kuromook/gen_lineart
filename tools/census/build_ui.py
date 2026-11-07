@@ -75,6 +75,10 @@ COLUMN_CAVEATS = {
     "n_material_upper": ["mask_material_pages.n_pages_material_ge3"],
     "n_material_tone": ["mask_material_pages.n_pages_material_ge3"],
     "n_unmeasured": ["mask_material_pages.n_pages_material_ge3"],
+    # **線画の名前の塗りつぶし候補の答え**(`lineart_fill_answers.py`、2026-11-07)
+    "answer_kind": ["lineart_fill_answers.frac_pure_black_among_ink"],
+    "answered_by": ["lineart_fill_answers.frac_pure_black_among_ink"],
+    "share_ink_of_population": ["lineart_fill_answers.frac_pure_black_among_ink"],
     # **作者の版の答え**(`version_rulings.py`、2026-11-07)
     "author_words": ["version_rulings.n_pages"],
     "decided_kind": ["version_rulings.n_pages"],

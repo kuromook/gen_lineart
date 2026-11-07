@@ -1831,10 +1831,12 @@ VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
               "share_layers_binary_alpha", "share_px_on_binary_layers",
               "share_px_partial_alpha",
               # **線画の層の範囲の中央値**(`l1_layer_extent.csv`)。件数ではないので小数が正しい
-              "median_bbox_share_of_canvas", "median_fill_of_bbox")
+              "median_bbox_share_of_canvas", "median_fill_of_bbox",
+              # **主値の母集団の墨に占める割合**(`lineart_fill_answers.csv`)
+              "share_ink_of_population")
 # 値の集合が宣言できる列(**白名簿。** 他の値が出たら指摘)
 DIM_COLS = ("population", "year_label", "v_layer_kind", "layer_type", "plane", "ruling",
-            "row_kind", "decided_kind", "version_role",
+            "row_kind", "decided_kind", "version_role", "answer_kind", "answered_by",
             "drawn_ratio_usable", "volatile",
             "is_folder", "has_frame_line", "has_mask", "has_stored_blocks",
             "alpha_max_zero", "rc_bucket", "init", "kind", "bits", "confidence",
@@ -1931,6 +1933,8 @@ PROSE_COLS = (*HIST_COLS,
               "probe_what",
               # **作者の言葉の逐語(名前は〔 〕で伏せる)**(`version_rulings.py`)
               "author_words",
+              # **聞き取りの答えの集計**(`lineart_fill_answers.py`、2026-11-07)。コメントは作者の言葉か census が埋めた文
+              "subset_label", "author_comment",
               "population_note", "corroboration",
               # **作者の判断を測定の列に混ぜない。** 別の列にして、散文として点検する
               "author_reading",
@@ -2093,6 +2097,10 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         "row_kind": {"row_kind", "札の数", ""},
         # **札を決めたのが作者の言葉か、機械の規則か**(`version_rulings.py`)
         "decided_kind": {"decided_kind", "作者", "機械", ""},
+        # **聞き取りの選択肢と、答えを書いたのが誰か**(`lineart_fill_answers.py`)
+        "answer_kind": {"answer_kind", "線画(線だけ)", "線画とベタ(線の層にベタも塗った)", "塗りつぶし",
+                        "その他", "分からない", "空", ""},
+        "answered_by": {"answered_by", "作者", "census(ユーザーの指示)", ""},
         # **M の札の語彙**(Track M が決めた。census は作り直さない)
         "version_role": {"version_role", "single", "superseded", "final", "wip", "duplicate_content",
                          "illustration", "revision", "undecided", "branch", "unrelated", "rough", ""},
