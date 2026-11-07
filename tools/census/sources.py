@@ -498,6 +498,13 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/note_p_census_columns_for_split_20261107.md",
+        what="**Track P の依頼: 発注候補 941頁の作品の単位・カラーかモノクロか・作業途中の扱い**",
+        why_not_yet="**答えた**: 器具 `p_split_columns.py`、頁ごとの全量は非公開(P と基盤へ)。"
+                    "**作品の単位は作者の編の裁定と、ファイルの中身の共有で束ねた**(名前の似かたでは束ねない。編の境を跨ぐ共有は束ねない)。"
+                    "**カラーかモノクロかの列は無い**(`colour_ratio_vs_author.csv` で作者の分類を再現しなかった)",
+    ),
+    dict(
         path="inbox/deliver_m_holdout8_20261107.md",
         what="**抽出側 → Track M の納品の写し**(8頁の層の画素とマスクのラスタ、`holdout8_20261107`)",
         why_not_yet="**ラスタは census が読まない**(条例10)。**census の材料表への外の既知セル**: "
