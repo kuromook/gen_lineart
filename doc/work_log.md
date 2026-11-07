@@ -6928,3 +6928,74 @@ fail. The gate was fine: `$(basename ...)` runs inside the same word and resets
 `$?` before it is expanded, so the loop was reporting basename's status. Caught
 only because a registration that is *designed* to fail reported success -- the
 same shape as `names_are_not_checks`. Capture the status into a variable first.
+
+## 2026-11-07 (same day, night) The ladder is open: the screen was shrinking the
+thing being measured
+
+The user: 「今の段階で、それが先に必要かはあまりピンとこないが、後で撤回になることも
+想定に入れつつやるとしようか　１を」 — start the collection, while holding open that it
+may be withdrawn. That reservation is now in the registry verbatim
+(`planned_collections[0].users_reservation`) and must be repeated whenever the result is
+written up.
+
+### The screen was making the answer
+
+The shared interview parts (`tools/ui/`, brought in from `foundation` at `93ae76f`) fit
+the image to the window. Measured on the staged page: **83% at 1024 wide, 124% at 1440**.
+Shrinking makes thin lines pale and dotted — **that is the axis this collection measures**,
+so the window size would have been part of the stimulus, differently on each device.
+
+- added `initial_view: "native"` to the question format and made this interview use it
+- computing it once is not enough: the pane's height changes after the image loads, and
+  the first attempt landed at **128%**. It now re-derives native on every `apply()` until
+  the judge zooms, so the screen's own layout cannot move the magnification
+- the shown magnification is now in each saved row (`shown_scale`) — the stimulus is what
+  was visible, not what was on disk
+- a pane too small to hold the image at 1:1 now says so next to the magnification
+
+Two smaller defects in the same parts: the row carried only `ts`, so **position and
+predecessor were not recorded** although 条例2 and the gate (`records_order_and_predecessor`)
+require them — `pos` / `n_items` / `prev_item_id` / `shown_seq` added; and the "縮小中"
+warning fired at exactly 1:1 (floating point), so it would have been permanently on screen
+and stopped being read — now `s < 0.999`. Also gave the page a title from the question
+(`page_title`), because a disposable artifact with a fixed name cannot be counted later
+(guideline §7-2 asks for exactly that counting). Note to the foundation:
+`../lineart/inbox/note_aesthetic_judge_ui_parts_20261107.md`.
+
+### Three changes to the registration, all before any judgement
+
+| what | from | to | why |
+|---|---|---|---|
+| collection start | 2026-11-08 | 2026-11-07 | the user decided to start today; registration is still the earlier of the two |
+| choices | binary | 使える / 使えない / **どれでもない / 分からない** | the common UI guideline (user-confirmed 2026-11-07) will not let the undecidable option be removed, and the parts add it automatically |
+| leg candidates | 96 tiles | **103** | 192 − 88 rungs − 1 blank GT; the 96 in the registration was wrong |
+
+The choices change has a cost and it is written down: **the options are no longer the same
+as anchor-20261004**, so the legs may not be printed beside 0/15 and 14/15 without saying
+so. That is survivable here only because this is a calibration, not an anchor. The pass
+rate now prints twice — 使える ÷ all, and 使える ÷ (使える+使えない) — with the held
+answers named per rung rather than folded into a denominator. **A rung with many 「分からない」
+is itself evidence of where the boundary sits.**
+
+### What was staged
+
+`tools/build_threshold_items.py` → `data/judge_ladder_20261107/` (untracked):
+88 rungs + 15 `rough` legs + 8 repeats = **111 items, 103 distinct images**, all through
+the declared JPEG q95 path (mean absolute pixel change 0.07–0.44, ink fraction moves in the
+4th decimal). Legs drawn from the 103 tiles no rung used, 3 per GT-ink quintile; dropped by
+reason printed (88 used by rungs, 1 blank GT). Order randomised at seed 20261108; ids are
+the presentation order so **nothing on screen names the rung or the tile** (checked: zero
+occurrences of `lineart_0` or `level_` in the published page).
+
+UI: **https://claude.ai/artifact/GeAEsZSQxDwWsiGtroxV6m** (created 2026-11-07, 4.18MB,
+capabilities `db` + `user`). Disposable per guideline §7-2 — the answers move to
+`data/judge_ladder_20261107/answers.jsonl`, row counts are matched with
+`tools/ui/verify_answers.py`, and the page is deleted only after the user says so.
+The store was exercised after publishing: one probe document written, listed back, deleted.
+**The page's own save path is still unproven** — it shows an error in the status line if it
+fails, and the first answered item will say.
+
+Gate re-run after the edits: **27 passed, 0 dropped** (one fewer than before only because
+the forced-choice reason no longer applies). `judge_anchor.py status` now prints the new
+registry fields, and **names any field it is not printing** — adding a field to the
+registry that nothing reads is another `names_are_not_checks` instance waiting to happen.

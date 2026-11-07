@@ -215,18 +215,31 @@ def cmd_status(reg):
             print(f"   {c['name']}  —— 門: {c['gate']}")
             print(f"     目的: {c['purpose']}")
             print(f"     登録: {c['registration']}")
-            for k, label in (("why", "なぜ"), ("why_it_can_run_now", "いま走れる理由"),
-                             ("material", "材料"), ("operator", "落とし方"),
-                             ("levels_measured", "段の実測"), ("axes", "軸"),
-                             ("ordinance_boundary", "条例との境界"),
-                             ("withdrawn_recommendation", "**薦めを取り下げた**"),
-                             ("fills", "埋まるもの"),
-                             ("cost", "費用"), ("note", "註"), ("candidates", "候補"),
-                             ("blocked_on", "**止まっている先**")):
+            labels = (("why", "なぜ"), ("why_it_can_run_now", "いま走れる理由"),
+                      ("collection_started", "**収集を始めた**"),
+                      ("users_reservation", "**ユーザーの留保**"),
+                      ("material", "材料"), ("operator", "落とし方"),
+                      ("levels_measured", "段の実測"), ("axes", "軸"),
+                      ("ordinance_boundary", "条例との境界"),
+                      ("withdrawn_recommendation", "**薦めを取り下げた**"),
+                      ("fills", "埋まるもの"),
+                      ("cost", "費用"), ("note", "註"), ("candidates", "候補"),
+                      ("blocked_on", "**止まっている先**"))
+            lists = (("changed_before_collection", "集める前に変えた"),
+                     ("ui_defects_found_before_collection", "画面の欠陥(集める前に直した)"),
+                     ("failed_items", "落ちた"))
+            for k, label in labels:
                 if c.get(k):
                     print(f"     {label}: {c[k]}")
-            for it in c.get("failed_items", []):
-                print(f"     落ちた: {it}")
+            for k, label in lists:
+                for it in c.get(k, []):
+                    print(f"     {label}: {it}")
+            # **印字されない欄を黙って持たない**(names_are_not_checks)。登録簿に足した欄は、
+            # ここに名前を足すまで誰の目にも触れない —— 沈黙が正常動作と見分けがつかない
+            known = {"name", "gate", "purpose", "registration"} | {k for k, _ in labels} | {k for k, _ in lists}
+            unprinted = sorted(set(c) - known)
+            if unprinted:
+                print(f"     **印字していない欄**: {unprinted} —— judge_anchor.py の labels/lists に名前を足すこと")
     return bad
 
 
