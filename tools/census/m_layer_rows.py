@@ -72,9 +72,8 @@ def page_rows(con, p):
     return out
 
 
-def main() -> int:
-    print("[頁の層の行(Track M の発注、8頁)]")
-    con = db.connect()
+def known_check(con):
+    """**既知セル**: 抽出側の 872頁と構造の列を全行突き合わせる。(header, n, bad) を返す"""
     known = list(csv.DictReader(open(os.path.join(ROOT, KNOWN), encoding="utf-8")))
     header = list(known[0].keys())
     cache, bad, n = {}, {}, 0
@@ -91,6 +90,13 @@ def main() -> int:
                 a, b = float(a), float(b)
             if a != b:
                 bad[c] = bad.get(c, 0) + 1
+    return header, n, bad
+
+
+def main() -> int:
+    print("[頁の層の行(Track M の発注、8頁)]")
+    con = db.connect()
+    header, n, bad = known_check(con)
     print(f"    **既知セル**: 抽出側の 872頁・{n:,}行と構造の {len(STRUCT)}列を突き合わせた —— "
           + ("**全行一致**" if not bad else f"**食い違い {bad}**"))
     if bad:

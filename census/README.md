@@ -164,6 +164,7 @@
 ./venv/bin/python tools/census/lineart_fill_candidates.py # 名前が線画なのに塗りつぶしの層の候補(作者に聞く表を data/ に作る。公開表は答えの後)
 ./venv/bin/python tools/census/lineart_fill_answers.py    # その表の答え(作者 + ユーザーの指示で census が埋めた行)と、「塗りつぶし」を外した墨の濃さ
 ./venv/bin/python tools/census/colour_class.py           # カラーかモノクロか(作者の決め方の第1段: カラーの層が無ければモノクロ。残りは作品フォルダーの聞き取り)
+./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列 + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)

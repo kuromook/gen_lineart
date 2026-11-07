@@ -17021,3 +17021,13 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
   - Track P の 941頁: モノクロ 139 / 聞き取り待ち 802
 - 第2段: 作品フォルダー 322 のうち全頁がモノクロに決まった 51、**聞き取りが要る 271**(P の頁を持つ 59 を上に並べた)→ `data/census_full/hearing_work_folder_manga_or_illust_20261107.xlsx`
 - 公開表 `census/colour_class.csv`(札 × 形式)/ 頁ごと `data/census_full/colour_class_20261107.csv`(非公開)
+
+## 2026-11-08 00:15 Track P の 300頁の層の行(構造の列を先に)
+
+- 依頼 `note_p_order_layer_rows_300_20261107.md`(名簿 `p_order_300_pages_20261107.csv` sha256 先頭 `9da9253e69130444`、300行。依頼に書かれた値と一致)
+- 器具 `tools/census/p_layer_rows.py`(`m_layer_rows.py` の既知セルを関数に切り出して使う): **既知セル 抽出側の 872頁・72,839行と構造の19列が全行一致**
+  - 300頁(恒久除外 0 / 作業途中 0)→ **層 40,879行**、has_mask の層 13,480。**has_mask の層の数が依頼の材料の数より少ない頁 0**
+  - マスクの画素の数は供給元の表の値を写した: 面の表(`>0/=255/1〜254`、キャンバス全体)で 13,437層(status ok 13,434 / mask_unread 3)、行なし 43層(296頁で引ける)。`mask_cover`(`>=128/1〜127`、バッファの範囲)は 1,604層(69頁)。**区切りが違うので片方から片方を作らない**(規律13)
+  - 第1段のカラーかモノクロか: 聞き取り待ち 272頁 / モノクロ 28頁
+  - → `data/census_full/p_order300_page_layers_20261108.csv`(非公開、73列、画素の列は空)
+- 抽出側の返事の写し `reply_foundation_occlusion_edge_estimate_20261107.md`(宛先は基盤。census の作業なし)を sources に登録

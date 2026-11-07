@@ -523,6 +523,18 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**次に聞き取りの画面を作るときから使う。** いま作る画面は無い。返事は要らない",
     ),
     dict(
+        path="inbox/note_p_order_layer_rows_300_20261107.md",
+        what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
+        why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"
+                    "**面の表 `>0/=255/1〜254`(キャンバス全体)と `mask_cover` `>=128/1〜127`(バッファの範囲)は区切りが違うので片方から作らない**)"
+                    " + 第1段のカラーかモノクロか + 作業途中。**画素の列は抽出側の納品(`face_merge_300_20261107/`)が来たら便ごとに足す**",
+    ),
+    dict(
+        path="inbox/reply_foundation_occlusion_edge_estimate_20261107.md",
+        what="**抽出側 → 基盤の返事の写し**(遮蔽物の輪郭からの深さを受ける。見込み3〜4日)",
+        why_not_yet="**宛先は基盤。** census の作業は無い",
+    ),
+    dict(
         path="inbox/note_m_order_layer_rows_holdout8_20261107.md",
         what="**Track M の発注: 標本外の8頁の層の行**(抽出側の 11-02 の層の表と同じ64列)",
         why_not_yet="**答えた**: 構造の19列を構造 DB から作り、画素の45列は空(画素は M が抽出側に発注済み)。"
