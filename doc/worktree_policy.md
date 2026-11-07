@@ -72,6 +72,7 @@ of each track; this table records only where each one physically lives, because
 | `lineart-colour-manuscripts` | `colour-manuscripts` | worktree of `lineart`, **Track M**, opened 2026-10-24 |
 | `lineart-external-standard` | `external-standard` | worktree of `lineart`, **Track N**, opened 2026-10-30 |
 | `lineart-krita-cleanup` | `krita-cleanup` | worktree of `lineart`, **Track O**, opened 2026-11-04 — Krita Fast Sketch Cleanup survey |
+| `lineart-face-merge` | `face-merge` | worktree of `lineart`, **Track P**, opened 2026-11-07 — learns face merging from mask faces; question and bars stay Track M's |
 | `lineart-ops-review` | `ops-review` | worktree of `lineart`, **not a track** (no letter) — the operating-rules stocktake, opened 2026-10-30. Output is proposed diffs only; **the foundation edits the source of truth** |
 | `lineart-panel-generation` | `panel-generation` | **separate clone** of the same remote |
 | `lineart-face-words` | `face-words` | worktree **of that clone**, not of `lineart` |
