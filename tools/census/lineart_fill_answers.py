@@ -37,6 +37,11 @@ SHA_PREFIX = "85ca75906dea8a90"
 OUT_PUB = "census/lineart_fill_answers.csv"
 OUT_FULL = "data/census_full/lineart_fill_answers_20261107.csv"
 EXCLUDE = {"塗りつぶし"}
+# **【11-07 ユーザーの決定「外す」】作者が「その他」と答えた層も外す。** census が埋めた「その他」(作品1つ、
+# 見た目は線だけ)は外さない —— ユーザーに見せた「その他」の内訳は作者の答えだけだった。
+# **決定は種類ごとの墨の割合を見た後で、外した後の値を見る前**(母集団を動かしたので前後を両方印字する)
+EXCLUDE_OTHER = "その他"
+LABEL_OTHER = "さらに、作者が「その他」と答えた層も外した値(11-07 ユーザーの決定)"
 BY_AUTHOR = "作者"
 BY_CENSUS = "census(ユーザーの指示)"
 FILL_WORK = "\\2024b\\fitness"
@@ -105,11 +110,13 @@ def main() -> int:
     k = lambda r: (r["page_path"], int(r["layer_id"]))  # noqa: E731
     prev_x = {k(r) for r in main_pop if k(r) in keys and hearing.get(r["page_path"]) in wf.HEARING_EXCLUDE}
     new_x = {(r["page"], r["lid"]) for r in recs if r["ans"] in EXCLUDE}
+    other_x = {(r["page"], r["lid"]) for r in recs if r["ans"] == EXCLUDE_OTHER and r["by"] == BY_AUTHOR}
     new_x_in_pop = new_x & {k(r) for r in main_pop}
     print(f"    **「塗りつぶし」の層 {len(new_x)}**(うち主値の母集団=2段目に在る {len(new_x_in_pop)})")
     steps = [("墨の濃さの主値(登録した母集団。動かさない)", set()),
              (wf.LABEL_AUTH, prev_x),
-             ("それに加えて、線画の名前の候補で作者が「塗りつぶし」と答えた層を外した値(11-07)", prev_x | new_x)]
+             ("それに加えて、線画の名前の候補で作者が「塗りつぶし」と答えた層を外した値(11-07)", prev_x | new_x),
+             (LABEL_OTHER, prev_x | new_x | other_x)]
     vals, out_vals = [], []
     for label, x in steps:
         keep = [r for r in main_pop if k(r) not in x]
@@ -123,7 +130,8 @@ def main() -> int:
     if vals[1] != "0.9156":
         print(f"    **11-03 の外した値 0.9156 を再現しない**({vals[1]})")
         bad += 1
-    print(f"    **名前付きの前後**: {wf.LABEL_AUTH} {vals[1]} → 塗りつぶしも外した値 {vals[2]}(主値 {vals[0]} は動かさない)")
+    print(f"    **名前付きの前後**: {wf.LABEL_AUTH} {vals[1]} → 塗りつぶしも外した値 {vals[2]}"
+          f" → その他も外した値 {vals[3]}(主値 {vals[0]} は動かさない)")
 
     # **「その他」は外さない。種類ごとの墨の割合を印字する**(外すかはユーザーが決める)
     pop_ink = sum(int(r["n_px_ink"] or 0) for r in main_pop)
@@ -154,7 +162,9 @@ NOTE = [
     "**名前が線画なのに塗りつぶしかもしれない層の聞き取り(2026-11-03 作成、11-07 回収)。** "
     "**篩**: 描かれた画素(透明度 1 以上)÷ キャンバスが 0.165 を超える層。0.165 は作者が仕上げの線と答えた層の最大値",
     "**答えの使い方は表を作ったときに書いた規則のまま**: **「塗りつぶし」だけを外す。** 「線画とベタ」「線画」は数に入れたまま。"
-    "**「その他」は規則に無いので外していない**(種類ごとの墨の割合を上に出した)。**主値 0.9177 は動かさない**(規律10)",
+    "**「その他」は規則に無かったが、【11-07 ユーザーの決定「外す」】で作者が「その他」と答えた層も外した**(最後の行)。"
+    "**決定は種類ごとの墨の割合を見た後** —— **母集団を動かしたので、外す前の値(塗りつぶしだけを外した値)も名前を付けて残す。** "
+    "**census が埋めた「その他」(作品 W5、見た目は線だけ)は外していない。** **主値 0.9177 は動かさない**(規律10)",
     "**作品 W5(札 2024b)の層は census が埋めた**(`answered_by`)—— **ユーザーの指示(11-07)**。"
     "作者「範囲が画面ほぼ全体となっているが見た目にはそのように見えなかった」。"
     "**描かれた画素の大半が透明度 1〜15 で、16 以上だけならキャンバスの1割未満** —— **篩が透明度 1 以上を数えたので候補に入った**。"

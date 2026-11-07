@@ -1,5 +1,5 @@
 source,material_kind,supplier,as_of,n_rows,sha256,volatile,note
-(この走行の器具),**器具の版**,census track,2026-11-07,,bc36a1a,,**この数を計算した器具の版。** 器具のファイルに未コミットの変更: yes(4 ファイル)。**版が器具を同定しない** —— **報告でこの数を引くときは版も引く**(T139)
+(この走行の器具),**器具の版**,census track,2026-11-07,,5196819,,**この数を計算した器具の版。** 器具のファイルに未コミットの変更: yes(2 ファイル)。**版が器具を同定しない** —— **報告でこの数を引くときは版も引く**(T139)
 clip_brushstyle_patternstyle_pages_20261103.csv,受領 CSV,抽出側(um350。作業用の器具、commit なし),2026-11-03,9648,01327e746e4f52235b27eea07c368811034ba3a1cfe53376a7233b3ea2920bce,,**sha256 検証済み。** **公開表は `census/pattern_style_pages.csv`** —— **供給元の合計と全部一致、構造 DB の `vector_objects > 0` の数と `.clip` 全頁で一致。** **納品の `n_vector_layers` はコマ枠の層を含む**(構造 DB の `n_vector_layers` は外す)
 census_l1_layer_bbox_20261104.csv,受領 CSV,抽出側(um350。器具 `measure_layer_extent.py` `e13cf72`),2026-11-04,49786,d8c79a948be27cc1f5a4b79de2da3dc2635bdeda862972dc1297136771b65538,,"**sha256 は便の先頭16桁と一致。** **公開表は `census/l1_layer_extent.csv`** —— **鍵の集合は墨の濃さの表から引き直して一致、`n_px_alpha_gt0` は 49,784層で一致**(違う2層は1段目の表が古い側)"
 census_face_layer_alpha_mask_20261104.csv,受領 CSV,抽出側(um350。器具 `measure_layer_extent.py` `e13cf72`),2026-11-04,189974,11dae65dba257aed171d5f2e478649a6506b8a79f3bc40361d870b1e08798da7,,**sha256 は便の先頭16桁と一致。** **公開表は `census/face_binary_alpha.csv`** —— **マスクは `mask_cover_request3_v2`、本体は `faint_alpha_905_v2` と重なる層で全部一致。** **形式5 の本体は調査中**
