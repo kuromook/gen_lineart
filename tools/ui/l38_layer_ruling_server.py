@@ -206,7 +206,7 @@ document.getElementById('fit').onchange=function(){fit(this.checked);};
 document.getElementById('undo').onclick=undo;
 document.getElementById('prev').onclick=function(){load(Math.max(ST.i-1,0));};
 document.getElementById('next').onclick=function(){load(Math.min(ST.i+1,ST.n-1));};
-load(0);
+get('/state?i=0').then(function(d){load(d.first_todo);});
 '''
 
 HTML = '''<!doctype html><html lang="ja"><meta charset="utf-8">
@@ -259,6 +259,10 @@ def payload(i):
     return dict(i=i, n=len(S['items']), w=it['w'], h=it['h'],
                 has_neck=bool(it['neck_img']),
                 n_done=sum(1 for x in S['items'] if key(x) in S['ans']),
+                # **最初の未回答へ飛ぶ**(答えた面が混ざっているので、頭から出すと
+                # 答え直しに見える。**答は消さず、画面の入口だけ動かす**)
+                first_todo=next((j for j, x in enumerate(S['items'])
+                                 if key(x) not in S['ans']), 0),
                 answer=(dict(label=a['label'], word=a.get('word', ''), t=a['t'])
                         if a else None),
                 list=[dict(done=key(x) in S['ans']) for x in S['items']])

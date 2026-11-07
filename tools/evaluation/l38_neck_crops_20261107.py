@@ -53,6 +53,7 @@ ROOT = '/home/sh1/deepl/lineart-fill-region'
 SRC = f'{ROOT}/results/l38_merge_cause_20261106.json'
 OUT = f'{ROOT}/results/l38_neck_crops_20261107'
 MINPART = 500
+MININK = 0.002   # 窓の中に最低限要る線の墨(**これを切ったら余白を広げる**)
 
 # **セルの述語。** `n_layer` は**面積1%以上を寄与した塗り層の数**(`l38_merge_cause` の定義)、
 # `neck` は**その半径で侵食すると 500 画素以上の片が2つ以上残る**最小の半径(無ければ `None`)。
@@ -82,15 +83,39 @@ def line_ink(lz, shape):
 
 
 def render(R, other, lines, box):
-    """窓を**絵として**描く。白地 / **問う面を橙で塗る** / 他の面は淡い灰 / **線の墨は黒**。
+    """窓を**絵として**描く。白地 / 他の面は淡い灰 / **線の墨は黒** / **問う面は半透明の橙**。
 
-    線を最後に置く —— 塗りの上に線が乗るので、**何の絵かが読めたまま**印が見える。
+    **線を先に置き、問う面を半透明で重ね、最後に輪郭を引く。** 2026-11-07、
+    最初の版は**面を塗ってから線を上に置いた**ので、**細い面が線に塗りつぶされて
+    「問う面が 1画素も見えない」切り出しが出た**(無作為30面のうち5枚で面が 0.05% 以下、
+    1枚は **0.0000%**)。**問う対象が見えない画像は答えられない** ——
+    シルエットを送った失敗(同じ日)と同じ病である。
+
+    - 面の画素は **橙を 50% 混ぜる**(線が透けたまま、面が在ることは分かる)
+    - **輪郭を濃い橙で引く**(どこまでが1つの面かが、面が細くても分かる。
+      **印を付ける**のは 2026-10-26 の方針)
     """
     y0, y1, x0, x1 = box
     img = np.full((y1 - y0, x1 - x0, 3), 255, np.uint8)
     img[other[y0:y1, x0:x1]] = (235, 235, 235)       # 同じコマの別の面
-    img[R[y0:y1, x0:x1]] = (170, 215, 255)           # **問う面(BGR = 淡い橙)**
-    img[lines[y0:y1, x0:x1]] = (0, 0, 0)             # 線の墨
+    img[lines[y0:y1, x0:x1]] = (0, 0, 0)             # 線の墨(先に置く)
+    m = R[y0:y1, x0:x1]
+    tint = np.array((170, 215, 255), np.float32)     # BGR = 淡い橙
+    img[m] = (0.5 * img[m].astype(np.float32) + 0.5 * tint).astype(np.uint8)
+    cn, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    th = max(2, int(round(min(img.shape[:2]) / 500)))
+    cv2.drawContours(img, cn, -1, (0, 90, 255), th)  # **問う面の輪郭(濃い橙)**
+    # **小さい面には在りかを示す枠を足す。** 窓は原寸なので、小さい面だと
+    # **広い窓のどこに在るのか分からない**(2026-11-07、面 1,464 画素が
+    # 3958x2579 の窓に入った = 窓の 0.001%)。枠は**面の外側**に引くので画素を隠さない
+    ys, xs = np.nonzero(m)
+    if len(ys):
+        bh, bw = ys.max() - ys.min() + 1, xs.max() - xs.min() + 1
+        if bh * bw < 0.25 * m.size:
+            pad = max(40, int(0.02 * min(img.shape[:2])))
+            cv2.rectangle(img, (max(0, xs.min() - pad), max(0, ys.min() - pad)),
+                          (min(img.shape[1] - 1, xs.max() + pad),
+                           min(img.shape[0] - 1, ys.max() + pad)), (0, 90, 255), th)
     return img
 
 
@@ -189,6 +214,7 @@ def main():
     print(f'\n走る頁 {len(js)}', flush=True)
     made = 0
     skip = collections.Counter()
+    wid = collections.Counter()
     for job in js:
         pid, work, fz, lz, sel = job
         lm, shape = page_masks(fz)
@@ -235,12 +261,24 @@ def main():
                     # **余白を足す。** 面の外接矩形ぴったりだと、**面の中しか見えない** ——
                     # 大きなベタだと窓の中に線が1画素も入らず、作者が何の絵か読めない
                     # (2026-11-07、ako7 の首の窓が線 0% になった)
-                    mg = a.margin
-                    by0, by1 = max(0, ys.min() - mg), min(R.shape[0], ys.max() + 1 + mg)
-                    bx0, bx1 = max(0, xs.min() - mg), min(R.shape[1], xs.max() + 1 + mg)
+                    LN = lines[y0:y1, x0:x1]
+                    # **線が入るまで余白を広げる。** 2026-11-07、無作為30面のうち1枚で
+                    # **窓の中の線が 0.0000%** になった(周りが白い頁)。**止めて落とすと
+                    # 一様でなくなる**ので、**コマの枠まで広げてから**数える(規律9)
+                    mg, grew = a.margin, 0
+                    while True:
+                        by0, by1 = max(0, ys.min() - mg), min(R.shape[0], ys.max() + 1 + mg)
+                        bx0, bx1 = max(0, xs.min() - mg), min(R.shape[1], xs.max() + 1 + mg)
+                        if LN[by0:by1, bx0:bx1].mean() >= MININK:
+                            break
+                        if (by1 - by0, bx1 - bx0) == R.shape:
+                            skip['**コマ全体でも線が足りない**(広げきった。落としていない)'] += 1
+                            break
+                        mg, grew = mg * 2, grew + 1
+                    if grew:
+                        wid[f'余白を {grew} 回広げた'] += 1
                     base = (f"{work}_{pid.split('_', 3)[-1]}_c{ci}_r{r['region']}"
                             f"_area{r['area']}_L{r['n_layer']}_neck{r['neck']}")
-                    LN = lines[y0:y1, x0:x1]
                     cv2.imwrite(f'{out}/{base}_a_face.png',
                                 render(R, other, LN, (by0, by1, bx0, bx1)))
                     # ---- 首の周りを原寸で
@@ -268,6 +306,8 @@ def main():
                         print(f'  **首の場所が出せなかった**: {base}', flush=True)
                     made += 1
     print(f'\n出した面 {made} / 頼んだ {len(pick)}  -> {out}')
+    for k, v in wid.most_common():
+        print(f'  {v}  {k}(**窓の中の線が {MININK:.1%} を切ったので**)')
     print('落としたもの(理由別。規律9):')
     for k, v in (skip.most_common() or [('(衝突は起きなかった)', 0)]):
         print(f'  {v}  {k}')
