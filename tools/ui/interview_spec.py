@@ -60,7 +60,7 @@ def load_questions(path):
     if errs:
         raise SpecError("問いの形の点検に落ちた:\n  - " + "\n  - ".join(errs))
     spec["item_ids"] = ids
-    spec.setdefault("batch_size", 20)
+    spec.setdefault("batch_size", 0)  # 0 = 途中の区切り画面を出さない(既定。作者 2026-11-07「不要」)
     return spec
 
 
