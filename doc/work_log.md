@@ -6839,3 +6839,92 @@ which became a list whose first element is the old string), **one changed**
 pre-correction wording is now kept **verbatim** in
 `decisive_before_correction`, printed by `judge_anchor.py status` -- the first
 version of the correction paraphrased it, which is not what discipline 3 asks for.
+
+## 2026-11-07 (night, second) The question came before the measurement: contrast
+
+The user stopped the intra-rater collection with a point that reorders the work:
+**decide what consistency is before measuring it.** Their example was colour --
+the eye reports a different colour depending on what it is compared against. The
+registration had quietly assumed **verdict = f(image) + noise**, which makes a
+repeat an estimate of noise. If the verdict is **f(image, context)**, a
+disagreement between two showings is not noise but a real effect, and calling it
+"low consistency" is a misreading of the instrument.
+
+**This tree already holds the evidence and never measured it.** Condition 4 warns
+that "a clean GT seen before a holed version pushes the deletion side down" --
+simultaneous contrast, written as a contamination warning with no number against
+it. And `anchor-20261004` **shared all 15 tiles across all four arms** (checked:
+overlap 15/15, every tile seen four times), so every verdict in it was given in
+some context. Moving from comparison to absolute judgement in 2026-10-04 did not
+remove the comparison; it hid it in the item order.
+
+### What was withdrawn
+
+The legs-only intra-rater collection, recommended two turns earlier. The legs are
+saturated (`rough` 45/45 unusable, `gt` 14/15 usable), so **its repeats would
+almost certainly agree** and return a number near 1.0 that reflects how easy the
+items are, not the judge's resolution -- and with one context it cannot separate
+noise from context. It passes the gate; the gate was not looking. The
+registration stays on record with the withdrawal written into it.
+
+### What was built instead: a threshold ladder (the user chose this first)
+
+`tools/build_damage_ladder.py` removes whole connected components of GT ink, in
+random order, **never exceeding the target**, in six steps. Measured, not assumed:
+
+| level (target) | n | removed fraction, median | range |
+|---|---:|---:|---|
+| 0.00 (`gt`) | 15 | 0.000 | -- |
+| 0.10 | 15 | 0.094 | 0.074 - 0.100 |
+| 0.20 | 15 | 0.188 | 0.142 - 0.200 |
+| 0.35 | 15 | 0.313 | 0.251 - 0.350 |
+| 0.50 | 15 | 0.454 | 0.381 - 0.500 |
+| 0.70 | 13 | 0.587 | 0.503 - 0.698 |
+
+**Two defects were found by looking, not by running.** The first operator stopped
+*after* exceeding the target, so one giant component made level 0.35 land at a
+median of 0.63 with a maximum of 1.00 -- **a level that jumps is not a level**.
+Fixed to take only components that fit. The second was worse and only the montage
+showed it: ink was taken at `g < 128`, the dark core, so the anti-aliased skirt
+survived and the lines went **pale instead of absent**. That is a fade ladder, and
+fading is precisely the axis that disqualified Track O's material. Components are
+now taken at `g < 242` and measured by darkness, `sum((255-g)/255)`, not by pixel
+count. Tiles too coarse to reach a level are dropped and counted by reason.
+
+Separation across the ladder, `--jpeg-roundtrip 95`: the extremes part at 0.836
+(`mean_ink`) and 0.887 (`near_white_frac`), but **adjacent levels part at only
+0.53 - 0.72**, because tiles are disjoint across levels and tile-to-tile variation
+dilutes the step. **Density alone cannot tell one level from its neighbour.**
+
+### The gate grew a third purpose
+
+`purpose: "calibration"`, with guards that keep it from becoming a way in: the
+registration must declare `claims_about_methods: false`, name the operator, carry
+**at least three levels whose measured damage is monotone**, and **every arm must
+be a level or a registered leg** -- so a model's output cannot ride in as a
+"level". In exchange the lesson 11 spread rule is not applied, because in a
+calibration damage *is* the independent variable and the rule would fail it by
+construction. The ordinance took the boundary as an exception to condition 10:
+**calibrating the judge is not asking again about a method**, and lesson 10 does
+not move.
+
+Every collection must now carry `records_order_and_predecessor: true`. **Context
+can only be measured afterwards**, and 2026-10-04 kept only timestamps, so "was
+this shown right after a clean drawing?" is unanswerable for the anchor. The
+three quantities the next stage has to separate -- agreement in a fixed context
+(instrument noise), context sensitivity, and the image-determined share (**the
+honest right-hand side for condition 8, which today says only "intra-rater" and
+does not say which**) -- are in the registry under `consistency_definition`,
+marked **undecided**, with the proposed rule that they are never collapsed into
+one number.
+
+The ladder registration passes the gate (28 items, 0 dropped): 111 items, about
+152 s. The handoff is at 178 lines and wants compressing next session.
+
+**One more instance of the check that cannot fail.** Verifying the gates with
+`for f in ...; do judge_protocol.py "$f" >/dev/null; echo "$(basename $f) exit=$?"; done`
+printed **exit=0 for all four registrations**, including the template, which must
+fail. The gate was fine: `$(basename ...)` runs inside the same word and resets
+`$?` before it is expanded, so the loop was reporting basename's status. Caught
+only because a registration that is *designed* to fail reported success -- the
+same shape as `names_are_not_checks`. Capture the status into a variable first.

@@ -70,6 +70,8 @@
   "stratification": "gt_ink の五分位で層化し、脚の間でタイルを重ねない(`tools/build_absolute_ratings.py` の既存の割り当て。**seed は新しくする** —— 同じ seed だと前回と同じタイルになり、再掲と区別がつかない)。",
   "tile_overlap_across_arms": false,
   "overlap_bias_note": null,
+  "records_order_and_predecessor": true,
+  "_order": "**項目の位置と直前の項目の id を記録する**(2026-11-07 に門へ入れた欄)。判定は文脈に依存しうる —— 色の同時対比と同じ形で、比べる相手によって答が変わる。記録しなければ後から文脈の効果を測れない(2026-10-04 は時刻しか残っていない)。",
 
   "anchor_legs": ["gt", "rough"],
   "same_session": true,

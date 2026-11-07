@@ -191,6 +191,21 @@ def cmd_status(reg):
         print(f"   帰結: {pr['consequence']}")
         print(f"   撤回ではない: {pr['not_a_retraction']}")
 
+    # **「一貫性とは何か」が未確定であること自体を印字する。** 黙っていると、
+    # 次のセッションが「判定 = f(画像) + 雑音」の模型をまた黙って置く
+    cd = reg.get("consistency_definition")
+    if cd:
+        print()
+        print("══ 一貫性の定義(**未確定**。先に決める)")
+        print(f"   出所: {cd['raised_by']}")
+        print(f"   なぜ要るか: {cd['why_it_matters']}")
+        for e in cd.get("evidence_already_here", []):
+            print(f"   既にある証拠: {e}")
+        for q in cd.get("three_quantities_proposed", []):
+            print(f"   量「{q['name']}」: {q['how']} —— {q['is']}")
+        print(f"   規則の案: {cd['rule_proposed']}")
+        print(f"   いま効いている分: {cd['enforced_now']}")
+
     # **計画中の収集。** 門の結果つきで出す —— 「落ちた」も記録である
     pc = reg.get("planned_collections") or []
     if pc:
@@ -200,7 +215,12 @@ def cmd_status(reg):
             print(f"   {c['name']}  —— 門: {c['gate']}")
             print(f"     目的: {c['purpose']}")
             print(f"     登録: {c['registration']}")
-            for k, label in (("why_it_can_run_now", "いま走れる理由"), ("fills", "埋まるもの"),
+            for k, label in (("why", "なぜ"), ("why_it_can_run_now", "いま走れる理由"),
+                             ("material", "材料"), ("operator", "落とし方"),
+                             ("levels_measured", "段の実測"), ("axes", "軸"),
+                             ("ordinance_boundary", "条例との境界"),
+                             ("withdrawn_recommendation", "**薦めを取り下げた**"),
+                             ("fills", "埋まるもの"),
                              ("cost", "費用"), ("note", "註"), ("candidates", "候補"),
                              ("blocked_on", "**止まっている先**")):
                 if c.get(k):

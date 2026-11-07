@@ -76,8 +76,8 @@ def check(spec):
     # **何のための収集かを先に宣言する。** 軸の規則は「腕の差を主張する収集」にだけ効く ——
     # 本人内一貫性を測る収集では脚が分かれているのは当たり前で、分離は落とす理由にならない
     purpose = spec.get("purpose")
-    need(purpose in ("compare_arms", "intra_rater"), "収集の目的",
-         f"`purpose` が compare_arms / intra_rater のどちらでもない({purpose!r})")
+    need(purpose in ("compare_arms", "intra_rater", "calibration"), "収集の目的",
+         f"`purpose` が compare_arms / intra_rater / calibration のどれでもない({purpose!r})")
 
     need(filled("normalisation"), "正規化の宣言",
          "**腕の間でファイル形式や経路が違うと、軸が圧縮を読む**(Track N 2026-10-30)。"
@@ -102,9 +102,10 @@ def check(spec):
                 # この規則をそのまま当てると、**lesson 10 を出した収集自身が止まっていた**。
                 rv = ax.get("reproduces_verdicts") or {}
                 hit, miss = rv.get("hit_rate"), rv.get("miss_rate")
-                if purpose == "intra_rater":
+                if purpose in ("intra_rater", "calibration"):
                     ok.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} だが、"
-                                             "この収集は**腕の差を主張しない**(目的は本人内一貫性)"))
+                                             "この収集は**手法の差を主張しない**"
+                                             f"(目的 {purpose})"))
                 elif hit is None or miss is None:
                     bad.append((f"軸 {name}", f"separation_auc {sep:.3f} ≥ 限界 {limit} なのに、"
                                               "**その軸が作者の分類を再現するかの読みが無い**(規律13)。"
@@ -142,7 +143,10 @@ def check(spec):
         need(filled("common_source_reason"), "同一元でない理由",
              "`common_source: false` と書くなら、**なぜ全腕が同じ元画像の加工でないのか**を書く"
              " —— 書かないと lesson 11 の点検が黙って飛ぶ")
-    if spec.get("common_source"):
+    if spec.get("common_source") and purpose == "calibration":
+        ok.append(("損傷量", "**校正では損傷が独立変数**なので、開きの規則(lesson 11)は当てない —— "
+                             "代わりに段の単調性を見ている"))
+    elif spec.get("common_source"):
         dm = spec.get("damage_measure") or {}
         if not dm:
             bad.append(("損傷量", "全腕が同じ元画像の劣化なのに腕ごとの損傷量が無い(lesson 11)"))
@@ -171,6 +175,12 @@ def check(spec):
         need(filled("forced_choice_reason"), "選べない形の理由",
              "「どちらとも言えない」が無いのに理由が書いていない")
 
+    # **文脈は後からしか測れない。** 2026-10-04 は時刻しか残っていないので、
+    # 「綺麗な絵の直後だったか」を後から読めない(条例4 が警告している汚染そのもの)
+    need(spec.get("records_order_and_predecessor") is True, "順番と直前の項目を記録する",
+         "`records_order_and_predecessor: true` が無い —— **判定は文脈に依存しうる**ので、"
+         "項目の位置と直前の項目を記録しないと、後から文脈の効果を測れない")
+
     need(filled("stratification"), "層化", "層化の書き方が無い(手がかりで選べる組を作らないため)")
     if spec.get("tile_overlap_across_arms") is None:
         bad.append(("タイル共有の申告", "腕の間でタイルを共有するかが書いていない"))
@@ -191,6 +201,29 @@ def check(spec):
     else:
         missing = [l for l in registered_legs if l not in legs]
         need(not missing, "錨脚", f"登録簿の脚 {missing} が入っていない(条例1)")
+    if purpose == "calibration":
+        # **校正は「判定者がどこで反転するか」を測る。** 損傷は独立変数なので lesson 11 の
+        # 開きの規則は当てない —— 代わりに**段が実測で単調であること**と、
+        # **どの腕もモデルの出力でないこと**を見る。ここを緩めると、校正の名で手法を集められる
+        need(spec.get("claims_about_methods") is False, "手法について主張しないことの明示",
+             "目的が calibration なら `claims_about_methods: false` と書く —— "
+             "**条例5 が禁じているのは手法の判定を頼み直すこと**で、判定者の校正はそれではない")
+        need(filled("operator"), "落とし方の宣言",
+             "**閾値は(判定者 × 落とし方)の性質**である。落とし方を名前で書く")
+        levels = spec.get("levels") or []
+        need(len(levels) >= 3, "段", f"段が {len(levels)} 本しかない(3本未満では反転を挟めない)")
+        vals = [lv.get("measured_removed_frac_median") for lv in levels]
+        if any(v is None for v in vals):
+            bad.append(("段の実測", "**狙いではなく実測**の損傷量を段ごとに入れる(丸ごと消すので狙いを外す)"))
+        elif any(b < a for a, b in zip(vals, vals[1:])):
+            bad.append(("段の単調性", f"実測が単調でない({vals}) —— 段が入れ替わっていたら独立変数ではない"))
+        else:
+            ok.append(("段", f"{len(levels)} 本、実測 {vals[0]:.3f} 〜 {vals[-1]:.3f} で単調"))
+        allowed = {lv.get("name") for lv in levels} | set(registered_legs)
+        strays = [x for x in (spec.get("arms") or []) if x not in allowed]
+        need(not strays, "校正に手法の出力を入れない",
+             f"段にも錨脚にも無い腕 {strays} が在る —— **校正の名で手法を集めることになる**")
+
     if purpose == "intra_rater":
         extra = [x for x in (spec.get("arms") or []) if x not in registered_legs]
         need(not extra, "本人内一貫性の収集に新しい腕を入れない",
