@@ -207,6 +207,22 @@ def cmd_status(reg):
         print(f"   いま効いている分: {cd['enforced_now']}")
 
     # **計画中の収集。** 門の結果つきで出す —— 「落ちた」も記録である
+    cd_ = reg.get("closed_directions") or []
+    if cd_:
+        print()
+        print("══ 閉じた道(**測定は撤回しない。閉じたのは道**)")
+        for c in cd_:
+            print(f"   {c['name']}  —— {c['closed_on']} / {c['closed_by']}")
+            for k, label in (("authors_words", "作者の言葉"), ("what_it_closes", "閉じるもの"),
+                             ("why", "なぜ"), ("not_retracted", "**撤回しないもの**"),
+                             ("what_survives", "残る道")):
+                if c.get(k):
+                    print(f"     {label}: {c[k]}")
+            unprinted = sorted(set(c) - {"name", "closed_on", "closed_by", "authors_words",
+                                         "what_it_closes", "why", "not_retracted", "what_survives"})
+            if unprinted:
+                print(f"     **印字していない欄**: {unprinted}")
+
     pc = reg.get("planned_collections") or []
     if pc:
         print()

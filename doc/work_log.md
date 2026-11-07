@@ -7126,3 +7126,47 @@ consistent with the table, and a reason not to build a ladder on them.
 
 **This is a probe, not a collection.** Nothing is registered until the author says
 which of these is what he meant by 下絵 — and the answer may be "none of them".
+
+## 2026-11-08 The author closed the direction: you cannot add hesitation
+
+Shown the four candidate operators at 1:1, the author answered (verbatim):
+
+> どのパターンも道を示していない　GTに重ねやホワイトノイズ、揺らぎを足しても
+> あくまでそういう表現、エフェクトを足しているように見える　下絵が下絵足らしめて
+> いるのは解釈しきれない迷い線の多さであり、人工的に加えるのは難しいように見える
+
+So direction (b) is closed, and for a reason worth stating precisely: **what makes a
+下絵 a 下絵 is the number of searching lines that never resolved into an
+interpretation.** That is a property of interpretation, not of pixels. An image
+operation can add something that *looks like* that texture — and the author read all
+four as effects laid over a finished drawing — but it cannot add a line that failed
+to find its subject, because the failure is not in the mark.
+
+**This is the same shape as lesson 11.** There, a comparison of two deletions
+returned a ranking of the damage rather than a judgement of the drawing: the
+instrument produced a quantity that was not the one the question asked for. Here the
+operator produces a texture that is not the one the category is made of.
+
+**Nothing measured is retracted.** The ladder's 15/15 at every rung stands; so does
+`comp_per_len` 9.43x with range overlap 0.000. What closed is the route of
+*manufacturing* borderline items, in both directions — removal does not cross the
+boundary (measured 2026-11-07), and addition is an effect (judged 2026-11-08).
+
+Registry: `closed_directions[0]`, printed by `judge_anchor.py status`.
+
+### What this leaves
+
+Borderline items have to be **found, not made**:
+
+1. **A real interior arm** — an actual output of some method that is neither GT nor
+   the rough. This has been next step 1 all along, blocked on material, and the
+   author's answer raises its priority rather than changing it.
+2. **The stages that already exist in the author's own process** — あたり → 下絵 →
+   清書. These are real drawings with genuinely varying amounts of unresolved line,
+   which is exactly the quantity the author named. **This is manuscript information,
+   so it belongs to `census`** (CLAUDE.md §4: a track does not build its own columns
+   of manuscript facts). This tree would be asking for layers identified by stage,
+   not deriving them.
+
+Route 2 is the one that matches the author's words, and it is the first time this
+tree has had a reason to want a manuscript column.
