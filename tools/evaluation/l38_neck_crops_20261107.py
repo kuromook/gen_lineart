@@ -166,15 +166,29 @@ def main():
     ap.add_argument('--random', type=int, default=0,
                     help='**素性で選ばず母集団から一様に N 面**取る(セルの選別は効かない)')
     ap.add_argument('--seed', type=int, default=20261107, help='無作為抽出の種(固定)')
+    # **名指しで出す口**(2026-11-07)。選別の規則は別の器具が持ち、ここは描くだけ
+    ap.add_argument('--list', help='出す面を名指しした JSON '
+                                   '([{work,pid,comp,region,area}, ...])')
+    ap.add_argument('--out-name', help='出し先のフォルダー名(既定はセル名か `random`)')
     ap.add_argument('--n', type=int, default=2, help='出す面の数')
     ap.add_argument('--win', type=int, default=700, help='首の窓の一辺(原寸の画素)')
     ap.add_argument('--margin', type=int, default=400,
                     help='面の外接矩形に足す余白(原寸の画素)。**周りの絵が入らないと読めない**')
     a = ap.parse_args()
-    out = f'{OUT}/{"random" if a.random else a.cell}'
+    out = f'{OUT}/{a.out_name or ("random" if a.random else a.cell)}'
     os.makedirs(out, exist_ok=True)
     allrows = json.load(open(SRC, encoding='utf-8'))
-    if a.random:
+    if a.list:
+        want = {(r['work'], r['pid'], r['comp'], r['region'], r['area'])
+                for r in json.load(open(a.list, encoding='utf-8'))}
+        rows = [r for r in allrows
+                if (r['work'], r['pid'], r['comp'], r['region'], r['area']) in want]
+        if len(rows) != len(want):
+            raise SystemExit(f'名指しの {len(want)} 面に対し素性が {len(rows)} 行。'
+                             f'**鍵と面積の両方で引いている**ので、合わなければ止める')
+        print(f'母集団 {len(allrows)} 面(現行40頁)/ **名指しの {len(rows)} 面**'
+              f'(選別は `{a.list}` の側が持つ)', flush=True)
+    elif a.random:
         # **一様。** 大きい面に寄せない・重ならない規則も当てない ——
         # 当てたらそれは母集団の比ではなくなる
         import random as _r
@@ -188,7 +202,7 @@ def main():
         print(f'母集団 {len(allrows)} 面(現行40頁)/ セル `{a.cell}` に当たる面 **{len(rows)}**'
               f'(首の半径の上限 {a.max_neck})', flush=True)
     # **同じ頁・同じ層に偏らせない**(1つの事故を n 回見せても材料にならない)
-    if a.random:
+    if a.random or a.list:
         pick = rows                       # **間引かない**(間引いたら一様でない)
     else:
         pick, seen = [], set()
