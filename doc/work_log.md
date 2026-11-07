@@ -7083,3 +7083,46 @@ degree never crosses the boundary — but it is two comments, so it is a hypothe
 One instrument note: **110 of 111 items were shown at exactly 1:1**; the first item
 was shown at 1.175 because the pane grows after the first image loads. It is in the
 row (`shown_scale`), which is why it can be said at all.
+
+## 2026-11-07 (same day) What separates the two groups is not how much ink
+
+The user chose direction (b) — change the operator, degrade the quality of the
+strokes rather than their quantity. The operator is not mine to guess (**the
+threshold is a property of judge × operator**), so before proposing one, measured
+what actually differs between the two groups the author has already separated:
+the 88 rung tiles (all usable) and the 15 `rough` tiles (all not usable).
+
+`tools/measure_lineart_vs_rough_axes.py`, GT against `rough` **on the same tile**,
+191 of 192 tiles (1 dropped: skeleton under 50 px):
+
+| axis | GT median | rough median | ratio | range overlap |
+|---|---:|---:|---:|---:|
+| `ink_frac` | 0.0788 | 0.1644 | 2.09 | **0.821** |
+| `mean_darkness` | 0.5257 | 0.3987 | 0.76 | 0.178 |
+| `width_mean` | 5.046 | 3.351 | 0.66 | 0.140 |
+| `width_cv` | 0.4868 | 0.5194 | 1.07 | 0.160 |
+| `comp_per_len` | 0.4261 | 4.0183 | **9.43** | **0.000** |
+| `junction_den` | 8.555 | 41.214 | **4.82** | 0.014 |
+| `stroke_den` | 1.589 | 5.662 | 3.56 | 0.451 |
+
+**The quantity axis overlaps almost completely (0.821) while fragmentation per unit
+stroke length does not overlap at all.** That is the same statement the ladder made
+from the other side: ink quantity does not cross the boundary. What separates a
+drawing the author accepts from one he calls 下絵 is that the rough is made of many
+short pieces that cross each other — about 9x the components and 5x the junctions
+per unit of stroke drawn.
+
+Width variation (`width_cv`, ratio 1.07) is **not** a separating axis, which rules
+out one plausible guess before it was built.
+
+### Four candidate operators, shown rather than described
+
+`tools/probe_degradation_operators.py` → `operator_candidates_native.png` (native
+1:1, GT and the real rough of the same tile for reference). On
+`lineart_003_005`: (a) fragmentation 0.202 → 5.884 components/length while ink falls
+0.091 → 0.064; (b) overdrawing 7.69 → 23.5 junctions/length while ink rises to 0.186;
+(c) wobble and (d) width variation barely move either number at this strength —
+consistent with the table, and a reason not to build a ladder on them.
+
+**This is a probe, not a collection.** Nothing is registered until the author says
+which of these is what he meant by 下絵 — and the answer may be "none of them".
