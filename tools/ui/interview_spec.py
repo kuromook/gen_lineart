@@ -6,6 +6,7 @@
 """
 import json
 import re
+from html import escape as html_escape
 from pathlib import Path
 
 CORE = Path(__file__).resolve().parent / "interview_core.html"
@@ -28,6 +29,8 @@ def load_questions(path):
         raise SpecError("; ".join(errs))
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", spec["interview_id"]):
         errs.append("`interview_id` は英数字と _ . - だけ")
+    if spec.get("initial_view", "fit") not in ("fit", "native"):
+        errs.append("`initial_view` は fit(既定)か native")
     if not 1 <= len(spec["choices"]) <= 7:
         errs.append("選択肢は 1〜7 個(「どれでもない」「分からない」は自動で足す。数字キーは 9 まで)")
     seen = set()
@@ -69,5 +72,9 @@ def render_page(spec, mode):
     blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = CORE.read_text(encoding="utf-8")
     assert "/*__INTERVIEW_DATA__*/null" in html and '/*__INTERVIEW_MODE__*/"server"' in html
+    # **使い捨ての artifact は名前で見分けられないと数えられない**(指針 §7-2)。
+    # 題は `page_title`、無ければ `interview_id`
+    title = html_escape(spec.get("page_title") or spec["interview_id"])
+    html = html.replace("<title>聞き取り</title>", f"<title>{title}</title>", 1)
     return (html.replace("/*__INTERVIEW_DATA__*/null", blob)
                 .replace('/*__INTERVIEW_MODE__*/"server"', json.dumps(mode)))

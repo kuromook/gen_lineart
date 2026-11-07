@@ -69,7 +69,7 @@ button:disabled{opacity:.45;cursor:default}
 // ---- データ: 組み立て器がここを置き換える。器具の用語を画面に出さないのは問いの作り手の仕事 ----
 const DATA = /*__INTERVIEW_DATA__*/null;
 const MODE = /*__INTERVIEW_MODE__*/"server";   // "server" | "artifact"
-const UI_VERSION = "interview_core 2026-11-07";
+const UI_VERSION = "interview_core 2026-11-07b";  // E の4点(等倍で始める・位置と直前・0.999・題)を取り込み
 
 // 「どれでもない」「分からない」は外せない(指針 §2-1)
 const BUILTIN = [
@@ -93,13 +93,20 @@ const store = MODE==="server" ? {
 
 // ---- 状態 ----
 let idx=0, sel=null, answers={}, savedThisSession=0, dimOthers=false, busy=false;
+// 判定は文脈で動きうる(色の同時対比と同じ形)。**どの位置で・直前に何を見せたか**を行に残す
+let shownSeq=0, shownNow=null, shownPrev=null;
 const latest = rows => { const m={}; rows.sort((a,b)=>(a.ts<b.ts?-1:1)).forEach(r=>{m[r.item_id]=r;}); return m; };
 
 // ---- 絵: 画面に収めて始め、拡大は補間しない(指針 §3) ----
 let view = {z:1, cx:.5, cy:.5};  // z = 収めた倍率に掛ける倍数、(cx,cy) = 中心(絵の割合)
+// **線の有無を問うときは、縮小した画面が答えを作る**(細い線が薄く・途切れて見える)。
+// `initial_view:"native"` の問いは**等倍で始める**。窓の大きさは絵の読み込み後に動くので、
+// 一度だけ計算せず、**人が自分で拡大縮小するまで毎回引き直す**(= 画面の都合で倍率が変わらない)
+let wantNative=false;
 const panes=[];
 function fitScale(p){ const r=p.view.getBoundingClientRect(); return Math.min(r.width/p.w, r.height/p.h); }
 function apply(){
+  if(wantNative && panes[0] && panes[0].w){ view.z=1/fitScale(panes[0]); view.cx=.5; view.cy=.5; }
   panes.forEach(p=>{ if(!p.w) return;
     const r=p.view.getBoundingClientRect(), s=fitScale(p)*view.z;
     const x=r.width/2 - view.cx*p.w*s, y=r.height/2 - view.cy*p.h*s;
@@ -109,17 +116,23 @@ function apply(){
     p.scaleLbl.textContent = Math.round(s*100)+"%";
   });
   const p=panes[0]; if(p&&p.w){ const s=fitScale(p)*view.z, L=$("zoomlbl");
-    L.textContent="倍率 "+Math.round(s*100)+"%(全部の絵に同じ拡大)"+(s<1?" —— 縮小中: 細い線は薄く・途切れて見えます。線の有無は等倍(Shift+1)で":"");
-    L.classList.toggle("small", s<1); }
+    // **0.999 で見る。** 等倍ちょうどを浮動小数の誤差で「縮小中」と言うと、警告が常時出て読まれなくなる
+    const shrunk = s < 0.999;
+    const r=p.view.getBoundingClientRect(), clipped = !shrunk && (p.w*s > r.width+1 || p.h*s > r.height+1);
+    L.textContent="倍率 "+Math.round(s*100)+"%(全部の絵に同じ拡大)"
+      +(shrunk?" —— 縮小中: 細い線は薄く・途切れて見えます。線の有無は等倍(Shift+1)で":"")
+      +(clipped?" —— この画面には全体が入りません。ドラッグで動かすか、0 で全体":"");
+    L.classList.toggle("small", shrunk||clipped); }
 }
 function zoomAt(p, factor, px, py){ // (px,py) = 窓の中の画面座標。そこを動かさずに拡大する
+  wantNative=false;
   const r=p.view.getBoundingClientRect(), s0=fitScale(p)*view.z;
   const ix=(px - (r.width/2 - view.cx*p.w*s0))/s0, iy=(py - (r.height/2 - view.cy*p.h*s0))/s0;
   view.z=Math.min(64,Math.max(.1,view.z*factor)); const s1=fitScale(p)*view.z;
   view.cx=(ix - (px - r.width/2)/s1)/p.w; view.cy=(iy - (py - r.height/2)/s1)/p.h; apply();
 }
-function setNative(){ const p=panes[0]; if(p&&p.w){ view.z=1/fitScale(p); apply(); } }
-function setFit(){ view={z:1,cx:.5,cy:.5}; apply(); }
+function setNative(){ wantNative=false; const p=panes[0]; if(p&&p.w){ view.z=1/fitScale(p); apply(); } }
+function setFit(){ wantNative=false; view={z:1,cx:.5,cy:.5}; apply(); }
 function bindView(p){
   const pts=new Map(); let last=null, pinch=null;
   p.view.addEventListener("wheel",e=>{e.preventDefault(); const r=p.view.getBoundingClientRect(); zoomAt(p, e.deltaY<0?1.25:0.8, e.clientX-r.left, e.clientY-r.top);},{passive:false});
@@ -134,6 +147,8 @@ function bindView(p){
 // ---- 描く ----
 function render(){
   const it=DATA.items[idx];
+  wantNative = DATA.initial_view==="native";
+  if(shownNow!==it.id){ shownPrev=shownNow; shownNow=it.id; shownSeq++; }
   $("q").textContent = (it.question || DATA.question) + (DATA.unit ? `(答える単位: ${DATA.unit})` : "");
   $("decides").textContent = DATA.decides ? "この答えで決まること: "+DATA.decides : "";
   $("note").textContent = it.note || "";
@@ -149,7 +164,8 @@ function render(){
     const img=document.createElement("img"); img.alt=im.caption||""; img.draggable=false; v.append(img);
     pane.append(cap,v); box.append(pane);
     const p={view:v,img,scaleLbl:sl,w:0,h:0}; panes.push(p); bindView(p);
-    img.onload=()=>{p.w=img.naturalWidth; p.h=img.naturalHeight; apply();};
+    img.onload=()=>{p.w=img.naturalWidth; p.h=img.naturalHeight;
+      apply();};
     img.src = im.src;
   });
   const prev=answers[it.id]; sel = prev ? prev.value : null; $("comment").value = prev ? (prev.comment||"") : "";
@@ -168,6 +184,8 @@ async function saveNext(){
   if(sel===null||busy) return; const it=DATA.items[idx], c=CHOICES.find(x=>x.value===sel);
   const row={interview_id:DATA.interview_id, item_id:it.id, item_version:it.version||null,
     images:it.images.map(i=>i.id||i.caption||""), value:c.value, label:c.label, comment:$("comment").value.trim(),
+    pos:idx, n_items:DATA.items.length, prev_item_id:shownPrev, shown_seq:shownSeq,
+    shown_scale:(panes[0]&&panes[0].w)?Math.round(fitScale(panes[0])*view.z*1000)/1000:null,
     ts:new Date().toISOString(), ui_version:UI_VERSION, session:SESSION, mode:MODE};
   busy=true; renderChoices(); $("status").textContent="保存中…";
   try{ await store.append(row); answers[it.id]=row; savedThisSession++; }
