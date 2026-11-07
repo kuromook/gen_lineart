@@ -498,6 +498,24 @@ ARRIVED_NOT_INTEGRATED = [
                     "`delivery.UNDECLARED_KNOWN` に入れた**",
     ),
     dict(
+        path="inbox/deliver_m_holdout8_20261107.md",
+        what="**抽出側 → Track M の納品の写し**(8頁の層の画素とマスクのラスタ、`holdout8_20261107`)",
+        why_not_yet="**ラスタは census が読まない**(条例10)。**census の材料表への外の既知セル**: "
+                    "**形のあるマスク(葉)が census の材料の下限と8頁とも一致、層の数も census の行と8頁とも一致**(抽出側が別の器具で数えた)。"
+                    "sha256 一覧(先頭 `63d5883d0514fc0b`)で 752本とも一致を census が確かめた。"
+                    "**描画できなかった2層は構造 DB で `v_layer_kind = text`**(抽出側の推定を構造の側で確かめた)",
+    ),
+    dict(
+        path="inbox/push_occlusion_edge_distance_request_20261107.md",
+        what="**基盤 → 抽出側の依頼の写し**(覆われた線の画素の、遮蔽物の輪郭からの深さ)",
+        why_not_yet="**宛先は抽出側、採点は基盤。** census の作業は無い",
+    ),
+    dict(
+        path="inbox/reply_interview_ui_parts_20261107.md",
+        what="**基盤の通達: 聞き取り UI の共通部品と指針**(と追補 `reply_interview_ui_parts_update_20261107.md`)",
+        why_not_yet="**次に聞き取りの画面を作るときから使う。** いま作る画面は無い。返事は要らない",
+    ),
+    dict(
         path="inbox/note_m_order_layer_rows_holdout8_20261107.md",
         what="**Track M の発注: 標本外の8頁の層の行**(抽出側の 11-02 の層の表と同じ64列)",
         why_not_yet="**答えた**: 構造の19列を構造 DB から作り、画素の45列は空(画素は M が抽出側に発注済み)。"
