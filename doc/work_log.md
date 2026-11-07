@@ -6999,3 +6999,87 @@ Gate re-run after the edits: **27 passed, 0 dropped** (one fewer than before onl
 the forced-choice reason no longer applies). `judge_anchor.py status` now prints the new
 registry fields, and **names any field it is not printing** — adding a field to the
 registry that nothing reads is another `names_are_not_checks` instance waiting to happen.
+
+## 2026-11-07 (same day) The ladder did not bracket the flip — and the legs did
+not move
+
+111 items in **252.6 s** (median 1.89 s, max 12.6 s), one sitting, 10:15:38Z to
+10:19:51Z. Every item answered once, nothing re-answered, no 「分からない」, no
+「どれでもない」. Readout `tools/read_threshold_ladder.py`, in the registered order.
+
+### ① The legs
+
+| leg | 2026-10-04 | 2026-11-07 |
+|---|---|---|
+| `gt` | 14/15 (the rejected one was the blank GT) | **15/15** |
+| `rough` | 0/15 | **0/15** |
+
+**The bar did not move** across 34 days and across an options change. This build
+excluded the blank GT from its material, so on tiles with content the comparison is
+14/14 against 15/15. The choices are not the same as anchor-20261004 (this
+collection added 「どれでもない」/「分からない」), and that is printed wherever the
+legs are printed.
+
+### ② The rungs — the bar was not met
+
+| rung | ink removed (measured median / max) | usable |
+|---|---:|---:|
+| `gt` | 0.000 / 0.000 | **15/15** |
+| `level_10` | 0.094 / 0.100 | **15/15** |
+| `level_20` | 0.190 / 0.200 | **15/15** |
+| `level_35` | 0.313 / 0.350 | **15/15** |
+| `level_50` | 0.433 / 0.500 | **15/15** |
+| `level_70` | 0.587 / **0.698** | **13/13** |
+
+Pass rate 1.000 at every rung, so **no two adjacent rungs bracket 0.5**. The
+registered refutation condition fires: *extend the ladder, do not conclude*. What
+the collection supports is bounded by what was shown: **between 0 and 0.70 of the
+GT's ink, removing ink does not move the verdict.** A flip exists somewhere in
+(0.70, 1.00] — the blank GT was rejected on 2026-10-04 — but no rung measured it.
+`15/15` is "above 80%", not literally 100% (条例5, the same reading as `0/15`).
+
+Native 1:1 strip of the most heavily cut tile that was still called usable (17 of
+27 components gone, 69.8% of the ink):
+`results/judge_damage_ladder_20261107/usable_at_70pct_native.png`.
+
+### ③ The repeats: 8/8, and that is the predicted uninformative answer
+
+Agreement 1.000 on 8 repeats, placed 5–22 items after their originals. **This is not
+条例8's right-hand side.** Every item in this collection is saturated (1.000 or
+0.000), so repeats agree because the items are easy, not because the judge is
+precise. On 2026-11-07 the intra-rater collection's recommendation was withdrawn
+with exactly this prediction; the prediction is now measured. **条例8's right-hand
+side is still empty.**
+
+### ④ The axis, on a pool built for it
+
+The rungs separate on ink by construction (`mean_ink` 0.836, `near_white_frac` 0.887
+at the extremes), and **the verdicts are identical across all of them**. With no
+variance in the verdict, no threshold on that axis can reproduce the author's
+classification at all. This is the second instance of the morning's finding —
+separation is a trigger, not a proxy — and the first one measured on a pool built
+on purpose to make the axis move.
+
+### The judge's own words
+
+Two of the fifteen `rough` items carried a comment, both the same: **「下絵」**.
+Recorded verbatim, not translated into the instruments' vocabulary. It reads as a
+statement about *kind* rather than *degree*, which would explain why an axis of
+degree never crosses the boundary — but it is two comments, so it is a hypothesis.
+
+### Three defects found while reading
+
+- **`judge_anchor.py bars` threw away what `recompute` said.** `recompute` is written
+  to say so rather than go quiet when it cannot read a record, and `cmd_bars`
+  discarded that message — so "the records are unreadable" printed identically to
+  "that arm was not measured". Now printed. (`names_are_not_checks`, again.)
+- The registry's numbers would have been **typed by hand**. The readout now also
+  writes `verdicts_by_arm.json` in the shape `recompute` already reads, so the
+  registry is re-derived from the records rather than transcribed.
+- **The cost estimate was 1.4x optimistic**: 152 s predicted, 252.6 s actual. The
+  estimate came from 60 comparative judgements at 1.37 s each; absolute judgements
+  on this material run at 2.3 s. Later registrations use 2.3 s/item.
+
+One instrument note: **110 of 111 items were shown at exactly 1:1**; the first item
+was shown at 1.175 because the pane grows after the first image loads. It is in the
+row (`shown_scale`), which is why it can be said at all.

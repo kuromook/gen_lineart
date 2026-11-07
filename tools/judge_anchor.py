@@ -257,8 +257,13 @@ def cmd_bars(reg, a_name, b_name):
             print(f"錨が登録簿に無い: {n}", file=sys.stderr)
             return 2
     A, B = by[a_name], by[b_name]
-    ga, _ = recompute(A)
-    gb, _ = recompute(B)
+    ga, ea = recompute(A)
+    gb, eb = recompute(B)
+    # **再計算器の言い分を捨てない。** 捨てると、記録を読めなかったことが
+    # 「その腕は未測定」と見分けがつかなくなる(names_are_not_checks)
+    for lab, x, e in (("前", A, ea), ("後", B, eb)):
+        if e:
+            print(f"   **{lab}({x['name']})の記録を引き直せない**: {e}")
     print("══ 前後の棒を両方、名前を付けて印字(規律10 第3条項)")
     for lab, x in (("前", A), ("後", B)):
         print(f"   {lab}: {x['name']}  ({x['taken_on']} / {x['judge']} / {x['unit']})")
