@@ -31,6 +31,7 @@ POOL = ROOT / 'results' / 'l38_faces_separated_20261108.json'
 OUT = ROOT / 'data' / 'l38_problemb_20261108'
 SEED = 20261108
 N_PIECE, N_KEPT = 30, 20
+MAX_PER_PARENT = 2        # **同じ親から最大2片**(追補1。親の中の片は独立でない)
 IC1_AREA = 2503898
 IC2_PARENT = 2232129
 
@@ -53,7 +54,22 @@ def main():
     print(f'  層2 元のまま   抽出の前: {q(kept)}')
 
     rnd = random.Random(SEED)
-    s1 = rnd.sample(piece, min(N_PIECE, len(piece)))
+    # **同じ親から最大 MAX_PER_PARENT 片**(追補1)。一様に並べ替えてから上限で間引く ——
+    # **間引いた数と、親ごとの数を印字する**(規律9)
+    shuffled = piece[:]
+    rnd.shuffle(shuffled)
+    per, s1, cutp = collections.Counter(), [], 0
+    for r in shuffled:
+        k = tuple(r['parent'])
+        if per[k] >= MAX_PER_PARENT:
+            cutp += 1
+            continue
+        per[k] += 1
+        s1.append(r)
+        if len(s1) >= N_PIECE:
+            break
+    print(f'  **上限 {MAX_PER_PARENT} 片/親** で間引いた片 {cutp}'
+          f'(落としたのではなく、この回の標本に入れなかっただけ)')
     s2 = rnd.sample(kept, min(N_KEPT, len(kept)))
     print(f'\n一様に抽出(種 {SEED}。**素性で選んでいない**)')
     print(f'  層1 {len(s1)} 片   抽出の後: {q(s1)}')
@@ -74,13 +90,19 @@ def main():
         ic1 = [r for r in pool if r['area'] == IC1_AREA]
         print(f'\n  **IC1 {IC1_AREA:,} は「元のまま」に無い**'
               f'(プール全体には {len(ic1)} 行)')
-    if ic1 and ('kept', IC1_AREA) not in have:
-        rows.append(dict(ic1[0], group='known_one'))
-        print(f'  既知セル IC1 を足した 面積 {IC1_AREA:,}(答: 1つのもの)')
+    if ic1:
+        if ('kept', IC1_AREA) in have:
+            print(f'  既知セル IC1 面積 {IC1_AREA:,} は**抽出に既に入っている**(足さない)')
+        else:
+            rows.append(dict(ic1[0], group='known_one'))
+            print(f'  既知セル IC1 を足した 面積 {IC1_AREA:,}(答: 1つのもの)')
     kids = [r for r in piece if r['parent'] and r['parent'][4] == IC2_PARENT]
     if kids:
         big = max(kids, key=lambda r: r['area'])
-        if ('piece', big['area']) not in have:
+        if ('piece', big['area']) in have:
+            print(f'  既知セル IC2 親 {IC2_PARENT:,} の最大の片(面積 {big["area"]:,})は'
+                  f'**抽出に既に入っている**(足さない)')
+        else:
             rows.append(dict(big, group='known_piece'))
             print(f'  既知セル IC2 を足した 親 {IC2_PARENT:,} の最大の片 '
                   f'面積 {big["area"]:,}(親は「髪と衣類」。片は 1つのもの が期待)')
