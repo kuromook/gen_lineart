@@ -14,6 +14,10 @@
   `parent` = 元の面の鍵 / `piece_lid` = その片の層 / `n_layer_big` = 床の上の片を持つ層の数
 
     /home/sh1/deepl/lineart/venv/bin/python tools/evaluation/l38_separate_problem_a_20261108.py [頁数]
+**軸も同じ一度の走りで測り直す**(2026-11-08)—— 旧い軸の数は**旧い面の上の値**なので、
+分離後のプールには当てられない。測るのは:
+  `band_cov` = コマの縁の帯の覆い(枠線の軸。帯は `P & ~erode(P, 6)`)/
+  `r_max` `r_med` `thin_frac`(形)/ `pure_black` `mean_gray`(墨。**その単位自身の層の生の濃淡**)
 """
 import collections
 import json
@@ -29,10 +33,38 @@ from l14_known_cells import A, comps                                # noqa: E402
 from l17_known_cells import arms, jobs, zmap                        # noqa: E402
 from l38_merge_cause_20261106 import (drop_wip, layer_masks,        # noqa: E402
                                       neck_radius, panels)
+from l38_frame_axis_20261107 import band_of                         # noqa: E402
+
+import cv2                                                          # noqa: E402
+
+THIN = 3                     # `l38_face_is_solid_20261107.py` と同じ(細い画素の半径)
 
 ROOT = '/home/sh1/deepl/lineart-fill-region'
 BEFORE = f'{ROOT}/results/l38_merge_cause_20261106.json'
 OUT = f'{ROOT}/results/l38_faces_separated_20261108.json'
+
+
+def pieces_in_face(R, win):
+    """面 `R` を**層ごとに割る**。`(床の上の片, 床の下の片)` を返す。
+
+    **規則は `l38_units_20261107.py` の「問題A の分離」。ここが唯一の実体である** ——
+    切り出しの器具も聞き取りの器具もこの関数を呼ぶ(**規則の写しを2つ持たない**。条例4)。
+
+    - 層ごとに `面 ∩ その層` を取り、**その層自身の8連結**で数える。**削らない** ——
+      削ると下の層の塊が割れて、**問題Aではない割れ目**が生まれる(2026-11-08 に直した)
+    - 層のマスクは重なるので **片の面積の和は面の面積を超える**(呼ぶ側が重なりを印字する)
+    """
+    big, small = [], []
+    for lid, sm in win:
+        part = sm & R
+        if not part.any():
+            continue
+        lab, ids, st = comps(part, 8, 1)
+        for k in ids:
+            a = int(st[k, A])
+            (big if a >= U.PIECE_FLOOR else small).append(
+                (int(lid), a, lab == k) if a >= U.PIECE_FLOOR else (int(lid), a))
+    return big, small
 
 
 def main():
@@ -67,8 +99,42 @@ def main():
             zs[lid] = z
         order = sorted(lm, key=lambda t: (zs[t[0]] if zs[t[0]] is not None else -1),
                        reverse=True)                                 # 上の層が先
+        paths = {int(lid): pa for lid, pa in fz}
+        cache = {}                      # **頁ごとに捨てる**(層の生 PNG は1枚 10MB 級)
+
+        def gray(lid):
+            if lid not in cache:
+                if len(cache) >= 6:
+                    cache.pop(next(iter(cache)))
+                im = cv2.imread(paths.get(lid, ''), cv2.IMREAD_GRAYSCALE)
+                cache[lid] = im if (im is not None and im.shape == shape) else None
+            return cache[lid]
+
         for pkey, ci, (y0, y1, x0, x1), P, glab, gids in panels(job, lm, shape, cut):
             win = [(lid, m[y0:y1, x0:x1] & P) for lid, m in order]
+            bd = band_of(P)
+            nb = int(bd.sum())
+
+            def axes(m, lid):
+                """**その単位について**軸を測る(枠線の帯の覆い / 形 / 墨)。
+                `lid` はその単位自身の層 —— 墨は**その層の生の濃淡**で読む。"""
+                d = cv2.distanceTransform(m.astype(np.uint8), cv2.DIST_L2, 5)[m]
+                g = gray(lid)
+                pure = mg = None
+                if g is None:
+                    cut['層の生 PNG が読めない(墨の側だけ欠ける)'] += 1
+                else:
+                    v = g[y0:y1, x0:x1][m]
+                    v = v[v < 128]
+                    if v.size:
+                        pure, mg = float((v == 0).mean()), float(v.mean())
+                    else:
+                        cut['単位の中にその層の墨が無い(半径4 で広がった分)'] += 1
+                return dict(band=nb, band_hit=int((m & bd).sum()),
+                            band_cov=(int((m & bd).sum()) / nb) if nb else None,
+                            r_max=float(d.max()), r_med=float(np.median(d)),
+                            thin_frac=float((d < THIN).mean()),
+                            pure_black=pure, mean_gray=mg)
             for gi in gids:
                 R = glab == gi
                 ar = int(R.sum())
@@ -78,21 +144,10 @@ def main():
                     frags.append(dict(base, origin='kept', why='元から床の下'))
                     stat['元から小片'] += 1
                     continue
-                # **層ごとに `面 ∩ その層` を取る。削らない** —— 削ると下の層の塊が割れて、
-                # **問題Aではない割れ目**が生まれる(2026-11-08 に直した。units の「直した理由」)
-                pieces = []
-                for lid, sm in win:
-                    part = sm & R
-                    if not part.any():
-                        continue
-                    lab, ids, st = comps(part, 8, 1)
-                    for k in ids:
-                        a = int(st[k, A])
-                        if a >= U.PIECE_FLOOR:
-                            pieces.append((int(lid), a, lab == k))
-                        else:
-                            frags.append(dict(base, origin='piece', piece_lid=int(lid),
-                                              area=a, why='片が床の下'))
+                pieces, small = pieces_in_face(R, win)
+                for lid, a in small:
+                    frags.append(dict(base, origin='piece', piece_lid=lid,
+                                      area=a, why='片が床の下'))
                 if pieces:
                     # **重なりは削らずに数える**(片の面積の和 − 面の面積)
                     stat['重なりの画素(片の和 − 面。**二重に数えた分**)'] += max(
@@ -117,7 +172,7 @@ def main():
                                          parent=[work, pid, int(ci), int(gi), ar],
                                          siblings=len(pieces), n_layer_big=1,
                                          neck=neck_radius(m), top_lid=lid,
-                                         n_comp_4=len(comps(m, 4)[1])))
+                                         n_comp_4=len(comps(m, 4)[1]), **axes(m, lid)))
                 else:
                     stat['元の面のまま(割っても片が1つ以下)'] += 1
                     ov = [(lid, int((s & R).sum())) for lid, s in win]
@@ -126,7 +181,7 @@ def main():
                                      piece_lid=None, siblings=1,
                                      n_layer_big=len(pieces),
                                      neck=neck_radius(R), top_lid=top,
-                                     n_comp_4=len(comps(R, 4)[1])))
+                                     n_comp_4=len(comps(R, 4)[1]), **axes(R, top)))
         if i % 5 == 0 or i == len(js):
             print(f'  {i}/{len(js)} 頁  分離後の面 {len(rows)}', flush=True)
     for k, v in cut.most_common():
