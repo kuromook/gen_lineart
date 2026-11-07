@@ -31,6 +31,28 @@ def wilson(k, n, z=1.96):
     return max(0.0, c - h), min(1.0, c + h)
 
 
+def diagnostic(kmap):
+    """**器具と問いについての数だけ**を出す(答えられなかった率と一言)。
+
+    主値(群Tと群Cの率・Fisher・腕の表)は**一切出さない** —— IC が外れた走行で
+    主値を見てから次の問いを作ると、点を見て棒を動かしたのと同じことになる(条例1)。
+    """
+    ansd = [v for v in kmap.values() if v.get('value') in ('one', 'many')]
+    held = [v for v in kmap.values() if v.get('value') in ('__unknown__', '__none__')]
+    n = len(ansd) + len(held)
+    print(f'  答えられなかった率: {len(held)}/{n} = {len(held) / n:.1%}'
+          f'(第1回: 一様30面 26.7% / 面だけ 17.6% / 小片 38.5%)')
+    if held:
+        print('    内訳: ' + ', '.join(f'{k} {v}' for k, v in collections.Counter(
+            v['value'] for v in held).items()))
+    cm = [v for v in kmap.values() if v.get('comment')]
+    print(f'  一言の欄 {len(cm)} 件(**多ければ問いの作りの欠陥**。指針 §2-3):')
+    for v in sorted(cm, key=lambda v: v.get('comment', '')):
+        # **面積を出さない** —— 面積は群を言い当てる鍵である(登録の対の表に書いてある)。
+        # 2026-11-07 にここから主値が漏れた。診断は主値を含意する鍵を持たない
+        print(f'    {v.get("value")}: {v["comment"]}')
+
+
 def main():
     kmap = json.load(open(D / 'map.json', encoding='utf-8'))
     if not ANS.exists():
@@ -59,7 +81,11 @@ def main():
         ic_ok += ok
         print(f'  {a:,} 期待 {want:<4} 実際 {got:<12} {"一致" if ok else "**外れた**"}({what})')
     if ic_n and ic_ok < ic_n:
-        print(f'\n**IC が {ic_ok}/{ic_n}。登録どおり、この走行の何も読まない。**')
+        print(f'\n**IC が {ic_ok}/{ic_n}。登録どおり、この走行の主値を読まない。**')
+        print('**群Tと群Cの率も、Fisher も、腕の表も印字しない** —— '
+              '外れた後に見てから次の問いを作れば、それは点を見て棒を動かしたのと同じになる。')
+        print('\n--- 以下は**器具と問いについての診断。棒ではない**(主値とは独立)---')
+        diagnostic(kmap)
         return
     print(f'  IC {ic_ok}/{ic_n} 一致' + ('(**まだ全部そろっていない**)' if ic_n < 3 else ''))
 
