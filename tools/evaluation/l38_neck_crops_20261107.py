@@ -136,29 +136,45 @@ def main():
     ap.add_argument('--max-neck', type=int, default=2, help='首の半径の上限(既定 2 = 最も細い)')
     ap.add_argument('--cell', choices=sorted(CELLS), default='1L_neck',
                     help='**2x2 のどのセルから出すか**(既定 1L_neck = 首だけで層は1つ)')
+    # **帰無値を取るための口**(2026-11-07)。選んだ面で測った比は母集団の比ではない ——
+    # **棒の前に帰無値**(規律9)。素性で選ばず、**母集団から一様に取る**
+    ap.add_argument('--random', type=int, default=0,
+                    help='**素性で選ばず母集団から一様に N 面**取る(セルの選別は効かない)')
+    ap.add_argument('--seed', type=int, default=20261107, help='無作為抽出の種(固定)')
     ap.add_argument('--n', type=int, default=2, help='出す面の数')
     ap.add_argument('--win', type=int, default=700, help='首の窓の一辺(原寸の画素)')
     ap.add_argument('--margin', type=int, default=400,
                     help='面の外接矩形に足す余白(原寸の画素)。**周りの絵が入らないと読めない**')
     a = ap.parse_args()
-    out = f'{OUT}/{a.cell}'
+    out = f'{OUT}/{"random" if a.random else a.cell}'
     os.makedirs(out, exist_ok=True)
     allrows = json.load(open(SRC, encoding='utf-8'))
-    pred = CELLS[a.cell]
-    rows = [r for r in allrows if pred(r, a.max_neck)]
-    rows.sort(key=lambda r: -r['area'])
-    print(f'母集団 {len(allrows)} 面(現行40頁)/ セル `{a.cell}` に当たる面 **{len(rows)}**'
-          f'(首の半径の上限 {a.max_neck})', flush=True)
+    if a.random:
+        # **一様。** 大きい面に寄せない・重ならない規則も当てない ——
+        # 当てたらそれは母集団の比ではなくなる
+        import random as _r
+        rows = _r.Random(a.seed).sample(allrows, min(a.random, len(allrows)))
+        print(f'母集団 {len(allrows)} 面(現行40頁)/ **一様に {len(rows)} 面**'
+              f'(種 {a.seed}。**素性で選んでいない** = 帰無値が取れる)', flush=True)
+    else:
+        pred = CELLS[a.cell]
+        rows = [r for r in allrows if pred(r, a.max_neck)]
+        rows.sort(key=lambda r: -r['area'])
+        print(f'母集団 {len(allrows)} 面(現行40頁)/ セル `{a.cell}` に当たる面 **{len(rows)}**'
+              f'(首の半径の上限 {a.max_neck})', flush=True)
     # **同じ頁・同じ層に偏らせない**(1つの事故を n 回見せても材料にならない)
-    pick, seen = [], set()
-    for r in rows:
-        k = (r['work'], r['pid'], r['top_lid'])
-        if k in seen:
-            continue
-        seen.add(k)
-        pick.append(r)
-        if len(pick) >= a.n:
-            break
+    if a.random:
+        pick = rows                       # **間引かない**(間引いたら一様でない)
+    else:
+        pick, seen = [], set()
+        for r in rows:
+            k = (r['work'], r['pid'], r['top_lid'])
+            if k in seen:
+                continue
+            seen.add(k)
+            pick.append(r)
+            if len(pick) >= a.n:
+                break
     print(f'そのうち出すのは **{len(pick)}**'
           f'(頁と層が重ならないように上から取った。面積の大きい順。'
           f'**同じ頁・同じ層で落ちた {len(rows) - len(pick)} 面**は出していない)', flush=True)
