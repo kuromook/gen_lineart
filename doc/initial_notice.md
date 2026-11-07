@@ -78,7 +78,19 @@
   **既に在る3行は測る側で落とす —— 行は消さず、「語の無い `panel_done` の面」として数える**
   (規律7)。**立て直し済み(いまは `pid 3089376`、PPID=1、ログ `/tmp/l38_server.log`)**
 
-- **2026-11-07、答を聞くための2本目の UI を立てた** ——
+- **2026-11-07夕、聞き取りは基盤の共通部品に載せ替えた**(通達
+  `reply_interview_ui_parts_20261107.md` / 指針 `doc/ui_guidelines_20261107.md`)。
+  **画面は書かない。問いを JSON に書く** ——
+  `tools/ui/l38_build_meaning_interview_20261107.py` が
+  `data/l38_meaning_20261107/`(**追跡しない**)に問いと絵を出し、
+  `tools/ui/interview_server.py <questions.json> --lan --port 8765` で出す
+  (`pid 3247550`、ログ `/tmp/l38_interview.log`)。**33問 = 無作為30 + 再掲3**
+  - **目隠しは部品の上でも保つ**: id は `f01` 連番、**絵も複製して名前を消す**、
+    鍵は `map.json`(画面に出さない)、**首の窓は出さない**(誘導になる)
+  - **部品に足りないものは track で分岐させず基盤へ**(通達)
+  - **実機のタッチは誰も確かめていない。** 最初に使う track が作者に聞いて基盤へ返す
+
+- **2026-11-07、答を聞くための2本目の UI を立てた(:8477。夕方に止めた)** ——
   `/home/sh1/deepl/lineart/venv/bin/python tools/ui/l38_layer_ruling_server.py --host 0.0.0.0`
   (**:8477**、`pid 3126203`、ログ `/tmp/l38_ruling_server.log`)。
   **問いは「この面に意味がいくつ入っているか」**で、まとまりの UI とは**別の単位の別の答**。
