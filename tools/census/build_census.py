@@ -1795,7 +1795,10 @@ METRIC_COLS = ("n_both_sides", "n_feature_only", "n_name_only",
                "n_drop_hidden", "n_drop_full_pass", "n_drop_full_hide", "n_drop_filter",
                "n_drop_line_hl_text", "n_unmeasured", "n_unread",
                "n_pages_measured_all", "n_pages_material_ge3", "n_pages_material_upper_ge3",
-               "n_pages_material_ge3_with_line", "n_pages_material_ge3_without_tone", "n_material_tone")
+               "n_pages_material_ge3_with_line", "n_pages_material_ge3_without_tone", "n_material_tone",
+               # **カラーかモノクロか(作者の決め方の第1段)**(`colour_class.py`、2026-11-07)。
+               # **`n_pages_colour_layer` はカラーの頁の数ではない**(聞き取り待ち)
+               "n_pages_mono_certain", "n_pages_colour_layer")
 # 形式の列(白名簿は下の `allow` で宣言する)
 # **件数ではなく実測値の列。** 小数でよい(件数が小数なら誤りだが、画布の寸法は小数が正しい)
 VALUE_COLS = ("canvas_w", "canvas_h", "dpi",
