@@ -689,7 +689,7 @@ closed, as are both of its successors.
   connected-component granularity. The "just cut it finer" route is closed.
   Notices: `inbox/note_oracle_visual_check_pairs_look_sound_20260913.md`,
   `inbox/note_stroke_fit_is_measurable_but_weak_20260917.md`.
-- `../lineart-pair-signal` (branch `pair-signal`) -- **CLOSED 2026-09-17,
+- `../lineart-pair-signal` (branch `pair-signal`) -- **CLOSED 2026-09-17, **Reopened 2026-11-08 by the user (「Dだろう」)** to tabulate how rough-side and lineart-side features correlate (no multivariate/CCA analysis exists anywhere in the record); brief `doc/track_d_reopen_correlation_20261108.md` in its tree.
   diagnosis complete. Reopened 2026-10-19 for one measurement by user
   approval, which it delivered the same day, and closed again.**
   **The pair is loose in both directions, and now by measurement.** The recall
