@@ -6221,3 +6221,25 @@ by the foundation in `2691594`; the only remaining gap was the ordinance.
 - Own slip, caught by reading the injected text: the first edit dropped the
   heading `## この track が存在する理由`, so the injector took that section's body
   as ordinance (1,528 chars). Restored; diff is now additions only.
+
+## 2026-11-08 — v4 pairs assembled; registration draft; user's decisions on unit/scale/population/variables
+
+- **v4 built** in `data/clip_pairs_v4/` (ignored): Aug zip `dataset_clip_pairs_v3.zip` +
+  `dataset_clip_pairs_v4_delta_20261106.zip` (sha256 matches the delivery record).
+  **Trap hit:** `unzip` mis-decoded the Japanese names (no UTF-8 flag) — 21 ok-pairs
+  unresolvable. Re-extracted with Python zipfile (cp437→utf-8). Now 1,848/1,848 pairs
+  resolve, no basename collisions.
+- Population count from `clip_pairs_qc_v4.csv` (no pixels read): 1,848 → −201
+  `line_fragment` → −3 `sketch_misaligned_by_eye` → 1,644 → −295 non-primary duplicates →
+  **1,349 pairs, 64 works, 15 year labels**. `aligned=False` inside ok: 154.
+  Chosen sketch layer names include `img028`, `color`, `UNI_s_*` — not filtered by name (条例3).
+- Axis inventory (Explore agent, read-only): common trap — MLP / stroke_decomposition / gate2
+  squash input to 480×480 ignoring aspect. Draft:
+  `doc/track_d_correlation_register_draft_20261108.md`.
+- **User decisions (11-08):** unit = page AND stroke-segment; page scale = native 480 tiles
+  (median per page); `aligned=False` kept as a separate stratum; variables: "できるだけいれたい
+  (あとから追加することもあるだろう)", drop overall black/white ("どうせ合わない"), add 線の勾配・
+  曲線・線そのものの数・線同士の平均距離.
+- Open: what "線の勾配" means (edge-profile slope vs line direction) — both registered under
+  separate names until the author says. Sketch-side ink threshold to be fixed by smoke (masks only,
+  no correlations) before any number.
