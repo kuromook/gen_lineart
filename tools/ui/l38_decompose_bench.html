@@ -27,7 +27,8 @@
   #how { padding:5px 8px; font-size:14px; border-top:1px solid var(--line);
          background:#1b1e22; }
   #mCut.on { background:#ff2b4d; border-color:#ff2b4d; color:#fff; }
-  #side { border-top:1px solid var(--line); padding:6px 8px; max-height:38vh; overflow:auto; }
+  #side { border-top:1px solid var(--line); padding:6px 8px; max-height:30vh; overflow:auto; }
+  body.wide #side, body.wide #how, body.wide #big { display:none; }
   button { font:inherit; color:var(--fg); background:#262a2f; border:1px solid var(--line);
            border-radius:8px; padding:7px 11px; }
   button.on { background:var(--hot); color:#17191c; border-color:var(--hot); font-weight:700; }
@@ -54,7 +55,8 @@
   <span class="muted">筆の太さ</span><input id="w" type="range" min="2" max="60" value="8" style="width:92px">
   <b id="wv" class="muted">8</b>
   <span style="width:10px"></span>
-  <button id="fit">画面に収める</button><button id="one">原寸</button><button id="undo">戻す</button>
+  <button id="zout">−</button><b id="zv" class="muted">100%</b><button id="zin">＋</button>
+  <button id="wide">絵を広く</button><button id="fit">画面に収める</button><button id="one">原寸</button><button id="undo">戻す</button>
 </div>
 
 <div id="stage" class="pan"><canvas id="cv"></canvas><canvas id="ov"></canvas><canvas
@@ -236,6 +238,8 @@ function apply() {
   for (const c of [cv, ov, mk]) c.style.transform =
     `translate(${view.x}px,${view.y}px) scale(${view.s})`;
   drawMarks(); sizeRing();
+  $('zv').textContent = (view.s * 100).toFixed(0) + '%';
+  if (mode === 'cut') setHow();
 }
 /* **筆の跡を、画面上で必ず見える太さで重ねる**(拡大率が変わるたび引き直す) */
 function drawMarks() {
@@ -260,6 +264,20 @@ function sizeRing() {
   ring.style.border = (brush * view.s < 12 ? '2px dashed ' : '2px solid ') + MODEC[mode];
   ring.style.boxShadow = '0 0 0 1px #000a';
   $('wv').textContent = `${brush}画素(画面 ${(brush * view.s).toFixed(1)})`;
+}
+/* **拡大はここ1か所で行う**(釦・車輪・つまみ・両指が同じ道を通る) */
+function zoomAt(k, sx, sy) {
+  const r = stage.getBoundingClientRect();
+  k = Math.max(0.02, Math.min(24, k));
+  const ix = (sx - r.left - view.x) / view.s, iy = (sy - r.top - view.y) / view.s;
+  view.s = k;
+  view.x = sx - r.left - ix * k;
+  view.y = sy - r.top - iy * k;
+  apply();
+}
+function zoomStep(f) {
+  const r = stage.getBoundingClientRect();
+  zoomAt(view.s * f, r.left + r.width / 2, r.top + r.height / 2);
 }
 function fitView() {
   const r = stage.getBoundingClientRect();
@@ -297,9 +315,30 @@ function toImg(e) {
   const r = stage.getBoundingClientRect();
   return [(e.clientX - r.left - view.x)/view.s, (e.clientY - r.top - view.y)/view.s];
 }
+stage.addEventListener('wheel', e => {
+  // **マウスの車輪と、画板のつまみ(ctrl つきで来る)。両方ここで受ける**
+  e.preventDefault();
+  const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0022));
+  zoomAt(view.s * f, e.clientX, e.clientY);
+}, {passive: false});
+stage.addEventListener('dblclick', e => zoomAt(view.s * 2, e.clientX, e.clientY));
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '+' || e.key === '=') zoomStep(1.4);
+  if (e.key === '-') zoomStep(1 / 1.4);
+});
 stage.addEventListener('pointerdown', e => {
   stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, e);
   if (pts.size === 2) {
+    if (pending.length) {                 // **つまむ前に入った筆を元に戻す**
+      for (const [q, l, w, c] of pending) { lab[q] = l; pin[q] = w; cut[q] = c; }
+      if (painting) {
+        const k = cutPaths.indexOf(painting);
+        if (k >= 0) cutPaths.splice(k, 1);
+      }
+      relabel(); paintParts();
+    }
+    painting = null;
     const [a,b] = [...pts.values()];
     pinch = {d: Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY), s: view.s,
              x: view.x, y: view.y,
@@ -367,12 +406,23 @@ function setMode(m) {
     $(id).className = (k === m ? 'on' : '');
   stage.className = m;
   ring.style.display = (m === 'pan' ? 'none' : 'block');
-  $('how').innerHTML = HOW[m].replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-    + (m === 'cut' && view.s < 0.4
-       ? ' <b style="color:#ff2b4d">いまの拡大率では筆が細すぎて見えません。'
-         + '「原寸」か2本指で拡大してください。</b>' : '');
-  sizeRing();
+  setHow(); sizeRing();
 }
+function setHow() {
+  $('how').innerHTML = HOW[mode].replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    + (mode === 'cut' && brush * view.s < 6
+       ? ' <b style="color:#ff2b4d">いまの拡大率では筆が画面上 '
+         + (brush * view.s).toFixed(1) + ' 画素しかありません。'
+         + '＋ か「原寸」で拡大してください。</b>' : '');
+}
+$('wide').onclick = () => {
+  document.body.classList.toggle('wide');
+  $('wide').className = document.body.classList.contains('wide') ? 'on' : '';
+  $('wide').textContent = document.body.classList.contains('wide') ? '下を出す' : '絵を広く';
+  apply();
+};
+$('zin').onclick = () => zoomStep(1.4);
+$('zout').onclick = () => zoomStep(1 / 1.4);
 $('mPan').onclick = () => setMode('pan');
 stage.addEventListener('pointerleave', () => { ring.style.display = 'none'; });
 $('mCut').onclick = () => setMode('cut');
