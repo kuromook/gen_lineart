@@ -1,0 +1,347 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>分解の台</title>
+<style>
+  :root { --bg:#17191c; --fg:#e9e9ea; --line:#34373c; --hot:#ff8a2b; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+              font:15px/1.5 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  body { display:flex; flex-direction:column; overscroll-behavior:none; }
+  #bar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:6px 8px;
+         border-bottom:1px solid var(--line); }
+  #stage { flex:1; position:relative; overflow:hidden; touch-action:none; background:#0d0e10; }
+  #stage canvas { position:absolute; left:0; top:0; transform-origin:0 0;
+                  image-rendering:pixelated; }
+  #side { border-top:1px solid var(--line); padding:6px 8px; max-height:38vh; overflow:auto; }
+  button { font:inherit; color:var(--fg); background:#262a2f; border:1px solid var(--line);
+           border-radius:8px; padding:7px 11px; }
+  button.on { background:var(--hot); color:#17191c; border-color:var(--hot); font-weight:700; }
+  button:disabled { opacity:.4; }
+  .part { display:flex; gap:6px; align-items:center; margin:4px 0; }
+  .sw { width:20px; height:20px; border-radius:5px; border:1px solid #0006; flex:0 0 auto; }
+  input[type=text] { flex:1; min-width:0; font:inherit; color:var(--fg); background:#1d2024;
+                     border:1px solid var(--line); border-radius:7px; padding:6px 8px; }
+  .chips { display:flex; gap:5px; flex-wrap:wrap; margin:3px 0 7px; }
+  .chips button { padding:4px 8px; font-size:13px; }
+  .muted { color:#9aa0a6; font-size:13px; }
+  #big { display:flex; gap:6px; padding:6px 8px; border-top:1px solid var(--line); }
+  #big button { flex:1; padding:12px 8px; }
+  #save { background:#1f6f3f; border-color:#2b8a50; font-weight:700; }
+  #note { padding:0 8px 6px; }
+</style>
+
+<div id="bar">
+  <button id="prev">◀</button><b id="pos" class="muted"></b><button id="next">▶</button>
+  <span style="width:10px"></span>
+  <button id="mPan" class="on">移動</button>
+  <button id="mCut">切る</button>
+  <button id="mPaint">ぬる</button>
+  <span class="muted">筆の太さ</span><input id="w" type="range" min="2" max="60" value="8" style="width:92px">
+  <b id="wv" class="muted">8</b>
+  <span style="width:10px"></span>
+  <button id="fit">画面に収める</button><button id="one">原寸</button><button id="undo">戻す</button>
+</div>
+
+<div id="stage"><canvas id="cv"></canvas><canvas id="ov"></canvas></div>
+
+<div id="side">
+  <div class="muted" id="hint">「切る」で繋がってしまった所に線を引くと、面が分かれます。分かれた所に名前を付けてください。</div>
+  <div id="parts"></div>
+  <div class="chips" id="chips"></div>
+  <div id="note"><input id="comment" type="text" placeholder="気づいたこと(任意)"></div>
+</div>
+
+<div id="big">
+  <button id="whole">このままで1つ</button>
+  <button id="unk">分からない</button>
+  <button id="save">保存して次へ</button>
+</div>
+
+<script>
+const UNITS = /*__UNITS__*/null;
+const COL = ['#ff8a2b','#45b6ff','#8bd450','#ff5d8f','#c792ea','#ffd166','#2ec4b6','#f4978e',
+             '#9bb1ff','#d4a373','#7ad7f0','#ff9f1c'];
+const CHIPS = ['線画に流れ込んだ分','コマ枠線','影','髪','衣類','書き文字','黒消し','矩形','リボンの線','背景のベタ'];
+const stage = document.getElementById('stage'), cv = document.getElementById('cv'),
+      ov = document.getElementById('ov'), cx = cv.getContext('2d'), ox = ov.getContext('2d');
+let i = 0, img = null, W = 0, H = 0;
+let face = null, lab = null, pin = null, cut = null;
+// face: 面の画素 / lab: 部品番号 / pin: 筆で決めた画素 / cut: 作者が切り離した画素
+let bb = [0,0,0,0];                                 // 面の囲み(描き直しをここに限る)
+let nextId = 1, names = new Map(), active = 1, mode = 'pan', brush = 8;
+let view = {s:1, x:0, y:0}, undoStack = [], strokes = 0, t0 = 0, done = {};
+
+const $ = s => document.getElementById(s);
+const idxOf = (x,y) => y*W + x;
+
+/* ---------- 読み込み ---------- */
+async function load(k) {
+  i = (k + UNITS.length) % UNITS.length;
+  const fid = UNITS[i];
+  $('pos').textContent = `${i+1} / ${UNITS.length}  ${done[fid] ? '済' : ''}`;
+  const [im, mk] = await Promise.all([pic(`img/${fid}.png`), pic(`mask/${fid}.png`)]);
+  img = im; W = im.naturalWidth; H = im.naturalHeight;
+  cv.width = ov.width = W; cv.height = ov.height = H;
+  cx.drawImage(im, 0, 0);
+  const m = document.createElement('canvas'); m.width = W; m.height = H;
+  const mc = m.getContext('2d'); mc.drawImage(mk, 0, 0);
+  const d = mc.getImageData(0, 0, W, H).data;
+  face = new Uint8Array(W*H); lab = new Uint16Array(W*H);
+  pin = new Uint8Array(W*H); cut = new Uint8Array(W*H);
+  let x0 = W, y0 = H, x1 = 0, y1 = 0;
+  for (let p = 0, q = 0; p < W*H; p++, q += 4) if (d[q] > 127) {
+    face[p] = 1;
+    const y = (p / W) | 0, x = p - y*W;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  bb = [x0, y0, Math.max(1, x1-x0+1), Math.max(1, y1-y0+1)];
+  nextId = 1; names = new Map(); undoStack = []; strokes = 0; t0 = Date.now();
+  relabel(); fitView(); paintParts();
+  $('comment').value = '';
+}
+const pic = src => new Promise((ok, no) => {
+  const e = new Image(); e.onload = () => ok(e); e.onerror = no; e.src = src;
+});
+
+/* ---------- 連結成分(筆で決めた画素は自分の番号を保つ) ---------- */
+function relabel() {
+  // **使える画素 = 面の中で、作者が切り離していないもの**。
+  // **筆で決めた画素は壁**(= その番号のまま。別の場所を同じ名前で束ねられる)
+  const prev = lab.slice(), seen = new Uint8Array(W*H), st = new Int32Array(W*H);
+  for (let p = 0; p < W*H; p++) if (!pin[p]) lab[p] = 0;
+  for (let p = 0; p < W*H; p++) {
+    if (!face[p] || cut[p] || pin[p] || seen[p] || lab[p]) continue;
+    const id = nextId++, inherit = prev[p];
+    let n = 0; st[n++] = p; seen[p] = 1;
+    while (n) {
+      const c = st[--n], y = (c / W) | 0, x = c - y*W; lab[c] = id;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = x+dx, ny = y+dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const q = ny*W + nx;
+        if (seen[q] || !face[q] || cut[q] || pin[q]) continue;
+        seen[q] = 1; st[n++] = q;
+      }
+    }
+    const old = names.get(inherit);
+    if (old) names.set(id, {...old});
+  }
+  const live = new Set(); for (let p = 0; p < W*H; p++) if (lab[p]) live.add(lab[p]);
+  if (!live.has(active)) active = [...live][0] || 1;
+}
+function areas() {
+  const a = new Map();
+  for (let p = 0; p < W*H; p++) if (lab[p]) a.set(lab[p], (a.get(lab[p])||0)+1);
+  return a;
+}
+
+/* ---------- 描画 ---------- */
+function paintParts() {
+  const a = areas(), ids = [...a.keys()].sort((x,y) => a.get(y)-a.get(x));
+  const [bx, by, bw, bh] = bb;
+  const d = ox.createImageData(bw, bh), px = d.data;
+  const colOf = {}; ids.forEach((id,k) => colOf[id] = COL[k % COL.length]);
+  const rgb = {}; for (const id of ids) {
+    const c = colOf[id]; rgb[id] = [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16),
+                                   parseInt(c.slice(5,7),16)];
+  }
+  for (let yy = 0, q = 0; yy < bh; yy++) {
+    for (let xx = 0; xx < bw; xx++, q += 4) {
+      const p = (by+yy)*W + (bx+xx), id = lab[p];
+      if (!id) {
+        // **切り離した画素は赤。面の外は何も描かない**
+        if (face[p]) { const r = cut[p] ? [255,43,77,170] : [120,120,130,150];
+                       px[q]=r[0]; px[q+1]=r[1]; px[q+2]=r[2]; px[q+3]=r[3]; }
+        continue;
+      }
+      const c = rgb[id]; px[q]=c[0]; px[q+1]=c[1]; px[q+2]=c[2]; px[q+3]=120;
+    }
+  }
+  ox.clearRect(0, 0, W, H); ox.putImageData(d, bx, by);
+  const box = $('parts'); box.innerHTML = '';
+  for (const id of ids) {
+    const row = document.createElement('div'); row.className = 'part';
+    const sw = document.createElement('div'); sw.className = 'sw';
+    sw.style.background = colOf[id];
+    const b = document.createElement('button'); b.textContent = (id===active?'●':'○');
+    b.onclick = () => { active = id; paintParts(); };
+    if (id === active) b.className = 'on';
+    const t = document.createElement('input'); t.type = 'text';
+    t.placeholder = 'この部分は何か';
+    t.value = (names.get(id)||{}).name || '';
+    t.oninput = () => names.set(id, {name: t.value, src: 'typed'});
+    const n = document.createElement('span'); n.className = 'muted';
+    n.textContent = a.get(id).toLocaleString();
+    row.append(sw, b, t, n); box.append(row);
+  }
+  const ch = $('chips'); ch.innerHTML = '';
+  for (const c of CHIPS) {
+    const b = document.createElement('button'); b.textContent = c;
+    b.onclick = () => { names.set(active, {name: c, src: 'chip'}); paintParts(); };
+    ch.append(b);
+  }
+  $('hint').textContent = ids.length > 1
+    ? `${ids.length} つに分かれています。それぞれに名前を付けて保存してください。`
+    : '「切る」で繋がってしまった所に線を引くと、面が分かれます。1つのままなら「このままで1つ」。';
+  apply();
+}
+function apply() {
+  for (const c of [cv, ov]) c.style.transform =
+    `translate(${view.x}px,${view.y}px) scale(${view.s})`;
+}
+function fitView() {
+  const r = stage.getBoundingClientRect();
+  view.s = Math.min(r.width/W, r.height/H);
+  view.x = (r.width - W*view.s)/2; view.y = (r.height - H*view.s)/2; apply();
+}
+
+/* ---------- 筆 ---------- */
+function snap(ix) { undoStack.push(ix); if (undoStack.length > 12) undoStack.shift(); }
+function stroke(x0, y0, x1, y1, kind) {
+  const r = brush/2, steps = Math.max(1, Math.hypot(x1-x0, y1-y0)|0), ch = [];
+  for (let s = 0; s <= steps; s++) {
+    const cxp = x0 + (x1-x0)*s/steps, cyp = y0 + (y1-y0)*s/steps;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx*dx + dy*dy > r*r) continue;
+      const x = Math.round(cxp+dx), y = Math.round(cyp+dy);
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const p = idxOf(x,y); if (!face[p]) continue;
+      if (kind === 'cut') {
+        if (cut[p]) continue;
+        ch.push([p, lab[p], pin[p], cut[p]]); lab[p] = 0; pin[p] = 0; cut[p] = 1;
+      } else {
+        if (cut[p]) continue;                       // **切った画素は筆で戻さない**
+        if (lab[p] === active && pin[p] === 1) continue;
+        ch.push([p, lab[p], pin[p], cut[p]]); lab[p] = active; pin[p] = 1;
+      }
+    }
+  }
+  return ch;
+}
+
+/* ---------- 指と筆 ---------- */
+const pts = new Map(); let drag = null, pinch = null, pending = [];
+function toImg(e) {
+  const r = stage.getBoundingClientRect();
+  return [(e.clientX - r.left - view.x)/view.s, (e.clientY - r.top - view.y)/view.s];
+}
+stage.addEventListener('pointerdown', e => {
+  stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, e);
+  if (pts.size === 2) {
+    const [a,b] = [...pts.values()];
+    pinch = {d: Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY), s: view.s,
+             x: view.x, y: view.y,
+             mx: (a.clientX+b.clientX)/2, my: (a.clientY+b.clientY)/2};
+    drag = null; pending = [];
+    return;
+  }
+  if (mode === 'pan') { drag = {x: e.clientX, y: e.clientY, vx: view.x, vy: view.y}; return; }
+  const [x,y] = toImg(e); drag = {ix: x, iy: y}; pending = [];
+});
+stage.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, e);
+  if (pinch && pts.size === 2) {
+    const [a,b] = [...pts.values()];
+    const d = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+    const k = Math.max(0.05, Math.min(16, pinch.s * d/pinch.d));
+    const r = stage.getBoundingClientRect();
+    const ox0 = (pinch.mx - r.left - pinch.x)/pinch.s, oy0 = (pinch.my - r.top - pinch.y)/pinch.s;
+    view.s = k; view.x = pinch.mx - r.left - ox0*k; view.y = pinch.my - r.top - oy0*k;
+    apply(); return;
+  }
+  if (!drag) return;
+  if (mode === 'pan') {
+    view.x = drag.vx + (e.clientX - drag.x); view.y = drag.vy + (e.clientY - drag.y);
+    apply(); return;
+  }
+  const [x,y] = toImg(e);
+  const ch = stroke(drag.ix, drag.iy, x, y, mode === 'cut' ? 'cut' : 'paint');
+  pending.push(...ch); drag.ix = x; drag.iy = y;
+  ox.save(); ox.globalAlpha = 1;
+  ox.strokeStyle = mode === 'cut' ? '#ff2b4d' : COL[0];
+  ox.lineWidth = brush; ox.lineCap = 'round';
+  ox.beginPath(); ox.moveTo(x, y); ox.lineTo(x, y); ox.stroke(); ox.restore();
+});
+function up(e) {
+  pts.delete(e.pointerId);
+  if (pts.size < 2) pinch = null;
+  if (!drag || mode === 'pan') { drag = null; return; }
+  drag = null;
+  if (pending.length) {
+    snap(pending); strokes++;
+    if (mode === 'cut') relabel();
+    paintParts();
+  }
+  pending = [];
+}
+stage.addEventListener('pointerup', up);
+stage.addEventListener('pointercancel', up);
+
+/* ---------- 釦 ---------- */
+function setMode(m) {
+  mode = m;
+  for (const [k,id] of [['pan','mPan'],['cut','mCut'],['paint','mPaint']])
+    $(id).className = (k === m ? 'on' : '');
+}
+$('mPan').onclick = () => setMode('pan');
+$('mCut').onclick = () => setMode('cut');
+$('mPaint').onclick = () => setMode('paint');
+$('w').oninput = e => { brush = +e.target.value; $('wv').textContent = brush; };
+$('fit').onclick = fitView;
+$('one').onclick = () => {
+  const r = stage.getBoundingClientRect();
+  const cxp = (r.width/2 - view.x)/view.s, cyp = (r.height/2 - view.y)/view.s;
+  view.s = 1; view.x = r.width/2 - cxp; view.y = r.height/2 - cyp; apply();
+};
+$('undo').onclick = () => {
+  const ch = undoStack.pop(); if (!ch) return;
+  for (const [p, l, q, c] of ch) { lab[p] = l; pin[p] = q; cut[p] = c; }
+  relabel(); paintParts();
+};
+$('prev').onclick = () => load(i-1);
+$('next').onclick = () => load(i+1);
+
+/* ---------- 保存(追記だけ) ---------- */
+function labelPng() {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), d = g.createImageData(W, H), px = d.data;
+  const a = areas(), ids = [...a.keys()].sort((x,y) => a.get(y)-a.get(x));
+  const num = {}; ids.forEach((id,k) => num[id] = k+1);
+  for (let p = 0, q = 0; p < W*H; p++, q += 4) {
+    const v = lab[p] ? num[lab[p]] : 0;
+    px[q] = px[q+1] = px[q+2] = v; px[q+3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+  return [c.toDataURL('image/png'), ids, num, a];
+}
+async function post(value) {
+  const [png, ids, num, a] = labelPng();
+  const row = {
+    interview_id: 'l38_decompose_bench_20261108', item_id: UNITS[i], value,
+    parts: ids.map(id => ({n: num[id], name: (names.get(id)||{}).name || '',
+                           name_src: (names.get(id)||{}).src || '', area: a.get(id)})),
+    n_parts: ids.length, strokes, seconds: Math.round((Date.now()-t0)/1000),
+    comment: $('comment').value || '', label_png: value === 'split' ? png : null,
+    ts: new Date().toISOString(), ua: navigator.userAgent.slice(0, 120),
+  };
+  const r = await fetch('api/partition', {method: 'POST', body: JSON.stringify(row)});
+  if (!r.ok) { alert('保存できませんでした: ' + r.status); return; }
+  done[UNITS[i]] = value;
+  load(i+1);
+}
+$('save').onclick = () => {
+  const a = areas(), ids = [...a.keys()];
+  if (ids.length < 2) { alert('まだ1つのままです。「切る」で分けるか、「このままで1つ」を押してください。'); return; }
+  const noname = ids.filter(id => !((names.get(id)||{}).name));
+  if (noname.length && !confirm(`${noname.length} つに名前が付いていません。そのまま保存しますか`)) return;
+  post('split');
+};
+$('whole').onclick = () => post('whole');
+$('unk').onclick = () => post('__unknown__');
+window.addEventListener('resize', () => apply());
+
+fetch('api/done').then(r => r.json()).then(d => { done = d; }).finally(() => load(0));
+</script>

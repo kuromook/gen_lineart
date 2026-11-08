@@ -43,6 +43,9 @@ def main():
     ap.add_argument('--list', required=True, help='出す単位を名指しした JSON(`fid` つき)')
     ap.add_argument('--out-name', required=True)
     ap.add_argument('--margin', type=int, default=400)
+    ap.add_argument('--masks', action='store_true',
+                    help='**分解の台(第2の画面)用に、窓と同じ大きさの単位のマスクも書く**。'
+                         '切り出しの絵は1画素も変わらない(足すだけ。2026-11-08)')
     a = ap.parse_args()
     out = f'{OUT}/{a.out_name}'
     os.makedirs(out, exist_ok=True)
@@ -63,7 +66,7 @@ def main():
     js = [j for j in js if (j[1], j[0]) in pages]
     print(f'走る頁 {len(js)}', flush=True)
 
-    made, skip = 0, collections.Counter()
+    made, skip, wins = 0, collections.Counter(), []
     for i, job in enumerate(js, 1):
         pid, work, fz, lz, sel = job
         lm, shape = layer_masks(fz, 'solid', cut)
@@ -143,9 +146,26 @@ def main():
                             skip['**輪郭が1画素も無い切り出し**(出さない。NC2)'] += 1
                             continue
                         cv2.imwrite(f'{out}/{r["fid"]}.png', img)
+                        if a.masks:
+                            # **窓の中の単位のマスク**(白 = 単位)。分解の台が
+                            # 「作者の筆を面の中だけに留める」のに使う
+                            cv2.imwrite(f'{out}/{r["fid"]}_mask.png',
+                                        (M[by0:by1, bx0:bx1] * 255).astype(np.uint8))
+                            wins.append(dict(fid=r['fid'], work=work, pid=pid,
+                                             comp=int(ci), region=int(key[3]),
+                                             area=int(r['area']), origin=r['origin'],
+                                             piece_lid=r['piece_lid'],
+                                             win=[int(by0 + y0), int(by1 + y0),
+                                                  int(bx0 + x0), int(bx1 + x0)],
+                                             koma=[int(y0), int(y1), int(x0), int(x1)]))
                         made += 1
         print(f'  {i}/{len(js)} 頁  出した {made}', flush=True)
 
+    if a.masks:
+        json.dump(wins, open(f'{out}/windows.json', 'w', encoding='utf-8'),
+                  ensure_ascii=False, indent=1)
+        print(f'マスクと窓を書いた {len(wins)} 件 -> {out}/windows.json'
+              f'(**窓は原稿の座標。原稿の画素は入っていない**)')
     print(f'\n出した単位 {made} / 頼んだ {len(want)}  -> {out}')
     print('落としたもの(理由別。規律9):')
     for k, v in skip.most_common():
