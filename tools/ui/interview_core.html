@@ -69,7 +69,7 @@ button:disabled{opacity:.45;cursor:default}
 // ---- データ: 組み立て器がここを置き換える。器具の用語を画面に出さないのは問いの作り手の仕事 ----
 const DATA = /*__INTERVIEW_DATA__*/null;
 const MODE = /*__INTERVIEW_MODE__*/"server";   // "server" | "artifact"
-const UI_VERSION = "interview_core 2026-11-07e";
+const UI_VERSION = "interview_core 2026-11-07b";  // E の4点(等倍で始める・位置と直前・0.999・題)を取り込み
 
 // 「どれでもない」「分からない」は外せない(指針 §2-1)
 const BUILTIN = [
@@ -191,9 +191,9 @@ async function saveNext(){
   try{ await store.append(row); answers[it.id]=row; savedThisSession++; }
   catch(e){ busy=false; renderChoices(); $("status").className="err"; $("status").textContent=e.message+" —— 答えはまだ保存されていません。もう一度 Enter を押してください"; return; }
   busy=false;
-  const bs=DATA.batch_size||20;
+  const bs=DATA.batch_size||0;  // 既定は区切らない(2026-11-07 作者「不要」)。問いの側で batch_size を書いたときだけ
   if(Object.keys(answers).length===DATA.items.length){ return finish(); }
-  if(savedThisSession%bs===0){ return pause(); }
+  if(bs>0 && savedThisSession%bs===0){ return pause(); }
   idx=nextIndex(idx); view={z:1,cx:.5,cy:.5}; render();
 }
 function nextIndex(i){ for(let k=1;k<=DATA.items.length;k++){const j=(i+k)%DATA.items.length; if(!answers[DATA.items[j].id]) return j;} return Math.min(i+1,DATA.items.length-1); }

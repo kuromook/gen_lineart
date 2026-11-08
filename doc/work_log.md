@@ -7193,3 +7193,33 @@ drops by reason. The note says explicitly not to substitute a nearby column, sin
 census's own log records that **`v_layer_kind` has no line-art subtype and line
 layers sit mixed into `raster`** — and that "we cannot do this" is a usable answer
 here, because it switches this tree to asking the author instead.
+
+## 2026-11-09 Notices: nothing new came in, and one instruction was still unexecuted
+
+Checked the notices. **Nothing has arrived for this tree since 2026-11-07 18:57**
+(`inbox/` newest is `reply_judge_ui_and_proxy_20261107.md`), and the foundation's
+`outbox/` has nothing newer addressed here either. **`census` has not answered** the
+request of 2026-11-08: the note still sits unread in `../lineart-census/inbox/`
+(census's own log has no mention of the drawing stages; it has been working on the
+occlusion-edge delivery of 2026-11-09). Nothing to chase — the note names the three
+numbers and says "cannot be done" is a usable answer.
+
+**What the check did find: one instruction in that 11-07 reply had never been
+carried out.** The reply said this tree's `tools/ui` sits on the version from before
+the foundation made the break screen opt-out, and to **re-take it**. Done:
+`git checkout foundation -- tools/ui`, now zero diff against `foundation`.
+
+What this tree had been running was **strictly less** than the foundation's copy, not
+newer — the local label `interview_core 2026-11-07e` was ahead of `…-07b` in letter
+only. The four parts this tree contributed are all in the foundation's version, and
+re-taking also brings: **the page title is HTML-escaped**, `initial_view` is checked
+(`fit` | `native`) instead of being accepted silently, `batch_size` defaults to **0**
+(no break screen — the author said "unnecessary" on 11-07) instead of 20, and the
+server's image URL form `/img/<src>` is documented. The ladder collection is
+unaffected: its spec writes `batch_size: 40` explicitly, and re-reading the collected
+records through the re-taken parts prints the same **111/111 answered, 0 re-answers,
+0 undecided, batch_size 40, initial_view native** (`verify_answers.py` rc=0).
+
+The silent acceptance of a bad `initial_view` is `names_are_not_checks` again: a
+misspelled view name would have fallen back to fit-to-window, which is exactly the
+defect that shrank the measured axis on 11-07 — and nothing would have said so.

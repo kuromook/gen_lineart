@@ -34,7 +34,7 @@ def main():
             "decides": "(見本)この層を線画として数えるかが決まる",
             "choices": [{"value": "line", "label": "線画", "help": "仕上げの線"},
                         {"value": "rough", "label": "下絵", "help": "下描き・あたり"}],
-            "batch_size": 2, "items": items}
+            "items": items}
     (out / "questions.json").write_text(json.dumps(spec, ensure_ascii=False, indent=1), encoding="utf-8")
     print(out / "questions.json")
 
