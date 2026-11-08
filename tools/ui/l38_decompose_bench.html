@@ -13,6 +13,14 @@
   #stage { flex:1; position:relative; overflow:hidden; touch-action:none; background:#0d0e10; }
   #stage canvas { position:absolute; left:0; top:0; transform-origin:0 0;
                   image-rendering:pixelated; }
+  #stage.pan  { cursor:grab; }
+  #stage.cut  { cursor:crosshair; }
+  #stage.paint{ cursor:crosshair; }
+  #ring { position:absolute; border-radius:50%; pointer-events:none; display:none;
+          box-sizing:border-box; transform:translate(-50%,-50%); }
+  #how { padding:5px 8px; font-size:14px; border-top:1px solid var(--line);
+         background:#1b1e22; }
+  #mCut.on { background:#ff2b4d; border-color:#ff2b4d; color:#fff; }
   #side { border-top:1px solid var(--line); padding:6px 8px; max-height:38vh; overflow:auto; }
   button { font:inherit; color:var(--fg); background:#262a2f; border:1px solid var(--line);
            border-radius:8px; padding:7px 11px; }
@@ -43,7 +51,9 @@
   <button id="fit">画面に収める</button><button id="one">原寸</button><button id="undo">戻す</button>
 </div>
 
-<div id="stage"><canvas id="cv"></canvas><canvas id="ov"></canvas></div>
+<div id="stage" class="pan"><canvas id="cv"></canvas><canvas id="ov"></canvas><canvas
+  id="mk"></canvas><div id="ring"></div></div>
+<div id="how"></div>
 
 <div id="side">
   <div class="muted" id="hint">「切る」で繋がってしまった所に線を引くと、面が分かれます。分かれた所に名前を付けてください。</div>
@@ -64,7 +74,20 @@ const COL = ['#ff8a2b','#45b6ff','#8bd450','#ff5d8f','#c792ea','#ffd166','#2ec4b
              '#9bb1ff','#d4a373','#7ad7f0','#ff9f1c'];
 const CHIPS = ['線画に流れ込んだ分','コマ枠線','影','髪','衣類','書き文字','黒消し','矩形','リボンの線','背景のベタ'];
 const stage = document.getElementById('stage'), cv = document.getElementById('cv'),
-      ov = document.getElementById('ov'), cx = cv.getContext('2d'), ox = ov.getContext('2d');
+      ov = document.getElementById('ov'), mk = document.getElementById('mk'),
+      ring = document.getElementById('ring'),
+      cx = cv.getContext('2d'), ox = ov.getContext('2d'), mx = mk.getContext('2d');
+// **切った跡は画素では 1〜2 画面画素しかなく見えない。** だから筆の跡そのものを
+// **画面上で必ず 4 画素以上の太さ**で重ねて描く(登録の問いには関係しない。見え方だけ)
+let cutPaths = [], painting = null;
+const MODEC = {cut:'#ff2b4d', paint:'#ff8a2b', pan:'#9aa0a6'};
+const HOW = {
+  pan:  '**移動**: 指やマウスで絵を動かします。2本指でつまむと拡大。',
+  cut:  '**切る**: 繋がってしまった所を**なぞると、そこが赤くなって面が切れます**。' +
+        '切り終えると面が色分けされます。細い所は拡大してからなぞってください。',
+  paint:'**ぬる**: いま選んでいる部品(●)の色で**なぞった所をその部品に移します**。' +
+        '離れた2か所を同じ部品にまとめられます。',
+};
 let i = 0, img = null, W = 0, H = 0;
 let face = null, lab = null, pin = null, cut = null;
 // face: 面の画素 / lab: 部品番号 / pin: 筆で決めた画素 / cut: 作者が切り離した画素
@@ -82,7 +105,7 @@ async function load(k) {
   $('pos').textContent = `${i+1} / ${UNITS.length}  ${done[fid] ? '済' : ''}`;
   const [im, mk] = await Promise.all([pic(`img/${fid}.png`), pic(`mask/${fid}.png`)]);
   img = im; W = im.naturalWidth; H = im.naturalHeight;
-  cv.width = ov.width = W; cv.height = ov.height = H;
+  cv.width = ov.width = mk.width = W; cv.height = ov.height = mk.height = H;
   cx.drawImage(im, 0, 0);
   const m = document.createElement('canvas'); m.width = W; m.height = H;
   const mc = m.getContext('2d'); mc.drawImage(mk, 0, 0);
@@ -97,7 +120,8 @@ async function load(k) {
   }
   bb = [x0, y0, Math.max(1, x1-x0+1), Math.max(1, y1-y0+1)];
   nextId = 1; names = new Map(); undoStack = []; strokes = 0; t0 = Date.now();
-  relabel(); fitView(); paintParts();
+  cutPaths = [];
+  relabel(); fitView(); paintParts(); setMode(mode);
   $('comment').value = '';
 }
 const pic = src => new Promise((ok, no) => {
@@ -188,8 +212,33 @@ function paintParts() {
   apply();
 }
 function apply() {
-  for (const c of [cv, ov]) c.style.transform =
+  for (const c of [cv, ov, mk]) c.style.transform =
     `translate(${view.x}px,${view.y}px) scale(${view.s})`;
+  drawMarks(); sizeRing();
+}
+/* **筆の跡を、画面上で必ず見える太さで重ねる**(拡大率が変わるたび引き直す) */
+function drawMarks() {
+  if (!mk.width) return;
+  mx.clearRect(0, 0, mk.width, mk.height);
+  const w = Math.max(brush, 4 / view.s);        // 画面上 4 画素を下回らない
+  mx.lineCap = mx.lineJoin = 'round';
+  const all = painting && painting.kind === 'paint' ? cutPaths.concat([painting]) : cutPaths;
+  for (const pa of all) {
+    mx.strokeStyle = pa.kind === 'cut' ? 'rgba(255,43,77,.95)' : 'rgba(255,138,43,.95)';
+    mx.lineWidth = Math.max(pa.brush, 4 / view.s);
+    mx.beginPath();
+    mx.moveTo(pa.pts[0][0], pa.pts[0][1]);
+    for (const [x, y] of pa.pts.slice(1)) mx.lineTo(x, y);
+    if (pa.pts.length === 1) mx.lineTo(pa.pts[0][0] + .01, pa.pts[0][1]);
+    mx.stroke();
+  }
+}
+function sizeRing() {
+  const d = Math.max(brush * view.s, 12);
+  ring.style.width = ring.style.height = d + 'px';
+  ring.style.border = (brush * view.s < 12 ? '2px dashed ' : '2px solid ') + MODEC[mode];
+  ring.style.boxShadow = '0 0 0 1px #000a';
+  $('wv').textContent = `${brush}画素(画面 ${(brush * view.s).toFixed(1)})`;
 }
 function fitView() {
   const r = stage.getBoundingClientRect();
@@ -239,8 +288,17 @@ stage.addEventListener('pointerdown', e => {
   }
   if (mode === 'pan') { drag = {x: e.clientX, y: e.clientY, vx: view.x, vy: view.y}; return; }
   const [x,y] = toImg(e); drag = {ix: x, iy: y}; pending = [];
+  painting = {kind: mode === 'cut' ? 'cut' : 'paint', brush, pts: [[x, y]]};
+  if (painting.kind === 'cut') cutPaths.push(painting);
+  drawMarks();
 });
 stage.addEventListener('pointermove', e => {
+  if (mode !== 'pan') {
+    const r = stage.getBoundingClientRect();
+    ring.style.display = 'block';
+    ring.style.left = (e.clientX - r.left) + 'px';
+    ring.style.top = (e.clientY - r.top) + 'px';
+  }
   if (!pts.has(e.pointerId)) return;
   pts.set(e.pointerId, e);
   if (pinch && pts.size === 2) {
@@ -259,23 +317,24 @@ stage.addEventListener('pointermove', e => {
   }
   const [x,y] = toImg(e);
   const ch = stroke(drag.ix, drag.iy, x, y, mode === 'cut' ? 'cut' : 'paint');
-  pending.push(...ch); drag.ix = x; drag.iy = y;
-  ox.save(); ox.globalAlpha = 1;
-  ox.strokeStyle = mode === 'cut' ? '#ff2b4d' : COL[0];
-  ox.lineWidth = brush; ox.lineCap = 'round';
-  ox.beginPath(); ox.moveTo(x, y); ox.lineTo(x, y); ox.stroke(); ox.restore();
+  pending.push(...ch);
+  if (painting) { painting.pts.push([x, y]); drawMarks(); }
+  drag.ix = x; drag.iy = y;
 });
 function up(e) {
   pts.delete(e.pointerId);
+  painting = null;
   if (pts.size < 2) pinch = null;
   if (!drag || mode === 'pan') { drag = null; return; }
   drag = null;
   if (pending.length) {
-    snap(pending); strokes++;
+    snap({ch: pending, path: mode === 'cut' ? cutPaths[cutPaths.length - 1] : null});
+    strokes++;
     if (mode === 'cut') relabel();
     paintParts();
   }
   pending = [];
+  drawMarks();
 }
 stage.addEventListener('pointerup', up);
 stage.addEventListener('pointercancel', up);
@@ -285,11 +344,19 @@ function setMode(m) {
   mode = m;
   for (const [k,id] of [['pan','mPan'],['cut','mCut'],['paint','mPaint']])
     $(id).className = (k === m ? 'on' : '');
+  stage.className = m;
+  ring.style.display = (m === 'pan' ? 'none' : 'block');
+  $('how').innerHTML = HOW[m].replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    + (m === 'cut' && view.s < 0.4
+       ? ' <b style="color:#ff2b4d">いまの拡大率では筆が細すぎて見えません。'
+         + '「原寸」か2本指で拡大してください。</b>' : '');
+  sizeRing();
 }
 $('mPan').onclick = () => setMode('pan');
+stage.addEventListener('pointerleave', () => { ring.style.display = 'none'; });
 $('mCut').onclick = () => setMode('cut');
 $('mPaint').onclick = () => setMode('paint');
-$('w').oninput = e => { brush = +e.target.value; $('wv').textContent = brush; };
+$('w').oninput = e => { brush = +e.target.value; sizeRing(); drawMarks(); };
 $('fit').onclick = fitView;
 $('one').onclick = () => {
   const r = stage.getBoundingClientRect();
@@ -297,8 +364,12 @@ $('one').onclick = () => {
   view.s = 1; view.x = r.width/2 - cxp; view.y = r.height/2 - cyp; apply();
 };
 $('undo').onclick = () => {
-  const ch = undoStack.pop(); if (!ch) return;
-  for (const [p, l, q, c] of ch) { lab[p] = l; pin[p] = q; cut[p] = c; }
+  const u = undoStack.pop(); if (!u) return;
+  if (u.path) {
+    const k = cutPaths.indexOf(u.path);
+    if (k >= 0) cutPaths.splice(k, 1);
+  }
+  for (const [p, l, q, c] of u.ch) { lab[p] = l; pin[p] = q; cut[p] = c; }
   relabel(); paintParts();
 };
 $('prev').onclick = () => load(i-1);

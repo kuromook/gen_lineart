@@ -95,8 +95,12 @@ def main():
         ids = keep
         if not ids:
             sys.exit('**「分解しないといけない」と答えた単位が1つも無い。台を出す相手がいない**')
-    page = PAGE.read_text(encoding='utf-8').replace(
-        '/*__UNITS__*/null', json.dumps(ids, ensure_ascii=False)).encode('utf-8')
+    def page():
+        # **毎回読み直す** —— 画面を直すたびに口を増やさないため(2026-11-08、作者が
+        # 「どのように切り分けができるのか見た目にわからない」と言った後に足した)
+        return PAGE.read_text(encoding='utf-8').replace(
+            '/*__UNITS__*/null', json.dumps(ids, ensure_ascii=False)).encode('utf-8')
+    page()                       # 起動時に1度読んで、壊れていたらここで落ちる
     lock = threading.Lock()
 
     def rows():
@@ -120,7 +124,7 @@ def main():
         def do_GET(self):
             path = unquote(urlparse(self.path).path)
             if path in ('/', '/index.html'):
-                return self.send(200, page, 'text/html; charset=utf-8')
+                return self.send(200, page(), 'text/html; charset=utf-8')
             if path == '/api/done':
                 with lock:
                     seen = {}
