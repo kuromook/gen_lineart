@@ -6270,3 +6270,18 @@ tile = max sketch<200 among tiles with GT<128 in [0.02, 0.15]. Strips (1:1, not 
   `src_per_out` 1.000 (native) → same role, same scale.
 - **Registered**: `doc/track_d_correlation_register_20261108.md` (renamed from the draft). No correlation
   computed before this commit.
+
+## 2026-11-08 — instruments built; full measurement launched (no correlation looked at)
+
+- `tools/evaluation/pair_feature_tiles.py` (measurement). Track G stroke code copied into `tools/stroke/`
+  from `lineart-stroke-grammar` `de593f6` (strokes / gate1_features / make_negatives), threshold passed in.
+  Smoke 2 pages (gakusai3): 70/86 kept tiles per page, ~240 s/page; 14 line tiles `few_strokes` (counted).
+  U2 rotated arm behaves: sketch160 le3 0.157 real vs 0.051 rot180. Note: `orientation_entropy`/`edir_*`
+  read gray via Canny, so they are identical for sketch160 and sketch200 (threshold-independent by construction).
+- **Control for the new axis `edge_sharpness_p50`** (registered): 20 line tiles, blur σ=1 lowers it 20/20,
+  binarising raises it 20/20 (median 689 → 506 / 770). Passes.
+- `tools/evaluation/pair_feature_correlation.py` (tables). **Synthetic control** (20 works, 163 pages, 200 perms):
+  planted axis r_within 0.751 outside band; work-shift-only axis r_raw 0.876 but r_within 0.058 inside band
+  (within-work rank removes work differences as registered); CCA cc1 0.756 vs null 97.5% 0.384.
+- Full run launched 21:00, detached (`setsid nohup`, parent PPID 1), 7 workers, 1,349 pages, estimate ~12–13 h.
+  Log `results/pair_feature_correlation_20261108/measure/run.log`; resumable from `pages.csv`.
