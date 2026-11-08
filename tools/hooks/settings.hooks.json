@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "`.claude/settings.json`(置き場 (a))か `~/.claude/settings.json`(置き場 (b))の",
+    "`hooks` キーに**合流させる**断片。**既存のキーを置き換えないこと。**",
+    "`${CLAUDE_PROJECT_DIR}` は使わない —— 16 の木で別の値になる必要があるので、",
+    "器具は自分の位置(`__file__`)から木を決める。(b) で入れる場合は command の道を",
+    "`/home/sh1/deepl/lineart/tools/hooks/...` に固定し、スクリプト側で木を見る。",
+    "詳細と採否は `doc/ops_review_proposal_20261030.md`。"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I tools/hooks/guard_forced_add.py",
+            "if": "Bash(git add *)",
+            "timeout": 10,
+            "statusMessage": "git add -f を見ている",
+            "onFailure": "continue"
+          },
+          {
+            "type": "command",
+            "command": "python3 -I tools/hooks/guard_public_artifacts.py block",
+            "if": "Bash(git commit *)",
+            "timeout": 20,
+            "statusMessage": "許可表の門",
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "r=$(git rev-parse --show-toplevel) && n=$(wc -l < \"$r/CLAUDE.md\") && { [ \"$n\" -le 150 ] || printf '{\"systemMessage\":\"CLAUDE.md が %s 行。**目安 150 行以内**を超えた。足した分と同じ行数を落とす —— **命令形は落とさない**(2026-10-26 に一度落ちた)。\"}\\n' \"$n\"; }",
+            "if": "Edit(CLAUDE.md)",
+            "timeout": 10,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I tools/hooks/session_brief.py",
+            "timeout": 30,
+            "statusMessage": "立場と点検",
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I tools/hooks/guard_public_artifacts.py warn",
+            "timeout": 20,
+            "onFailure": "continue"
+          }
+        ]
+      }
+    ]
+  }
+}
