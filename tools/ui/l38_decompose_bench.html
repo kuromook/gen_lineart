@@ -13,9 +13,10 @@
   #stage { flex:1; position:relative; overflow:hidden; touch-action:none; background:#0d0e10; }
   #stage canvas { position:absolute; left:0; top:0; transform-origin:0 0;
                   image-rendering:pixelated; }
-  /* **面はほぼ純黒(99%)。半透明で重ねると色が出ない** —— screen で重ねると
-     黒の上に色がそのまま乗る(2026-11-08、作者「別れた面に色が出ていない」) */
-  #ov { mix-blend-mode:screen; }
+  /* **重ね方を変えない(normal)。** 切り出しは面を「淡い橙 50%」で塗ってあるので、
+     screen で重ねると **青 + 淡い橙 = ピンク**になり、**札の色と画面の色が食い違った**
+     (2026-11-08、作者「画面上の絵の面はピンクだがUI側は青」)。
+     いまは**不透明で塗り、面の中の線だけ暗く残す** —— 札の色とまったく同じ色が出る */
   #hint { padding:6px 8px; border-radius:8px; font-size:15px; font-weight:700; }
   #hint.many { background:#123d24; color:#8bd450; }
   #hint.one  { background:#3d2f12; color:#ffd166; }
@@ -100,7 +101,7 @@ const HOW = {
         '切るのと違い、**面は減りません**。',
 };
 let i = 0, img = null, W = 0, H = 0;
-let face = null, lab = null, pin = null, cut = null;
+let face = null, lab = null, pin = null, cut = null, ink = null;
 // face: 面の画素 / lab: 部品番号 / pin: 筆で決めた画素 / cut: 作者が切り離した画素
 let bb = [0,0,0,0];                                 // 面の囲み(描き直しをここに限る)
 let nextId = 1, names = new Map(), active = 1, mode = 'pan', brush = 8;
@@ -122,7 +123,13 @@ async function load(k) {
   const mc = m.getContext('2d'); mc.drawImage(mk, 0, 0);
   const d = mc.getImageData(0, 0, W, H).data;
   face = new Uint8Array(W*H); lab = new Uint16Array(W*H);
-  pin = new Uint8Array(W*H); cut = new Uint8Array(W*H);
+  pin = new Uint8Array(W*H); cut = new Uint8Array(W*H); ink = new Uint8Array(W*H);
+  // **面の中の線の墨を覚える。** 切り出しは「線を置いてから面を淡い橙 50% で重ねる」ので、
+  // 面の中でも**線の所は暗い**(明るさ ≒ 105 / 線でない所 ≒ 232)。
+  // **部品の色で塗りつぶしても線が残る** = 塗りつぶしが流れ込んだ線が見える
+  const cd = cx.getImageData(0, 0, W, H).data;
+  for (let q = 0, r = 0; q < W*H; q++, r += 4)
+    if (cd[r]*0.30 + cd[r+1]*0.59 + cd[r+2]*0.11 < 170) ink[q] = 1;
   let x0 = W, y0 = H, x1 = 0, y1 = 0;
   for (let p = 0, q = 0; p < W*H; p++, q += 4) if (d[q] > 127) {
     face[p] = 1;
@@ -187,11 +194,14 @@ function paintParts() {
       const p = (by+yy)*W + (bx+xx), id = lab[p];
       if (!id) {
         // **切り離した画素は赤。面の外は何も描かない**
-        if (face[p]) { const r = cut[p] ? [255,60,90] : [150,150,160];
-                       px[q]=r[0]; px[q+1]=r[1]; px[q+2]=r[2]; px[q+3]=255; }
+        if (face[p]) {
+          const k = ink[p] ? 0.45 : 1, r = cut[p] ? [255,60,90] : [150,150,160];
+          px[q]=r[0]*k; px[q+1]=r[1]*k; px[q+2]=r[2]*k; px[q+3]=255;
+        }
         continue;
       }
-      const c = rgb[id]; px[q]=c[0]; px[q+1]=c[1]; px[q+2]=c[2]; px[q+3]=255;
+      const c = rgb[id], k = ink[p] ? 0.45 : 1;   // **線の所だけ暗く = 同じ色のまま**
+      px[q]=c[0]*k; px[q+1]=c[1]*k; px[q+2]=c[2]*k; px[q+3]=255;
     }
   }
   ox.clearRect(0, 0, W, H); ox.putImageData(d, bx, by);
@@ -322,13 +332,30 @@ stage.addEventListener('wheel', e => {
   zoomAt(view.s * f, e.clientX, e.clientY);
 }, {passive: false});
 stage.addEventListener('dblclick', e => zoomAt(view.s * 2, e.clientX, e.clientY));
+let heldMode = null;                 // **スペースを押している間だけ移動に切り替える**
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === '+' || e.key === '=') zoomStep(1.4);
   if (e.key === '-') zoomStep(1 / 1.4);
+  if (e.code === 'Space' && heldMode === null) {
+    e.preventDefault();
+    heldMode = mode; setMode('pan');
+    $('how').innerHTML = '<b>スペースを押している間は移動</b>'
+      + '(離すと「' + ({cut:'切る', paint:'ぬる', pan:'移動'})[heldMode] + '」に戻ります)';
+  }
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'Space' && heldMode !== null) { setMode(heldMode); heldMode = null; }
 });
 stage.addEventListener('pointerdown', e => {
   stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, e);
+  if (e.button === 1 && heldMode === null) {        // **中押しの釦でも移動**
+    heldMode = mode; setMode('pan');
+    stage.addEventListener('pointerup', function back() {
+      if (heldMode !== null) { setMode(heldMode); heldMode = null; }
+      stage.removeEventListener('pointerup', back);
+    });
+  }
   if (pts.size === 2) {
     if (pending.length) {                 // **つまむ前に入った筆を元に戻す**
       for (const [q, l, w, c] of pending) { lab[q] = l; pin[q] = w; cut[q] = c; }
