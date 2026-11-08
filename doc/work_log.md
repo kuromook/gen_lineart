@@ -6235,7 +6235,7 @@ by the foundation in `2691594`; the only remaining gap was the ordinance.
   Chosen sketch layer names include `img028`, `color`, `UNI_s_*` — not filtered by name (条例3).
 - Axis inventory (Explore agent, read-only): common trap — MLP / stroke_decomposition / gate2
   squash input to 480×480 ignoring aspect. Draft:
-  `doc/track_d_correlation_register_draft_20261108.md`.
+  `doc/track_d_correlation_register_20261108.md`.
 - **User decisions (11-08):** unit = page AND stroke-segment; page scale = native 480 tiles
   (median per page); `aligned=False` kept as a separate stratum; variables: "できるだけいれたい
   (あとから追加することもあるだろう)", drop overall black/white ("どうせ合わない"), add 線の勾配・
@@ -6265,3 +6265,8 @@ tile = max sketch<200 among tiles with GT<128 in [0.02, 0.15]. Strips (1:1, not 
   Overlay shows sketch-only content (frames, notes, lettering) and GT-only content (panels with no
   sketch, a large triangular solid in 2017 pink14). **Page-level features will mix coverage
   differences with drawing differences** — tile population rule must be registered.
+- **User (11-08) after the crops:** sketch threshold 160 main + 200 beside; tiles = both sides ≥1% ink only,
+  dropped tiles counted by reason. Distance bins 3/8 px reused: Sept main pool clippairs had
+  `src_per_out` 1.000 (native) → same role, same scale.
+- **Registered**: `doc/track_d_correlation_register_20261108.md` (renamed from the draft). No correlation
+  computed before this commit.
