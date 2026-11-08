@@ -6245,3 +6245,23 @@ by the foundation in `2691594`; the only remaining gap was the ordinance.
   no correlations) before any number.
 - **Author (11-08): 「線の勾配」= 線の向き(傾き).** Registered as `dir_*`. The edge-profile
   axis stays as `edge_sharpness_p50`, explicitly not called 勾配.
+
+## 2026-11-08 — smoke: sketch-side ink threshold at native 480 tiles (no correlations computed)
+
+`experiments/smoke_sketch_threshold_20261108.py`, one page per year label (seed 0, 15 pages),
+tile = max sketch<200 among tiles with GT<128 in [0.02, 0.15]. Strips (1:1, not tracked) in
+`results/pair_feature_correlation_20261108/smoke_threshold/`.
+- **First version picked solid-fill tiles** (maximised min(sketch, GT) → GT ink 0.6, width p50 174 px).
+  Fixed selector; the first run's numbers are not used.
+- Pages are ~7016×4961 (600 dpi class). GT line width p50 at native on line-like tiles:
+  1.9–8.2 px (2 tiles with fill reach 11–24). Sketch<200 width p50: 2.7–5.7 px.
+  Sketch ink share of the chosen tiles: <128 0.026–0.18, <160 0.07–0.30, <200 0.13–0.43.
+- **By eye, one threshold does not fit all media**: pencil scan (2017, 2024c) — 128 drops faint
+  lines, 200 fattens and merges, 160 keeps main strokes; crisp digital (2019b) — any works,
+  ≥200 picks up shading tone; thick grainy brush (2015) — ~25 px strokes, tile is frame/notes;
+  blurred grey (2016) — no threshold gives lines (Sept "graphite close-up" type).
+- **Page alignment** (1/8 scale, overlap of sketch<200 on GT<128, shift ±320 px): best at zero shift
+  for 11/15 pages; 2024c (−112 px vertical, 0.236→0.252), 2024b, 2024 (aligned=False), 2019 small gains.
+  Overlay shows sketch-only content (frames, notes, lettering) and GT-only content (panels with no
+  sketch, a large triangular solid in 2017 pink14). **Page-level features will mix coverage
+  differences with drawing differences** — tile population rule must be registered.
