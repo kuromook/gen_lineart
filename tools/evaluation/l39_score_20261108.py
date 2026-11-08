@@ -61,7 +61,7 @@ def shift(m):
 
 
 def load_test(work):
-    return [d for d in (pickle.load(open(p, 'rb')) for p in sorted(glob.glob(f'{CACHE}/*.pkl')))
+    return [d for d in (pickle.load(open(p, 'rb')) for p in sorted(glob.glob(f'{CACHE}/[0-9]*.pkl')))
             if d['work'] == work]
 
 
