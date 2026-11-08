@@ -6199,3 +6199,25 @@ census was meant to measure is that **the pair is loose in both directions**,
 which is consistent with hypothesis 4 standing: a conditioned generative
 objective learns to copy what it is given, and what it is given disagrees
 with the target by this much in both directions.
+
+## 2026-11-08 — reopen for the correlation tally: the ordinance section first
+
+Reopened by the user's decision ("Dだろう"); brief is
+`doc/track_d_reopen_correlation_20261108.md`. The law files (13) were taken
+by the foundation in `2691594`; the only remaining gap was the ordinance.
+
+- Wrote `## 条例` in `doc/initial_notice.md` (type `doc/ordinance_spec.md`):
+  upper law as pointers only, judgement unit = none (tally, not judgement),
+  7 articles — v4 pairs minus the 3 `sketch_misaligned_by_eye`; no "迷い線"
+  naming; `sketch set` may include reference material; permutation null within
+  work × generation; condition image polarity; paired reading of width/fill
+  and near_white; numbers not to quote (withdrawn 2.24/3.60 px; Sept
+  alignment figures belong to the 8,467 training pairs, not v4).
+  The old "運用ルール" section is left as a record, not ordinance.
+- Injected size per `tools/hooks/session_brief.py`: **1,052 chars** (budget 2,000).
+- `tools/catch_up.py` (against foundation's tree, law at `19d0ab2f93`):
+  14/14 "同じ", **"追いついている", exit 0 — 0 mismatches.** Before writing,
+  it was 13 同じ + 1 無い (the ordinance). `tools/check_public_artifacts.py`: exit 0.
+- Own slip, caught by reading the injected text: the first edit dropped the
+  heading `## この track が存在する理由`, so the injector took that section's body
+  as ordinance (1,528 chars). Restored; diff is now additions only.
