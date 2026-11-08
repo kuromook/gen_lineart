@@ -125,6 +125,21 @@ def main():
             path = unquote(urlparse(self.path).path)
             if path in ('/', '/index.html'):
                 return self.send(200, page(), 'text/html; charset=utf-8')
+            if path.startswith('/api/saved/'):
+                # **開き直したときに前の区分けを戻す**(2026-11-08、作者
+                # 「もとに戻っている 保存されていないのでは」—— 保存は効いていたが戻していなかった)
+                fid = path[len('/api/saved/'):]
+                with lock:
+                    hit = [r for r in rows() if r.get('item_id') == fid]
+                last_row = hit[-1] if hit else None
+                return self.send(200, json.dumps(last_row, ensure_ascii=False).encode(),
+                                 'application/json')
+            m = re.fullmatch(r'/label/(f[0-9]{2,4}_[0-9A-Za-z]+\.png)', path)
+            if m:
+                q = labels / m.group(1)
+                if not q.is_file() or q.parent != labels:
+                    return self.send(404, b'not found', 'text/plain')
+                return self.send(200, q.read_bytes(), 'image/png')
             if path == '/api/done':
                 with lock:
                     seen = {}
