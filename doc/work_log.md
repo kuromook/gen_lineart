@@ -7170,3 +7170,26 @@ Borderline items have to be **found, not made**:
 
 Route 2 is the one that matches the author's words, and it is the first time this
 tree has had a reason to want a manuscript column.
+
+### Same day: the artifact is gone, and the request went to census
+
+The interview artifact (https://claude.ai/artifact/GeAEsZSQxDwWsiGtroxV6m) was
+**deleted on 2026-11-08** at the user's instruction. Before deleting, the artifact's
+111 rows were compared **field by field** against the copy in `data/` — read twice,
+hours apart, both identical to the local file — and `verify_answers.py` printed the
+row-count match. The artifact no longer appears in the gallery listing. Created
+2026-11-07, deleted 2026-11-08, per guideline §7-2.
+
+An earlier delete call was cancelled when the user interrupted the turn to type; the
+interrupt cancels the pending call and its approval prompt. Not a stuck job.
+
+The request to `census` went out the same day (user-approved):
+`outbox/note_census_request_drawing_stages_20261108.md`, copied to
+`../lineart-census/inbox/` and to the foundation. It asks for **three numbers, not a
+column** — how many pages keep two or more stages as separate layers, whether each
+stage's pixels are retrievable (their own T128/T129 traps make `drawn_ratio = 0`
+unreadable as "empty", and delivered PNGs are pre-mask), and the population with
+drops by reason. The note says explicitly not to substitute a nearby column, since
+census's own log records that **`v_layer_kind` has no line-art subtype and line
+layers sit mixed into `raster`** — and that "we cannot do this" is a usable answer
+here, because it switches this tree to asking the author instead.
