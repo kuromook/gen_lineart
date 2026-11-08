@@ -523,6 +523,18 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**次に聞き取りの画面を作るときから使う。** いま作る画面は無い。返事は要らない",
     ),
     dict(
+        path="inbox/note_census_request_drawing_stages_20261108.md",
+        what="**Track E の発注: 工程の段(あたり / 下絵 / 清書)で同定した層**(先に、やるかを決める数3つ)",
+        why_not_yet="**答えた: いまは「できない」。** 段を再現する列も作者の裁定も無い(作業用フォルダーで代えた前例は的中 2/129)。"
+                    "名前の側の大きさだけ出した(線画系と下絵系の両方が在る頁 `.clip` 2,102 / `.lip` 730、的中率は測れない)。"
+                    "**`.clip` の画素の3分けは段の同定が来てから。** 提案: 作者に段を付けてもらう標本(E とユーザーが決める)",
+    ),
+    dict(
+        path="inbox/deliver_occlusion_edge_20261109.md",
+        what="**抽出側 → 基盤の納品の写し**(遮蔽物の輪郭からの深さ、13,809層・2,000頁。IC1 全層一致)",
+        why_not_yet="**宛先は基盤、採点も基盤。** census の作業は無い。本文の sha256 は一覧と一致(CSV は取っていない)",
+    ),
+    dict(
         path="inbox/note_p_order_layer_rows_300_20261107.md",
         what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
         why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"
