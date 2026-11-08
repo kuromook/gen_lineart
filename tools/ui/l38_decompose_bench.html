@@ -13,6 +13,12 @@
   #stage { flex:1; position:relative; overflow:hidden; touch-action:none; background:#0d0e10; }
   #stage canvas { position:absolute; left:0; top:0; transform-origin:0 0;
                   image-rendering:pixelated; }
+  /* **面はほぼ純黒(99%)。半透明で重ねると色が出ない** —— screen で重ねると
+     黒の上に色がそのまま乗る(2026-11-08、作者「別れた面に色が出ていない」) */
+  #ov { mix-blend-mode:screen; }
+  #hint { padding:6px 8px; border-radius:8px; font-size:15px; font-weight:700; }
+  #hint.many { background:#123d24; color:#8bd450; }
+  #hint.one  { background:#3d2f12; color:#ffd166; }
   #stage.pan  { cursor:grab; }
   #stage.cut  { cursor:crosshair; }
   #stage.paint{ cursor:crosshair; }
@@ -57,6 +63,7 @@
 
 <div id="side">
   <div class="muted" id="hint">「切る」で繋がってしまった所に線を引くと、面が分かれます。分かれた所に名前を付けてください。</div>
+  <div id="act" class="muted" style="margin:5px 0"></div>
   <div id="parts"></div>
   <div class="chips" id="chips"></div>
   <div id="note"><input id="comment" type="text" placeholder="気づいたこと(任意)"></div>
@@ -70,8 +77,8 @@
 
 <script>
 const UNITS = /*__UNITS__*/null;
-const COL = ['#ff8a2b','#45b6ff','#8bd450','#ff5d8f','#c792ea','#ffd166','#2ec4b6','#f4978e',
-             '#9bb1ff','#d4a373','#7ad7f0','#ff9f1c'];
+const COL = ['#ffa94d','#4dc4ff','#a0e85b','#ff6fa5','#d7a9ff','#ffe066','#4ee0c8','#ffb3a7',
+             '#b0c4ff','#e8c07d','#8ee9ff','#ffd43b'];
 const CHIPS = ['線画に流れ込んだ分','コマ枠線','影','髪','衣類','書き文字','黒消し','矩形','リボンの線','背景のベタ'];
 const stage = document.getElementById('stage'), cv = document.getElementById('cv'),
       ov = document.getElementById('ov'), mk = document.getElementById('mk'),
@@ -85,8 +92,10 @@ const HOW = {
   pan:  '**移動**: 指やマウスで絵を動かします。2本指でつまむと拡大。',
   cut:  '**切る**: 繋がってしまった所を**なぞると、そこが赤くなって面が切れます**。' +
         '切り終えると面が色分けされます。細い所は拡大してからなぞってください。',
-  paint:'**ぬる**: いま選んでいる部品(●)の色で**なぞった所をその部品に移します**。' +
-        '離れた2か所を同じ部品にまとめられます。',
+  paint:'**ぬる**: なぞった所を**いま●が付いている部品に移します**(色が変わります)。' +
+        '使い道は2つ —— ①切ると細かく割れすぎたとき、**同じものを1つの部品にまとめる**。' +
+        '②離れた2か所(左右の目、2か所の影)を**同じ名前の1つの部品にする**。' +
+        '切るのと違い、**面は減りません**。',
 };
 let i = 0, img = null, W = 0, H = 0;
 let face = null, lab = null, pin = null, cut = null;
@@ -176,11 +185,11 @@ function paintParts() {
       const p = (by+yy)*W + (bx+xx), id = lab[p];
       if (!id) {
         // **切り離した画素は赤。面の外は何も描かない**
-        if (face[p]) { const r = cut[p] ? [255,43,77,170] : [120,120,130,150];
-                       px[q]=r[0]; px[q+1]=r[1]; px[q+2]=r[2]; px[q+3]=r[3]; }
+        if (face[p]) { const r = cut[p] ? [255,60,90] : [150,150,160];
+                       px[q]=r[0]; px[q+1]=r[1]; px[q+2]=r[2]; px[q+3]=255; }
         continue;
       }
-      const c = rgb[id]; px[q]=c[0]; px[q+1]=c[1]; px[q+2]=c[2]; px[q+3]=120;
+      const c = rgb[id]; px[q]=c[0]; px[q+1]=c[1]; px[q+2]=c[2]; px[q+3]=255;
     }
   }
   ox.clearRect(0, 0, W, H); ox.putImageData(d, bx, by);
@@ -206,9 +215,21 @@ function paintParts() {
     b.onclick = () => { names.set(active, {name: c, src: 'chip'}); paintParts(); };
     ch.append(b);
   }
-  $('hint').textContent = ids.length > 1
-    ? `${ids.length} つに分かれています。それぞれに名前を付けて保存してください。`
-    : '「切る」で繋がってしまった所に線を引くと、面が分かれます。1つのままなら「このままで1つ」。';
+  const h = $('hint');
+  h.className = ids.length > 1 ? 'many' : 'one';
+  h.textContent = ids.length > 1
+    ? `◆ いま ${ids.length} つに分かれています。それぞれに名前を付けて「保存して次へ」。`
+    : (cutPaths.length
+       ? '● まだ 1 つのままです —— 繋ぎ目を**跨いで**切れていません。'
+         .replace(/\*\*/g, '') + '赤い線の両端が面から出るまで引いてください。'
+       : '● いまは 1 つの面です。「切る」で繋ぎ目をなぞると分かれます。'
+         + '分ける所が無ければ「このままで1つ」。');
+  const an = (names.get(active) || {}).name;
+  $('act').innerHTML = ids.length
+    ? `「ぬる」でなぞった所を移す先: <span class="sw" style="display:inline-block;`
+      + `vertical-align:-4px;background:${colOf[active] || '#888'}"></span> `
+      + `${an ? '「' + an + '」' : '名前のない部品'}(部品の ○ を押すと移す先が変わります)`
+    : '';
   apply();
 }
 function apply() {
