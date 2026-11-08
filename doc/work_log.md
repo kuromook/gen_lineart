@@ -6243,3 +6243,5 @@ by the foundation in `2691594`; the only remaining gap was the ordinance.
 - Open: what "線の勾配" means (edge-profile slope vs line direction) — both registered under
   separate names until the author says. Sketch-side ink threshold to be fixed by smoke (masks only,
   no correlations) before any number.
+- **Author (11-08): 「線の勾配」= 線の向き(傾き).** Registered as `dir_*`. The edge-profile
+  axis stays as `edge_sharpness_p50`, explicitly not called 勾配.
