@@ -128,6 +128,8 @@ def main():
     axes = [k for k in tiles[0] if k not in ("key", "tile", "side", "stroke_status")]
     st = Counter((t["side"], t["stroke_status"]) for t in tiles)
     print("stroke axes status by side (non-ok tiles keep pixel axes, stroke axes NaN):", dict(st))
+    ai = Counter(t["side"] for t in tiles if fnum(t["ink_ratio"]) >= 1.0)
+    print("all-ink tiles by side (MLP skeleton axes and line_width_p50 NaN; fix of 2026-11-09):", dict(ai))
     # page medians
     agg = defaultdict(lambda: defaultdict(list))
     for t in tiles:

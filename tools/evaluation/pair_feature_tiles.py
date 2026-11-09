@@ -195,12 +195,20 @@ def pixel_axes(gray, thr):
     out["faint_near_ink_ratio"], out["faint_mean_dist_to_ink"] = faint_locality(gray, thr)
     out.update(grid_heterogeneity(ink))
     out.update(edge_dirs(gray))
+    out["fill_ratio"] = fill_ratio(ink)
+    if ink.all():
+        # MLP skeletonize() erodes with cv2's default border (= ink), so an all-ink tile never
+        # shrinks and the loop never ends (run 1 hung on 7 pages, 2026-11-09). Only this case is
+        # changed, so tiles measured before the fix keep their values; the count is printed.
+        out.update({"px_status": "all_ink", "long_component_ratio": np.nan,
+                    "components_per_1k_ink_px": np.nan, "line_width_p50": np.nan})
+        return out
     skel = mlp_skeletonize(ink)
     comp = component_stats(skel)
     w50, _w95 = line_width_stats(ink)
-    out.update({"long_component_ratio": comp["long_component_ratio"],
+    out.update({"px_status": "ok", "long_component_ratio": comp["long_component_ratio"],
                 "components_per_1k_ink_px": comp["component_count"] / max(n, 1) * 1000.0,
-                "line_width_p50": w50, "fill_ratio": fill_ratio(ink)})
+                "line_width_p50": w50})
     return out
 
 

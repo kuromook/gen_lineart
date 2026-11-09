@@ -6285,3 +6285,15 @@ tile = max sketch<200 among tiles with GT<128 in [0.02, 0.15]. Strips (1:1, not 
   (within-work rank removes work differences as registered); CCA cc1 0.756 vs null 97.5% 0.384.
 - Full run launched 21:00, detached (`setsid nohup`, parent PPID 1), 7 workers, 1,349 pages, estimate ~12–13 h.
   Log `results/pair_feature_correlation_20261108/measure/run.log`; resumable from `pages.csv`.
+
+## 2026-11-09 本番の測定が7頁で止まっていた → 器具を直して再開
+
+- **事実**: 21:00開始の走行は 231/1349 頁で止まっていた(出力の最終更新 04:48、以後11時間、7ワーカーとも CPU 100% で出力無し)。
+  前回「12〜13時間」と見積もったのは smoke 2頁の速さを当てはめた誤り。正常な頁は p50 520s / 最大 1,167s。
+- **原因**: 線画のタイルが**全面墨**(ink=1.000、ベタの中)のとき、MLP の `skeletonize()`(`evaluate_stroke_stability.py:92`)が終わらない。
+  cv2 の erode は既定で外側を墨として扱うので、全面墨は1画素も減らない。条例5の「退化画像でハング」と同型。
+  詰まった頁を1枚だけ回し、faulthandler のスタックで特定した(17番目の頁、タイル 3840_1440)。
+- **修正**: `pixel_axes` で全面墨のときだけ骨格依存の軸(`long_component_ratio` `components_per_1k_ink_px` `line_width_p50`)を NaN にする。
+  それ以外のタイルの値は変わらないので、測定済みの231頁はそのまま使う。器具の破損で点数と独立 = 棒は動かない。
+  全面墨のタイルの数は集計側で `ink_ratio>=1` から辺ごとに印字する(`tiles.csv` の見出しは固定済みで新しい列は載らない)。
+- 止めた走行のログは `measure/run_1_hung.log`。ユーザー「時間かかってもいいのでゆっくり回すで再開を」。
