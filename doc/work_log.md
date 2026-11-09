@@ -7428,3 +7428,65 @@ Sections of the handoff that are byte-identical to before the rewrite: `## 条�
 `## 錨`, `## 範囲外`, `## 素材の所在`, `## 閉じた道`, `## 返し方` (checked against `HEAD`). The
 instrument table gained the predictor's registration — an instrument missing from that table is the
 same as an instrument nobody has.
+
+## 2026-11-10 (未明) Nothing to run, so the sampling was designed — and designing it moved a bar into view
+
+The column table has not arrived. The order went to `census` at 2026-11-09 23:27
+(`outbox/note_census_role_predictor_column_order_20261109.md`, delivered), and the pixel counts it
+waits on are still running on the extraction side — **one stream from the evening of 11-09, estimate
+4–5 hours** (`inbox/reply_census_stage_layer_pixels_started_20261109.md`). `census`'s outbox has
+nothing newer than 23:01. **So nothing was run.** The registry's `blocked_on` said the hand-off was
+未発注; it was stale and is now corrected.
+
+**The majority null value, as far as it is computable before the run.** The author's answers split
+**清書 135 / 下絵 15 / あたり 4 / remainder 111** over 265 layers. The count of 分からない (call it
+u) is not in the reply, so the exact figure is not available — but **the majority class is 清書
+whatever u is**, because 135 > 111 ≥ (段ではない). Accuracy is **135/(265−u)**, i.e. **0.509 (u=0) to
+0.877 (u=111)**. Registered as a range with u left open, to be filled when the table lands. This is
+the figure **for the 265 layers**, which is not the population the bar will finally be read on — see
+below.
+
+**Designing the next hearing round turned up something about the existing lower bar.** The 12 pages
+already answered were **drawn by census's naming rule** (one page per work folder, seed 0); the 2,191
+pages where neither family of names appears were **never exposed**. So **0.957 / 0.588 / 0 is the
+naming rule's accuracy on the population the naming rule selected**, not on the manuscript. Adding
+name-less layers raises the naming rule's miss rate by construction, so a predictor that beat it
+*there* would have beaten a bar we had moved ourselves — the shape of T112 (widened the population
+and stepped on it). Written before any run (規律9-5).
+
+**The design, registered as `role_predictor.next_hearing_design`:** three bins, and **only one of
+them reads the bar.** 便A **無作為** — work folders drawn at random, one page each, **2,191
+name-less pages included**, every non-folder raster/vector layer of the page regardless of name,
+12 pages + 2 repeats; the null values, the per-stage hit/miss and **a re-computation of the naming
+rule's own bar** are read here and nowhere else. 便B **薄い段を埋める** — enrichment for あたり (4
+labels) and 下絵 (15), selected by *hypotheses* (name variants, **drawing colour other than black**,
+hidden, low opacity, stacking order below the 清書, faint ink, other pages of the one work folder
+where all three stages survived), 8–10 pages, **training only**. 便C **迷う層** — uncertainty
+sampling once a predictor exists, **training only**. Order: 便B → first predictor → **便A (required,
+not droppable)** → 便C; 便B first because **4 あたり labels will not train anything**, and 便A kept
+because enrichment alone can never support a claim about the manuscript.
+
+Three constraints that came out of writing it down. (1) **The hold-out work folders must be drawn
+before 便B is selected**, or the folders added by enrichment leak into the test side; the 12
+already-labelled folders go on the training side so all 265 layers stay usable. (2) **The repeats
+ride in 便A** (条例1: do not collect without repeats — layer-unit intra-rater consistency is still
+unmeasured and is the predictor's ceiling), but the interval is a day, so the reading is **one-sided
+only: a high agreement is explained by memory and says nothing, a low one is real**. Until a figure
+exists, **no "good" line is drawn on the predictor's hit rate** — you cannot draw a line under an
+unknown ceiling. (3) **The pixel counts do not cover a page's layers.** The 53,243 rows are
+`why_listed` = name-hit or heard, over 2,108 pages, and the 2,191 name-less pages are not among them
+— so most of 便A's layers would come back with empty pixel columns, and **dropping those rows would
+restore the naming bias inside the hold-out** (規律9: selection is measurement). The fix is cheap:
+ask for the pixels of **every** non-folder raster/vector layer of 便A's pages at the same time,
+≈300 layers. The current 265 are already in the count (`why_listed=聞き取り`), so the **first**
+predictor will have its pixel columns.
+
+Also registered: what gets excluded and counted — empty layers (and **the naming bar re-computed
+with them out, both sides printed**, since tightening the floor is not independent), 分からない,
+`.lip` (no pixels anywhere; out of the first predictor, a name-and-structure-only arm undecided), and
+layer kinds outside 非フォルダーの通常・ベクター (the 206 not shown last time: 塗りつぶし 144 /
+素材 21 / テキスト 12 / 用紙 12 / 作品情報 8 / グラデ 6 / その他 3) — the predictor's population is
+held to the same range as the hearing.
+
+**No order was sent.** A hearing round spends the author's time, and the last one moved only on the
+user's explicit go-ahead; the draft is held in `outbox/` undelivered until the user says so.
