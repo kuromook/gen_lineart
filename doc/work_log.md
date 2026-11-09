@@ -7490,3 +7490,23 @@ held to the same range as the hearing.
 
 **No order was sent.** A hearing round spends the author's time, and the last one moved only on the
 user's explicit go-ahead; the draft is held in `outbox/` undelivered until the user says so.
+
+## 2026-11-10 The hearing round was ordered — 便B first, design unchanged
+
+The user approved it in one word (逐語「**発注しよう**」), so the draft left `outbox/` as
+`note_census_hearing_round2_design_20261110.md` and went to `../lineart-census/inbox/` with a copy to
+`../lineart/inbox/`. **Arrival checked by md5** — all three copies `118c7ec6…`. **便B first**, per the
+order registered the night before.
+
+**The design went out as registered, not as revised after approval.** One line was added, and it is
+about the author's time rather than the measurement: if 14 pages / 8–10 pages is too heavy, census
+should say so **before the table reaches the author** — shrinking it afterwards moves the population
+(規律9-5). Nothing else changed: the three bins, 便A as the only bin that reads the bar, the hold-out
+folders drawn before 便B, the repeats riding in 便A with the one-sided reading, the request for the
+pixels of *every* non-folder raster/vector layer of 便A's pages, and the exclusion counts all stand as
+written before any run.
+
+Still waiting on two things from census, and **nothing can be run until the first arrives**: the
+1-layer-1-row column table (ordered 11-09 23:27, itself waiting on the pixel counts streaming on the
+extraction side), and the 便B hearing table. The majority null stays registered as a range —
+**135/(265−u) = 0.509..0.877, majority 清書 whatever u is** — until the table fills in u.
