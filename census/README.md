@@ -167,6 +167,7 @@
 ./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列 + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)
 ./venv/bin/python tools/census/stage_layers_order.py     # 工程の段の候補の層の一覧(抽出側への画素の数え上げの発注。非公開)
+./venv/bin/python tools/census/stage_hearing_answers.py  # 工程の段の聞き取りの答えで名前の当て方の的中と取りこぼしを出す(非公開)
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)
