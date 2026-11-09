@@ -7223,3 +7223,52 @@ records through the re-taken parts prints the same **111/111 answered, 0 re-answ
 The silent acceptance of a bad `initial_view` is `names_are_not_checks` again: a
 misspelled view name would have fallen back to fit-to-window, which is exactly the
 defect that shrank the measured axis on 11-07 — and nothing would have said so.
+
+### 2026-11-09 (evening) Notices: census answered — **the stages are not a column, and the author is being asked**
+
+Two replies came in while this tree was idle:
+`inbox/reply_e_census_drawing_stages_20261109.md` (07:53) and
+`…_hearing_20261109.md` (08:44). Both answer the 11-08 request, and the answer is
+the honest one: **"cannot be done yet"**, with the name-side sizes given separately
+and labelled as not the author's classification.
+
+What it says, and what it costs this tree:
+
+- **No column reproduces the author's stages** (あたり / 下絵 / 清書), and no ruling
+  of the author's names them — census checked its own log and the foundation's.
+- **The precedent for substituting a nearby column failed**: on 2026-11-03 the rule
+  "a layer inside a working (sketch-set) folder is not a finished line" was wrong on
+  **127 of 129** pages — the author called those finished lines. **Hit rate 2/129.**
+  This is 規律13 with a number attached, and it is why census refused to hand over a
+  proxy column.
+- Name-side sizes (**not** usable as the production column — there is nothing to
+  score them against, because no layer carries an author-assigned stage): pages
+  holding **both** a line-family and a rough-family name are `.clip` **2,102** /
+  `.lip` **730**. But **`.lip` has no pixels on any page**, so those 730 are all
+  "not retrievable" and only the `.clip` side can ever yield material.
+- **「あたり」 does not exist as a layer name** once text layers are removed (7 hits,
+  all dialogue or memo text). **Three stages cannot be assembled by name.** Whether
+  `ラフ` and `下絵` are different stages or two names for one, census declines to
+  decide (its own ordinance 9).
+- The `.clip` "pixels present / present but pre-mask / not retrievable" split is
+  **not counted yet** — deliberately, because counting it before the stages are
+  identified would only multiply the name-side numbers.
+
+**The user approved census's proposal the same day** (「作ってもらおう」): census built
+a hearing table and gave it to the author —`.clip` 12 pages (both 6 / rough-only 3 /
+line-only 3, one page per work folder, seed 0), **265 layers**, names and order and
+visibility only, **no pixels on screen**, and the name-side rule was not shown to the
+author. Per layer: あたり / 下絵 / 清書 / 段の線ではない / 分からない; per page: are
+differing stages kept as separate layers. Census wrote **which numbers it will
+compute before building the table** (hit and miss for 清書 and 下絵 separately, pages
+keeping ≥2 stages, 「分からない」 excluded with the excluded count printed). **Answers
+are pending with the author.**
+
+Nothing to run here. The one thing that comes back to this tree: census's §3 says
+that **if the author cannot decide from names alone, the native-crop screen is this
+tree's side** — and that screen would go through `tools/judge_protocol.py` like any
+other collection. The handoff now carries this as next step **0-3**, and the closed
+manufacture route as **0-1** plus a line in 閉じた道.
+
+`doc/initial_notice.md` is now **208 lines** and holds history that belongs in this
+log; it wants compressing before it grows again.
