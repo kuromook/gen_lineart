@@ -36,9 +36,9 @@ def near(r, pre, T, denom):
     return sum(int(r[f"{pre}{b}"]) for b in BINS if b in UPPER and UPPER[b] <= T) / d
 
 
-def main():
+def load_population():
+    """登録の母集団と、改訂1 で外す層の鍵を返す(印字はしない)。"""
     info = load_structure()
-    rep, year, colour = load_side()
     v4 = {}
     for f in FILES["v4"]:
         with open(f, newline="", encoding="utf-8") as fh:
@@ -80,6 +80,12 @@ def main():
                 continue
             r["_ic1"] = int(r["n_cov"]) == int(vs[1])
             rows.append(r)
+    return rows, excl, drop, vis_mismatch
+
+
+def main():
+    rep, year, colour = load_side()
+    rows, excl, drop, vis_mismatch = load_population()
 
     P("# 遮蔽の深さの採点(登録 `prereg_occlusion_edge_20261107.md` 改訂1・2)\n")
     P("## 母集団(落とした数を理由別に。規律9)")
