@@ -523,6 +523,13 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**次に聞き取りの画面を作るときから使う。** いま作る画面は無い。返事は要らない",
     ),
     dict(
+        path="inbox/deliver_p_order300_part1_20261109.md",
+        what="**抽出側 → census・Track P の納品: 300頁の層の画素とマスク**(part1 = 8便 240頁、part2 `deliver_p_order300_part2_20261109.md` = 残り2便。着手の返信 `reply_p_order300_started_20261109.md`)",
+        why_not_yet="**ラスタは census が読まない**(条例10)。抽出側の照合: 層は census の行と、材料は名簿と300頁とも一致、"
+                    "書けなかったマスク3枚は census の面の表の `mask_unread` 3層と同じ層。"
+                    "**未統合**: 300頁の層の行の画素の列(manifest の値)をまだ埋めていない",
+    ),
+    dict(
         path="inbox/note_census_request_drawing_stages_20261108.md",
         what="**Track E の発注: 工程の段(あたり / 下絵 / 清書)で同定した層**(先に、やるかを決める数3つ)",
         why_not_yet="**答えた: いまは「できない」。** 段を再現する列も作者の裁定も無い(作業用フォルダーで代えた前例は的中 2/129)。"
