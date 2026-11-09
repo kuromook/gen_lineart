@@ -7272,3 +7272,59 @@ manufacture route as **0-1** plus a line in 閉じた道.
 
 `doc/initial_notice.md` is now **208 lines** and holds history that belongs in this
 log; it wants compressing before it grows again.
+
+### 2026-11-09 (night) The author answered the stage hearing — and the handoff was compressed
+
+**The author answered the same day** (the user said so in this session: 「さっきこの聞き取り
+をした」). Census scored it and the reply is `inbox/reply_e_census_drawing_stages_answers_20261109.md`
+(22:38; instrument `tools/census/stage_hearing_answers.py`, which **declared the numbers at its
+head before the answers were looked at**). 12 pages, 265 layers:
+
+| | all 265 | minus hand-lettering / balloon names (238) |
+|---|---|---|
+| 清書 hit (name-rule right) | 112/117 = **0.957** | same |
+| 清書 miss (author's 清書 the names don't pick up) | 23/135 = **0.170** | 14/126 = 0.111 |
+| 下絵 hit | 10/17 = **0.588** | 8/13 = 0.615 |
+| 下絵 miss | 5/15 = **0.333** | 5/13 = 0.385 |
+| **あたり** | **0 layers hit by name / 4 in the author's answers** | same |
+
+Both columns are printed because the author added a caveat — 「描き文字関係は属性入力でぶれて
+しまったかもしれない」 — and census did not rewrite the answers. **Per page, stages kept as
+separate layers: 2 stages 8 pages / 3 stages 1 page / 0 stages 3 pages.** Layers whose rough-family
+name the author marked "not a stage" are mostly **empty layers** (the author's own comment).
+
+**What this settles for route 0-3**: the name rule is usable for **清書 only**. 下絵 at 0.588 hit
+and あたり at **zero** cannot identify an arm — 規律13 with the numbers printed rather than
+assumed. The material side is moving: the extraction tool is counting pixels for the **53,243
+candidate stage layers** (`reply_census_stage_layer_pixels_started_20261109.md`, one stream from
+the evening of 11-09, 4–5 h estimated, smoke test on 9 pages / 384 layers passed every check,
+including `n_px_a_gt0` matching the PNG alpha on all 349 layers that overlap the earlier delivery).
+**`.lip` has no pixels on any page**, so only `.clip` can ever yield material.
+
+**A reading to carry, stated as a hypothesis**: the stages the hearing found do not obviously
+contain the item this tree needs. 下絵 is the leg that already sits at 0/15 and 清書 the leg at
+15/15; **あたり is coarser than 下絵**, so real あたり tiles would most likely extend the ladder
+*downward*, not into the interior. If the author's process has no named stage between 下絵 and
+清書, the borderline lives in **partial states of 清書** (clean-up in progress), not in a stage
+name — and that is a thing to ask, not to assume.
+
+Two more things arrived in the same batch. The author's policy, verbatim: 「聞き取りだけで全部
+やるようなのは無理がある　回帰や機械学習等で統計量から予想できるようになるべきではある（レイヤ
+名は必ずしも正しくないが）　現時点では正解ラベルは十分ではないから聞き取りはしっかりやる」 —
+so these 265 layers are **the first batch of true labels**, not a finished column. And on the
+user's instruction census **filed a charter request with the foundation** for a track that predicts
+a layer's real role from statistics, names and hearings
+(`inbox/note_foundation_propose_layer_role_track_20261109.md`, copy here). **Chartering is the
+foundation's role**; this tree is one consumer of that column, and its bar there would be the
+two-bar form: lower bar = the name rule's numbers above, real bar = the author.
+
+**The handoff was compressed** (user's instruction 「圧縮して」): **208 → 193 lines**, and the new
+census facts went in during the same pass — the raw addition had been +20 lines over the 188-line
+baseline, the net is +5. What was cut is chronicle that this log already holds (the four dated
+11-07 paragraphs). What was kept, because it exists nowhere else: the 条例1 misreading with its
+numbers, f(image, context) and the 15/15 overlap in anchor-20261004, the reopening's reason, and
+the gate's two remaining failures on the current anchor. **`## 条例`, `## 器具の罠`, the instrument
+table, `## 錨`, `## 範囲外`, `## 閉じた道` and `## 返し方` are byte-identical to before the
+compression** (checked by comparing each section against `HEAD`), so no imperative was dropped and
+the ordinance is untouched. The compression also surfaced a duplicate: the "two items fail the
+gate" block had been pasted twice; one copy removed.
