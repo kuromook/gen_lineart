@@ -7328,3 +7328,56 @@ table, `## 錨`, `## 範囲外`, `## 閉じた道` and `## 返し方` are byte-i
 compression** (checked by comparing each section against `HEAD`), so no imperative was dropped and
 the ordinance is untouched. The compression also surfaced a duplicate: the "two items fail the
 gate" block had been pasted twice; one copy removed.
+
+### 2026-11-09 (night 2) The user gave this tree a new job: predict a layer's real role
+
+**The user's decision, verbatim**: 「この聞き取りは新たな扉、聞き取り結果とレイヤ名、レイヤのもつ
+統計量から回帰・機械学習をもって真のレイヤの役割を予想できるようにするというアイデアを生んだ
+これは別トラックEの役目と考えている」 — and, asked which of the two readings was meant,
+**「E が持つ(この木でやる)」**. So this tree builds the predictor; a separate track is not stood up.
+
+**Registered before anything runs** — registry section `role_predictor`, printed in full by
+`judge_anchor.py status`:
+
+- **Two bars.** Lower bar = **the name rule**, with census's measured numbers (清書 hit 0.957 /
+  miss 0.170, 下絵 0.588 / 0.333, **あたり hit by zero layers** against 4 in the author's answers,
+  over 12 pages / 265 layers — **not a share of the whole**). Real bar = **the author**.
+  **The predicted column is used only after beating the name rule** (規律13).
+- **Two null values printed, not one**: the majority stage (not yet computed — it is printed before
+  the run) and the name rule. **Win or lose is read on a hold-out split by work folder** (the same
+  idea as Track P's `split_unit`); hit rates on layers used for training are an upper bound.
+- **Refutation condition**: if more labels still do not beat the name rule, this direction closes
+  and the work goes back to hearings.
+- Drops counted by reason (規律9), 「分からない」 excluded with the excluded count printed, and the
+  author's hand-lettering caveat kept as **two columns rather than folded into one**.
+
+**The boundary this moves, written before the run** (規律9-5, so it is not a bar moved after seeing
+results): the basic law's 「track は原稿の情報の列を自分で作らない」 and this tree's identical line
+in `範囲外`. **Only "who builds the predictor" moved. The columns' origin did not** — labels, names,
+structure and pixel statistics all come from `census`, this tree builds the predictor and prints its
+hit and miss, and **a predicted column that other tracks would use goes back to census**
+(basic law §4, 「結果は `census` に返させる」). This tree does not become a distributor of
+manuscript columns, and `closed_directions[0].what_survives` stands as written.
+
+Two notes went out (`outbox/`, delivered to `../lineart/inbox/` and `../lineart-census/inbox/`):
+the **direction change to the foundation** (census filed a charter request at 23:01 on the user's
+instruction; the user then put the work here, so the foundation should record *not* standing up a
+track), and the **column order to census** — one row per layer, labels in both hand-lettering
+variants, **the name rule's own verdict as a column** (it is the lower bar, so it has to travel with
+the data), structure and pixel statistics, the **work-folder split key**, population and drops by
+reason, and the layers to be predicted as well as the 265 labelled ones. Also recorded there: **this
+tree chooses which layers to ask next, census builds the hearing table**, and if the author needs to
+see pixels, **the screen is this tree's side and goes through the gate**.
+
+**The guard found a real omission the moment it was added.** `judge_anchor.py status` now prints the
+new section by walking its contents (so adding a field cannot leave it unread), and then **names
+every top-level registry section it does not print**. It immediately reported `revised` — the
+registry's own revision history, **printed nowhere since it was created**. It has a printer now, and
+today's line is in it. This is `names_are_not_checks` in its purest form: three revision entries
+existed, were correct, and were invisible.
+
+Status: **registration only, nothing run.** Blocked on the pixel statistics (53,243 candidate layers
+being counted on the extraction side) and the column handover. First real task once labels arrive:
+**which layers to ask next** — 265 is not enough to train on, and the author said so himself.
+Open question for the user: whether this new job needs a clause in the 条例 (it is at 1,998 of
+2,000 characters, so a clause means dropping the same length first).

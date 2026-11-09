@@ -256,7 +256,59 @@ def cmd_status(reg):
             unprinted = sorted(set(c) - known)
             if unprinted:
                 print(f"     **印字していない欄**: {unprinted} —— judge_anchor.py の labels/lists に名前を足すこと")
+
+    # **走行前の登録は、走る前に読めないと意味がない。** 欄を足すたびに印字器を直す形は
+    # 落ちる(names_are_not_checks)ので、ここは**中身を辿って全部出す** —— 黙っている欄を作らない
+    rp = reg.get("role_predictor")
+    if rp:
+        print()
+        print("══ 層の役割の予測器(**走行前の登録**。走らせる前に読む)")
+        walk(rp, 3)
+
+    # **改版の履歴は印字する。** 登録簿に在るのに誰も読まない節は、無いのと同じ
+    # (2026-11-09 に下の点検器が見つけた)
+    rv = reg.get("revised") or []
+    if rv:
+        print()
+        print("══ この登録簿の改版(**過去の行は消さない**)")
+        for r in rv:
+            print(f"   {r}")
+
+    # **登録簿に足した節が、どの印字器にも乗らないまま在ることを許さない**(条例9 /
+    # names_are_not_checks)。印字しない節は**名前とどこで読むかを言う**
+    printed = {"period_rule", "anchors", "external_human_judgements", "material_screenings",
+               "axis_as_proxy", "consistency_definition", "closed_directions",
+               "planned_collections", "role_predictor", "revised"}
+    elsewhere = {"disagreement_rule": "`reread <旧> <新>`", "claims": "`reread <旧> <新>`",
+                 "schema": "(型の札)", "track": "(木の名)", "written_on": "(書いた日)",
+                 "why": "(この登録簿がある理由)", "reading_tool": "(読み出し器の名)"}
+    rest = sorted(set(reg) - printed)
+    if rest:
+        print()
+        print("══ この印字器が出していない節")
+        for k in rest:
+            print(f"   {k}: {elsewhere.get(k, '**どこでも印字していない** —— 印字器を足すか、節を消すこと')}")
     return bad
+
+
+def walk(x, indent):
+    """登録の中身を辿って全部印字する(**印字されない欄を作らない**)。"""
+    pad = " " * indent
+    if isinstance(x, dict):
+        for k, v in x.items():
+            if isinstance(v, (dict, list)):
+                print(f"{pad}{k}:")
+                walk(v, indent + 2)
+            else:
+                print(f"{pad}{k}: {v}")
+    elif isinstance(x, list):
+        for v in x:
+            if isinstance(v, (dict, list)):
+                walk(v, indent + 2)
+            else:
+                print(f"{pad}- {v}")
+    else:
+        print(f"{pad}{x}")
 
 
 def frac(got, arm):
