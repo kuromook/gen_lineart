@@ -7381,3 +7381,50 @@ being counted on the extraction side) and the column handover. First real task o
 **which layers to ask next** — 265 is not enough to train on, and the author said so himself.
 Open question for the user: whether this new job needs a clause in the 条例 (it is at 1,998 of
 2,000 characters, so a clause means dropping the same length first).
+
+### 2026-11-09 (night 3) The subject changed: the predictor is the work, consistency is parked
+
+**The user's decision, verbatim**: 「絵1枚の判定の本人内一貫性と文脈　これはもういらないと感じて
+いる　今とりくむに優先度がひくい」 and 「initial notice を真のレイヤの目的を回帰・機械学習等の
+統計学を用いて統計量・聞き取り・レイヤ名から予測することを取り組むようかきなおす」. So the layer-role
+predictor went from **instrument to subject** in the space of one message, and the handoff was
+rewritten around it.
+
+`doc/initial_notice.md` now opens on **`## いま取り組むこと`** — predict a layer's real role (first
+the drawing stage) from statistics, the hearing and layer names, with the registration's essentials
+inline: the two bars (lower = the name rule at 清書 0.957/0.170, 下絵 0.588/0.333, あたり **0**;
+real = the author), two null values printed rather than one, the work-folder split, the 265 labels,
+the printing duties (drops by reason, 「分からない」 excluded and counted, the author's
+hand-lettering caveat kept as two columns), the refutation condition, the boundary with census, and
+the **unit warning** — the predictor judges layers, the judgement side judges one 480px tile, so its
+hit rate is never the judgement bar.
+
+**What was parked, and at what cost.** The consistency-and-context work (old next step 0-2) is
+**not retracted**: `consistency_definition` keeps its three quantities, undecided; the intra-rater
+registration stays on file; and **the gate's requirement that every collection record position and
+predecessor still applies** (條例2 — judgement is f(image, context), which the user themselves
+established on 11-07). The cost is stated in both documents: **ordinance 8's right-hand side stays
+empty**, so the scorer's acceptance condition cannot be met, and the way that ordinance now bites is
+on the side of **not retraining generative models**. `anchor-20261004`'s intra-rater field is
+unmeasured; 0.750 is the comparison anchor's and 8/8 is saturated repeats — **neither may be cited
+as the right-hand side.**
+
+**Nothing measured was retracted.** lesson 10, the ladder, the legs, the two "separation is not a
+proxy" results, the closed manufacture route and the anchors all stand, now under
+`## 判定側の到達点(立っている。撤回は無い)`. The next-step numbers were renumbered around the new
+subject (1–3 the predictor, 4 the real stages, 5 the interior arm, 6 material, 7 the scorer) with
+**an explicit old→new map in the handoff**, and the old numbers in this log were left as they were —
+past lines are not rewritten.
+
+In the registry, `role_predictor.not_the_objective` — written hours earlier in answer to the user's
+own question about what sits on top — was **renamed `_superseded_not_the_objective` and kept**, with
+`now_the_work` beside it holding the new decision verbatim. The rank moved; the reading as written
+is still a record (規律10). What survives the change unchanged is named explicitly: the unit
+difference, and that **the predictor alone does not produce the borderline item** this tree needs.
+`hand_off_condition` was rewritten too: handing the work back to a separate track is the user's call
+now, not this tree's.
+
+Sections of the handoff that are byte-identical to before the rewrite: `## 条例`, `## 器具の罠`,
+`## 錨`, `## 範囲外`, `## 素材の所在`, `## 閉じた道`, `## 返し方` (checked against `HEAD`). The
+instrument table gained the predictor's registration — an instrument missing from that table is the
+same as an instrument nobody has.
