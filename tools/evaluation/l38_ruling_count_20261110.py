@@ -20,7 +20,7 @@ SEP = f'{ROOT}/results/l38_faces_separated_20261108.json'    # 分けた後の�
 # 面を問う聞き取り(L39 はコマを問うので入れない)
 INTERVIEWS = ['l38_solidcheck_20261107', 'l38_meaning_20261107', 'l38_layeraxis_20261107',
               'l38_problemb_20261108', 'l38_decompose_20261108', 'l38_bleed_20261108',
-              'l38_overlap_20261109']
+              'l38_overlap_20261109', 'l38_floorfill_20261110']
 NO_ANSWER = {'__unknown__', '__none__', '__hold__'}
 SEED = 20261110
 
