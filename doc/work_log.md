@@ -7655,3 +7655,47 @@ caveat is adopted: **layer colour replaces the display colour while the ink stay
 has been lit against the author's classification. To make the axis measurable at all, 便B was asked
 for **a third stratum of 2 pages drawn from pages that have a layer with the colour enabled** — and
 that stratum is labelled as being for measurability, **not** for enriching the thin stages.
+
+## 2026-11-10 (late, second) The user reordered the work: deterministic first, hearing last — and the templates check out in the table we already have
+
+The user approved sending the axis-2 hearing and then redirected before it went: 「まず単純なところから
+始められないか　PICOトンボや枠などのテンプレートは全く同じレイヤでしかない　レイヤ名もぶれていない　
+これらは決定論的に除外できるはずだ」, 「黒消しは回転した黒の長方形がレイヤ内に複数あるだけだ レイヤ名
+では特定できなくとも、これらが統計量で判定できないとは思えない 聞き取りすら不要のはずだ」,
+「これまでいっぺんにやりすぎたのかもしれん」. census was told **not to hand the axis-2 table to the
+author** (`outbox/note_census_template_first_hold_hearing_20261110.md`, delivered to census,
+foundation and fill-region). The two-axis decision, 黒消し as 判定保留, and the 20-row split all stand.
+
+**The template claim holds in the table already in hand.** `PICOトンボ`: **all 7 layers carry an
+identical signature** — 13,648 pixels, bbox 1079,0,5947,6543, canvas 7016x6543 — across **7 different
+work units**; `断ち落とし枠（白）` likewise, all 7 identical at 4,127,524 pixels. **The author answered
+段ではない on 14/14 of them, with no wobble.** And there is a **name-free** version of the same test:
+group layers by (name, pixel count, bbox, canvas) and keep the groups that span **three or more work
+units** — of **32,953 signature groups, exactly 2 qualify, and both are the templates**. The 62 groups
+spanning two units are mostly `線画 HEAD face` and friends, i.e. artwork — possibly the same work split
+across two units, which is **a hypothesis, not checked**.
+
+**What the table cannot do.** Its population is the name-selected stage candidates, so `PICOトンボ`
+appears only for the 12 hearing pages (`why_listed=聞き取り`). The deterministic list therefore needs
+**an inventory of every layer name** — name, layer count, number of work units, number of pages, kind —
+which census can do from the structure DB alone, and that was asked for. The names that span many
+units without wobbling are the candidates, and **the exclusion list is then fixed as a table: a name
+not on it is not dropped** (the same shape as the public-artifact allowlist). The pixel signature for
+those candidates comes after, as the name-free confirmation, and **that order needs the user's
+approval, so it was not placed.**
+
+**黒消し: the statistics it needs were written down before anything runs.** Nothing in hand can
+measure it — the table has alpha pixel counts and bounding boxes, and not one shape statistic.
+Required: per layer the component count and the pure-black fraction; per connected component the
+area, **the minimum-area rectangle's area**, its angle, and the axis-aligned bbox area. Candidate
+rule: **≥2 components, area-weighted area/min-area-rect ≥ 0.95 (components are rectangles), a high
+pure-black fraction, and at least one component at an angle that is neither 0° nor 90° (rotated).**
+Controls named in advance: **コマ枠** (rectangular but at 0° and hollow), **hair/clothing black fill**
+(shapeless, so the ratio is low), **用紙** (one component covering everything). The ledger's known
+cell from Track N — **fills are 97–99% pure black, lines 6–32%** — says the black fraction separates
+fill from line, and 黒消し should sit on the fill side. **Not ordered; the scope is the user's call.**
+
+Order of work, one step at a time: **(1) the all-layer name inventory (census) → (2) fix the exclusion
+name table → (3) the pixel signature as the name-free confirmation → (4) 黒消し's statistics → (5) the
+描き文字・エフェクト hearing, last.** fill-region was told that whatever (1)–(3) remove can be removed
+without waiting for any hearing.
