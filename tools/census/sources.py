@@ -601,6 +601,38 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**宛先は抽出側。** census の作業は無い(追記 `push_occlusion_edge_stage2_cancel_addendum_20261110.md` も同じ)",
     ),
     dict(
+        path="inbox/deliver_stage_round2a_and_draw_colour_20261110.md",
+        what="**抽出側の納品: 便A の残り 46層の画素と、段の候補 53,289層の描画色**(sha256 一覧と一致。描画色の意味は抽出側の推定: CSP のレイヤーカラー = 表示の置き換え)",
+        why_not_yet="**層の役割の表に入れた**: `layer_role_table.py` → `layer_role_table_20261110_v2.csv`(53,289層、描画色4列)。"
+                    "**既知セル: P の300頁の表(census が manifest から組んだ)と重なる 9,453層で3列とも一致**。ラベルの在る層で enable=1 は 0",
+    ),
+    dict(
+        path="inbox/note_census_b_hypotheses_measured_20261110.md",
+        what="**Track E の決定: 便B は名前を使わず 芯4頁 + 広4頁**(当て込みの閾値と札に書く)/ 重なり順の向きの問い / 「どちらも無い」頁の構造の列の見積りの問い",
+        why_not_yet="**頁を引いた**(描画色2頁を足して10頁、`stage_hearing_round2_b.py`)。**550行で、8頁が1頁で20行を超える** —— 作者の大きさの規律と合わないので表は渡さず E とユーザーに返した。"
+                    "向き: 位置1 = 手前(用紙 7,642層が全部、兄弟の中で最小の `order_in_parent`)",
+    ),
+    dict(
+        path="inbox/note_census_exclude_axis_and_20row_split_20261110.md",
+        what="**Track E: 除外は別の軸(2軸)/ 便A・便B を20行ずつに割る / 描画色はラベルの層に値が無く測れない**",
+        why_not_yet="**便A を E の割り方で5束にした**(`stage_hearing_round2_a_sheets.py`。A-2 は1頁42行の例外。再掲2頁は 11-09 の並びと一致)。作者に渡すかはユーザー",
+    ),
+    dict(
+        path="inbox/note_census_template_first_hold_hearing_20261110.md",
+        what="**Track E: 順番を変える(ユーザーの指示)** —— 軸2 の聞き取りは保留、先にテンプレートの決定論的な除外。(a) 全層の層名の棚卸しの依頼",
+        why_not_yet="**(a) を出した**: `layer_name_inventory.py` → `layer_name_inventory_20261110.csv`(非公開、層名 × 種別 16,479行)。(b) 画素の署名・黒消しの統計量は承認待ちで E が保留",
+    ),
+    dict(
+        path="inbox/reply_e_sketch_contents_to_role_predictor_20261110.md",
+        what="**基盤 → E の回送の写し**(下絵の層の中身の仕分けを役割の予測の枠へ。白い塗りがアルファで墨に数えられた件)",
+        why_not_yet="**宛先は E。** census に効く点: **census の画素の数はアルファで数えている**(白で塗った画素も `n_px_a_gt0` に入る)。E に添えた",
+    ),
+    dict(
+        path="inbox/deliver_occlusion_edge_stage2_crops_20261110.md",
+        what="**抽出側 → 基盤の納品の写し(無効)**: 取り消し後に作られた第2段の切り出し。`note_occlusion_edge_stage2_crops_deleted_20261110.md` で全部消したと知らせがあった",
+        why_not_yet="**census は写していない**(原稿の画素は census の木に無い)。作業なし",
+    ),
+    dict(
         path="inbox/note_p_order_layer_rows_300_20261107.md",
         what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
         why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"
