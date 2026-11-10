@@ -7510,3 +7510,48 @@ Still waiting on two things from census, and **nothing can be run until the firs
 1-layer-1-row column table (ordered 11-09 23:27, itself waiting on the pixel counts streaming on the
 extraction side), and the 便B hearing table. The majority null stays registered as a range —
 **135/(265−u) = 0.509..0.877, majority 清書 whatever u is** — until the table fills in u.
+
+## 2026-11-10 (night) The table arrived; the nulls were printed before any predictor — and a registered caveat was refuted
+
+Three notices came in. `census` delivered the **1-layer-1-row table** at 12:54 (53,243 rows, 42
+columns, sha256 `98eb806ac7a19783…`, verified on arrival) together with 便A's pages and the hold-out
+units, and it had already **drawn 便A before 便B** as the order asked (seed `20261110`, the 10 split
+units holding the labelled 12 pages moved to the training side, 12 folders one page each, repeats at
+items 8–9, **97 layers — lighter than the ≈300 estimate** because random pages are mostly old pages
+with few layers). The three CSVs were moved out of `inbox/` into `data/role_predictor/` (untracked,
+confirmed by `git check-ignore`). Two later notices: the drawing colour **is** readable after all —
+the extraction manifest carries `draw_color_*`, census withdrew only the word "引けない" and not the
+statement that the structure DB lacks the column — and census ordered those values for all 53,243
+layers on the user's approval (逐語「たのんで」).
+
+**The nulls were printed before anything was predicted** (`tools/role_predictor_nulls.py`, which
+names what it does not look at: no pixels, no images, and not one of the 52,978 unlabelled rows).
+
+- **u = 0.** No layer was answered 分からない, so the range registered last night collapses to its
+  lower end: **majority = 清書, 135/263 = 0.5133**.
+- **Instead, the author used a word outside the vocabulary we offered: 文字, on 2 layers.** Dropped
+  and counted, **not folded into 段ではない** — folding would erase a distinction the author made.
+- **The naming rule's bar was re-derived from the table rather than copied**, and it matches census:
+  清書 112/117 = 0.9573 hit, 23/135 = 0.1704 miss; 下絵 10/17 = 0.5882, 5/15 = 0.3333; **あたり —
+  the rule names it for zero layers, so all 4/4 are missed.**
+- Other drops, each counted: `.lip` 0, render failures 0, layer kinds outside raster/vector 0 (all
+  265 are raster).
+
+**The refuted caveat.** The registration said *空の層は役割を持たない* — drawing-pixel-0 layers have
+no role, so exclude them. The table says otherwise: of the 24 labelled empty layers, **15 are 段では
+ない but 9 are 清書**. `base` (ベースマスク) and hair-black layers are **empty in the body while the
+mask carries the shape** (the author's own comment). Excluding them would have silently deleted a
+whole kind of material — the borrowed-constant failure of 規律9 — and it moves the floor as well
+(母数 239, majority 0.5272, 下絵 hit 0.8333). **So empty layers stay in, `empty` becomes a feature,**
+and the default of the instrument is not to drop them. The old caveat line was kept, marked refuted;
+the reading as written is still a record.
+
+**Nothing was predicted, and the registered order says not to yet:** 便B comes before the first
+predictor because 4 あたり labels will not train anything. 便B is itself stopped on us — census is
+waiting for **which hypotheses to draw it by**, and that decision is this tree's. The columns it can
+draw on are known (visibility, opacity, `pos_from_top`, `colour_type_index` — which is CSP's colour
+*mode*, not the stroke colour — blend mode, clip, name, faintness `n_px_a_ge26/n_px_a_gt0`, other
+pages of the one folder where all three stages survived); the stroke-colour hypothesis has values for
+437 layers and **zero labelled ones**, so it is unlit (規律13). Before answering, the thing to do is
+the shape of 条例1: **measure which of those columns actually marks 下絵 and あたり in the 265 labels
+we already have** — not guess.
