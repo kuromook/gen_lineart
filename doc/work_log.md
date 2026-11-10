@@ -7699,3 +7699,28 @@ Order of work, one step at a time: **(1) the all-layer name inventory (census) �
 name table → (3) the pixel signature as the name-free confirmation → (4) 黒消し's statistics → (5) the
 描き文字・エフェクト hearing, last.** fill-region was told that whatever (1)–(3) remove can be removed
 without waiting for any hearing.
+
+## 2026-11-10 (late, third) The template test became an instrument, and the threshold turned out not to be knife-edge
+
+Step (1) only, as the user said. The findings from the previous entry came out of throwaway scripts,
+so they were turned into `tools/template_signature_scan.py` — it names what it reacts to (the
+signature is name + alpha>0 pixel count + bbox + canvas; **no pixel values, no image**), counts the
+rows it drops by reason (**4,988 rows with 0 or empty pixels, because a "0 pixel" signature would
+match everything**), and states what it does not do (it does not build the exclusion list — a person
+fixes that, and a name not on the list is not dropped, the same shape as the public-artifact
+allowlist).
+
+**The distribution answers the fitting worry.** Of 32,953 signature groups over 48,255 rows:
+**32,889 span one work, 62 span two, 2 span seven, and nothing lies in between.** So the threshold
+can be drawn anywhere from 3 to 7 and the answer does not change — the instrument now prints that
+margin itself, together with the reminder that **the margin exists "in this table", where only 2
+candidate groups live.** The two groups at 7 are `PICOトンボ` (13,648 px) and `断ち落とし枠（白）`
+(4,127,524 px), and the author answered **段ではない on all 14** of their layers.
+
+The control is printed beside it: the 62 two-work groups are 205 layers and mostly **artwork** —
+`線画 HEAD face` 23 groups, `rough` 18, `線画` 11 — so **dropping to a threshold of 2 would delete
+drawing**. Whether those pairs are one work split across two units stays an **unchecked hypothesis**.
+Also printed: 2,942 signatures repeat within a single work (reuse, not a template).
+
+Nothing was ordered. Waiting on census's all-layer name inventory, which is the only thing that can
+turn these two names into an exclusion table over the manuscript.
