@@ -17094,3 +17094,13 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
   - 便B は E が仮説を決めてから。引ける列(表示・不透明度・重なり順・表現色・墨の薄さ)と**引けない列(描線の色)**を返事に書いた
 - 便 `reply_e_census_layer_role_table_and_round2_20261110.md` + CSV 3本 → E(写し: 基盤)。空の層の内訳を1か所書き違えて送り、直して送り直した
 - P の共有(`線画` の名前で線が引けない3頁)・基盤の問い合わせの写しは sources に登録(census の作業なし)
+
+## 2026-11-10 18:21 P の300頁の層の行に画素の列を入れた / 描線の色は抽出側が読める(E へ追記)
+
+- 器具 `tools/census/p_layer_rows.py` を拡張 → `data/census_full/p_order300_page_layers_20261110.csv`(40,879行・78列、sha256 先頭 `a4cff42ea442724d`)。11-08 の版は残す
+- 画素の列は抽出側の manifest(`face_merge_300_20261107/bNN/`、10便とも sha256 照合)の値を写した。census は画素を読んでいない。`black_among_drawn` / `drawn_gray_mean` / `preview_dark` は manifest に無く空
+- 書き方は M の 872頁の表に合わせた: `rendered` は「読めた」(空の層 11,785 も True・数は 0)、フォルダー 9,045 と描画できなかった 98 は False
+- 足した列: `unrendered_reason` / `mask_px_ge128` / `mask_px_1_127` / `mask_init_color` / `mask_error`(マスクの値 13,477、読めない 3 = `mask_unread` の3層、全部フォルダー)。`mask_cover_px_ge128` と両方在る 1,603層は値が全部一致(列は分けたまま)
+- 既知セル(M の 872頁の表、旧い読み手)と重なる 69頁・6,412層: 42列全部一致 5,942 / 違う 470 = manifest に無い空の層の描画色 451・形式 19 + 値の違い 3層(用紙2層が今は読める、ハイライト1層が今は空)
+- **E への追記**: 11-10 の返事の「描線の色は引けない」は言い過ぎ。構造 DB には無いが、抽出側の manifest に `draw_color_*`(CSP の層の描画色)が在る。E の表 53,243層のうち手元で値が在るのは 437層(87頁)、ラベル付き 0。全層に要るかは E が決める(決まれば抽出側に発注)。前の文は撤回しない
+- 便: `reply_p_census_layer_rows_300_pixels_20261110.md`(CSV 同封)→ P / `reply_e_census_draw_colour_readable_20261110.md` → E(写しはどちらも基盤)

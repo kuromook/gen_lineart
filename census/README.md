@@ -164,7 +164,7 @@
 ./venv/bin/python tools/census/lineart_fill_candidates.py # 名前が線画なのに塗りつぶしの層の候補(作者に聞く表を data/ に作る。公開表は答えの後)
 ./venv/bin/python tools/census/lineart_fill_answers.py    # その表の答え(作者 + ユーザーの指示で census が埋めた行)と、「塗りつぶし」を外した墨の濃さ
 ./venv/bin/python tools/census/colour_class.py           # カラーかモノクロか(作者の決め方の第1段: カラーの層が無ければモノクロ。残りは作品フォルダーの聞き取り)
-./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列 + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
+./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列。画素の列は抽出側の manifest から写す + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)
 ./venv/bin/python tools/census/stage_layers_order.py     # 工程の段の候補の層の一覧(抽出側への画素の数え上げの発注。非公開)
 ./venv/bin/python tools/census/stage_hearing_answers.py  # 工程の段の聞き取りの答えで名前の当て方の的中と取りこぼしを出す(非公開)

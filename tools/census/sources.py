@@ -577,7 +577,9 @@ ARRIVED_NOT_INTEGRATED = [
         what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
         why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"
                     "**面の表 `>0/=255/1〜254`(キャンバス全体)と `mask_cover` `>=128/1〜127`(バッファの範囲)は区切りが違うので片方から作らない**)"
-                    " + 第1段のカラーかモノクロか + 作業途中。**画素の列は抽出側の納品(`face_merge_300_20261107/`)が来たら便ごとに足す**",
+                    " + 第1段のカラーかモノクロか + 作業途中。"
+                    "**11-10 に画素の列を入れた**: 抽出側の manifest(10便、sha256 照合)の値を写す。`black_among_drawn` / `drawn_gray_mean` / `preview_dark` は"
+                    "manifest に無く空。既知セル M の872頁の表と重なる 6,412層で、manifest に無い空の層の描画色 451・形式 19 のほか値の違い 3層(読み手の版)",
     ),
     dict(
         path="inbox/reply_foundation_occlusion_edge_estimate_20261107.md",
