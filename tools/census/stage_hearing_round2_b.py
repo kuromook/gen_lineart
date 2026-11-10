@@ -16,6 +16,9 @@
 - 層: その頁の、フォルダーでない `raster` と `vector` の全部(便A と同じ。名前・層別に関わらず)
 - **束**: 頁の順のまま、20行を超えない所で切る。**頁の途中では切らない**。1頁で20行を超える頁は単独の束(例外、印字)
 - 問いは軸1(工程の段)だけ。最初の束は試し
+- **v2(2026-11-10、ユーザーの決定「20以下」)**: v1 の10頁は 550行で、8頁が1頁で20行を超えた(作者の数「Excel は 20」)。
+  **候補を「並べる層(raster と vector)が 20 以下の頁」に絞って同じ seed・同じ手順で引き直す。** 作者が答える前に決めた。
+  v1 の出力は消さずに残す(`*_20261110.csv` / `*_bundleB-*`)。v2 は `_le20` を付ける。絞る前後の候補の数を両方印字する
 
     ./venv/bin/python tools/census/stage_hearing_round2_b.py
 """
@@ -36,10 +39,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 HOLDOUT = "data/census_full/holdout_units_round2_a_20261110.csv"
 SEED = 20261110
+MAX_ROWS = int(os.environ.get("ROUND2B_MAX_ROWS", "20"))   # 0 = 絞らない(v1)
 STRATA = [("芯", 4), ("広", 4), ("描画色", 2)]
-OUT = "data/census_full/hearing_round2_b_pages_20261110.csv"
-KEY_OUT = "data/census_full/hearing_round2_b_key_20261110.csv"
-XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110.xlsx"
+OUT = "data/census_full/hearing_round2_b_pages_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
+KEY_OUT = "data/census_full/hearing_round2_b_key_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
+XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110" + ("_le20" if MAX_ROWS else "") + ".xlsx"
 
 
 def f(x):
@@ -78,6 +82,23 @@ def main() -> int:
     for s, _ in STRATA:
         ps = [p for p in hits if s in hits[p]]
         print(f"      {s}: 当たる頁 {len(ps):,} / 単位 {len({un[wd(p)] for p in ps})}")
+    q0 = ",".join("?" * len(hits))
+    allp = con.execute(f"""select l.page_path, l.layer_id, l.parent_id, l.order_in_parent, coalesce(l.name, ''),
+                                  l.folder, l.visibility, k.v_layer_kind
+                             from layers l join v_layer_kind k using (page_path, layer_id)
+                            where l.page_path in ({q0})""", sorted(hits)).fetchall()
+    bp = collections.defaultdict(list)
+    for r in allp:
+        bp[r[0]].append(r)
+    nrow = {p: len(layers_top_down(bp[p])[0]) for p in hits}
+    if MAX_ROWS:
+        print(f"    **v2: 並べる層が {MAX_ROWS} 以下の頁に絞る**(ユーザーの決定)")
+        for s, _ in STRATA:
+            ps = [p for p in hits if s in hits[p]]
+            ok = [p for p in ps if nrow[p] <= MAX_ROWS]
+            print(f"      {s}: 絞る前 {len(ps):,}頁 / {len({un[wd(p)] for p in ps})}単位 → 絞った後 {len(ok):,}頁 / "
+                  f"{len({un[wd(p)] for p in ok})}単位(落とした 20行超 {len(ps) - len(ok):,}頁)")
+        hits = {p: v for p, v in hits.items() if nrow[p] <= MAX_ROWS}
     rng = random.Random(SEED)
     used, picks = set(), []
     for s, k in STRATA:
