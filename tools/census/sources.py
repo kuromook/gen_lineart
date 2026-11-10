@@ -584,6 +584,22 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**宛先は基盤。** census の作業は無い。本文と CSV の sha256 は一覧と一致",
     ),
     dict(
+        path="inbox/deliver_colour_rounding_fix_20261110.md",
+        what="**抽出側の追加便**(書き出しが丸めで飛ばした層 49 = P の300頁 45 + 他の便 4、と P の300頁の書けなかったマスク3枚をベクターで作った値)",
+        why_not_yet="**P の300頁の分は重ねた**: `p_layer_rows.py` → `p_order300_page_layers_20261110_v2.csv`(`pixel_source` / `mask_source` に印)。"
+                    "**他の便の4層は M の判断**(holdout8・pilot。census の表に画素の列は無い)",
+    ),
+    dict(
+        path="inbox/note_fill_region_exclude_lettering_20261110.md",
+        what="**fill-region の発注: 「絵から除外」する層の列**(描き文字 / 黒消し / エフェクト / 絵。作者「国勢調査によって除外されるべき」「クレンジング」)",
+        why_not_yet="**受けた。範囲をユーザーに確かめている** —— 統計量からの予測は 11-09 に Track E の仕事と決まっている(予測器は track)。census の側は名前の列・聞き取り・的中と取りこぼし",
+    ),
+    dict(
+        path="inbox/push_occlusion_edge_stage2_cancel_20261110.md",
+        what="**基盤 → 抽出側の取り消しの写し**(遮蔽の深さ 第2段の切り出し。作者「この実験に意味はない」)と追記(閉じたのは食い込みの検証だけ、遮蔽の調査は続く)",
+        why_not_yet="**宛先は抽出側。** census の作業は無い(追記 `push_occlusion_edge_stage2_cancel_addendum_20261110.md` も同じ)",
+    ),
+    dict(
         path="inbox/note_p_order_layer_rows_300_20261107.md",
         what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
         why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"

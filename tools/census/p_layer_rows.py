@@ -47,14 +47,19 @@ FACE = "inbox/census_face_layer_alpha_mask_20261104.csv"
 COVER = "inbox/mask_cover_request3_v2_20261102.csv"
 COLOUR = "data/census_full/colour_class_20261107.csv"
 WIP = "data/census_full/wip_pages_20261106.csv"
-OUT = "data/census_full/p_order300_page_layers_20261110.csv"
+OUT = "data/census_full/p_order300_page_layers_20261110_v2.csv"
+# **2026-11-10 夜の追加便**: 書き出しが丸めで飛ばした層(P の300頁で 45層)と、書けなかったマスク3枚をベクターで作った値。
+# **元の便の上に重ねる**(元の便は抽出側も変えていない)。重ねた行は `pixel_source` / `mask_source` に印を立てる
+FIX = "../lineart/data/incoming_manuscript/colour_rounding_fix_20261110"
+FIX_FROM = "face_merge_300_20261107"
 MANI = "../lineart/data/incoming_manuscript/face_merge_300_20261107"
 KNOWN = "../lineart-colour-manuscripts/inbox/m_colour_page_layers_v2_20261102.csv"
 PIXC = ["rendered", "drawn_ratio", "formats", "draw_color_enable", "draw_color_main", "draw_color_sub", "sat_mean",
         "colours_q16", "top_colour_share", "top_colour_q16"]
 EXTRA = ["mask_face_n_px_gt0", "mask_face_n_px_255", "mask_face_n_px_1_254", "mask_face_n_px_total",
          "mask_face_status", "mask_cover_px_ge128", "mask_cover_px_1_127", "colour_class", "wip_status",
-         "unrendered_reason", "mask_px_ge128", "mask_px_1_127", "mask_init_color", "mask_error"]
+         "unrendered_reason", "mask_px_ge128", "mask_px_1_127", "mask_init_color", "mask_error",
+         "pixel_source", "mask_source"]
 
 
 def py(v):
@@ -97,7 +102,38 @@ def manifests():
         mm = json.load(open(os.path.join(d, f"layer_masks_manifest_{b}.json"), encoding="utf-8"))
         for L in mm["layers"]:
             mask[(L["page_path"], L["layer_id"])] = L
-    return pix, skip, mask
+    # 追加便: sha256 を一覧と照らしてから重ねる
+    want = {}
+    for ln in open(os.path.join(ROOT, FIX, "colour_rounding_fix_20261110.sha256"), encoding="utf-8"):
+        h, f = ln.split(maxsplit=1)
+        want[f.strip().lstrip("*").removeprefix("./")] = h
+    for f in ("colour_layers_manifest_rounding_fix.json", "koma_masks_vector/layer_masks_manifest.json"):
+        got = hashlib.sha256(open(os.path.join(ROOT, FIX, f), "rb").read()).hexdigest()
+        if want.get(f) != got:
+            raise SystemExit(f"    **sha256 が合わない: 追加便 {f}**")
+    fixed_pix, fixed_mask = set(), set()
+    for L in json.load(open(os.path.join(ROOT, FIX, "colour_layers_manifest_rounding_fix.json"), encoding="utf-8"))["layers"]:
+        if L["original_delivery"].split("/")[0] != FIX_FROM:  # 値は `face_merge_300_20261107/bNN`
+            continue
+        k = (L["source"], L["layer_id"])
+        if skip.pop(k, None) != "1画素も描かれていない" or k in pix:
+            raise SystemExit(f"    **追加便の層が元の便で「1画素も描かれていない」ではない: {k[1]}**")
+        v = {kk: py(L[kk]) for kk in PIXC if kk != "rendered"}
+        v["formats"] = ";".join(L["formats"])
+        v["rendered"] = "True"
+        for i, n in enumerate(L["sat_hist"]):
+            v[f"sat_{i * 8:03d}_{i * 8 + 7:03d}"] = str(n)
+        pix[k] = v
+        fixed_pix.add(k)
+    for L in json.load(open(os.path.join(ROOT, FIX, "koma_masks_vector/layer_masks_manifest.json"), encoding="utf-8"))["layers"]:
+        k = (L["page_path"], L["layer_id"])
+        if k not in mask or not mask[k].get("error"):
+            raise SystemExit(f"    **追加便のマスクが元の便で書けなかったマスクではない: {k[1]}**")
+        mask[k] = L
+        fixed_mask.add(k)
+    print(f"    **追加便(sha256 照合)を重ねた**: 層 {len(fixed_pix)}(元の便では「1画素も描かれていない」)/ "
+          f"マスク {len(fixed_mask)}(元の便では書けなかった。ベクターから作った値)")
+    return pix, skip, mask, fixed_pix, fixed_mask
 
 
 def main() -> int:
@@ -127,7 +163,7 @@ def main() -> int:
     if any(p in excl for p in pages):
         print("    **恒久除外の頁が入っている。出さない**")
         return 1
-    pix, skip, mask = manifests()
+    pix, skip, mask, fixed_pix, fixed_mask = manifests()
     print(f"    manifest(sha256 を10便とも照らした): 書いた層 {len(pix):,} / 書かなかった層 {len(skip):,}"
           f"(" + " / ".join(f"{k} {v}" for k, v in collections.Counter(skip.values()).items()) + f")/ マスクの行 {len(mask):,}")
     rows, missing, c = [], [], collections.Counter()
@@ -173,7 +209,9 @@ def main() -> int:
                 v["mask_px_ge128"] if v else "", v["mask_px_1_127"] if v else "",
                 col.get(p, ""), wip.get(p, ""), sk or "",
                 py(mk.get("mask_px_ge128")) if mk else "", py(mk.get("mask_px_1_127")) if mk else "",
-                py(mk.get("init_color")) if mk else "", py(mk.get("error")) if mk else ""])
+                py(mk.get("init_color")) if mk else "", py(mk.get("error")) if mk else "",
+                "colour_rounding_fix_20261110" if (p, lid) in fixed_pix else ("face_merge_300_20261107" if px or sk else ""),
+                ("vector(colour_rounding_fix_20261110)" if (p, lid) in fixed_mask else "saved" if mk else "")])
         under += n_mask < int(o["census_n_material"])
     del c["-"]
     print(f"    **層 {len(rows):,}行**(頁 {len(pages) - len(missing)})")
