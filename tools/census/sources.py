@@ -573,6 +573,17 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**宛先は基盤、採点も基盤。** census の作業は無い。本文の sha256 は一覧と一致(CSV は取っていない)",
     ),
     dict(
+        path="inbox/note_n_census_process_pilot20_20261110.md",
+        what="**Track N の依頼: 工程の聞き取りを20作の試しから**(2021〜2023b から10作 / 2024 系から10作、裁定済み11作を除く。ユーザー承認)",
+        why_not_yet="**表を作った**: 器具 `process_hearing_pilot20.py`(seed 20261110、`.clip` の頁が在る作品、札の直下の頁は候補外)。"
+                    "**作者の記入待ち** —— 回収したら `author_process.csv` に取る",
+    ),
+    dict(
+        path="inbox/reply_foundation_occ_edge_koma_mask_20261110.md",
+        what="**抽出側 → 基盤の返事の写し**(遮蔽の深さの表は読めないコマのマスクを掛けない扱い。影響のありうる層 241頁・347層、鍵の CSV つき)",
+        why_not_yet="**宛先は基盤。** census の作業は無い。本文と CSV の sha256 は一覧と一致",
+    ),
+    dict(
         path="inbox/note_p_order_layer_rows_300_20261107.md",
         what="**Track P の依頼: 300頁の層の行**(holdout8 と同じ64列。抽出側への発注 `push_p_order_300_pages_20261107.md` と名簿 CSV の写しつき)",
         why_not_yet="**構造の列を先に答えた**: 器具 `p_layer_rows.py`、全量は非公開。64列 + マスクの画素の数(供給元の表の値を写す。"
