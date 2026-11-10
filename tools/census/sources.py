@@ -530,6 +530,37 @@ ARRIVED_NOT_INTEGRATED = [
                     "**未統合**: 300頁の層の行の画素の列(manifest の値)をまだ埋めていない",
     ),
     dict(
+        path="inbox/deliver_stage_layer_pixels_20261109_v2.md",
+        what="**抽出側の納品: 工程の段の候補 53,243層の画素の数**(初版 `deliver_stage_layer_pixels_20261109.md` は表のパスの誤記だけ違う。コマ枠のベクターで埋めた 505層 `deliver_stage_layer_pixels_koma_vector_20261110.md`)",
+        why_not_yet="**統合した**: `layer_role_table.py` で1層1行の表に入れた(505層は印の列 `all_masks_from_koma_vector`)。sha256 は一覧と一致",
+    ),
+    dict(
+        path="inbox/note_koma_mask_not_saved_20261110.md",
+        what="**抽出側の知らせ: 新しい版の CSP がコマフォルダーのマスクなど作り直せるラスタを保存していない**(2022b〜2024c と 2017 の1頁)",
+        why_not_yet="**census の面の表の `mask_unread` もこれと思われる(推定。抽出側)。** 段の表の 505層はコマ枠のベクターで埋めた値を使う。面の表・材料表の作り直しは頼んでいない",
+    ),
+    dict(
+        path="inbox/note_census_role_predictor_column_order_20261109.md",
+        what="**Track E の発注: 層の役割の予測器のための1層1行の表**(ユーザー決定: 予測器は E が持つ。基盤の申し送り `reply_judge_layer_role_assigned_20261109.md`)",
+        why_not_yet="**答えた**: `layer_role_table.py`(53,243層・42列、非公開)。分け方の鍵は `split_units.py`(全作品フォルダー、P の単位と一致)",
+    ),
+    dict(
+        path="inbox/note_census_hearing_round2_design_20261110.md",
+        what="**Track E の発注: 次の聞き取りの便の設計**(便A 無作為・棒を読む唯一の便 / 便B 薄い段 / 便C 迷う層。ユーザー承認)",
+        why_not_yet="**便A の頁を先に引いた**(`stage_hearing_round2_a.py`、seed 20261110、14項目・97層。画素の残り46層を抽出側に発注)。"
+                    "**便B は E が仮説を決めてから**(引ける列を返事に書いた)。表はまだ作者に渡していない",
+    ),
+    dict(
+        path="inbox/note_p_census_line_layer_name_misses_20261110.md",
+        what="**Track P の共有: 層の名前 `線画` で線を引けなかった3頁**(返信不要)",
+        why_not_yet="**層の役割の予測器(Track E)の材料。** census の作業は無い。3頁とも段の候補の表の外(名前で両方が当たる頁ではない)",
+    ),
+    dict(
+        path="inbox/push_occlusion_edge_koma_mask_question_20261110.md",
+        what="**基盤 → 抽出側の問い合わせの写し**(遮蔽の深さの表は読めないコマのマスクをどう扱ったか。第2段の切り出しの発注 `push_occlusion_edge_stage2_crops_20261109.md` の写しも)",
+        why_not_yet="**宛先は抽出側、採点は基盤。** census の作業は無い",
+    ),
+    dict(
         path="inbox/note_census_request_drawing_stages_20261108.md",
         what="**Track E の発注: 工程の段(あたり / 下絵 / 清書)で同定した層**(先に、やるかを決める数3つ)",
         why_not_yet="**答えた: いまは「できない」。** 段を再現する列も作者の裁定も無い(作業用フォルダーで代えた前例は的中 2/129)。"

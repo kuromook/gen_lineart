@@ -168,6 +168,9 @@
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)
 ./venv/bin/python tools/census/stage_layers_order.py     # 工程の段の候補の層の一覧(抽出側への画素の数え上げの発注。非公開)
 ./venv/bin/python tools/census/stage_hearing_answers.py  # 工程の段の聞き取りの答えで名前の当て方の的中と取りこぼしを出す(非公開)
+./venv/bin/python tools/census/split_units.py            # 作品で分ける単位(全作品フォルダー。P の単位と一致を確かめる)
+./venv/bin/python tools/census/layer_role_table.py        # 層の役割の予測器(Track E)のための1層1行の表(非公開)
+./venv/bin/python tools/census/stage_hearing_round2_a.py  # 次の聞き取りの便A(無作為・棒を読む便)の頁と、画素の追加発注(非公開)
 
 ./venv/bin/python tools/census/build_census.py              # 指摘 0 でなければ commit しない
 ./venv/bin/python tools/census/control_name_leak.py census  # 点検が本当に鳴るか(C1〜C5)
