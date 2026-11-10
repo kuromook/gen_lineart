@@ -7555,3 +7555,53 @@ pages of the one folder where all three stages survived); the stroke-colour hypo
 437 layers and **zero labelled ones**, so it is unlit (規律13). Before answering, the thing to do is
 the shape of 条例1: **measure which of those columns actually marks 下絵 and あたり in the 265 labels
 we already have** — not guess.
+
+## 2026-11-10 (night, second) 便B's hypotheses were measured, not guessed — and the names win on paper for a circular reason
+
+census asked which hypotheses to draw 便B by. The answer was measured first
+(`tools/role_predictor_enrich_axes.py`, which names that it predicts nothing and sees no pixels —
+only the table's numbers) and returned in
+`outbox/note_census_b_hypotheses_measured_20261110.md` (delivered, md5 identical in all three copies).
+
+**Null value for this question:** the thin stages are **19/263 = 0.0722** of the labelled layers, and
+**あたり is 4 layers — one layer is 25%.**
+
+Two rules, **neither of which looks at a name**, carry 便B:
+
+- **芯** — coverage (`n_px_a_gt0 / canvas area`) > 0.5 **and** faintness (`n_px_a_ge26/n_px_a_gt0`) <
+  0.25: **hit 7/9 = 0.778** (10.8x the null), **mixes in zero 段ではない**, catches 3/4 あたり.
+- **広** — the ancestor folder is hidden: hit 16/33 = 0.485, **catches 16/19**, 下絵 13/15.
+- Either: **18/19, あたり 4/4.** Yield after removing 便A's 12 evaluation units and the labelled 12
+  pages (51,531 layers / 2,060 pages / 64 units): 芯 481/393/17, 広 4,676/1,800/59 — 8 pages is easy.
+- **The thresholds were chosen by looking at the 19 labelled rows — fitted.** They hold flat over
+  0.3–0.5 and 0.25–0.4, so not knife-edge, but it goes on the bin's label and **is not used on 便A.**
+
+**The name rules score better and are still the wrong choice.** "Ancestor contains `sketch set`"
+catches **19/19** — and that is circular here: **all 12 labelled pages have a `sketch set` ancestor**
+(counted). The effective n is **9 pages / 7 units** for the 19 layers, and **あたり's 4 layers sit on
+4 pages, two of them the same work**. The existing name rule misses **8 of the 19**, so drawing 便B by
+name would mean the labels for name-less thin stages never grow — the author's own caveat
+(「レイヤ名は必ずしも正しくない」) is the thing this work is supposed to face.
+
+Columns measured and dropped, with reasons: `blend_mode`/`clip_raw`/`has_mask`/`tone_enabled` are
+effectively constant over the 263; `colour_type_index` is 1 for all 4 あたり and for 126 清書 as well;
+**`pos_from_top` was not used because which end "手前" means is unverified** (asked census — not
+guessed into a feature, 規律13); the stroke colour has values for 437 layers and **zero labelled
+ones**, so it cannot be measured yet.
+
+**Two readings came out of the table.**
+
+1. **"下絵 = faint" is false.** Median faintness: **あたり 0.152 / 下絵 0.770 / 清書 0.945 / 段では
+   ない 1.000**; median coverage **あたり 0.546 / 下絵 0.050 / 清書 0.001**. So **下絵 contains two
+   kinds** — a large-and-faint "rough" kind and a small-and-dark "下絵" kind — and 芯 only reaches the
+   first (下絵 4/15). This bears on feature design, not just on 便B.
+2. **A hole in the registered design.** The table's population *is* the name-selected layers, so
+   **pages where no name hits do not exist in it**: of the 41,921 layers left after removing 便A's
+   evaluation units, **every page carries at least one name-hit layer — zero name-blind pages**. So
+   **便B cannot reach the names' blind spot**; only 便A can, and 便A is the bar-reading bin, unusable
+   for training. Filling it needs the structure columns for the 2,191 "neither" pages — **census was
+   asked for an estimate only. Nothing was ordered; that call is the user's.**
+
+Also answered: empty layers stay in as a feature (§6 of the note, the refuted caveat), and `.lip`
+stays out of the first predictor with its count printed. **No predictor was run** — the registered
+order still puts 便B's labels first.
