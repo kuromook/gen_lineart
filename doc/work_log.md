@@ -7772,3 +7772,42 @@ means the 芯 rule (coverage > 0.5 and faint < 0.25) **can also catch layers pai
 how often is **not counted**, and settling it needs the same grey-value statistic as 黒消し. A new
 ordinance line was added: **`text` layer names are body text and the colophon rows contain the
 author's personal information — they never go into documents, public artifacts or screens.**
+
+## 2026-11-11 The author ruled on white paint — and the 186 pages in hand say the ruling applies to a population we have not looked at
+
+The author's ruling (逐語): 「白い塗りはほとんどの場合で「面」をなしていない　線やベタを消す「ホワイト修正」
+的な使い方や吐息などのエフェクトとしてつかわれることがほとんどだ　意味のある面を持っているケースもない
+わけではないが、それは例外的に聞き取りでフォローするべきだろう　基本的に白い塗りのレイヤはそのまま除外
+して問題ないようなものばかりだ」. Taken, with one distinction that has to be made or the ruling deletes
+drawing: **it is a ruling about layers, and there are two different operations.**
+
+1. **A layer whose content is white paint → drop the layer** (the ruling).
+2. **White pixels mixed into a drawing layer → take them out of the ink count** (an instrument fix;
+   foundation's relay says the same, that case 1 of the sketch findings "is not role prediction but
+   fixing the instrument").
+
+**Measured on the 186 pages already in hand** (the extraction side's table for D): in those 下絵
+layers `white_frac` is **0 on 145 pages, 0–0.1% on 10, 0.1–1% on 7, 1–5% on 17, 5–20% on 6, and over
+20% on 1**. The pages the author called ベタ run **0.0015–0.1621**; the pages answered *clean* that
+still carry white run **0.0001–0.0015**. So **not one of these 186 is a "white paint layer"** — every
+one is a drawing layer with white retouch, at most 16.2% of its pixels. **The layers the ruling is
+about are in a population nobody here has looked at yet**, which is exactly why operation 1 cannot be
+run on this evidence.
+
+**The threshold for dropping a layer is therefore left undecided and registered as undecided.** With
+zero examples of case 1 there is nothing to set it against; the next step is to look at the
+distribution of `white_frac` over a real population, which needs no threshold to do, and read it the
+way the signature test's empty 3-to-7 band was read. **Exceptions go to the hearing**, as the author
+said.
+
+**No new statistic needs inventing.** The extraction side's existing columns already carry it:
+`n_drawn`, `n_white` (mean colour ≥ 230), `n_white_ge128`, `white_frac`, `black_opaque` (alpha ≥ 200
+and mean < 60), `colour_opaque`, `grey_mid`. So the order is to run an existing instrument over a
+wider population, drafted in `outbox/draft_census_order_grey_stats_20261111.md` and **held
+undelivered**: **便1** small — `成人修正`'s 651 layers plus ~50 each of the three named controls, with
+the per-component shape statistics for the 黒消し rule — then **便2** large, the per-layer grey columns
+over the 53,289 stage candidates, in the Mon–Thu night slot. Small first, as the smoke test.
+
+The same statistic also **corrects a number this tree reported**: because the pixel counts are
+alpha-based, the 芯 rule (coverage > 0.5, faintness < 0.25) can pick up layers painted broadly in
+white. How often is still uncounted.
