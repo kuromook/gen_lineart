@@ -592,7 +592,8 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_fill_region_exclude_lettering_20261110.md",
         what="**fill-region の発注: 「絵から除外」する層の列**(描き文字 / 黒消し / エフェクト / 絵。作者「国勢調査によって除外されるべき」「クレンジング」)",
-        why_not_yet="**受けた。範囲をユーザーに確かめている** —— 統計量からの予測は 11-09 に Track E の仕事と決まっている(予測器は track)。census の側は名前の列・聞き取り・的中と取りこぼし",
+        why_not_yet="**受けた。分担はユーザーの決定(11-10)**: 予測は Track E の層の役割の予測器に区分を足す。census は名前の当て方の列(推測)・"
+                    "区分の聞き取りの表・的中と取りこぼし。**名前の列から始める。聞き取りは E の便の設計を待つ**",
     ),
     dict(
         path="inbox/push_occlusion_edge_stage2_cancel_20261110.md",
