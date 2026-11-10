@@ -7605,3 +7605,53 @@ ones**, so it cannot be measured yet.
 Also answered: empty layers stay in as a feature (§6 of the note, the refuted caveat), and `.lip`
 stays out of the first predictor with its count printed. **No predictor was run** — the registered
 order still puts 便B's labels first.
+
+## 2026-11-10 (late) A second axis was assigned, the author capped the hearing at 20 rows, and the drawing colour could not be measured
+
+Four notices. The extraction side delivered **the 46 missing pixel rows for 便A** (12 pages, 42 drawn
+/ 4 empty / 0 failed — 便A's layers now have their pixel columns) and **the drawing colour for all
+53,289 layers**. census relayed **a user decision**: the "exclude from the picture" classification
+(描き文字 / 黒消し / エフェクト) is to be predicted by **this tree's predictor**, and **fill-region has
+stopped new measurements until it exists** (author: 「あまりにも『絵でない』混ざり物に振り回されすぎ
+ている　それらを除外する『クレンジング』に一旦力を入れてもらおう」). And census asked foundation to
+make a discipline out of **the author's own cap on hearing size**: 「excelの聞き取り表や複雑な操作が
+必要なUIなら２０　画像を二択のUIなら５０　まよったら１０」.
+
+All three were answered in `outbox/note_census_exclude_axis_and_20row_split_20261110.md` (delivered to
+census, foundation and fill-region, md5 identical).
+
+**The exclusion is a second axis, not a split of 段ではない — and the table decided it, not taste.**
+Of the 26 labelled layers whose name contains 描き文字 or フキダシ, the author assigned **下絵 2 /
+清書 9 / 段ではない 15**; of the 10 `effect`-named ones, **下絵 1 / 清書 1 / 段ではない 8**. Carving
+the exclusions out of 段ではない would therefore **throw 11 lettering layers and 2 effect layers out
+of the stages the author had put them in**. So: axis 1 = the process stage, axis 2 = 絵 / 描き文字 /
+エフェクト / 黒消し / 分からない, and **a layer carries a value on both**. The hearing asks the two
+questions separately, which also lets the 描き文字 "ぶれ" in the stage answers stand unfolded.
+
+**黒消し is registered as unpredictable for now, which is not the same as predicting 絵.** The name
+`黒消し` matches **zero layers** in this population (census: 609 folders, 0 layers, all `.lip`),
+so the class has no labels and gets **母数0・判定保留** printed beside it from the start. Likewise
+**fill-region's 31 answers are at the 面 unit and will not be used as layer labels** — mapping them
+through the topmost layer's path is a substitution (規律13) — though they are fine for *choosing which
+layers to ask about*. The name-rule material for axis 2: **描き文字・フキダシ 887 layers, `effect`
+60, 黒消し 0** out of 53,243; hit and miss rates wait for the author's answers.
+
+**The author's cap lands directly on 便A: 97 rows.** Split into five bins without reordering the
+items — 便A-1 items 1–5 (16 rows), **便A-2 item 6 alone (42 rows)**, 便A-3 items 7–8 (7), 便A-4 items
+9–10 (18), 便A-5 items 11–14 (14); the repeats stay at positions 8 and 9. **Item 6 is a single page of
+42 layers (and the one WIP page), so it cannot be split and it is not dropped** — dropping it would
+move the population (規律9-5); it goes out labelled as heavy. **The reading rule was written before
+the answers exist: 便A's bar is read only when all five bins are answered; a partial reading must say
+how many bins it covers; the order is never rearranged** — stopping where the author stopped is
+legitimate, reordering is moving the population. 便B is cut the same way and its first bin goes out
+as a trial, with **「分からない」and a free-text field in the choices** — the author's out-of-vocabulary
+「文字」 on 2 layers is the worked example of a missing option.
+
+**The drawing colour arrived and could not be measured: 判定保留, not a refutation.** Of the 263
+labelled layers, **`draw_color_enable = 1` holds for zero** (no missing rows), so the hit rate is
+**0/0 — 母数0**. Across the whole table 589 layers on 203 pages have it. The extraction side's own
+caveat is adopted: **layer colour replaces the display colour while the ink stays black, which is not
+"the rough was drawn in blue"** (the default blue `62 140 236` accounts for 195 layers), and nothing
+has been lit against the author's classification. To make the axis measurable at all, 便B was asked
+for **a third stratum of 2 pages drawn from pages that have a layer with the colour enabled** — and
+that stratum is labelled as being for measurability, **not** for enriching the thin stages.
