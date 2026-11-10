@@ -7724,3 +7724,51 @@ Also printed: 2,942 signatures repeat within a single work (reuse, not a templat
 
 Nothing was ordered. Waiting on census's all-layer name inventory, which is the only thing that can
 turn these two names into an exclusion table over the manuscript.
+
+## 2026-11-11 Step (2): the exclusion table is drafted, and 黒消し turned out to have a handle in .clip after all
+
+Six notices arrived overnight. census delivered **the all-layer name inventory**
+(`layer_name_inventory_20261110.csv`, 16,479 rows over **437,425 layers**), the role table v2 with the
+drawing-colour columns (53,289 layers; the known cell against P's 300 pages matched on all three
+columns for 9,453 layers), 便A cut into the five bins this tree specified, 便B redrawn, and the
+structure columns for **the 2,191 name-blind pages** (9,420 layers, 152 work folders, 104 units) — the
+hole named in the design two entries ago is now fillable. Three user decisions came through census
+and foundation: **A-1 goes to the author as the trial and A-2's 42-row exception is allowed**, **便B is
+redrawn from pages of ≤20 rows**, **the name-blind pages' columns are produced** — and, separately,
+**the sorting of what is inside a 下絵 layer (white paint, opaque black blobs, part-panel sketches,
+duplicate pages) is also assigned to this tree's frame**. That last one is queued, not started.
+
+**Step (2), the draft exclusion table: `config/picture_exclusion_draft_20261111.tsv`. Nothing is
+dropped yet — adding a row needs the user's approval**, exactly as the public-artifact allowlist
+works: it is not a table of safe things, it is a table of chosen things, and a name not on it is not
+dropped.
+
+- **The template names are only four rows.** `PICOトンボ` (raster, **4,793 layers / 82 units**),
+  `断ち落とし枠（白）` (4,785 / 82), `断ち落とし枠` (230 / 3, **all `.lip`, so the signature cannot
+  confirm it** — left as a candidate), `ガイド` (3 layers / 2 units — **too few to know what it is**,
+  candidate). Plus the folder `外枠` (4,786 / 82). The author's answers cover the first two: **14/14
+  段ではない.**
+- **Three kinds decide themselves without any name**: `paper` 9,624 layers, `story_info` 8,096
+  (ノンブル and 作品情報), `text` 19,925. **The author has answered none of these** — they were in the
+  206 layers the hearing never listed — so the grounds are the kind definitions plus Track M's ruling
+  that **speech-text layers are not used as boundaries while 描き文字 is**. The user approves or not.
+- **Two names were measured and refused**: `effect` (of the 10 labelled effect-named layers, **2 are
+  stages**) and 描き文字・フキダシ (of 26, **11 are stages**). A name that hits and still lands in a
+  stage is not deterministic, so both go to the hearing-and-prediction side.
+
+**黒消し has a handle in `.clip` after all — but not the name 黒消し.** The name `黒消し` is a folder,
+609 layers, and **zero `.clip` pages** (census's count reproduced). What does live in `.clip` is
+**`成人修正` — raster, 651 layers, 58 units, all 651 pages `.clip`** — and `モザイク` (frame_folder,
+1,665 layers / 41 units, 1,541 `.clip` pages). **This is not a proposal to drop them by name.** It is
+the material for building the statistical rule the author described (several rotated black
+rectangles): a set of layers where the thing is expected to be present, against the controls already
+named. **So step (4)'s order shrinks from every layer to 651 layers plus controls.**
+
+Also recorded, from census: **`pos_from_top` = 1 is the front (topmost)** — evidenced by 7,642 paper
+layers all sitting last among their siblings — so the thin stages at positions 2–6 are near the
+**front**, which is worth remembering when features are built. And a correction that touches a number
+this tree reported: **the pixel counts are alpha-based, so white paint counts as "drawn"**, which
+means the 芯 rule (coverage > 0.5 and faint < 0.25) **can also catch layers painted broadly in white**;
+how often is **not counted**, and settling it needs the same grey-value statistic as 黒消し. A new
+ordinance line was added: **`text` layer names are body text and the colophon rows contain the
+author's personal information — they never go into documents, public artifacts or screens.**
