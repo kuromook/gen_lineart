@@ -576,7 +576,7 @@ ARRIVED_NOT_INTEGRATED = [
         path="inbox/note_n_census_process_pilot20_20261110.md",
         what="**Track N の依頼: 工程の聞き取りを20作の試しから**(2021〜2023b から10作 / 2024 系から10作、裁定済み11作を除く。ユーザー承認)",
         why_not_yet="**表を作った**: 器具 `process_hearing_pilot20.py`(seed 20261110、`.clip` の頁が在る作品、札の直下の頁は候補外)。"
-                    "**作者の記入待ち** —— 回収したら `author_process.csv` に取る",
+                    "**11-10 に回収して `author_process.csv` に取った**(20行、値は書き換えない)。選択肢に「線画が無い」が無かった(11行がコメントで補った)",
     ),
     dict(
         path="inbox/reply_foundation_occ_edge_koma_mask_20261110.md",

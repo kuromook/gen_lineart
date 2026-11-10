@@ -2075,8 +2075,10 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # **但し書きの付いた頁の匿名の番号。** 登録簿は `data/census_full/page_keys.csv`
         "page_key": {"page_key", ""} | {f"PN{i}" for i in range(1, 1000)},
         # **作者の語のまま。** census が付けた分類ではない(2026-10-31、Track N 経由)
-        "stage_rough": {"stage_rough", "アナログ", "デジタル", "**未裁定**", ""},
-        "stage_lineart": {"stage_lineart", "アナログ", "デジタル", "**未裁定**", ""},
+        # **2026-11-10**: 試しの20作の表の選択肢(`process_hearing_pilot20.CHOICES`)と空欄の「未記入」を足した。
+        # 「分からない」は線画の段が無い作品にも付いている(選択肢に「無い」が無かった。コメントと並べる)
+        "stage_rough": {"stage_rough", "アナログ", "デジタル", "混在", "分からない", "未記入", "**未裁定**", ""},
+        "stage_lineart": {"stage_lineart", "アナログ", "デジタル", "混在", "分からない", "未記入", "**未裁定**", ""},
         # **「書かれていない」を「そうではない」と読まない** ——
         # 作者は4作にだけ `ipad` と書いた。残りは**未記載**であって「iPad ではない」ではない
         "device_note": {"device_note", "ipad と明記", "未記載", ""},

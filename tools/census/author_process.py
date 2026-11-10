@@ -38,6 +38,9 @@ import keys as census_keys  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INPUT = "data/census_full/author_process_20261031.csv"
+# **2026-11-10 追加**: 試しの20作の答え(作者が直接記入。表 `process_hearing_pilot20.py`)。**値は書き換えない** ——
+# 線画の「分からない」は、コメント「線画はない」と並べて載せる(選択肢に「線画が無い」が無かった = 表の不具合)
+PILOT = "data/census_full/hearing_process_pilot20_answered_20261110.xlsx"
 ARC_READBACK = "inbox/work_arcs_20261030.csv"
 
 
@@ -60,6 +63,13 @@ def work_dir_of(page_path: str, year: str, work: str):
 
 
 NOTE = [
+    "**2026-11-10 に20行を足した**(試しの20作。作者が census の表に直接記入、Track N の依頼)。"
+    "**下の 10-31 の注は、10-31 の11作についての言明のまま残す**(書き換えない)",
+    "**試しの20作の線画「分からない」12行のうち11行は、作者のコメントが「線画はない」**"
+    "(作者、2026-11-10:「今回は線画のない鉛筆漫画原稿がおおい」)。**表の選択肢に「線画が無い」が無かった** —— "
+    "表の不具合で、作者の迷いではない。**値は書き換えず、コメントと並べて載せる。「分からない」を「無い」と読み替えるのは読む側の仕事**",
+    "**試しの20作は 19作である** —— 2行(札が違う同じ名前の作品)は作者が「同じ内容」と答えた(2026-11-10)。"
+    "census の分ける単位でも、ファイルの中身の共有で同じ単位に束ねてあった",
     "**出所は作者の記入式の表**(2026-10-31、Track N 経由)。"
     "**census は作者に直接聞いていない。** **track が推測した列ではない** —— "
     "**他の track が同じ推測を別々に作るのを止めるために、ここが正本を持つ**"
@@ -77,15 +87,35 @@ NOTE = [
     "**仕上げの列は無い。** 作者は「アナログの仕上げはまずない」と言い、"
     "**在れば備考に書く約束だったが、どの行にも書かれていない** —— "
     "**「0件だった」ではなく「列を立てていない」**",
-    "**この11作は母集団 320 組のうちの 11 組である。** "
+    "**10-31 の11作は母集団 320 組のうちの 11 組である。** "
     "**残りに方式の裁定は無い** —— **空欄は「デジタル」ではない**(条例4 の家族)",
 ]
 
 
+def pilot_rows(arcs):
+    """試しの20作の答え。作者が census の表に直接記入した(Track N の依頼)"""
+    from openpyxl import load_workbook
+    ws = load_workbook(os.path.join(ROOT, PILOT), read_only=True)["作品"]
+    it = ws.iter_rows(values_only=True)
+    h = list(next(it))
+    out = []
+    for v in it:
+        r = dict(zip(h, v))
+        if r["番号"] is None:
+            continue
+        k = (str(r["札"]), r["作品"])
+        out.append(dict(year_label=k[0], work=k[1], arc_from_n=arcs.get(k, "未割り当て"),
+                        stage_rough=r["下絵"] or "未記入", stage_lineart=r["線画"] or "未記入",
+                        device_note=r["機材の備考"] or "未記載", comment=r["コメント"] or "",
+                        decided_by="作者の記入式の表(census が作成、直接)", as_of="2026-11-10",
+                        source_notice="hearing_process_pilot20_answered_20261110.xlsx"))
+    return out
+
+
 def main() -> int:
     print("  [制作の方式(作者の裁定)]")
-    rows_in = load(INPUT)
     arcs = {(r["year"], r["work"]): r["arc"] for r in load(ARC_READBACK)}
+    rows_in = [dict(r, comment="") for r in load(INPUT)] + pilot_rows(arcs)
     con = census_db.connect()
     try:
         pages = collections.Counter()
@@ -155,7 +185,7 @@ def main() -> int:
                      arcs.get(k, "**未裁定**"),
                      r["stage_rough"], r["stage_lineart"], r["device_note"],
                      pages[k], layers[k],
-                     r["decided_by"], r["as_of"], r["source_notice"], ""])
+                     r["decided_by"], r["as_of"], r["source_notice"], r["comment"], ""])
     reg.report("作品の鍵")
     reg.close()
 
@@ -166,9 +196,9 @@ def main() -> int:
     dev = collections.Counter(r[5] for r in rows)
     print("    機材: " + " / ".join(f"{k} {v}" for k, v in sorted(dev.items())))
 
-    rows += [["", "", "", "", "", "", "", "", "", "", "", n] for n in NOTE]
+    rows += [["", "", "", "", "", "", "", "", "", "", "", "", n] for n in NOTE]
     header = ["work_id", "year_label", "arc", "stage_rough", "stage_lineart",
-              "device_note", "n_pages", "n_layers", "by", "as_of", "source", "note"]
+              "device_note", "n_pages", "n_layers", "by", "as_of", "source", "author_comment", "note"]
     n = bc.write_csv(os.path.join(ROOT, "census", "author_process.csv"), header, rows)
     print(f"    author_process.csv {n}行")
     return 0
