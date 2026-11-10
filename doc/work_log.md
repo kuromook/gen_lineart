@@ -7811,3 +7811,39 @@ over the 53,289 stage candidates, in the Mon–Thu night slot. Small first, as t
 The same statistic also **corrects a number this tree reported**: because the pixel counts are
 alpha-based, the 芯 rule (coverage > 0.5, faintness < 0.25) can pick up layers painted broadly in
 white. How often is still uncounted.
+
+## 2026-11-11 (night) A-1 came back answered; the missing option turned out not to need the author at all
+
+census relayed two things. First, **the author confirmed the alias**: on two layers named `成人修正`
+the stage answer was 段の線ではない with the comment **「黒消しの別名」** — the handle this tree found in
+the inventory, confirmed by the author's own words. census's caveat is right and is adopted: **two
+layers were answered, so extending the name to all 651 is a guess** (規律13). The row therefore stays
+**「材料」** in `config/picture_exclusion_draft_20261111.tsv` — not a proposal to drop anything by name —
+and its use is as the material for building the rotated-rectangle rule against the three named
+controls. Whether `モザイク` and friends count as aliases goes to the author, not to us.
+
+Second, **A-1 (the trial bin, 16 rows) came back answered, and the bar was not read** — five bins
+first, as registered before anything ran. Raw counts only: **段の線ではない 7 / 下絵 4 / あたり 4 /
+分からない 1.** The direction is visible — the thin stages were 0.0722 of the name-drawn 265, and here
+they are 8 of 16 — so **the nulls will move a lot, and they are not being read on 16 of 97 rows.**
+便B is **not** redrawn either: changing the selection after seeing A-1 is changing it because of what
+was seen, and even a training-only bin keeps the order.
+
+**The trial's catch, and it cost the author nothing to fix.** The author answered 分からない with the
+comment 「空」 on an empty layer, and census asked whether to add a 「空」 option from A-2 on. Checking
+the 16 rows against the pixel columns settled it: **the single 分からない row is exactly the one layer
+with `n_px_a_gt0 = 0`, and all 15 others are above zero** (76,193 to 28,669,110). **Empty is
+deterministic from a column we already have, so the author should not be asked about it at all.**
+A-2 through A-5 therefore keep A-1's choices unchanged — an instrument that changes inside the
+bar-reading bin would entangle bin-to-bin differences with movements of the author's own standard
+(the shape of 条例6, since there is one judge) — and **the author's answer is not rewritten** (規律6):
+it stays 分からない, and the analysis splits it by `empty` and prints both counts. The option and an
+`empty` mark (placed by machine, not hunted for by the author) start with 便B and the axis-2 hearing,
+where nothing touches the bar.
+
+**And the two-axis design got its worked example from the author, unprompted**: a layer named `rough`
+answered **あたり** with the comment **「描き文字のあたり」**. Had the exclusions been carved out of
+段ではない, that layer would have been evicted from the stage the author put it in. Also `effect` →
+「描き文字」, `描き文字　　白フチ` → 「描き文字」, and three 「グレーの塗」. **These comments are not axis-2
+answers** — they are volunteered remarks on a question nobody asked, so the population is skewed and
+they stay out of the labels; axis 2 gets asked properly.
