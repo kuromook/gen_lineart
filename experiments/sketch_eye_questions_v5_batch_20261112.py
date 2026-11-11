@@ -33,7 +33,8 @@ a = ap.parse_args()
 v4 = [k for k, _, _ in load_jobs("data/clip_pairs_v4")]
 pid = {k: f"p{i:04d}" for i, k in enumerate(v4)}
 v5 = load_jobs("data/clip_pairs_v5", qc="clip_pairs_qc_v5.csv")
-seen = {json.loads(l)["item_id"] for l in open(f"{D}/answers.jsonl", encoding="utf-8")}
+# only the 11-10 (v4) answers are excluded, so the shuffled order stays the same as later batches are answered
+seen = {r["item_id"] for r in map(json.loads, open(f"{D}/answers.jsonl", encoding="utf-8")) if r.get("item_version") == "clip_pairs_v4"}
 pool = [j for j in v5 if pid[j[0]] not in seen]
 random.Random(a.seed).shuffle(pool)          # one fixed order; batch b takes slice b
 pick = pool[(a.batch - 1) * a.n: a.batch * a.n]
