@@ -8005,3 +8005,18 @@ prints the caveat with the numbers). The approved order went out narrowed to thi
 every mask_fill layer with pixels, own-mask pixels and any tone record in the .clip. One thing is being looked
 for — whether any layer has `n_px_a_gt0 > 0` with `n_px_a_gt0_own_mask = 0`, the author's masked-out tone layer,
 whose denominator is currently zero.
+
+## 2026-11-11 (late, cont.) 便B's 65-layer order approved — with the half of the definition it cannot test written on the label first
+
+"こちらも承認". The order goes as census prepared it (`stage_layers_order_round2b_20261111.csv`, 65 rows,
+sha256 `c562e39a73a3583c`) and needs no extra columns: the 46-layer delivery already carries every column the
+settled definition uses — `render_status`, `n_px_a_gt0`, `n_px_a_gt0_own_mask`, `has_own_mask`,
+`n_ancestor_masks`, `mask_status`.
+
+Checked before sending rather than after: all 65 layers are `raster`, and so are all 111 rows of 便B. There is
+not one `mask_fill` among them, which is the kind the tone-layer lead points at. So the clause "pixels present
+but the own mask hides all of it" cannot fire anywhere in 便B — the empty mark this order enables will only
+ever be the "zero pixels, no own mask" kind. The cause is the population again: 便B was drawn from the
+53,289-layer stage table, which holds a single mask_fill layer. census was asked to write that on the label,
+so the mark is not read as covering the whole definition. The tone clause gets tested in the separate 2018
+monochrome-manga unit instead.
