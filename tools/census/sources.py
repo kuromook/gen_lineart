@@ -639,6 +639,52 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/deliver_tone_mask_pixels_ako6_20261112.md",
+        what="**抽出側の納品: 1作品フォルダーのトーンの層のマスクの画素(4,784 + 167層)と、トーンの設定の値**。塗りの層は全面を描いた約束の値で数えた",
+        why_not_yet="**sha256 一致。census で数え直して、塗りの層のうち自分のマスクが 0 の層 2,865(E と一致)。** 表 v3 には入れていない(塗りの層はほぼ母集団の外)。"
+                    "塗りの層を表に入れるときはマスクそのものの画素の列を足す",
+    ),
+    dict(
+        path="inbox/note_census_tone_clause_measured_and_a2_read_20261112.md",
+        what="**Track E: トーンの条項に母数が付いた(1作品フォルダーで 2,865層がマスクで全部消えている)/ 便A の束2 の読み(採点なし)**",
+        why_not_yet="**受けた。** 聞き取りの項目にする提案は除外の track の持ち分なので写した",
+    ),
+    dict(
+        path="inbox/note_census_round2b_marked_and_tone_name_verified_20261112.md",
+        what="**Track E: 便B の空の印を手元でも付けた(6層)/ トーンの名前の形と効果の列の照合 / 全層の 2×2 の依頼**",
+        why_not_yet="**2×2 を出した**(全層で 名前∧有効 89,059 / 名前∧無効 61 / 無効でない側の取りこぼし 2,001)。空の6層は census と一致",
+    ),
+    dict(
+        path="inbox/note_census_step3_signature_and_canvas_ask_20261112.md",
+        what="**Track E: 第3段(テンプレートの画素の署名)を手元の表で走らせた / キャンバスの大きさの依頼**",
+        why_not_yet="**キャンバスの集計を出した**(`template_pages_step3_order.py`。.clip で 16種)",
+    ),
+    dict(
+        path="inbox/note_census_step3_corpus_order_approved_20261112.md",
+        what="**Track E: 第3段の頁の発注(1作品単位1頁・層を全部、先に1頁)。ユーザーの承認あり**",
+        why_not_yet="**抽出側へ発注した**(67頁・4,248層。.lip だけの15単位は外した)。納品待ち",
+    ),
+    dict(
+        path="inbox/note_census_step3_rule_addendum_20261112.md",
+        what="**Track E: 第3段の読みの規則に条項を1つ足した(発注は変わらない)**",
+        why_not_yet="**census の作業なし。** 発注の中身は変えていない",
+    ),
+    dict(
+        path="inbox/reply_census_duplicate_pages_20261112.md",
+        what="**基盤の回送: 対の中で二重に入っている頁のどれを使うかは census(ユーザーの決定)**。採る版を名簿の列にしてほしい",
+        why_not_yet="**受けた。対の新しい版ができてから、その頁で一覧を作り直し、作者に20行の試しで聞く**(作者に渡す前にユーザーの承認)",
+    ),
+    dict(
+        path="inbox/reply_p_census_colour_stage3_order_20261112.md",
+        what="**Track P: カラーかの聞き取りの第3段は P の頁を持つフォルダーから(ユーザー了承)** / 11-09 の層の種別の依頼の催促",
+        why_not_yet="**種別の列を渡した**(`p_layer_kind_300.py`、40,879行、引けない行 0)。第3段の表はまだ作っていない",
+    ),
+    dict(
+        path="inbox/note_p_census_layer_kind_300_20261109.md",
+        what="**Track P: 300頁の全層に層の種別の列を**",
+        why_not_yet="**11-12 に渡した**(11-09 から census が取りこぼしていた)",
+    ),
+    dict(
         path="inbox/note_q_census_bin1_amendment_fixed_order_go_20261112.md",
         what="**Track Q: 便1 の一覧を登録の追補で固定。発注を出してよい**",
         why_not_yet="**抽出側へ発注した**(SCP、着弾を確認)。納品待ち",
