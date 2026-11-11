@@ -765,7 +765,29 @@
       },
       "bar_unchanged": "便A の空の5行は5行とも定義Dでも空。97行/92行の両方印字はそのまま効く",
       "unmeasurable_rows": "画素の列が空欄の15層は render_status『描画できなかった』(vector 1 / image_material 14)。どの定義でも空にしない",
-      "status": "作者の承認待ち。便B の65層の発注も、定義が固まってから"
+      "status": "作者の承認待ち。便B の65層の発注も、定義が固まってから",
+      "what_ancestor_means": {
+        "census_definition_verbatim": "`ancestors`(祖先のフォルダー名、上から) / `n_ancestor_masks`: マスクを持つ祖先のフォルダーの数",
+        "sources": [
+          "inbox/reply_e_census_layer_role_table_and_round2_20261110.md",
+          "inbox/reply_census_stage_layer_pixels_started_20261109.md"
+        ],
+        "shape_in_the_data": "頁の根 `p` → コマのフォルダー `コマ n` → 人物のフォルダー `\"M\"`/`\"F\"` → `トーン` のように重なる。例 `p/コマ 3/\"M\"/トーン` は祖先4つ",
+        "depth_distribution_of_zero_pixel_layers": {
+          "0": 6,
+          "1": 108,
+          "2": 1264,
+          "3": 3236,
+          "4": 347,
+          "5": 15,
+          "6": 1
+        },
+        "what_the_column_does_not_say": "**どの世代のフォルダーがマスクを持っているかは、この列では分からない**(数だけ)。だから提案の条件4は「上に在るどのフォルダーもマスクを持たない」という読みになっている",
+        "open_question_for_the_author": "『マスクがあれば空ではない』の『マスク』は (a) 上に在るどのフォルダーのマスクでもよいか、(b) すぐ上の親だけか、(c) 自分のマスクだけか。(b)を取るなら census に『マスクを持つ祖先の深さ』の列を頼む必要がある",
+        "the_nine_seisho": "清書9層は全部、コマの中の人物のフォルダー(`p/コマ n/\"M\"` または その下の `トーン`)の下に在り、マスクを持つ祖先はちょうど1つ",
+        "not_a_clean_separator": "マスクを持つ祖先が1つ以上の17層は 清書9 / 段ではない8。段ではない8層は `p/コマ n/bg` と `トーン` の下。**『マスクが在る』だけでは段は決まらない**",
+        "the_five_a_rows": "便A の空の5行は全部 マスクを持つ祖先0(深さ 1〜2、`sketch set/Sketch` など)。どの読みでも空のまま"
+      }
     }
   }
 }
