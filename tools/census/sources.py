@@ -644,6 +644,16 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/deliver_q1_trial17_images_20261112.md",
+        what="**抽出側の納品: 除外の track の17行の画(34枚、原寸)と点検の表**。2行は問う層が非表示で、頁の合成に写らない",
+        why_not_yet="**除外の track へ回送した**(sha256 36件一致。census は画を開いていない)。非表示の2行の扱いは除外の track が決める",
+    ),
+    dict(
+        path="inbox/note_census_name_hearing_round2_approved_20261112.md",
+        what="**Track E: 層名の聞き取り 第2回(20行)の発注。問いは「どの頁でも絵から除外してよいか」。1行目は名前ではなく効果の列で引く**(ユーザーの承認あり)",
+        why_not_yet="**表を作った**(`name_hearing_round2_sheet.py`。下書きの数を棚卸しと構造 DB で引き直して全部一致、名前の行と1行目の重なり 0層)。作者の答え待ち",
+    ),
+    dict(
         path="inbox/deliver_template_pages_step3_20261112.md",
         what="**抽出側の納品: 第3段の全67頁(4,248層)**。画像素材の画素0 は空ではない見込み(元の画像を読んでいない)",
         why_not_yet="**Track E へ回送した**(sha256 一致)。読みは E",
