@@ -10,12 +10,15 @@
   候補の3つ(ako6 / comics4 / china_v2)のうち、census が選んだ。**漫画かイラストかの表のこの行は作者の答えではない(未確認)**
 - 層: 祖先に名前が `トーン` か `tone`(大小を問わない)を含むフォルダーを持つ、フォルダーでない層の全部
 - 列は構造 DB の列だけ。**画素(`n_px_a_gt0` / `n_px_a_gt0_own_mask`)は無い** —— 抽出側への発注が要り、ユーザーの承認の後
+- **発注(ユーザーの承認 2026-11-11「なら全部でいい」)**: 4,784層全部を抽出側への一覧に書く。**先に1頁で試す**(頁は
+  `random.Random(20261111)` で、塗りの層を持つ頁から1つ)。一覧の `smoke = 1` がその頁
 
     ./venv/bin/python tools/census/tone_folder_layers.py
 """
 import collections
 import csv
 import os
+import random
 import re
 import sys
 
@@ -27,6 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 UNIT = "\\2018\\ako6\\"
 TONE = re.compile(r"トーン|tone", re.I)
 OUT = "data/census_full/tone_folder_layers_2018_ako6_20261111.csv"
+ORDER_OUT = "outbox/tone_mask_pixels_order_2018_ako6_20261111.csv"
 
 
 def main() -> int:
@@ -65,6 +69,15 @@ def main() -> int:
         w.writeheader()
         w.writerows(out)
     print(f"    → `{OUT}`(非公開)")
+    pg = sorted({d["page_path"] for d in out if d["v_layer_kind"] == "mask_fill"})
+    smoke = random.Random(20261111).choice(pg)
+    with open(os.path.join(ROOT, ORDER_OUT), "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["no", "page_path", "layer_id", "v_layer_kind", "tone_enabled", "has_mask", "smoke"])
+        for i, d in enumerate(out, 1):
+            w.writerow([i, d["page_path"], d["layer_id"], d["v_layer_kind"], d["tone_enabled"], d["has_mask"], int(d["page_path"] == smoke)])
+    ns = [d for d in out if d["page_path"] == smoke]
+    print(f"    発注の一覧 `{ORDER_OUT}` {len(out):,}行 / 試しの頁: 層 {len(ns)}(塗りの層 {sum(d['v_layer_kind'] == 'mask_fill' for d in ns)})")
     return 0
 
 

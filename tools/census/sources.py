@@ -647,7 +647,8 @@ ARRIVED_NOT_INTEGRATED = [
         path="inbox/note_census_tone_layer_flag_20261111.md",
         what="**Track E: トーンの層を示す列が手元に無い**(段の候補の表で `tone_enabled` が全部 0)。列の出所と、トーンのフォルダーの中の層を1作品ぶん",
         why_not_yet="**答えた: `tone_enabled` が真の層は構造 DB に 91,060層で全部が塗りの層(`mask_fill`)。段の候補の表は raster と vector なので母集団の外。** "
-                    "1作品フォルダーぶんの構造の列を渡した。画素は発注が要り、ユーザーの承認待ち",
+                    "1作品フォルダーぶんの構造の列を渡した。**画素はユーザーの承認(11-11「全部でいい」)で抽出側へ発注した**(4,784層、先に1頁で試す。"
+                    "マスクそのものの画素の列を1つ足して頼んだ)",
     ),
     dict(
         path="inbox/note_q_e_census_hello_b_and_kuro_keshi_registered_20261111.md",
