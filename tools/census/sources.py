@@ -639,6 +639,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/note_census_a2_wording_and_empty_count_20261111.md",
+        what="**Track E の訂正: 便A の空の層は97行に5**(census の「全体で1」は回収した16行の中の数で、述語が無かった)/ A-2 の一言の曝露は2行",
+        why_not_yet="**受けた。** 器具の印字に母集団を書き、16行の中 1 / 97行の中 5 を両方出す(E と一致)",
+    ),
+    dict(
         path="inbox/deliver_occlusion_edge_stage2_crops_20261110.md",
         what="**抽出側 → 基盤の納品の写し(無効)**: 取り消し後に作られた第2段の切り出し。`note_occlusion_edge_stage2_crops_deleted_20261110.md` で全部消したと知らせがあった",
         why_not_yet="**census は写していない**(原稿の画素は census の木に無い)。作業なし",

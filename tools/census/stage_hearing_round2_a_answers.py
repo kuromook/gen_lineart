@@ -63,7 +63,12 @@ def main() -> int:
         print(f"    {b}: {len(a) - 1}行(sha256 {sha[:16]})→ " + " / ".join(f"{s} {n}" for s, n in c.most_common()))
     dk = [x for x in out if x["author_stage"] == "分からない"]
     print(f"    分からない {len(dk)} → ∧空 {sum(x['empty'] == '1' for x in dk)} / ∧空でない {sum(x['empty'] == '0' for x in dk)}"
-          f"(答えは書き換えない)/ 空の層 全体 {sum(x['empty'] == '1' for x in out)}")
+          f"(答えは書き換えない)")
+    # 11-11 の印字「空の層 全体 1」は述語が無く、97行の数と読まれた(E が訂正: 97行に5)。母集団を名前で書いて両方出す
+    allk = [k for b_ in key for k in key[b_]]
+    print(f"    空の層: **回収した束の行({len(out)}行)の中で {sum(x['empty'] == '1' for x in out)}** / "
+          f"**便A の全行({len(allk)}行)の中で {sum(empty[(k['page_path'], k['layer_id'])] == '1' for k in allk)}**(束ごと "
+          + " / ".join(f"{b_} {sum(empty[(k['page_path'], k['layer_id'])] == '1' for k in key[b_])}" for b_, _ in BUNDLES) + ")")
     with open(os.path.join(ROOT, OUT), "w", encoding="utf-8", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(out[0]))
         w.writeheader()
