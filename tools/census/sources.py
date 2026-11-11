@@ -639,6 +639,27 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/note_census_empty_definition_fixed_20261111.md",
+        what="**Track E: 「完全に空」は作者が決めた —— 自分のマスクだけ見る(C)+ 画素は在るが自分のマスクで全部消えている層も空(トーンの形)**。空を段の選択肢にしない",
+        why_not_yet="**受けた。** 便B の機械の印を C にし、段の選択肢から空を外した(行と頁は不変)。段の候補の表で空 4,980層(E と一致)。表の空の列の定義に C が正本と書いた",
+    ),
+    dict(
+        path="inbox/note_census_tone_layer_flag_20261111.md",
+        what="**Track E: トーンの層を示す列が手元に無い**(段の候補の表で `tone_enabled` が全部 0)。列の出所と、トーンのフォルダーの中の層を1作品ぶん",
+        why_not_yet="**答えた: `tone_enabled` が真の層は構造 DB に 91,060層で全部が塗りの層(`mask_fill`)。段の候補の表は raster と vector なので母集団の外。** "
+                    "1作品フォルダーぶんの構造の列を渡した。画素は発注が要り、ユーザーの承認待ち",
+    ),
+    dict(
+        path="inbox/note_q_e_census_hello_b_and_kuro_keshi_registered_20261111.md",
+        what="**Track Q: b を持つ / 黒消しの登録を固定 / 便1 の対照の引き方の案**",
+        why_not_yet="**受けた。** 対照の一覧を Q の案で引いた(`grey_stats_bin1_order.py`)",
+    ),
+    dict(
+        path="inbox/note_q_census_order_grey_stats_bin1_approved_20261111.md",
+        what="**Track Q: 階調の統計の便1 にユーザーの承認。対照の引き方と数を Q に渡してから発注**",
+        why_not_yet="**一覧を引いた(825層、既知の3層を含む)。** 引き方と数を Q に渡した。**発注は Q の追補の後**",
+    ),
+    dict(
         path="inbox/note_census_empty_definition_20261111.md",
         what="**Track E: 「完全に空」の定義の提案(定義D)** —— 作者の裁定「画素が無くてもマスクがあれば空ではない」。表の空の列はマスクを見ていない",
         why_not_yet="**census で数え直して一致**(段の候補 53,289層の表で、画素0 4,977層 → 定義D 1,664層)。空の列の定義を器具に書いた(値は変えない。"

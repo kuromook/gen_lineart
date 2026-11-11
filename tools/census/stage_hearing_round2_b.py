@@ -19,8 +19,10 @@
 - **表の形(E 11-11 `note_census_a1_keep_choices_20261111.md`)**: 便B は選択肢に「空(1画素も描かれていない)」を足し、
   「空」の印を画素の列(層の役割の表 v2 の `empty`)から機械が付ける。頁と行は変えない(引き直さない)
 - **「空」の定義を変える(E 11-11 `note_census_empty_definition_20261111.md`、作者の裁定「画素無くてもマスクがあればその層は空ではない
-  完全に空であるという定義が必要」)**: 選択肢の文と機械の印を **定義D**(描画が読めた ∧ 画素0 ∧ 自分のマスクが無いか空 ∧
-  祖先のマスクが無い ∧ マスクが読めた)にする。**表は作者に出す前なので、行も頁も変わらない。** 定義D は E の提案で、作者の確認待ち
+  完全に空であるという定義が必要」)**: 一度は E の提案の定義D(祖先のマスクまで見る)にした
+- **作者が C を選んだ(E `note_census_empty_definition_fixed_20261111.md`。定義D は採られなかった)**: 機械の印は `empty_c()`
+  (自分のマスクだけ見る + 画素は在るが自分のマスクで全部消えている層も空)。**E の頼みで「空」を段の選択肢から外す**
+  (作者は空の層に段を付けている = 排他ではない)。「空」は機械の印の列だけに残す。**表は作者に出す前なので、行も頁も変わらない**
 - **v2(2026-11-10、ユーザーの決定「20以下」)**: v1 の10頁は 550行で、8頁が1頁で20行を超えた(作者の数「Excel は 20」)。
   **候補を「並べる層(raster と vector)が 20 以下の頁」に絞って同じ seed・同じ手順で引き直す。** 作者が答える前に決めた。
   v1 の出力は消さずに残す(`*_20261110.csv` / `*_bundleB-*`)。v2 は `_le20` を付ける。絞る前後の候補の数を両方印字する
@@ -56,14 +58,16 @@ def f(x):
     return float(x) if x not in ("", None) else None
 
 
-def empty_d(r) -> str:
-    """E の定義D(「完全に空」)。全部が成り立つときだけ 1 を返す"""
-    return str(int(r["render_status"] != "描画できなかった" and r["n_px_a_gt0"] == "0"
-                   and (r["has_own_mask"] == "0" or r["n_px_a_gt0_own_mask"] == "0")
-                   and r["n_ancestor_masks"] == "0" and r["mask_status"] == "ok"))
-
-
-EMPTY_CHOICE = "空(画素が0で、自分にも上のフォルダーにもマスクが無い)"
+def empty_c(r) -> str:
+    """「完全に空」の正本(作者の裁定 2026-11-11 = C + トーンの形)。E `tools/empty_tone_masked_out.py` の `is_empty()` と同じ規則。
+    祖先のマスクは見ない。読めない層は "0"(空ではない = 測れない)"""
+    px = int(r["n_px_a_gt0"]) if r["n_px_a_gt0"] not in ("", None) else None
+    if px is None or r["mask_status"] not in ("ok", ""):
+        return "0"
+    own = int(r["n_px_a_gt0_own_mask"]) if r["n_px_a_gt0_own_mask"] not in ("", None) else None
+    if px == 0:
+        return "0" if (r["has_own_mask"] == "1" and (own or 0) > 0) else "1"
+    return "1" if own == 0 else "0"
 
 
 def main() -> int:
@@ -79,7 +83,7 @@ def main() -> int:
     pages_all = set()
     for r in csv.DictReader(open(os.path.join(ROOT, TABLE), encoding="utf-8")):
         n_all += 1
-        empty[(r["page_path"], r["layer_id"])] = empty_d(r)
+        empty[(r["page_path"], r["layer_id"])] = empty_c(r)
         if r["split_unit"] in ev:
             drop["便A の評価単位"] += 1
             continue
@@ -190,7 +194,7 @@ def main() -> int:
         over = "  **20行を超える(1頁で切れない)**" if len(sub) > LIMIT else ""
         print(f"    {b}: 項目 {', '.join(map(str, its))} → {len(sub)}行{over}")
         write_xlsx(b, its, items, sub, None, label="便B", n_bundles=len(names), path=XLSX, trial=(b == "B-1"),
-                   stages=STAGES[:-1] + [EMPTY_CHOICE, STAGES[-1]], empty=empty)
+                   stages=STAGES, empty=empty)
     print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}` / 表 `{XLSX.format(b='B-1')}` ほか(非公開)")
     return 0
 
