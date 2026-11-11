@@ -171,6 +171,8 @@
 ./venv/bin/python tools/census/tone_folder_layers.py          # トーンのフォルダーの中の層、1作品フォルダーぶん(構造 DB だけ、非公開)
 ./venv/bin/python tools/census/template_pages_step3_order.py  # 第3段(テンプレートの画素の署名)の頁の一覧と、キャンバスの集計(非公開)
 ./venv/bin/python tools/census/p_layer_kind_300.py          # P の300頁の全層の層の種別(非公開)
+./venv/bin/python tools/census/duplicate_pages_v5.py          # 対 v5 の中で二重に入っている頁の一覧(非公開)
+./venv/bin/python tools/census/hearing_duplicate_folders_v5.py # その聞き取りの表(つながったフォルダーの組で1行、非公開)
 ./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列。画素の列は抽出側の manifest から写す + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 ./venv/bin/python tools/census/process_hearing_pilot20.py # Track N の依頼: 工程の聞き取りの試し 20作の表(非公開)
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)

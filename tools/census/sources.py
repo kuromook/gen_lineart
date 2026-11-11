@@ -639,6 +639,27 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/deliver_grey_stats_bin1_20261112.md",
+        what="**抽出側の納品: 階調の統計の便1(825層の色の内訳と連結成分 5,301行)**。既知の3層の画素数は一致",
+        why_not_yet="**除外の track へ回送した**(sha256 一致。既知の3層は層の役割の表 v3 でも一致)。読みは除外の track",
+    ),
+    dict(
+        path="inbox/deliver_template_pages_step3_smoke_20261112.md",
+        what="**抽出側の納品: 第3段の試しの1頁(99層)**。残りの頁は続けて流す",
+        why_not_yet="**Track E へ回送した。** 塗りの層の数え方がトーンの便と違う(この便は全面の約束を使わない)と添えた",
+    ),
+    dict(
+        path="inbox/note_census_a_taken_over_canvas_and_tone_verdict_20261112.md",
+        what="**Track E: a を引き取った / 作者がテンプレートと答えた塗りの層の名前を除外の表に足す提案(ユーザーの承認待ち)/ 規則が届き得る単位の上限 / トーンは名前を使わず効果の列**",
+        why_not_yet="**受けた。** 除外の表に足す件はユーザーに上げた",
+    ),
+    dict(
+        path="inbox/reply_census_pairs_v5_arrived_20261112.md",
+        what="**基盤: 対の v5 が届いた。二重の頁の一覧は v5 で作ってよい(QC で外す頁を先に落とす)**",
+        why_not_yet="**一覧を作った**(`duplicate_pages_v5.py`: 114組・257頁)。フォルダーのつながりで8行に畳んだ聞き取りの表を作った(`hearing_duplicate_folders_v5.py`)。"
+                    "作者に渡す前にユーザーの承認",
+    ),
+    dict(
         path="inbox/deliver_tone_mask_pixels_ako6_20261112.md",
         what="**抽出側の納品: 1作品フォルダーのトーンの層のマスクの画素(4,784 + 167層)と、トーンの設定の値**。塗りの層は全面を描いた約束の値で数えた",
         why_not_yet="**sha256 一致。census で数え直して、塗りの層のうち自分のマスクが 0 の層 2,865(E と一致)。** 表 v3 には入れていない(塗りの層はほぼ母集団の外)。"
