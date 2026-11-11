@@ -22,7 +22,9 @@ from stage_hearing_round2_a_sheets import BUNDLES, KEY_OUT, XLSX  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ANSWERED = {"A-1": ("data/census_full/hearing_round2_a_bundleA-1_answered_20261111.xlsx",
-                    "6b8778d46b4566243c8b70eb39ebb9bf52b49e1097aaaeea200dcb932b6bb891", "2026-11-11")}
+                    "6b8778d46b4566243c8b70eb39ebb9bf52b49e1097aaaeea200dcb932b6bb891", "2026-11-11"),
+            "A-2": ("data/census_full/hearing_round2_a_bundleA-2_answered_20261112.xlsx",
+                    "028fdab5ec97717c7c3e859c9101e50b2536dd22ffeb01385c7d8083caa12499", "2026-11-12")}
 OUT = "data/census_full/hearing_round2_a_answers.csv"
 TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 
