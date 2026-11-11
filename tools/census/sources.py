@@ -647,7 +647,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_census_order_grey_stats_20261111.md",
         what="**Track E → census: 抽出側への階調の統計の発注の起案**(小さい便1 → 大きい便2。ユーザーの承認あり)。対照の層の一覧を census が引く",
-        why_not_yet="**保留(ユーザーに確認中)**: 基盤が除外の track を立て、新しい画素の列の発注はその track の登録の後に census 経由で、と回送した。順番をユーザーに聞く",
+        why_not_yet="**保留(ユーザーの決定 11-11: 除外の track の登録を待つ)**。基盤の回送どおり、登録の後に census が対照の一覧を引いて出す",
     ),
     dict(
         path="inbox/reply_track_q_opened_20261111.md",
