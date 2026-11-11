@@ -742,7 +742,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/reply_track_q_opened_20261111.md",
         what="**基盤: b(除外の判定)の track を立てた**(Track Q)。新しい画素の列の発注は Q の登録の後に census 経由",
-        why_not_yet="**受けた。** a(テンプレート)の聞き取りの答えを Q と E に写す",
+        why_not_yet="**受けた。** a(テンプレート)の聞き取りの答えを Q と E に写した。**11-12 にユーザーが a の担当を census から E に改めた**(census は一覧・発注・列)",
     ),
     dict(
         path="inbox/note_census_a2_wording_and_empty_count_20261111.md",
