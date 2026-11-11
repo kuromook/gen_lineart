@@ -17206,3 +17206,12 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
 - fill-region: テンプレート・成人修正は fill-region の単位に 0。作者が黒消しと答えた単位はモザイクの道 → 別名の候補として作者に聞く項目に残す
 - 抽出側の outbox の新着 `note_foundation_pairs_v5_decision_20261111.md` は基盤宛(census の作業なし)
 - 返事 `reply_e_census_a2_out_and_round2b_empty_mark_20261111.md` → E / 写し 基盤
+
+## 2026-11-11 12:20 事故: 層名2つが公開の provenance.csv に出て push された(11d6b81)
+
+- 直前の commit で、`sources.py` の受け取りの説明に層名(黒消しの別名と、モザイクの名前)を書いた。それが公開の `census/provenance.csv` に写った
+- ビルドは「モザイク」を指摘して「commit しない」と出していた。しかし、ビルドと commit を `;` で繋いでいたので止まらず、commit と push まで進んだ
+  - **黒消しの別名は、禁止語彙に無かったので鳴らなかった**
+- 直し: 説明を層名なしに書き直した(provenance に出る層名 0)。別名を `build_census.py` の `AUTHOR_LAYER_NAMES` に足した(禁止 6 → 7 語)
+- **11d6b81 は origin の履歴に残る**(force-push では消えない。CLAUDE.md §4)。漏れたのは層名2つで、作品名・頁のパスは無い
+- 以後: 点検と commit を `&&` で繋ぎ、指摘があれば止める形にする

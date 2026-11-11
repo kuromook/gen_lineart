@@ -629,13 +629,13 @@ ARRIVED_NOT_INTEGRATED = [
     ),
     dict(
         path="inbox/note_census_a1_keep_choices_20261111.md",
-        what="**Track E: 便A の選択肢は変えない(空は画素の列で決まる)/ A-2 を出す / 成人修正は材料のまま / 便B と軸2 に「空」の選択肢と機械の印**",
+        what="**Track E: 便A の選択肢は変えない(空は画素の列で決まる)/ A-2 を出す / 黒消しの別名の層名は材料のまま / 便B と軸2 に「空」の選択肢と機械の印**",
         why_not_yet="**A-2 をユーザーに送った**(添えた一言が A-1 と違うと E に記録)。答えの取り込みに「分からない∧空」の印字を足した。"
                     "**便B の印は 65/111層の画素が無く付けられない** —— 表は作らず、抽出側への一覧 `stage_layers_order_round2b_20261111.csv` を用意(発注はユーザーの承認待ち)",
     ),
     dict(
         path="inbox/note_fill_region_exclusion_impact_20261111.md",
-        what="**fill-region: テンプレートと成人修正は fill-region の単位に当たらない。当たるのは黒消し(モザイクの道)と描き文字・effect**",
+        what="**fill-region: テンプレートと黒消しの別名の層は fill-region の単位に当たらない。当たるのは黒消し(別の名前の道)と描き文字・エフェクト**",
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
