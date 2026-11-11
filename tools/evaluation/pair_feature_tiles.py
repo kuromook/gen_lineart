@@ -291,8 +291,8 @@ def measure_page(job):
     return page, tiles, segrows
 
 
-def load_jobs(root, only=None, limit=0):
-    rows = list(csv.DictReader(open(Path(root) / "clip_pairs" / "clip_pairs_qc_v4.csv", encoding="utf-8")))
+def load_jobs(root, only=None, limit=0, qc="clip_pairs_qc_v4.csv"):
+    rows = list(csv.DictReader(open(Path(root) / "clip_pairs" / qc, encoding="utf-8")))
     idx = {os.path.basename(p): p for p in glob.glob(str(Path(root) / "clip_pairs" / "**" / "*.jpg"), recursive=True)}
     drop = {}
     jobs = []
@@ -317,9 +317,10 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--only", nargs="*")
+    ap.add_argument("--qc", default="clip_pairs_qc_v4.csv", help="QC table under <root>/clip_pairs (v5: clip_pairs_qc_v5.csv)")
     a = ap.parse_args()
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    jobs = load_jobs(a.root, a.only, a.limit)
+    jobs = load_jobs(a.root, a.only, a.limit, a.qc)
     done = set()
     if (out / "pages.csv").exists():
         done = {r["key"] for r in csv.DictReader(open(out / "pages.csv", encoding="utf-8"))}
