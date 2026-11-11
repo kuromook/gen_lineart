@@ -722,7 +722,17 @@
           "3b_pixels": "**抽出側の走行(ユーザーの承認が要る)**: **1作品単位あたり1頁、その頁の層を全部**。82単位 + ガイドの2単位。**層を全部**にするのは、逆向き(名前が違うテンプレート)を測るため",
           "page_selection_rule": "**選び方を先に書く(規律9: 選別は測定)**: 各単位で、テンプレートの名前の層を持つ `.clip` 頁のうち**頁のパスが辞書順で最初のもの**。1単位1頁。`.lip` の単位は測れないので母数から外して数を印字する"
         },
-        "status": "**3a は census に依頼した(手元の DB の問い)。3b はユーザーの承認待ちで、1層も発注していない**"
+        "status": "**3a は census に依頼した(手元の DB の問い)。3b はユーザーの承認待ちで、1層も発注していない**",
+        "order_approved": {
+          "users_words": "承認した (2026-11-12)",
+          "delivered": "outbox/note_census_step3_corpus_order_approved_20261112.md(census / 基盤 / fill-region、md5 一致)",
+          "who_builds_the_list": "**census** —— 頁のパスは構造 DB の側にしかない。返し先も census",
+          "size_estimate": "82単位 + ガイドの2単位。1頁あたりの層は n_leaf_layers で中央値71・平均84 → **およそ 5,800〜6,900層**",
+          "smoke_test_first": "**先に1頁**(census がトーンの便でやった形)。列・行数・フォルダーの扱いを見てから残り",
+          "columns": "便A/便B と同じ列 + census が付ける canvas_px_w / canvas_px_h / name / v_layer_kind / ancestors。**新しい統計量は要らない**",
+          "canvas_ask_does_not_block": "キャンバスの答えは**測る頁を変えない**。変わるのは比べ方(キャンバスごとに別の定数、『3単位以上』も同じキャンバスの中で数える)",
+          "status": "**発注済み。census が一覧を作って抽出側に回す**"
+        }
       }
     },
     "a_empty_rows_measured": {
