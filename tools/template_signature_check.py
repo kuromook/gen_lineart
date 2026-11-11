@@ -23,6 +23,27 @@ TEMPLATE_NAMES = ["PICOトンボ", "断ち落とし枠（白）", "断ち落と�
 SIG = ("canvas_px_w", "canvas_px_h", "n_px_a_gt0", "bbox_x0", "bbox_y0", "bbox_x1", "bbox_y1")
 
 
+def norm_rows(rows, src):
+    """納品の CSV には `split_unit` / `author_stage` / `render_status` が無いことが在る。
+    **頁のパスから導けるものだけ導き、導けないものは空欄にする**(推測で埋めない)。"""
+    added = collections.Counter()
+    for r in rows:
+        if not r.get("split_unit"):
+            parts = (r.get("page_path") or "").replace("/", "\\").split("\\")
+            r["split_unit"] = "\\".join(parts[:2]) if len(parts) >= 2 else (parts[0] if parts else "")
+            added["split_unit を頁のパスの頭2つから導いた"] += 1
+        for c in ("author_stage", "render_status", "why_listed", "name_rule", "v_layer_kind",
+                  "name", "n_px_a_ge26", "n_leaf_layers"):
+            if c not in r or r[c] is None:
+                r[c] = ""
+                added["%s が無いので空欄にした" % c] += 1
+    if added:
+        print("   列の補い(%s):" % src)
+        for k, v in sorted(added.items(), key=lambda x: -x[1]):
+            print("     %-46s %d 行" % (k, v))
+    return rows
+
+
 def sha(p):
     h = hashlib.sha256()
     with open(p, "rb") as f:
@@ -40,10 +61,16 @@ def sig(r):
     return None if any(x in ("", None) for x in v) else v
 
 
-def main():
-    print("表: %s sha256 %s" % (TABLE, sha(TABLE)))
-    rows = list(csv.DictReader(io.open(TABLE, encoding="utf-8")))
-    print("母集団: %d 層 —— **名前で引いた段の候補と聞き取りの層。全437,425層ではない**" % len(rows))
+def main(table=TABLE):
+    print("表: %s sha256 %s" % (table, sha(table)))
+    rows = norm_rows(list(csv.DictReader(io.open(table, encoding="utf-8"))), table)
+    units = {r["split_unit"] for r in rows}
+    pages = {r["page_path"] for r in rows}
+    print("母集団: **%d 層 / %d 頁 / %d 作品単位**" % (len(rows), len(pages), len(units)))
+    if table == TABLE:
+        print("   (**名前で引いた段の候補と聞き取りの層。全437,425層ではない**)")
+    else:
+        print("   (**第3段の納品。1作品単位1頁・その頁の層を全部**)")
 
     print("\n== 0. 署名が作れない層(規律9: 落としたものを理由別に数える) ==")
     drop = collections.Counter()
@@ -149,21 +176,23 @@ def main():
         if is_full:
             full.append((g, rs))
 
-    print("\n== 7. **名前を使わない規則の候補**、3つを並べる(規律9-5: 前後を名前付きで印字) ==")
-    def judge(rule):
+    print("\n== 7. **名前を使わない規則の候補**、4つを並べる(規律9-5: 前後を名前付きで印字) ==")
+    def judge(rule, tol=0.01):
         hit = []
         for g, rs in (by_sig if rule == "厳しい" else by_geo).items():
             u = {r["split_unit"] for r in rs}
             if len(u) < 3:
                 continue
-            if rule == "緩い+全面を外す":
-                gg = g if rule != "厳しい" else None
-                if (g[3], g[4], g[5], g[6]) == ("0", "0", g[0], g[1]) if rule == "厳しい" else \
-                   (g[2], g[3], g[4], g[5]) == ("0", "0", g[0], g[1]):
+            if rule != "厳しい" and rule != "緩い":
+                if (g[2], g[3], g[4], g[5]) == ("0", "0", g[0], g[1]):
+                    continue
+            if rule.endswith("画素±1%"):
+                px = [int(r["n_px_a_gt0"]) for r in rs]
+                if max(px) and (max(px) - min(px)) / max(px) > tol:
                     continue
             hit.append((g, rs))
         return hit
-    for rule in ("厳しい", "緩い", "緩い+全面を外す"):
+    for rule in ("厳しい", "緩い", "緩い+全面を外す", "緩い+全面を外す+画素±1%"):
         hit = judge(rule)
         layers = sum(len(rs) for _, rs in hit)
         nms = collections.Counter(safe_name(r) for _, rs in hit for r in rs)
@@ -172,9 +201,14 @@ def main():
         missed = sum(1 for r in rows if r["name"] in tmpl) - sum(v for k, v in nms.items() if k in tmpl)
         print("   規則=%-16s 組 %d / 層 %-3d / **テンプレートでない層 %d** / **取りこぼし %d** / 名前=%s"
               % (rule, len(hit), layers, wrong, missed, dict(nms.most_common(4))))
-    print("   → **『緩い + キャンバス全面の矩形を外す』が、この母集団で 取りこぼし0・誤り0**")
-    print("   **但し: 『全面を外す』の条項は、5単位の組(線画10層)を見た**後**に足した。")
-    print("   母数1組・10層に当てた条項で、他の母集団で確かめていない**(規律9-5)")
+    print("   → **使う規則は『緩い + 全面を外す + 画素±1%』**(登録簿 step3_corpus_preregistration)")
+    print("   **条項2つは、どちらも後から足した**(規律9-5):")
+    print("     ・『全面を外す』は 5単位の組(線画10層)を**見た後**。**母数1組・10層**")
+    print("     ・『画素±1%』は **smoke test が出した弱点に当てた**(作りものの頁で、")
+    print("       外接矩形が3単位で同じで中身が違う層を規則が拾った)。実データでの母数は0 ——")
+    print("       **この表では規則3と結果が同じで、効いているかどうかが見えない**")
+    print("     ・許容 1% は、`断ち落とし枠（白）` の実測の散らばり **0.15%** より緩い側に取った。")
+    print("       **母数1層に当てた定数で、validate していない**")
 
     print("\n== 4. キャンバスの大きさ —— 署名を他の単位に伸ばせるかの上限 ==")
     cv = collections.Counter((r["canvas_px_w"], r["canvas_px_h"]) for r in usable)
@@ -184,6 +218,40 @@ def main():
         print("     %sx%s —— %d層 / %d単位" % (k[0], k[1], v, len(u)))
     print("   → **署名はキャンバスを含むので、キャンバスが違う単位には同じ署名では届かない**")
 
+    if table != TABLE:
+        print("\n== 5. **棒**(登録簿 exclusion_axis.step3_corpus_preregistration。走る前に書いた) ==")
+        tmpl = {"PICOトンボ", "断ち落とし枠（白）", "断ち落とし枠", "外枠", "ガイド"}
+        hit = []
+        for g, rs in by_geo.items():
+            u = {r["split_unit"] for r in rs}
+            if len(u) < 3:
+                continue
+            if (g[2], g[3], g[4], g[5]) == ("0", "0", g[0], g[1]):
+                continue
+            px = [int(r["n_px_a_gt0"]) for r in rs]
+            if max(px) and (max(px) - min(px)) / max(px) > 0.01:
+                print("     群を外した(画素の散らばりが許容の1パーセントより大きい): "
+                      "矩形=(%s,%s,%s,%s) %d単位 画素 %d〜%d"
+                      % (g[2], g[3], g[4], g[5], len(u), min(px), max(px)))
+                continue
+            hit.append((g, rs))
+        caught = collections.Counter(safe_name(r) for _, rs in hit for r in rs)
+        wrong = sum(v for k, v in caught.items() if k not in tmpl)
+        named = [r for r in rows if r.get("name") in tmpl]
+        caught_names = sum(v for k, v in caught.items() if k in tmpl)
+        print("   規則に当たった層: %d(%d組)" % (sum(len(rs) for _, rs in hit), len(hit)))
+        print("   **テンプレートでない層: %d**" % wrong)
+        print("   **取りこぼし: %d**(テンプレートの名前の層 %d のうち、規則に当たらなかった数)"
+              % (len(named) - caught_names, len(named)))
+        if wrong == 0 and len(named) - caught_names == 0:
+            print("   → **棒に届いた。** 名前を使わない規則が、この母集団でも立つ")
+        else:
+            if len(named) - caught_names > 0:
+                print("   → **取りこぼしが在る。** テンプレートなのに規則が拾わない層 —— キャンバス別に数え直す")
+            if wrong > 0:
+                print("   → **テンプレートでない層が在る。** 名前を使わない道は使えない(否定。判定保留ではない)")
+        print("   当たった名前の内訳: %s" % dict(caught.most_common(8)))
+        return 0
     print("\n== 5. この段が手元で終わらない理由(母集団) ==")
     for nm in ("PICOトンボ", "断ち落とし枠（白）"):
         intable = {r["split_unit"] for r in rows if r["name"] == nm}
@@ -193,4 +261,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else TABLE))
