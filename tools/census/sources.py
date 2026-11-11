@@ -639,6 +639,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/note_census_chousei_confirmed_20261112.md",
+        what="**Track E: 作者がテンプレートと答えた塗りの層の名前を、ユーザーの承認で除外の表の「確定」にした**(落ちる層 52,009 → 54,392)",
+        why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
+    ),
+    dict(
         path="inbox/deliver_template_pages_step3_20261112.md",
         what="**抽出側の納品: 第3段の全67頁(4,248層)**。画像素材の画素0 は空ではない見込み(元の画像を読んでいない)",
         why_not_yet="**Track E へ回送した**(sha256 一致)。読みは E",
