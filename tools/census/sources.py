@@ -639,6 +639,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/note_q_census_bin1_amendment_fixed_order_go_20261112.md",
+        what="**Track Q: 便1 の一覧を登録の追補で固定。発注を出してよい**",
+        why_not_yet="**抽出側へ発注した**(SCP、着弾を確認)。納品待ち",
+    ),
+    dict(
         path="inbox/deliver_stage_round2b_and_draw_colour_20261112.md",
         what="**抽出側の納品: 便B の残り 65層の画素と描画色**(sha256 一覧と一致。頁のエラー 0、描いた 63 / 画素0 2)",
         why_not_yet="**層の役割の表 v3 に入れた**(53,354層。v2 の 53,289層は全列そのまま。既知セル: 描画色が P の300頁の表と 9,453層で一致)。"
@@ -675,7 +680,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_q_census_order_grey_stats_bin1_approved_20261111.md",
         what="**Track Q: 階調の統計の便1 にユーザーの承認。対照の引き方と数を Q に渡してから発注**",
-        why_not_yet="**一覧を引いた(825層、既知の3層を含む)。** 引き方と数を Q に渡した。**発注は Q の追補の後**",
+        why_not_yet="**一覧を引いた(825層、既知の3層を含む)。** 引き方と数を Q に渡した。Q の追補の後、**11-12 に抽出側へ発注した**",
     ),
     dict(
         path="inbox/note_census_empty_definition_20261111.md",
