@@ -7949,3 +7949,31 @@ compete with 清書. Emptiness becomes a machine-placed mark alongside the stage
 
 Asked of census, pending the user's approval: what `tone_enabled` actually reads, and the pixel/own-mask
 columns for layers inside one work unit's tone folders.
+
+## 2026-11-11 (late, cont.) Is there a column that says "this layer is a tone layer"? No — and not for want of the right works
+
+The author narrowed the ground usefully: tone folders appear only in monochrome manga finished for print, so
+illustrations and pencil manga cannot settle it, while the ako series or ~2018 manga could; and `トーン`/`tone`
+are the names of the *folders* that collect tone layers, so the tone layers themselves are what must be looked
+at. Then the question: is there information on whether a layer is a tone layer?
+
+Measured (`tools/tone_layer_flag_probe.py`): no. `tone_enabled` is 0 for all 53,289 rows, and grepping every
+received notice shows the column has never been documented beyond its name appearing in a list. The important
+part is that this is **not** a population problem, which was worth checking before ordering anything: the ako
+works are already in the table (14,536 layers) and so is the 2018 label (8,575), and 138 layers sit directly
+under a `トーン`/`tone` ancestor including 2018's comics4 (15), china_v2 (14) and ako6 (4) — every one of them
+with `tone_enabled = 0`. So either those 138 are not tone layers, or the column does not read the tone effect.
+That distinction lives in the file, not in our columns.
+
+I also closed off the substitute I would otherwise have been tempted by. `colour_type_index = 2` is enriched
+38.8-fold under tone folders (0.45% → 17.4%), which looks like a find until the other direction is printed:
+only 24 of its 239 layers sit under a tone ancestor, the rest are under `p/コマ n/bg` and `p/外枠`, 191 of 239
+have zero pixels, and the 15 that carry author labels all say 段ではない. It reads as 表現色 = monochrome 1-bit
+(a guess, unconfirmed), not as tone. `layer_type = 3` fails the same test (3 of 739). Neither gets substituted
+for the author's class — the hit-and-miss numbers are exactly what cannot be shown here.
+
+Drafted an order, held for approval: what `tone_enabled` reads, then — only if the column is not simply broken
+— one 2018 monochrome manga unit's tone-folder contents with the mask and pixel columns plus any tone-effect
+record in the .clip. One unit, because the author asked not to run everything at once; monochrome manga only,
+because the author said illustrations and pencil manga cannot be judged. The empty rule itself is not blocked
+by any of this; it is written and instrumented, and what is pending is only whether any layer matches it.
