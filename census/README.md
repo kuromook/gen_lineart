@@ -166,6 +166,7 @@
 ./venv/bin/python tools/census/colour_class.py           # カラーかモノクロか(作者の決め方の第1段: カラーの層が無ければモノクロ。残りは作品フォルダーの聞き取り)
 ./venv/bin/python tools/census/manga_illust_answers.py   # 作品フォルダーは漫画かイラストか(作者の答えの取り込み。答えた行だけ数え、未確認の行は分けて残す)
 ./venv/bin/python tools/census/template_candidates.py      # a(決定論の除外): テンプレートの層名の候補と、作者に固定してもらう20行の表(非公開)
+./venv/bin/python tools/census/template_names_answers.py   # その答えの取り込みと、作者が「テンプレート」と答えた (層名, 種別) だけの除外の名前の表(非公開)
 ./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列。画素の列は抽出側の manifest から写す + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 ./venv/bin/python tools/census/process_hearing_pilot20.py # Track N の依頼: 工程の聞き取りの試し 20作の表(非公開)
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)

@@ -639,6 +639,22 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/note_census_empty_definition_20261111.md",
+        what="**Track E: 「完全に空」の定義の提案(定義D)** —— 作者の裁定「画素が無くてもマスクがあれば空ではない」。表の空の列はマスクを見ていない",
+        why_not_yet="**census で数え直して一致**(段の候補 53,289層の表で、画素0 4,977層 → 定義D 1,664層)。空の列の定義を器具に書いた(値は変えない。"
+                    "描画できなかった15層は「測れない」)。便B の選択肢と機械の印を定義D にした(表は作者に出す前、行は不変)。定義D は作者の確認待ち",
+    ),
+    dict(
+        path="inbox/note_census_order_grey_stats_20261111.md",
+        what="**Track E → census: 抽出側への階調の統計の発注の起案**(小さい便1 → 大きい便2。ユーザーの承認あり)。対照の層の一覧を census が引く",
+        why_not_yet="**保留(ユーザーに確認中)**: 基盤が除外の track を立て、新しい画素の列の発注はその track の登録の後に census 経由で、と回送した。順番をユーザーに聞く",
+    ),
+    dict(
+        path="inbox/reply_track_q_opened_20261111.md",
+        what="**基盤: b(除外の判定)の track を立てた**(Track Q)。新しい画素の列の発注は Q の登録の後に census 経由",
+        why_not_yet="**受けた。** a(テンプレート)の聞き取りの答えを Q と E に写す",
+    ),
+    dict(
         path="inbox/note_census_a2_wording_and_empty_count_20261111.md",
         what="**Track E の訂正: 便A の空の層は97行に5**(census の「全体で1」は回収した16行の中の数で、述語が無かった)/ A-2 の一言の曝露は2行",
         why_not_yet="**受けた。** 器具の印字に母集団を書き、16行の中 1 / 97行の中 5 を両方出す(E と一致)",
