@@ -7876,3 +7876,44 @@ material rows now carry both facts, and both stay 材料, not a name-based drop.
 
 Still waiting on the user: the grey-statistics order (便1 small, 便2 in the night slot), fixing the 提案 rows of
 the exclusion table, and now census's 65-layer pixel order for 便B's empty mark.
+
+## 2026-11-11 (evening) Three answers from the user: the order goes, the exclusion takes effect, and "empty" was never defined
+
+The user answered the three pending approvals in one line: "2 OK 1OK 3 画素無くてもマスクがあればその層は
+空ではない 完全に空であるという定義が必要".
+
+**(1) The grey-statistics order is delivered** (`note_census_order_grey_stats_20261111.md`, to census and
+foundation). I added one thing after the approval and said so in the notice: 便1's material now also draws
+~50 layers from under `モザイク`, because fill-region had just shown that the one unit the author called 黒消し
+sits on a `/p/モザイク/effect` path with no `成人修正` in it. A rule built on `成人修正` alone would likely miss
+that shape. Both name families stay 材料, not a name-based drop.
+
+**(2) The exclusion table's six 提案 rows are now 確定**, and `tools/picture_exclusion_filter.py` applies only
+the 確定 rows, printing drops by reason and the author's stage for every dropped layer that carries a label.
+Two populations, both printed, because they differ by three orders of magnitude: on the 53,289-layer role
+table the filter drops **18 layers** (the table is name-selected stage candidates, so templates and paper are
+barely in it), while over the 437,425-layer inventory it drops **52,009 (11.89%)**, leaving 385,416. The
+discipline-13 check passes: of the dropped layers, 14 carry author labels and all 14 say 段ではない, zero say
+あたり/下絵/清書 — and the instrument prints that this says nothing about the unlabelled layers.
+
+**(3) The author sent "empty" back, and was right.** I had written that emptiness is deterministic from an
+existing column; that was using one column as a definition without writing the definition down — the shape of
+規律13, committed by me the day after I invoked it against someone else. The proposed definition now has five
+conditions (render readable; own pixels 0; no own mask or an empty one; no ancestor mask; mask readable), with
+unreadable layers landing in 測れない rather than 空. Measuring the candidates (`tools/empty_definition.py`)
+showed where the bite is: of the 4,977 zero-pixel layers in the table, every single one has `has_own_mask = 0`,
+so the own-mask clause changes nothing here — it is the **ancestor** mask that moves 3,313 layers out of
+"empty", leaving 1,664.
+
+Then the author's own labels confirmed the author's rule. Of the 24 labelled zero-pixel layers, the old reading
+mixed 清書 9 with 段ではない 15. Under the new definition only **7** stay empty and **all 7 are 段ではない**; the
+17 that leave include all 9 清書, each with `n_ancestor_masks = 1` and no own mask. Those are precisely the nine
+layers that refuted my caveat "an empty layer has no role" on 11-10 — the refutation's mechanism and the
+author's sentence turn out to be the same fact: the layer's pixels are zero and the folder's mask carries the
+shape. Caveat printed with it: the denominator is 24, 7 of which remain, and nothing is shown about unlabelled
+layers.
+
+便A's bar is unaffected — all five empty rows are empty under the new definition too, so the registered
+97-row / 92-row double printing stands. The 65-layer order for 便B's empty mark needs no new columns (the
+46-layer delivery already carries every column the definition uses), but it stays unsent until the author
+passes the definition.
