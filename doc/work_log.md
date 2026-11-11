@@ -7917,3 +7917,35 @@ layers.
 97-row / 92-row double printing stands. The 65-layer order for 便B's empty mark needs no new columns (the
 46-layer delivery already carries every column the definition uses), but it stays unsent until the author
 passes the definition.
+
+## 2026-11-11 (late) The author picked (c), added the tone case, and asked whether we can decide it from what we have
+
+The answer was "ｃ", then a correction that mattered more than the choice: a tone layer carries tone over its
+whole area by default, so masking the whole layer out leaves a layer that holds tone and a mask and yet draws
+nothing — that is empty. So the definition is own-mask-only, plus one more clause.
+
+The rule is expressible with the columns already in hand. census's own definitions settle it: `n_px_a_gt0`
+counts alpha>0 **ignoring masks**, and `n_px_a_gt0_own_mask` counts those pixels where the layer's own mask is
+≥128. "Masked out entirely" is therefore `n_px_a_gt0 > 0 and n_px_a_gt0_own_mask == 0`. No new file analysis is
+needed to *write* it (`tools/empty_tone_masked_out.py`, `is_empty()` is now the canonical predicate).
+
+What cannot be done is confirming it. In the 53,289-layer table, `tone_enabled` is **0 for every single row**,
+so the tone case has a denominator of zero — unmeasurable, not refuted. The shape itself catches three layers,
+and all three have `tone_enabled = 0`, a 清書 name rule and no author label, so they are a different fact
+("a 清書-named layer whose own mask hides all of it"), not the author's case. And the clause the author's first
+correction protects — zero pixels but an own mask carrying the shape — has a denominator of zero too: all 742
+own-mask layers in the table have pixels. The inventory shows why tone is invisible here: tone is organised as
+**folders** (`tone` 6,388 layers / 33 units, `トーン` 6,327 / 41), with plain rasters inside; 108 table layers sit
+under a `トーン` ancestor, 42 of them with zero pixels and exactly one with its own mask.
+
+Two consequences I had to write down against myself. First, yesterday's clean-looking result — "under 定義D the
+seven layers that stay empty are 7/7 段ではない" — belongs to a reading the author did not take. Under (c) all 24
+labelled zero-pixel layers stay empty and their stages are 清書 9 / 段ではない 15, so that 7/7 must not be quoted
+as support for the definition in force. The number is not withdrawn; the bar's version is part of the
+configuration. Second, and more useful: under (c) **empty and stage are not exclusive** — the author assigned
+stages to empty layers. So census's proposal to add 「空」 to the stage choices has to be dropped: it would
+compete with 清書. Emptiness becomes a machine-placed mark alongside the stage question, which is also what
+便B's table needs.
+
+Asked of census, pending the user's approval: what `tone_enabled` actually reads, and the pixel/own-mask
+columns for layers inside one work unit's tone folders.
