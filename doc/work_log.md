@@ -7847,3 +7847,32 @@ answered **あたり** with the comment **「描き文字のあたり」**. Had 
 「描き文字」, `描き文字　　白フチ` → 「描き文字」, and three 「グレーの塗」. **These comments are not axis-2
 answers** — they are volunteered remarks on a question nobody asked, so the population is skewed and
 they stay out of the labels; axis 2 gets asked properly.
+
+## 2026-11-11 (afternoon) The wording I warned against arrived in my own hearing bin — and census's "only one empty layer" was wrong
+
+Two notices came in. census sent A-2 to the author, and said in passing that the whole of 便A holds one
+empty layer. I joined the 97-row key to the v2 role table on `n_px_a_gt0` (`tools/hearing_a_empty_exposure.py`,
+both sha256 printed, zero unmatched rows) and got **five**: A-1 1, A-2 2, A-3 1, A-4 0, A-5 1. "One" is true
+inside A-1 only, which is the one bundle answered so far — the kind of figure that reads as a population
+statement while being a sample statement.
+
+That changes how the A-2 wording difference has to be read. census added a sentence outside the workbook
+("an empty layer may stay 『分からない』"). My own notice the day before had said: do not change the instrument
+inside the bar-reading bin. The workbook did not change; the covering sentence did, and I had not counted it
+as part of the instrument. The exposure is bounded and countable: the sentence can only touch the empty rows
+of its own bundle, so **two** rows carry the hint, two (A-3, A-5) do not, and A-1's one did not. The unbounded
+path — a general nudge toward 分からない on non-empty rows — has no upper bound I can measure; with 16/42/7/18/14
+rows per bundle a per-bundle rate comparison is not readable, so I registered it as unmeasured rather than
+arguing it away. Registered before reading anything: the bar is read on two named populations, 97 rows (with
+the empties) and 92 rows (without), the 92-row value leading because emptiness is a deterministic column, and
+the five empty rows printed separately with the author's answers unrewritten.
+
+fill-region's notice closed the name route for 黒消し. Templates and `成人修正`/`黒消し` hit zero of their 656
+面 units; `モザイク`/`描き文字`/`effect` hit 192 (29%). And the single unit the author called 黒消し sits on a
+`/p/モザイク/effect` path with no `成人修正` in it. So the alias is not one name. Step (4) stops trying to reach
+黒消し by name and builds the rule from the shape statistics, with `成人修正` (651) and `モザイク` (1,665) as
+material and controls — which is what the author asked for in the first place. The draft exclusion table's two
+material rows now carry both facts, and both stay 材料, not a name-based drop.
+
+Still waiting on the user: the grey-statistics order (便1 small, 便2 in the night slot), fixing the 提案 rows of
+the exclusion table, and now census's 65-layer pixel order for 便B's empty mark.
