@@ -677,7 +677,7 @@ ARRIVED_NOT_INTEGRATED = [
         path="inbox/reply_census_pairs_v5_arrived_20261112.md",
         what="**基盤: 対の v5 が届いた。二重の頁の一覧は v5 で作ってよい(QC で外す頁を先に落とす)**",
         why_not_yet="**一覧を作った**(`duplicate_pages_v5.py`: 114組・257頁)。フォルダーのつながりで8行に畳んだ聞き取りの表を作った(`hearing_duplicate_folders_v5.py`)。"
-                    "作者に渡す前にユーザーの承認",
+                    "**ユーザーの承認(11-12「よい」)で作者に渡した**",
     ),
     dict(
         path="inbox/deliver_tone_mask_pixels_ako6_20261112.md",
