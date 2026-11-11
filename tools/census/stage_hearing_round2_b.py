@@ -16,6 +16,8 @@
 - 層: その頁の、フォルダーでない `raster` と `vector` の全部(便A と同じ。名前・層別に関わらず)
 - **束**: 頁の順のまま、20行を超えない所で切る。**頁の途中では切らない**。1頁で20行を超える頁は単独の束(例外、印字)
 - 問いは軸1(工程の段)だけ。最初の束は試し
+- **表の形(E 11-11 `note_census_a1_keep_choices_20261111.md`)**: 便B は選択肢に「空(1画素も描かれていない)」を足し、
+  「空」の印を画素の列(層の役割の表 v2 の `empty`)から機械が付ける。頁と行は変えない(引き直さない)
 - **v2(2026-11-10、ユーザーの決定「20以下」)**: v1 の10頁は 550行で、8頁が1頁で20行を超えた(作者の数「Excel は 20」)。
   **候補を「並べる層(raster と vector)が 20 以下の頁」に絞って同じ seed・同じ手順で引き直す。** 作者が答える前に決めた。
   v1 の出力は消さずに残す(`*_20261110.csv` / `*_bundleB-*`)。v2 は `_le20` を付ける。絞る前後の候補の数を両方印字する
@@ -32,13 +34,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db  # noqa: E402
 import split_units  # noqa: E402
 from p_split_columns import wd  # noqa: E402
-from stage_hearing import OUT_KEY, name_rule  # noqa: E402
+from stage_hearing import OUT_KEY, STAGES, name_rule  # noqa: E402
 from stage_hearing_round2_a_sheets import LIMIT, layers_top_down, write_xlsx  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 HOLDOUT = "data/census_full/holdout_units_round2_a_20261110.csv"
 SEED = 20261110
+ORDER_OUT = "outbox/stage_layers_order_round2b_20261111.csv"
 MAX_ROWS = int(os.environ.get("ROUND2B_MAX_ROWS", "20"))   # 0 = 絞らない(v1)
 STRATA = [("芯", 4), ("広", 4), ("描画色", 2)]
 OUT = "data/census_full/hearing_round2_b_pages_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
@@ -58,10 +61,12 @@ def main() -> int:
           if r["side"].startswith("評価")}
     labelled = {r["page_path"] for r in csv.DictReader(open(os.path.join(ROOT, OUT_KEY), encoding="utf-8"))}
     hits = collections.defaultdict(set)
+    empty = {}
     n_all, drop = 0, collections.Counter()
     pages_all = set()
     for r in csv.DictReader(open(os.path.join(ROOT, TABLE), encoding="utf-8")):
         n_all += 1
+        empty[(r["page_path"], r["layer_id"])] = r["empty"]
         if r["split_unit"] in ev:
             drop["便A の評価単位"] += 1
             continue
@@ -155,11 +160,24 @@ def main() -> int:
         w.writeheader()
         for r in rows:
             w.writerow(dict(bundle=bmap[r["item"]], **r))
+    miss = [r for r in rows if (r["page_path"], str(r["layer_id"])) not in empty]
+    if miss:
+        # 「空」の印は画素の列から付ける(E 11-11)。画素の行の無い層があれば、表は作らず抽出側への一覧だけ作る
+        print(f"    **画素の行の無い層 {len(miss)} / {len(rows)}(頁 {len({r['page_path'] for r in miss})})** —— "
+              f"「空」の印が付けられないので表は作らない。抽出側への一覧 `{ORDER_OUT}`(発注はユーザーの承認の後)")
+        with open(os.path.join(ROOT, ORDER_OUT), "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["no", "page_path", "layer_id", "name_family", "why_listed", "v_layer_kind"])
+            for i, r in enumerate(miss, 1):
+                w.writerow([i, r["page_path"], r["layer_id"], "", "便B", r["kind"]])
+        print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}`")
+        return 0
     for b, its in names:
         sub = [r for r in rows if r["item"] in its]
         over = "  **20行を超える(1頁で切れない)**" if len(sub) > LIMIT else ""
         print(f"    {b}: 項目 {', '.join(map(str, its))} → {len(sub)}行{over}")
-        write_xlsx(b, its, items, sub, None, label="便B", n_bundles=len(names), path=XLSX, trial=(b == "B-1"))
+        write_xlsx(b, its, items, sub, None, label="便B", n_bundles=len(names), path=XLSX, trial=(b == "B-1"),
+                   stages=STAGES[:-1] + ["空(1画素も描かれていない)", STAGES[-1]], empty=empty)
     print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}` / 表 `{XLSX.format(b='B-1')}` ほか(非公開)")
     return 0
 

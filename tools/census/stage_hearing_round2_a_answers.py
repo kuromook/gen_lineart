@@ -6,6 +6,8 @@
 - 束ごとに、固定の列(頁・上から・層の名前・フォルダー・表示・種類)が作った表と全行一致することを確かめる(違えば止める)
 - 空欄の段は「未記入」と数える(11-09 の「段の線ではない」と数える読み方は、頁に「済」がある表のためのもの。この表には頁のシートが無い)
 - 作者のコメントは逐語で残す
+- **E の決定(11-11 `note_census_a1_keep_choices_20261111.md`)**: 便A の選択肢は変えない。「分からない」は書き換えず、
+  画素の列(`empty`、層の役割の表 v2)で「分からない∧空 / 分からない∧空でない」に分けて印字する
 
     ./venv/bin/python tools/census/stage_hearing_round2_a_answers.py
 """
@@ -22,6 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 ANSWERED = {"A-1": ("data/census_full/hearing_round2_a_bundleA-1_answered_20261111.xlsx",
                     "6b8778d46b4566243c8b70eb39ebb9bf52b49e1097aaaeea200dcb932b6bb891", "2026-11-11")}
 OUT = "data/census_full/hearing_round2_a_answers.csv"
+TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 
 
 def main() -> int:
@@ -30,6 +33,8 @@ def main() -> int:
     key = collections.defaultdict(list)
     for r in csv.DictReader(open(os.path.join(ROOT, KEY_OUT), encoding="utf-8")):
         key[r["bundle"]].append(r)
+    empty = {(r["page_path"], r["layer_id"]): r["empty"]
+             for r in csv.DictReader(open(os.path.join(ROOT, TABLE), encoding="utf-8"))}
     out = []
     for b, _ in BUNDLES:
         if b not in ANSWERED:
@@ -53,8 +58,12 @@ def main() -> int:
             stage = r[8] if r[8] else "未記入"
             c[stage] += 1
             out.append(dict(bundle=b, item=k["item"], pos=k["pos"], page_path=k["page_path"], layer_id=k["layer_id"],
-                            author_stage=stage, author_comment=r[9] or "", as_of=as_of))
+                            author_stage=stage, author_comment=r[9] or "", empty=empty[(k["page_path"], k["layer_id"])],
+                            as_of=as_of))
         print(f"    {b}: {len(a) - 1}行(sha256 {sha[:16]})→ " + " / ".join(f"{s} {n}" for s, n in c.most_common()))
+    dk = [x for x in out if x["author_stage"] == "分からない"]
+    print(f"    分からない {len(dk)} → ∧空 {sum(x['empty'] == '1' for x in dk)} / ∧空でない {sum(x['empty'] == '0' for x in dk)}"
+          f"(答えは書き換えない)/ 空の層 全体 {sum(x['empty'] == '1' for x in out)}")
     with open(os.path.join(ROOT, OUT), "w", encoding="utf-8", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(out[0]))
         w.writeheader()

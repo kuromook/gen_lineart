@@ -117,7 +117,8 @@ def main() -> int:
     return 0
 
 
-def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None):
+def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None, stages=STAGES, empty=None):
+    """`empty` を渡すと「空」の列(画素の列から機械が付けた印)を足す。便B と軸2 だけ(E 11-11。便A は変えない)"""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
@@ -131,12 +132,14 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
         (f"工程の段の聞き取り {label} の束 {b}(Track E の依頼。census が作成、2026-11-10)", bo),
         (f"この束は {len(its)}頁・{len(sub)}行です。{label} は全部で{n_bundles}束あり、この束はそのうちの1つです。", f),
         ("何について答えるか: 「層」のシートの1行が1つの層です。その層に描かれている線が、どの段のものかを選んでください。", f),
-        ("段: " + " / ".join(STAGES), f),
+        ("段: " + " / ".join(stages), f),
         ("黄色の列だけ記入してください(「段」はプルダウン、「コメント」は自由記入)。前回(11-09)と同じ問いです。", f),
         ("層は頁の上(手前)から順に並べています。並べたのは、フォルダーでない通常の層とベクターの層だけです。", f),
         ("選択肢に合う答えが無いときは、「段」を空けてコメントに書いてください。選択肢を直す手がかりにします。", f),
         ("迷う層は「分からない」で構いません。", f),
     ]
+    if empty is not None:
+        lines.append(("「空」の列は、画素を数えて機械が付けた印です(1画素も描かれていない層に「空」)。探さなくて構いません。", f))
     if trial if trial is not None else b == "A-1":
         lines.append(("この束は試しです。答えにくい所や選択肢の足りない所があれば、コメントに書いてください。直してから次の束を出します。", bo))
     if heavy:
@@ -148,23 +151,30 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
         ws.cell(i, 1, t).font = ft
     ws.column_dimensions["A"].width = 120
     wl = wb.create_sheet("層")
-    hdr = ["頁", "頁のパス", "作業途中", "上から", "層の名前", "入っているフォルダー", "表示", "種類", "段", "コメント"]
+    hdr = ["頁", "頁のパス", "作業途中", "上から", "層の名前", "入っているフォルダー", "表示", "種類"]
+    hdr += (["空(機械の印)"] if empty is not None else []) + ["段", "コメント"]
+    js = len(hdr) - 1   # 段の列の番号(1始まり)
     for j, h in enumerate(hdr, 1):
         wl.cell(1, j, h).font = bo
     wipname = {it["page_path"]: ("作業途中" if it["wip_status"] == "作業途中" else "") for it in items}
     for i, r in enumerate(sub, 2):
         vals = [r["item"], r["page_path"], wipname[r["page_path"]], r["pos"], r["name"], r["folder"], r["shown"],
-                "通常" if r["kind"] == "raster" else "ベクター", "", ""]
+                "通常" if r["kind"] == "raster" else "ベクター"]
+        if empty is not None:
+            vals.append("空" if empty[(r["page_path"], str(r["layer_id"]))] == "1" else "")
+        vals += ["", ""]
         for j, v in enumerate(vals, 1):
             c = wl.cell(i, j, v)
             c.font = f
             c.alignment = Alignment(vertical="top")
-        wl.cell(i, 9).fill = fill
-        wl.cell(i, 10).fill = fill
-    dv = DataValidation(type="list", formula1='"' + ",".join(STAGES) + '"', allow_blank=True)
+        wl.cell(i, js).fill = fill
+        wl.cell(i, js + 1).fill = fill
+    dv = DataValidation(type="list", formula1='"' + ",".join(stages) + '"', allow_blank=True)
     wl.add_data_validation(dv)
-    dv.add(f"I2:I{len(sub) + 1}")
-    for col, wdt in zip("ABCDEFGHIJ", (5, 50, 9, 7, 30, 30, 22, 9, 34, 36)):
+    sc = chr(64 + js)
+    dv.add(f"{sc}2:{sc}{len(sub) + 1}")
+    widths = (5, 50, 9, 7, 30, 30, 22, 9) + ((10,) if empty is not None else ()) + (34, 36)
+    for col, wdt in zip("ABCDEFGHIJK", widths):
         wl.column_dimensions[col].width = wdt
     wl.freeze_panes = "E2"
     wb.save(os.path.join(ROOT, path.format(b=b)))

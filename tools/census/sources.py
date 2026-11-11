@@ -628,6 +628,17 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**宛先は E。** census に効く点: **census の画素の数はアルファで数えている**(白で塗った画素も `n_px_a_gt0` に入る)。E に添えた",
     ),
     dict(
+        path="inbox/note_census_a1_keep_choices_20261111.md",
+        what="**Track E: 便A の選択肢は変えない(空は画素の列で決まる)/ A-2 を出す / 成人修正は材料のまま / 便B と軸2 に「空」の選択肢と機械の印**",
+        why_not_yet="**A-2 をユーザーに送った**(添えた一言が A-1 と違うと E に記録)。答えの取り込みに「分からない∧空」の印字を足した。"
+                    "**便B の印は 65/111層の画素が無く付けられない** —— 表は作らず、抽出側への一覧 `stage_layers_order_round2b_20261111.csv` を用意(発注はユーザーの承認待ち)",
+    ),
+    dict(
+        path="inbox/note_fill_region_exclusion_impact_20261111.md",
+        what="**fill-region: テンプレートと成人修正は fill-region の単位に当たらない。当たるのは黒消し(モザイクの道)と描き文字・effect**",
+        why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
+    ),
+    dict(
         path="inbox/deliver_occlusion_edge_stage2_crops_20261110.md",
         what="**抽出側 → 基盤の納品の写し(無効)**: 取り消し後に作られた第2段の切り出し。`note_occlusion_edge_stage2_crops_deleted_20261110.md` で全部消したと知らせがあった",
         why_not_yet="**census は写していない**(原稿の画素は census の木に無い)。作業なし",

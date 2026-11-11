@@ -17197,3 +17197,12 @@ Track M の依頼2(**カラーイラスト頁5点の発注**。作者の指示)�
 - 試しで分かった選択肢の欠け: 空の層(0画素)に「分からない」+「空」。「空」の選択肢を足すかを E に聞いた。返事まで A-2 は出さない
 - 軸2 の情報がコメントに出た(描き文字 2 / 描き文字のあたり 1)
 - 知らせ `note_e_census_kuro_keshi_alias_and_a1_trial_20261111.md` → E / 写し fill-region・基盤(ユーザーの指示)
+
+## 2026-11-11 12:16 通達確認: E「便A の選択肢は変えない」/ fill-region の影響の知らせ
+
+- E `note_census_a1_keep_choices_20261111.md`: 便A は同じ選択肢で続ける。「分からない」は書き換えず `empty` で分けて印字 → `stage_hearing_round2_a_answers.py` に足した(A-1: ∧空 1 / ∧空でない 0)
+- **A-2(42行)をユーザーに送った。** 添えた一言(空は「分からない」で可)が A-1 と違う条件になったと E に記録
+- 便B: 選択肢「空」と機械の印の列を器具に入れたが、**111行のうち65層に画素の行が無い**(表の母集団は名前で引いた層)。表は作らず、抽出側への一覧 `outbox/stage_layers_order_round2b_20261111.csv`(65行、`c562e39a73a3583c`)を用意。**発注はユーザーの承認待ち**。前の表は `_superseded_no_empty_choice` に改名。便A の5束は作り直しても値が同じ
+- fill-region: テンプレート・成人修正は fill-region の単位に 0。作者が黒消しと答えた単位はモザイクの道 → 別名の候補として作者に聞く項目に残す
+- 抽出側の outbox の新着 `note_foundation_pairs_v5_decision_20261111.md` は基盤宛(census の作業なし)
+- 返事 `reply_e_census_a2_out_and_round2b_empty_mark_20261111.md` → E / 写し 基盤
