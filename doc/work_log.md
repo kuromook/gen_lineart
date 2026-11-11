@@ -7977,3 +7977,31 @@ Drafted an order, held for approval: what `tone_enabled` reads, then — only if
 record in the .clip. One unit, because the author asked not to run everything at once; monochrome manga only,
 because the author said illustrations and pencil manga cannot be judged. The empty rule itself is not blocked
 by any of this; it is written and instrumented, and what is pending is only whether any layer matches it.
+
+## 2026-11-11 (late, cont.) The author's "probably a different kind" turned out to be the second-largest kind in the corpus
+
+The author distinguished two mechanisms: a **トーン化** effect that converts an ordinary layer into a tone
+layer — probably what `tone_enabled` reads — and a layer *created* as a tone layer, probably a different kind,
+with the internals unknown until looked at. Then: "発注を承認する".
+
+Taking the hint seriously, I listed every `v_layer_kind` in the inventory rather than just the four that appear
+in the stage table, and the answer was sitting there. `mask_fill` holds **118,353 layers** — second only to
+raster — and **89,082 of them (75.3%) are named in the pattern `<線数>L <濃度>%`**: `60L 10%`, `55L 18%`,
+`30L 10%`, `線 50L 10%`. The line counts are manga tone line counts (60L 63,420 / 55L 15,879 / 30L 8,306 /
+50L 1,478) and the densities are tone densities (10, 20, 30, 60, 11, 22, 18%). The kind does the cutting, not
+the name: the same pattern catches 38 raster layers out of 162,536. The remaining 29,271 mask_fill layers are
+gradients and fills (`乳首グラデ` 12,597, `肌グラデ` 2,408, `調整` 2,383, `べた塗り 1` 1,110).
+
+That explains the zeros. A fill-type layer covers its whole area by default and the mask decides where it
+shows — exactly the author's description of a tone layer whose mask can hide everything. `tone_enabled` is the
+other mechanism, the トーン化 effect, so it is legitimately 0 on layers that were created as tone layers. And
+the reason none of this was visible: the stage table contains **one** mask_fill layer out of 53,289, because
+its population was drawn by name. A class worth 27% of the corpus was entirely outside the window — neither in
+the stage table nor in the exclusion table.
+
+It stays a guess until the file says otherwise, so nothing is used as a tone column yet (`tools/tone_layer_candidates.py`
+prints the caveat with the numbers). The approved order went out narrowed to this: the provenance of
+`tone_enabled`, `v_layer_kind`, `layer_type` and `colour_type_index`; and for one 2018 monochrome manga unit,
+every mask_fill layer with pixels, own-mask pixels and any tone record in the .clip. One thing is being looked
+for — whether any layer has `n_px_a_gt0 > 0` with `n_px_a_gt0_own_mask = 0`, the author's masked-out tone layer,
+whose denominator is currently zero.
