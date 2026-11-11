@@ -12,6 +12,9 @@
 - 列は構造 DB の列だけ。**画素(`n_px_a_gt0` / `n_px_a_gt0_own_mask`)は無い** —— 抽出側への発注が要り、ユーザーの承認の後
 - **発注(ユーザーの承認 2026-11-11「なら全部でいい」)**: 4,784層全部を抽出側への一覧に書く。**先に1頁で試す**(頁は
   `random.Random(20261111)` で、塗りの層を持つ頁から1つ)。一覧の `smoke = 1` がその頁
+- **追加(E `note_census_tone_order_approved_and_mask_fill_lead_20261111.md`、ユーザーの承認「発注を承認する」)**: E の頼みは
+  「1単位の `mask_fill` を全部(トーンのフォルダーの中に限らない)」。同じ作品フォルダーで、フォルダーの外の `mask_fill` を
+  追加の一覧に書く(最初の一覧は書き換えない)
 
     ./venv/bin/python tools/census/tone_folder_layers.py
 """
@@ -31,6 +34,7 @@ UNIT = "\\2018\\ako6\\"
 TONE = re.compile(r"トーン|tone", re.I)
 OUT = "data/census_full/tone_folder_layers_2018_ako6_20261111.csv"
 ORDER_OUT = "outbox/tone_mask_pixels_order_2018_ako6_20261111.csv"
+ADD_OUT = "outbox/tone_mask_pixels_order_2018_ako6_addendum_20261112.csv"
 
 
 def main() -> int:
@@ -78,6 +82,16 @@ def main() -> int:
             w.writerow([i, d["page_path"], d["layer_id"], d["v_layer_kind"], d["tone_enabled"], d["has_mask"], int(d["page_path"] == smoke)])
     ns = [d for d in out if d["page_path"] == smoke]
     print(f"    発注の一覧 `{ORDER_OUT}` {len(out):,}行 / 試しの頁: 層 {len(ns)}(塗りの層 {sum(d['v_layer_kind'] == 'mask_fill' for d in ns)})")
+    ins = {(d["page_path"], d["layer_id"]) for d in out}
+    add = [r for r in rows if r[5] == "mask_fill" and not r[4] and r[0] not in ex and (r[0], r[1]) not in ins]
+    with open(os.path.join(ROOT, ADD_OUT), "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["no", "page_path", "layer_id", "v_layer_kind", "tone_enabled", "has_mask", "smoke"])
+        for i, r in enumerate(add, 1):
+            w.writerow([i, r[0], r[1], r[5], int(bool(r[9])), int(bool(r[8])), 0])
+    c2 = collections.Counter((int(bool(r[9])), int(bool(r[8]))) for r in add)
+    print(f"    追加の一覧 `{ADD_OUT}`: トーンのフォルダーの外の塗りの層 {len(add)}(頁 {len({r[0] for r in add})})"
+          f" / (tone_enabled, has_mask) " + " / ".join(f"{a} {n}" for a, n in c2.most_common()))
     return 0
 
 
