@@ -43,7 +43,8 @@ from stage_hearing import OUT_KEY, STAGES, name_rule  # noqa: E402
 from stage_hearing_round2_a_sheets import LIMIT, layers_top_down, write_xlsx  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
+TABLE = "data/census_full/layer_role_table_20261110_v2.csv"   # 頁を引いた母集団(v2 のまま。引き直さない)
+TABLE_V3 = "data/census_full/layer_role_table_20261112_v3.csv"   # 空の印だけ v3 から(便B の残り 65層の画素が入った)
 HOLDOUT = "data/census_full/holdout_units_round2_a_20261110.csv"
 SEED = 20261110
 ORDER_OUT = "outbox/stage_layers_order_round2b_20261111.csv"
@@ -99,6 +100,9 @@ def main() -> int:
             hits[p].add("広")
         if r["draw_color_enable"] == "1":
             hits[p].add("描画色")
+    # 空の印だけ v3 から(便B の残り 65層の画素が入った。頁を引く母集団は v2 のまま)
+    empty = {(r["page_path"], r["layer_id"]): empty_c(r)
+             for r in csv.DictReader(open(os.path.join(ROOT, TABLE_V3), encoding="utf-8"))}
     print(f"    表 {n_all:,}層 → 外した " + " / ".join(f"{a} {b:,}" for a, b in drop.items())
           + f" → 残り {n_all - sum(drop.values()):,}層 / {len(pages_all):,}頁")
     for s, _ in STRATA:

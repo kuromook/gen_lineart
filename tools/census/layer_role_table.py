@@ -17,6 +17,8 @@
    マスクがあればその層は空ではない」により、**この列は「完全に空」ではない**。正本は作者が選んだ C + トーンの形
    (`stage_hearing_round2_b.empty_c()` = E の `is_empty()`。v2 で 4,980層)。E の定義D(祖先のマスクも見る、1,664層)は採られなかった。
    **`tone_enabled` はこの表では全部 0** —— トーンの層は種別 `mask_fill` で、この表(raster と vector)の母集団の外にいる。
+   **v3(11-12)で `empty_c` 列を末尾に足した**(作者が選んだ定義 C + トーンの形。`empty` は値も意味も v2 のまま残す)。
+   v3 は便B の残り 65層を足した(53,354層)。v1・v2 は消さない
    **「描画できなかった」15層は `empty = 0` だが、意味は「空でないと分かった」ではなく「測れない」**
 5. 分け方の鍵: `work_dir` / `split_unit`(`split_units.py`: 編の裁定と中身の共有で束ねた単位。全322作品フォルダー)
 6. `why_listed`(名前 / 聞き取り)
@@ -37,6 +39,7 @@ import split_units  # noqa: E402
 from p_split_columns import wd  # noqa: E402
 from stage_hearing import name_rule  # noqa: E402
 from stage_hearing_answers import OUT as SCORED, TEXTISH  # noqa: E402
+from stage_hearing_round2_b import empty_c  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ORDER = "outbox/stage_layers_order_20261109.csv"
@@ -45,10 +48,16 @@ PIX = "inbox/stage_layer_pixels_20261109.csv"
 PIX_2A = "inbox/stage_layer_pixels_round2a_20261110.csv"      # sha256 先頭 392ef9ef0e689287
 DRAW = "inbox/layer_draw_colour_20261110.csv"                  # 描画色。sha256 先頭 4e33f270e731c2bf
 DRAW_SHA = "4e33f270e731c2bffc771631c5951b9f78345f18d9c9a461e5f48e89c636f817"
+# v3(11-12): 便B の残り 65層の画素と描画色(抽出側の納品 `deliver_stage_round2b_and_draw_colour_20261112.md`)
+ORDER_2B = "outbox/stage_layers_order_round2b_20261111.csv"
+PIX_2B = "inbox/stage_layer_pixels_round2b_20261112.csv"
+PIX_2B_SHA = "aeeabea83b1e3f005d7c22398c57112e55a4ec66f6bd227e3790e923afb81eb6"
+DRAW_2B = "inbox/layer_draw_colour_round2b_20261112.csv"
+DRAW_2B_SHA = "edba87ecb6614e0fd6b996eaa237ca4abf530f3524a19d83fdce93944eda8677"
 P300 = "data/census_full/p_order300_page_layers_20261110_v2.csv"   # 描画色の既知セル(manifest から census が組んだ表)
 KOMA = "inbox/stage_layer_pixels_koma_vector_20261110.csv"
 KEY = "data/census_full/hearing_drawing_stages_key_20261109.csv"
-OUT = "data/census_full/layer_role_table_20261110_v2.csv"   # v1(53,243層・描画色なし)は残す
+OUT = "data/census_full/layer_role_table_20261112_v3.csv"   # v1(53,243層・描画色なし)・v2(53,289層)は残す
 PIXCOLS = ["render_status", "render_error", "n_px_a_gt0", "n_px_a_ge26", "n_px_a_gt0_own_mask", "n_px_a_gt0_all_masks",
            "bbox_x0", "bbox_y0", "bbox_x1", "bbox_y1", "has_own_mask", "n_ancestor_masks", "mask_status"]
 
@@ -88,19 +97,23 @@ def page_order(con, pages):
 DRAWCOLS = ["draw_color_enable", "draw_color_main", "draw_color_sub", "draw_color_read_error"]
 
 
-def load_draw():
+def load_draw(files=((DRAW, DRAW_SHA), (DRAW_2B, DRAW_2B_SHA))):
     """抽出側の描画色の表(11-10)。sha を確かめ、行が一覧と1対1か、既知セル(P の300頁の表)と一致するかを印字する。
 
     **値の意味は抽出側の推定**(CSP のレイヤーカラー = 表示の置き換え。線の画素は黒のまま)。**下描きを表すかは照らしていない**(規律13)。
     P の表は `[r, g, b]` の Python の並び、こちらは "r g b" の文字列なので、同じ形に直して比べる。
     """
     import hashlib
-    path = os.path.join(ROOT, DRAW)
-    sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
-    if sha != DRAW_SHA:
-        print(f"    **描画色の表の sha256 が違う** {sha[:16]}")
-        return None
-    rows = list(csv.DictReader(open(path, encoding="utf-8")))
+    rows = []
+    for f, want in files:
+        path = os.path.join(ROOT, f)
+        sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        if sha != want:
+            print(f"    **描画色の表の sha256 が違う** {f} {sha[:16]}")
+            return None
+        rr = list(csv.DictReader(open(path, encoding="utf-8")))
+        print(f"    描画色 `{os.path.basename(f)}` {len(rr):,}行(sha256 {sha[:16]})")
+        rows += rr
     d = {}
     for r in rows:
         k = (r["page_path"], int(r["layer_id"]))
@@ -109,7 +122,7 @@ def load_draw():
             return None
         d[k] = dict(draw_color_enable=r["draw_color_enable"], draw_color_main=r["draw_color_main"].strip(),
                     draw_color_sub=r["draw_color_sub"].strip(), draw_color_read_error=r["read_error"])
-    print(f"    描画色の表 {len(rows):,}行(sha256 {sha[:16]})")
+    print(f"    描画色の表 計 {len(rows):,}行")
 
     def norm(v):
         v = (v or "").strip()
@@ -146,10 +159,19 @@ def main() -> int:
     con = db.connect()
     order = list(csv.DictReader(open(os.path.join(ROOT, ORDER), encoding="utf-8")))
     order += list(csv.DictReader(open(os.path.join(ROOT, ORDER_2A), encoding="utf-8")))
+    order += list(csv.DictReader(open(os.path.join(ROOT, ORDER_2B), encoding="utf-8")))
     pix = {(r["page_path"], int(r["layer_id"])): r for r in csv.DictReader(open(os.path.join(ROOT, PIX), encoding="utf-8"))}
     pix2 = {(r["page_path"], int(r["layer_id"])): r for r in csv.DictReader(open(os.path.join(ROOT, PIX_2A), encoding="utf-8"))}
     print(f"    便A の追加の画素 {len(pix2)}層 / 前の表と重なる {len(set(pix2) & set(pix))}")
     pix.update(pix2)
+    import hashlib
+    got = hashlib.sha256(open(os.path.join(ROOT, PIX_2B), "rb").read()).hexdigest()
+    if got != PIX_2B_SHA:
+        print(f"    **便B の画素の sha256 が違う** {got[:16]}")
+        return 1
+    pix3 = {(r["page_path"], int(r["layer_id"])): r for r in csv.DictReader(open(os.path.join(ROOT, PIX_2B), encoding="utf-8"))}
+    print(f"    便B の追加の画素 {len(pix3)}層 / 前の表と重なる {len(set(pix3) & set(pix))}")
+    pix.update(pix3)
     draw = load_draw()
     if draw is None:
         return 1
@@ -181,7 +203,7 @@ def main() -> int:
             "name", "ancestors", "name_rule",
             "v_layer_kind", "layer_type", "colour_type_index", "self_shown_db", "ancestors_shown_db", "opacity",
             "blend_mode", "clip_raw", "has_mask", "tone_enabled", "pos_from_top", "n_leaf_layers",
-            "canvas_px_w", "canvas_px_h"] + PIXCOLS + ["all_masks_from_koma_vector", "empty"] + DRAWCOLS
+            "canvas_px_w", "canvas_px_h"] + PIXCOLS + ["all_masks_from_koma_vector", "empty"] + DRAWCOLS + ["empty_c"]
     out, c = [], collections.Counter()
     for k in keys:
         s, x, o = st[k], pix[k], po[k]
@@ -200,7 +222,7 @@ def main() -> int:
                     lb["author"] if lb else "", (lb["author"] if lb and not tx else ""), lb["comment"] if lb else "", int(tx),
                     s[2], o[2], name_rule(s[2]),
                     s[3], s[4], s[5], s[6], o[3], s[7], s[8], s[9], int(bool(s[10])), int(bool(s[11])), o[0], o[1],
-                    s[12], s[13]] + [v[cn] for cn in PIXCOLS] + [fill, empty] + [draw[k][cn] for cn in DRAWCOLS])
+                    s[12], s[13]] + [v[cn] for cn in PIXCOLS] + [fill, empty] + [draw[k][cn] for cn in DRAWCOLS] + [empty_c(v)])
     why = {(r["page_path"], int(r["layer_id"])): r["why_listed"] for r in order}
     for row in out:
         row[5] = why[(row[0], row[1])]
@@ -208,9 +230,11 @@ def main() -> int:
     print(f"    作品フォルダー {len({r[2] for r in out})} / 単位 {len({r[3] for r in out})}")
     # 宣言した数: 空の層を除いた名前の当て方の棒を、除く前と並べる
     labelled = [r for r in out if r[6]]
-    nd = len(DRAWCOLS)
-    print(f"    描画色: enable=1 {sum(r[-nd] == '1' for r in out):,} / ラベルの在る層のうち enable=1 "
-          f"{sum(r[-nd] == '1' for r in labelled)} / read_error あり {sum(bool(r[-1]) for r in out):,}")
+    # v3 で末尾に列を足したので、位置ではなく名前で引く(11-12、位置で引いて 0 / 全部 と印字した)
+    ien, ire, iec = head.index("draw_color_enable"), head.index("draw_color_read_error"), head.index("empty_c")
+    print(f"    描画色: enable=1 {sum(r[ien] == '1' for r in out):,} / ラベルの在る層のうち enable=1 "
+          f"{sum(r[ien] == '1' for r in labelled)} / read_error あり {sum(bool(r[ire]) for r in out):,}")
+    print(f"    空(定義 C、`empty_c`): {sum(r[iec] == '1' for r in out):,}層 / `empty`(画素0): {sum(r[head.index('empty')] == 1 for r in out):,}層")
     ie = head.index("empty")
     print(f"    **ラベルの在る層 {len(labelled)}**(うち空の層 {sum(r[ie] for r in labelled)})")
     for label, sub in (("空の層を含む(11-09 の値)", labelled), ("空の層を除く", [r for r in labelled if not r[ie]])):

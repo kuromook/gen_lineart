@@ -139,7 +139,8 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
         ("迷う層は「分からない」で構いません。", f),
     ]
     if empty is not None:
-        lines.append(("「空」の列は、画素を数えて機械が付けた印です(1画素も描かれていない層に「空」)。探さなくて構いません。", f))
+        lines.append(("「空」の列は、画素を数えて機械が付けた印です(何も描かれていない層か、描いたものが自分のマスクで全部隠れている層に「空」。"
+                      "11-11 に決めてもらった定義です)。空の層にも、いつもどおり段を選んでください。", f))
     if trial if trial is not None else b == "A-1":
         lines.append(("この束は試しです。答えにくい所や選択肢の足りない所があれば、コメントに書いてください。直してから次の束を出します。", bo))
     if heavy:
