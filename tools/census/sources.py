@@ -639,6 +639,21 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 作者が黒消しと答えた単位は別の名前の道にある —— 別名の候補として作者に聞く項目に残す",
     ),
     dict(
+        path="inbox/deliver_template_pages_step3_20261112.md",
+        what="**抽出側の納品: 第3段の全67頁(4,248層)**。画像素材の画素0 は空ではない見込み(元の画像を読んでいない)",
+        why_not_yet="**Track E へ回送した**(sha256 一致)。読みは E",
+    ),
+    dict(
+        path="inbox/note_q_census_bin1_received_ic1_ok_20261112.md",
+        what="**除外の track: 便1 を受けた(既知の3層は一致)/ 規則を追補で直した / 便1 の一覧に作品単位の列がほしい**",
+        why_not_yet="**作品単位の列つきの一覧を渡した**(発注した一覧は変えない)",
+    ),
+    dict(
+        path="inbox/note_q_census_q1_trial17_approved_20261112.md",
+        what="**除外の track: 作者に見せる17行にユーザーの承認。表と画の発注**",
+        why_not_yet="**並びの鍵と見せる表を作り(層の名前は出さない)、抽出側へ画を発注した**(17層 × 2枚、原寸)。画は census が開かずに回送する",
+    ),
+    dict(
         path="inbox/deliver_grey_stats_bin1_20261112.md",
         what="**抽出側の納品: 階調の統計の便1(825層の色の内訳と連結成分 5,301行)**。既知の3層の画素数は一致",
         why_not_yet="**除外の track へ回送した**(sha256 一致。既知の3層は層の役割の表 v3 でも一致)。読みは除外の track",

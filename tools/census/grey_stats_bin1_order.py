@@ -33,6 +33,7 @@ SEED = 20261111
 N_PER = 50
 TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 OUT = "outbox/grey_stats_bin1_layers_20261111.csv"
+OUT_UNIT = "data/census_full/grey_stats_bin1_layers_with_unit_20261112.csv"
 KURO, MOZA, BETA = "成人修正", "モザイク", "ベタ"
 
 
@@ -114,6 +115,13 @@ def main() -> int:
         for i, (s, k) in enumerate(out, 1):
             w.writerow([i, k[0], k[1], s, by[k][5], int(bool(by[k][4]))])
     print(f"    計 {len(out)}層 → `{OUT}`(非公開。発注は Q の追補の後)")
+    # Q の頼み(11-12): 同じ一覧に作品単位の列を足した版(発注した一覧は変えない)
+    with open(os.path.join(ROOT, OUT_UNIT), "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["no", "page_path", "layer_id", "group", "v_layer_kind", "is_folder", "split_unit"])
+        for i, (s, k) in enumerate(out, 1):
+            w.writerow([i, k[0], k[1], s, by[k][5], int(bool(by[k][4])), un[wd(k[0])]])
+    print(f"    作品単位の列つき → `{OUT_UNIT}`")
     return 0
 
 
