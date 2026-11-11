@@ -8020,3 +8020,64 @@ ever be the "zero pixels, no own mask" kind. The cause is the population again: 
 53,289-layer stage table, which holds a single mask_fill layer. census was asked to write that on the label,
 so the mark is not read as covering the whole definition. The tone clause gets tested in the separate 2018
 monochrome-manga unit instead.
+
+## 2026-11-12 通達確認 —— 便B の「空」の印が付いた(111行中6層)/ トーンの名前が列を再現する(0.9997)が `tone_lpi` は印ではない
+
+**新着4件**(`inbox/`、11-11 19:55 〜 11-12 02:04):
+
+1. `reply_e_census_tone_is_fill_layer_and_empty_c_20261111.md` + `tone_folder_layers_2018_ako6_20261111.csv`(4,784層)
+2. `push_census_order_tone_mask_pixels_ako6_20261111.md`(トーンの発注、1便目 4,784層)
+3. `reply_e_census_65_already_ordered_and_tone_addendum_20261112.md` + `push_…_addendum_20261112.md`(フォルダー外の mask_fill 167層を追加)
+4. **抽出側の納品**: `deliver_stage_round2b_and_draw_colour_20261112.md` + `stage_layer_pixels_round2b_20261112.csv`(65層)/ `layer_draw_colour_round2b_20261112.csv`。`.sha256` の照合 **OK**
+
+### census からの訂正を受けた —— `tone_enabled` は器具ではなく母集団の話だった
+
+**全層では `tone_enabled` = 1 が 91,060層で、全部が `mask_fill`。** こちらの「53,289層すべて0」は
+**段の表での話**で、そこでは今も正しい。二つの読みのうち **(ア)(表の138層はトーンレイヤーではない)** が確定。
+`mask_fill` = `layer_type` の2のビット ∧ `has_gradation` という census のビューだった。
+
+**行き違い1件**: 65層は census が 11-11 12:23 に既に発注していた(ユーザーの別の承認)。こちらの
+「こちらも承認」は後追いで、**発注は二重になっていない**。
+
+### 1. 便B 111行の「空」の印を、手元で独立に付けた
+
+器具 `tools/round2b_empty_mark.py`(正本の述語 `is_empty()` をそのまま当てるだけ)。
+
+| 出所 | 行 | | 印 | 層 |
+|---|---:|---|---|---:|
+| 表 v2 に行が在る層 | 46 | | **空(画素0・自マスクも無いか空)** | **6** |
+| 追加納品(65層) | 65 | | 空でない | 105 |
+| 照合不能 | **0** | | 測れない | 0 |
+
+6層とも raster・画素0・自マスク無し(B-4項目5 pos10/12、B-5項目6 pos2/3、B-5項目7 pos5、B-7項目10 pos7)。
+
+- **census の指摘した列の穴は、便B では噛まない** —— 「画素0 かつ `has_own_mask`=1」が**母数0**
+- **トーンの条項の母数も0**(111行は111行とも raster)。便B では**試せていない**(判定保留)
+- `empty_c()` でも6層になるはず。**違ったらどちらかが誤り**なので突き合わせを頼んだ
+
+### 2. 頼まれた規律13 の照合: 名前「<線数>L <濃度>%」 対 `tone_lpi` / `tone_density_pct`
+
+器具 `tools/tone_name_vs_columns.py`。材料は ako6 のトーンのフォルダーの中の 4,784層。
+**母集団は `2018\ako6` のフォルダーの中だけで、全層ではない。**
+
+| 向き | 結果 |
+|---|---|
+| (順)名前の当たる 3,983層で、線数と濃度が**両方**一致 | **3,982 / 3,983 = 0.9997** |
+| (逆)`tone_enabled`=1 の 3,982層で、名前の**取りこぼし** | **0 / 3,982 = 0.0000** |
+
+**この単位では入れ替えて使える。** ただし2件:
+
+- **(a) 名前は凍る。** 食い違いの1層は 名前 `60L 22%` / 列 lpi 60.0・濃度 **54.0** / `tone_enabled` **0**。
+  名前は作った時の設定で、列は今の設定。**名前を使うなら「作った時の設定」と書く**
+- **(b) `tone_lpi > 0` はトーンの印ではない。印は `tone_enabled`。** この単位で `tone_enabled`=0 なのに
+  lpi>0 の層が **72層**(mask_fill・マスクあり 61 / **raster・マスク無し 9**)。値が残るので lpi で引くと
+  raster まで入る —— `colour_type_index = 2` と同じ形の罠(前回は逆向きを印字して避けた)
+
+### 3. census に頼んだこと(1件。**抽出側の仕事なし、手元の DB の問い**)
+
+**全437,425層での 2×2(名前の当たり × `tone_enabled`)。** 手元の **89,082**(名前)と DB の
+**91,060**(`tone_enabled`)は**周縁の数で交差ではない** —— 2.6% の差がどちらに出ているかは周縁からは言えない。
+交差が在れば、名前を列として使えるかを**全層で**言える。
+
+知らせ: `outbox/note_census_round2b_marked_and_tone_name_verified_20261112.md`
+(`../lineart-census/inbox/` / 写し `../lineart/inbox/` `../lineart-fill-region/inbox/`、md5 一致)

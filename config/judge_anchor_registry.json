@@ -913,7 +913,8 @@
             "トーン1 / トーン2(mask_fill)の位置づけ"
           ],
           "the_one_thing_to_see": "n_px_a_gt0 > 0 かつ n_px_a_gt0_own_mask = 0 の層が在るか。今は母数0で判定保留"
-        }
+        },
+        "answer_superseded_2026_11_12": "**全層では tone_enabled=1 が 91,060層で、全部 mask_fill**(census、2026-11-12)。『53,289層すべて0』は段の表での話で、そこでは今も正しい。原因は母集団で器具ではない —— 二つの読みのうち **(ア)** が確定した"
       },
       "round2b_65_order_approved": {
         "users_words": "こちらも承認 (2026-11-11)",
@@ -921,7 +922,31 @@
         "order": "census の stage_layers_order_round2b_20261111.csv(65行、sha256 c562e39a73a3583c)をそのまま。**列は足さない** —— 46層の納品の列に定義の5条件すべてが在る",
         "limit_printed_before_it_runs": "**65層は65層とも raster。便B の111行も全部 raster。mask_fill は1層もない** —— トーンの条項(画素>0 かつ 自マスク越し0)は便Bでは当たらない見込み。印が付くのは『画素0・自分のマスクも無い』側だけで、札にそう書かせた",
         "why": "便B は段の表53,289層から引いており、その表に mask_fill は1層しか入っていない",
-        "tone_clause_tested_elsewhere": "2018のモノクロ漫画1単位の便(mask_fill 全層)で見る"
+        "tone_clause_tested_elsewhere": "2018のモノクロ漫画1単位の便(mask_fill 全層)で見る",
+        "crossed_wires": "census は 11-11 12:23 に既に発注していた(ユーザーの承認「抽出ツールに65層の画素の数え上げを頼んでよい」)。こちらの承認は後追いで、発注は二重になっていない"
+      },
+      "round2b_mark_measured": {
+        "date": "2026-11-12",
+        "instrument": "tools/round2b_empty_mark.py(正本の述語 is_empty() を便Bの母集団に当てるだけ)",
+        "sources": "鍵 hearing_round2_b_key_20261110_le20.csv 6d18d4bcc2468539 / 表v2 06e4cb4fc1240871 / 追加納品 inbox/stage_layer_pixels_round2b_20261112.csv aeeabea83b1e3f00(.sha256 の照合 OK)",
+        "population": "便B 111行。表v2 に行が在る46層 + 追加納品の65層。**照合不能 0**",
+        "result": "**空 6 / 空でない 105 / 測れない 0**。6層とも raster・画素0・自マスク無し(B-4項目5 pos10, B-4項目5 pos12, B-5項目6 pos2, B-5項目6 pos3, B-5項目7 pos5, B-7項目10 pos7)",
+        "hole_does_not_bite": "census の指摘した列の穴(画素0 だが自分のマスクが形を持つ)は、便B では**母数0**。n_px_own_mask_ge128 が無くても印は曖昧にならない",
+        "tone_clause_denominator": "**0**。111行は111行とも raster で mask_fill は0層。便B では試せていない(判定保留)",
+        "cross_check_pending": "census の empty_c() でも6層になるはず。違ったらどちらかが誤り —— 突き合わせを頼んだ"
+      },
+      "tone_name_vs_columns": {
+        "date": "2026-11-12",
+        "why": "census の頼み(2026-11-12 §3): 名前「<線数>L <濃度>%」を列として使う前に、tone_lpi / tone_density_pct を再現するか示す(規律13)",
+        "instrument": "tools/tone_name_vs_columns.py",
+        "material": "inbox/tone_folder_layers_2018_ako6_20261111.csv 4,784層 sha256 9d4115abcb5c28dd(構造DBだけ。画素は無い)",
+        "population_bound": "**`2018\\ako6` の、祖先に トーン/tone を持つ層だけ。** 全437,425層ではない。ここで言えたことを全層に及ぼすのは推測",
+        "forward": "名前が当たる 3,983層で、線数と濃度が**両方**一致 = **3,982 / 3,983 = 0.9997**",
+        "reverse": "tone_enabled=1 の 3,982層で、名前の**取りこぼし 0 / 3,982 = 0.0000**",
+        "verdict": "この単位では名前と列は入れ替えて使える。ただし下の2件が付く",
+        "caveat_name_is_frozen": "食い違いの1層: 名前 `60L 22%` / 列 lpi 60.0・濃度 **54.0** / tone_enabled **0**。**名前は作った時に凍り、列は今の状態に付く。** 名前を使うなら『作った時の設定』であって『今の設定』ではない",
+        "caveat_lpi_is_not_a_marker": "**`tone_lpi > 0` はトーンの印ではない。印は `tone_enabled`。** この単位で tone_enabled=0 なのに lpi>0 の層が **72層**(mask_fill・マスクあり 61 / **raster・マスク無し 9**)。値が残るので lpi で引くと raster まで入る —— `colour_type_index=2` と同じ形の罠",
+        "open": "**全層での 2×2(名前の当たり × tone_enabled)を census に頼んだ。** 手元の 89,082(名前)と DB の 91,060(tone_enabled)は**周縁の数で交差ではない**。2.6% の差がどちらに出ているかは周縁からは言えない"
       }
     }
   }
