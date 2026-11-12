@@ -645,6 +645,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/note_census_3d_line_kind_author_20261113.md",
+        what="**R: 3D 出力の線画を別の種別にしたい(作者)。既存の記録で印の列が作れるかの頼み(発注は止める)**",
+        why_not_yet="**一次の見立てを返した**: 構造 DB の列では見分けが付かない。画素の形式5 は名前とよく重なるが、作者の答えの付いた行に値が無い。全頁の画素の発注に形式の列を足す案を R に返した(承認は R が取る)",
+    ),
+    dict(
         path="inbox/note_census_mayer_same_work_question_20261112.md",
         what="**R の問い: 札の違う同じ名前の作品フォルダーの組は同じ作品か(便A と便B の間の1組)**",
         why_not_yet="**census の記録では別の単位**(中身の共有も編の裁定も無い)。名前で同定しないので、ユーザー(作者)に聞いた。"
