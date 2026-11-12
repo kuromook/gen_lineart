@@ -645,6 +645,61 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/note_census_add_template_choice_20261112.md",
+        what="**Track E: 段の選択肢に「テンプレート」を足す(ユーザーの指示)。まだなら A-3 を止める / 棒の読み方を先に固定**",
+        why_not_yet="**census が見落とした**(03:36 着、通達確認の起点の取り方で拾えなかった)。A-3〜A-5 は旧い選択肢のまま出た。便B v3 で足した",
+    ),
+    dict(
+        path="inbox/note_census_bin_a_bar_read_and_choice_missing_20261112.md",
+        what="**Track E: 便A の棒を読んだ(多数派 0.3908 / 名前の当て方 0.7447・全母数 0.4023)/ 選択肢「テンプレート」が作者に届いていなかった**",
+        why_not_yet="**見落としを認めて返した。** 便B v3 に選択肢を足した",
+    ),
+    dict(
+        path="inbox/note_census_step3_bar_read_and_round2_in_table_20261112.md",
+        what="**Track E: 第3段の棒は届かなかった(否定)/ 第2回の答えを除外の表に入れた / 便B の先入れに異議なし / 頼み4つ**",
+        why_not_yet="**頼みに答えた**(重なり 0層、層ごとの a の判定の表、フォルダーの中身)。便B を v3 で作り直した(12行を機械で閉じ、作者は99行)",
+    ),
+    dict(
+        path="inbox/note_census_a_open_items_and_missing_mask_column_20261112.md",
+        what="**Track E: a の残りを数え切った / 画素の発注にマスクそのものの列が落ちていた**",
+        why_not_yet="**全頁の発注に列を入れた。** 頁の数と .lip の層の数を返した",
+    ),
+    dict(
+        path="inbox/note_census_authors_three_rulings_20261112.md",
+        what="**Track E: 作者の裁定3件(属性で落ちる層 / 一部は Q の持ち分 / テンプレートのフォルダーは名前で落とせる)**",
+        why_not_yet="**全頁で中身を数えた**(67頁では型だけだったフォルダーに、全頁では型以外の層が37)。属性の出どころを返した",
+    ),
+    dict(
+        path="inbox/note_census_order_empty_pixels_corpus_and_two_rulings_20261112.md",
+        what="**Track E: 全頁の画素の発注(ユーザーの承認)/ .lip の層と候補3行の材料 / 作者の裁定2件**",
+        why_not_yet="**抽出側へ発注した**(`full_clip_pixels_order.py`: .clip 7,662頁・312,762層、年代札で16便)。.lip の層 124,663、うち .clip に同じ(名前, 種別)が無い層 53,865",
+    ),
+    dict(
+        path="inbox/note_q_census_order_q2_bar_columns_20261112.md",
+        what="**除外の track: 黒消しの規則 v2 の列の発注(ユーザーの承認)。便1 と同じ825層、合成の図形で器具を先に確かめる**",
+        why_not_yet="**抽出側へ発注した**(一覧は便1 と同じ)",
+    ),
+    dict(
+        path="inbox/note_q_census_author_kuro_keshi_standalone_20261112.md",
+        what="**除外の track: 作者の答え(黒消しは独立した層で他と混ざらない)/ 同じ頁に2層以上の頁の数の頼み**",
+        why_not_yet="**裁定の表に載せた。** 名前の側で数えて、2層以上の頁は 0",
+    ),
+    dict(
+        path="inbox/note_q_all_q1_kuro_keshi_result_20261112.md",
+        what="**除外の track: 黒消しの第1版の結果 —— 規則は名前に負けた。予測を列にしない**",
+        why_not_yet="**受けた。** census の表には足さない",
+    ),
+    dict(
+        path="inbox/reply_foundation_v5_sample_cleansing_20261112.md",
+        what="**抽出側 → 基盤(写し): v5 の見本の誤り(親フォルダーの名前を見ていない / 下絵が複数の層)/ 二重の頁の名簿 v2 を受けた**",
+        why_not_yet="**受けた。** 名簿 v2 の sha256 は一致と先方が確認。3D の同定は census の領分だが、この便での頼みは無い",
+    ),
+    dict(
+        path="inbox/push_lineart_layer_selection_v5_sample_20261112.md",
+        what="**基盤 → 抽出側(写し): 対の線画に選ばれた層が線画ではない頁 —— 選び方を直す依頼**",
+        why_not_yet="**受けた。** 返し先は census。届いたら基盤・E・D に写す",
+    ),
+    dict(
         path="inbox/deliver_q1_trial17_images_20261112.md",
         what="**抽出側の納品: 除外の track の17行の画(34枚、原寸)と点検の表**。2行は問う層が非表示で、頁の合成に写らない",
         why_not_yet="**除外の track へ回送した**(sha256 36件一致。census は画を開いていない)。非表示の2行の扱いは除外の track が決める",

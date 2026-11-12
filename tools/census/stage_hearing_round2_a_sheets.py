@@ -117,14 +117,17 @@ def main() -> int:
     return 0
 
 
-def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None, stages=STAGES, empty=None):
-    """`empty` を渡すと「空」の列(画素の列から機械が付けた印)を足す。便B と軸2 だけ(E 11-11。便A は変えない)"""
+def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None, stages=STAGES, empty=None, machine=None):
+    """`empty` を渡すと「空」の列(画素の列から機械が付けた印)を足す。便B と軸2 だけ(E 11-11。便A は変えない)。
+    `machine`({(page_path, layer_id文字列): 機械の答え})を渡すと、その行の段の欄に機械の答えを書いて閉じる(灰色・プルダウンなし)。
+    作者は残りの行だけに答える(ユーザー 11-12「OKだ」、E 同意)"""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
     wb = Workbook()
     f, bo = Font(name="Arial"), Font(name="Arial", bold=True)
     fill = PatternFill("solid", fgColor="FFFF00")
+    grey = PatternFill("solid", fgColor="D9D9D9")
     ws = wb.active
     ws.title = "説明"
     heavy = len(sub) > LIMIT
@@ -141,6 +144,9 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
     if empty is not None:
         lines.append(("「空」の列は、画素を数えて機械が付けた印です(何も描かれていない層か、描いたものが自分のマスクで全部隠れている層に「空」。"
                       "11-11 に決めてもらった定義です)。空の層にも、いつもどおり段を選んでください。", f))
+    if machine:
+        lines.append(("灰色の行は、機械が先に答えを入れた行です(何も描かれていない層 = 空 / 除外の表で確定した名前の層 = テンプレート)。"
+                      "答えなくて構いません。違うと思ったら、コメントに書いてください。", bo))
     if trial if trial is not None else b == "A-1":
         lines.append(("この束は試しです。答えにくい所や選択肢の足りない所があれば、コメントに書いてください。直してから次の束を出します。", bo))
     if heavy:
@@ -163,17 +169,25 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
                 "通常" if r["kind"] == "raster" else "ベクター"]
         if empty is not None:
             vals.append("空" if empty[(r["page_path"], str(r["layer_id"]))] == "1" else "")
-        vals += ["", ""]
+        mk = (machine or {}).get((r["page_path"], str(r["layer_id"])))
+        vals += [("機械: " + mk) if mk else "", ""]
         for j, v in enumerate(vals, 1):
             c = wl.cell(i, j, v)
             c.font = f
             c.alignment = Alignment(vertical="top")
-        wl.cell(i, js).fill = fill
-        wl.cell(i, js + 1).fill = fill
+        if mk:
+            for j in range(1, len(vals) + 1):
+                wl.cell(i, j).fill = grey
+            wl.cell(i, js + 1).fill = fill
+        else:
+            wl.cell(i, js).fill = fill
+            wl.cell(i, js + 1).fill = fill
     dv = DataValidation(type="list", formula1='"' + ",".join(stages) + '"', allow_blank=True)
     wl.add_data_validation(dv)
     sc = chr(64 + js)
-    dv.add(f"{sc}2:{sc}{len(sub) + 1}")
+    for i, r in enumerate(sub, 2):
+        if not (machine or {}).get((r["page_path"], str(r["layer_id"]))):
+            dv.add(f"{sc}{i}")
     widths = (5, 50, 9, 7, 30, 30, 22, 9) + ((10,) if empty is not None else ()) + (34, 36)
     for col, wdt in zip("ABCDEFGHIJK", widths):
         wl.column_dimensions[col].width = wdt

@@ -26,6 +26,12 @@
 - **v2(2026-11-10、ユーザーの決定「20以下」)**: v1 の10頁は 550行で、8頁が1頁で20行を超えた(作者の数「Excel は 20」)。
   **候補を「並べる層(raster と vector)が 20 以下の頁」に絞って同じ seed・同じ手順で引き直す。** 作者が答える前に決めた。
   v1 の出力は消さずに残す(`*_20261110.csv` / `*_bundleB-*`)。v2 は `_le20` を付ける。絞る前後の候補の数を両方印字する
+- **v3 の表(2026-11-12、`ROUND2B_PREFILL=1`)**: 頁と行は v2 のまま(引き直さない)。2つを変える
+  - **機械の答えを先に入れて閉じる**(ユーザー 11-12「OKだ」、E 同意): `empty_c` = 空 の行 → `機械: 空`、
+    E の除外の表の 状態=確定 の名前のうちテンプレートの名前(`PICOトンボ` / `断ち落とし枠（白）` / `外枠`)の行 → `機械: テンプレート`。
+    第2回の層名の聞き取りで「よい」の名前は閉じない(問いが軸2 で、段を含意しない。E)
+  - **段の選択肢に「テンプレート(トンボ・裁ち落とし枠など、印刷のための層)」を足す**(ユーザーの指示「a 選択肢にテンプレートが必要」、E 11-12)
+  - 出力は `_le20_prefill`。v2 の表は消さない。閉じた行の数と、作者が答える行の数を印字する
 
     ./venv/bin/python tools/census/stage_hearing_round2_b.py
 """
@@ -52,7 +58,11 @@ MAX_ROWS = int(os.environ.get("ROUND2B_MAX_ROWS", "20"))   # 0 = 絞らない(v1
 STRATA = [("芯", 4), ("広", 4), ("描画色", 2)]
 OUT = "data/census_full/hearing_round2_b_pages_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
 KEY_OUT = "data/census_full/hearing_round2_b_key_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
-XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110" + ("_le20" if MAX_ROWS else "") + ".xlsx"
+PREFILL = os.environ.get("ROUND2B_PREFILL", "") == "1"
+XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110" + ("_le20" if MAX_ROWS else "") + ("_prefill" if PREFILL else "") + ".xlsx"
+MACHINE_OUT = "data/census_full/hearing_round2_b_machine_answers_20261112.csv"
+TEMPLATE_NAMES = {"PICOトンボ", "断ち落とし枠（白）", "外枠"}   # E の表の 状態=確定 のテンプレートの名前(11-12)
+TEMPLATE_CHOICE = "テンプレート(トンボ・裁ち落とし枠など、印刷のための層)"
 
 
 def f(x):
@@ -193,12 +203,33 @@ def main() -> int:
                 w.writerow([i, r["page_path"], r["layer_id"], "", "便B", r["kind"]])
         print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}`")
         return 0
+    machine, stages = None, STAGES
+    if PREFILL:
+        machine = {}
+        for r in rows:
+            k = (r["page_path"], str(r["layer_id"]))
+            if empty[k] == "1":
+                machine[k] = "空"
+            elif r["name"] in TEMPLATE_NAMES:
+                machine[k] = "テンプレート"
+        stages = STAGES[:-1] + [TEMPLATE_CHOICE, STAGES[-1]]
+        c = collections.Counter(machine.values())
+        print(f"    **機械の答えで閉じた行 {len(machine)}**(空 {c['空']} / テンプレート {c['テンプレート']})/ "
+              f"**作者が答える行 {len(rows) - len(machine)}**(全 {len(rows)} 行)")
+        with open(os.path.join(ROOT, MACHINE_OUT), "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["bundle", "page_path", "layer_id", "name", "machine_answer", "answer_tag"])
+            for r in rows:
+                k = (r["page_path"], str(r["layer_id"]))
+                if k in machine:
+                    w.writerow([bmap[r["item"]], r["page_path"], r["layer_id"], r["name"], machine[k],
+                                "machine_empty_c" if machine[k] == "空" else "machine_exclusion_confirmed"])
     for b, its in names:
         sub = [r for r in rows if r["item"] in its]
         over = "  **20行を超える(1頁で切れない)**" if len(sub) > LIMIT else ""
         print(f"    {b}: 項目 {', '.join(map(str, its))} → {len(sub)}行{over}")
         write_xlsx(b, its, items, sub, None, label="便B", n_bundles=len(names), path=XLSX, trial=(b == "B-1"),
-                   stages=STAGES, empty=empty)
+                   stages=stages, empty=None if PREFILL else empty, machine=machine)
     print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}` / 表 `{XLSX.format(b='B-1')}` ほか(非公開)")
     return 0
 
