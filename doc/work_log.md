@@ -17440,3 +17440,8 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 - E = a(テンプレート・空など決定論の層の判別)だけ。b = Q のまま。c(線画・下絵)は E の外 —— census の起案(c の新しい track、ユーザー「今は急いでない」)が受け皿の候補
 - c の材料で E の下にあったもの: 工程の段の聞き取り 便A(97行、棒は読んだ)・便B(99行、未発出)、名前の当て方の棒、層の役割の表 v3。**棒の登録は持ち主が変わっても動かさない**(規律10、E 自身と census の但し書き)
 - CURRENT の E の行と worktree_policy の E の行に書いた
+
+## 2026-11-12 ユーザーの決定: Track R(`layer-picture`)を新設 —— 絵である層を非決定論的に判定(c)
+- 逐語「新しいトラックを新設する　Qが絵でないレイヤを非決定論的手法で判定するのに対し、Rは絵であるレイヤを非決定論的に判定する」(c の受け皿を問うたことへの答え)
+- `git worktree add ../lineart-layer-picture -b layer-picture foundation`(`14f83a1`)。引き継ぎを R の木で commit `0469242`(push は R)。inbox に便10通。CURRENT の Track Ledger と worktree_policy に行を足した。**枝名 `layer-picture` は基盤が付けた**(Q の `layer-exclusion` と対)
+- 通達 `outbox/reply_track_r_opened_20261112.md` → E・census・Q・D・R。E に `role_predictor` の登録を R へ渡すよう、census に段の聞き取りの宛先を R へ変えるよう頼んだ
