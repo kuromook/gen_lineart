@@ -651,7 +651,8 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_census_name_hearing_round2_approved_20261112.md",
         what="**Track E: 層名の聞き取り 第2回(20行)の発注。問いは「どの頁でも絵から除外してよいか」。1行目は名前ではなく効果の列で引く**(ユーザーの承認あり)",
-        why_not_yet="**表を作った**(`name_hearing_round2_sheet.py`。下書きの数を棚卸しと構造 DB で引き直して全部一致、名前の行と1行目の重なり 0層)。作者の答え待ち",
+        why_not_yet="**表を作った**(`name_hearing_round2_sheet.py`。下書きの数を棚卸しと構造 DB で引き直して全部一致、名前の行と1行目の重なり 0層)。"
+                    "**答えを取り込んで E に返した**(`name_hearing_round2_answers.py`。よい 12 / だめ 7 / 分からない 1、第1回とは別のファイル)",
     ),
     dict(
         path="inbox/deliver_template_pages_step3_20261112.md",

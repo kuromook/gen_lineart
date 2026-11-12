@@ -175,6 +175,7 @@
 ./venv/bin/python tools/census/hearing_duplicate_folders_v5.py # その聞き取りの表(つながったフォルダーの組で1行、非公開)
 ./venv/bin/python tools/census/hearing_q1_trial17.py           # 除外の track の黒消しの17行: 並びの鍵・見せる表・画の発注の一覧(非公開)
 ./venv/bin/python tools/census/name_hearing_round2_sheet.py    # 層名の聞き取り 第2回(20行、問いは「どの頁でも除外してよいか」)の表(非公開)
+./venv/bin/python tools/census/name_hearing_round2_answers.py  # その答えの取り込み(第1回とは別のファイル、札付き、非公開)
 ./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列。画素の列は抽出側の manifest から写す + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
 ./venv/bin/python tools/census/process_hearing_pilot20.py # Track N の依頼: 工程の聞き取りの試し 20作の表(非公開)
 ./venv/bin/python tools/census/stage_hearing.py          # 工程の段の聞き取り表(Track E の発注。12頁の層の一覧、作者が段を選ぶ。非公開)
