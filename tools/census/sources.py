@@ -647,7 +647,8 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/reply_track_r_opened_20261112.md",
         what="**基盤: 絵である層を当てる track(R)を立てた。工程の段の聞き取りの宛先を R に変える。便B は作者に渡す前にユーザーの承認**",
-        why_not_yet="**宛先を変えた。** 便A の答え・便B の7束(v3)・層の役割の表 v3 を R に渡した。便B はユーザーの承認待ち",
+        why_not_yet="**宛先を変えた。** 便A の答え・便B の7束(v3)・層の役割の表 v3 を R に渡した。"
+                    "**ユーザーの承認(11-12「おくって」)で便B を出した。** B-1 を取り込んで R に返した(`stage_hearing_round2_b_answers.py`)。B-2 を出した",
     ),
     dict(
         path="inbox/consult_census_q2_bar_columns_synthetic_20261112.md",
