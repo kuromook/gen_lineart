@@ -65,7 +65,8 @@ def main(table=DEFAULT_TABLE):
     print("表(母集団):", table, "sha256", sha(table))
     on, off = load_rules(TSV)
     col = [r for r in on if r["how"] == "列"]
-    on = [r for r in on if r["how"] != "列"]
+    cls = [r for r in on if r["how"] == "条項"]
+    on = [r for r in on if r["how"] not in ("列", "条項")]
     print("\n効かせる行(状態=確定): %d" % len(on))
     for r in on:
         print("   %s / %s / %s" % (r["how"], r["key"], r["kind"]))
@@ -143,7 +144,8 @@ def corpus(path=INVENTORY):
     print("棚卸し:", path, "sha256", sha(path))
     on, _ = load_rules(TSV)
     col = [r for r in on if r["how"] == "列"]
-    on = [r for r in on if r["how"] != "列"]
+    cls = [r for r in on if r["how"] == "条項"]
+    on = [r for r in on if r["how"] not in ("列", "条項")]
     rows = list(csv.DictReader(io.open(path, encoding="utf-8")))
     n_all = sum(int(r["n_layers"]) for r in rows)
     print("棚卸しの行: %d / 層: %d" % (len(rows), n_all))
@@ -184,6 +186,15 @@ def corpus(path=INVENTORY):
         print("   **『重なり0の仮定の下の値』という但し書きは外した。** census の層ごとの判定 `a_verdict_20261112.csv` と")
         print("   突き合わせた: template_excluded 196,291 / not_excluded 24,801 / undecided 216,333、")
         print("   うち列で落ちた 91,060 を引くと **105,231 = この器具の名前と種別の数と一致**")
+    if cls:
+        print("\n**決め方=条項 の行(層ごとの測定が要る。器具では当てられない)**")
+        for r in cls:
+            print("   条項: %s —— **器具は `tools/empty_clause_apply.py`**" % r["key"])
+        print("   測ってある範囲(役割の表 v3 の 53,354層、全部 .clip)で空=1 は **4,982層、うち既に落ちていたのは0**。")
+        print("   **%d + 91,060 + 4,982 = 201,273 / %d = 0.4601**(**測ってある範囲でだけの差**。" % (tot, n_all))
+        print("   率 4,982/53,354 = 0.0934 を全層に引き伸ばさない。`.lip` の 57,665層は画素で空を言えない)")
+        print("   **作者の裁定(2026-11-13、逐語)「下絵　線画hair  blackも名前だけでは落とせない非決定論側だ")
+        print("   これらが落とせるのは空の場合だけだ」** —— 『除外しない』の行の 435層も、空のときだけ落ちる")
     print("**頁の数は行ごとの和なので、同じ頁を重ねて数えている**(上界)。作品単位は行ごとの最大。")
     print("**残る層: %d。** これは「絵の層」ではなく「この篩で落ちなかった層」である。" % (n_all - tot))
     return 0
