@@ -173,6 +173,7 @@
 ./venv/bin/python tools/census/p_layer_kind_300.py          # P の300頁の全層の層の種別(非公開)
 ./venv/bin/python tools/census/duplicate_pages_v5.py          # 対 v5 の中で二重に入っている頁の一覧(非公開)
 ./venv/bin/python tools/census/hearing_duplicate_folders_v5.py # その聞き取りの表(つながったフォルダーの組で1行、非公開)
+./venv/bin/python tools/census/duplicate_folders_v5_answers.py  # その答えから、二重の組の頁を採る・落とすに分けた名簿(非公開)
 ./venv/bin/python tools/census/hearing_q1_trial17.py           # 除外の track の黒消しの17行: 並びの鍵・見せる表・画の発注の一覧(非公開)
 ./venv/bin/python tools/census/name_hearing_round2_sheet.py    # 層名の聞き取り 第2回(20行、問いは「どの頁でも除外してよいか」)の表(非公開)
 ./venv/bin/python tools/census/name_hearing_round2_answers.py  # その答えの取り込み(第1回とは別のファイル、札付き、非公開)
