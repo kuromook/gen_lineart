@@ -64,9 +64,15 @@ def main(table=DEFAULT_TABLE):
     print("表(篩)   :", TSV, "sha256", sha(TSV))
     print("表(母集団):", table, "sha256", sha(table))
     on, off = load_rules(TSV)
+    col = [r for r in on if r["how"] == "列"]
+    on = [r for r in on if r["how"] != "列"]
     print("\n効かせる行(状態=確定): %d" % len(on))
     for r in on:
         print("   %s / %s / %s" % (r["how"], r["key"], r["kind"]))
+    if col:
+        print("**器具が当てられない確定の行: %d**(決め方=列。棚卸しにも役割の表にもこの列が無い)" % len(col))
+        for r in col:
+            print("   列 / %s / %s —— **census の数で別に足す**" % (r["key"], r["kind"]))
     print("効かせない行: %d" % len(off))
     for r in off:
         print("   [%s] %s / %s" % (r["state"], r["how"], r["key"]))
@@ -136,6 +142,8 @@ def corpus(path=INVENTORY):
     print("== 作品全体(棚卸し)で何層落ちるか ==")
     print("棚卸し:", path, "sha256", sha(path))
     on, _ = load_rules(TSV)
+    col = [r for r in on if r["how"] == "列"]
+    on = [r for r in on if r["how"] != "列"]
     rows = list(csv.DictReader(io.open(path, encoding="utf-8")))
     n_all = sum(int(r["n_layers"]) for r in rows)
     print("棚卸しの行: %d / 層: %d" % (len(rows), n_all))
@@ -161,7 +169,18 @@ def corpus(path=INVENTORY):
         for r in hit:
             seen.add((r["layer_name"], r["v_layer_kind"]))
     print("| 計 | %d | **%d** | | |" % (len(seen), tot))
-    print("\n落とす層 %d / 全 %d = %.4f" % (tot, n_all, tot / n_all))
+    print("\n落とす層 %d / 全 %d = %.4f **(決め方=列 の行を含まない)**" % (tot, n_all, tot / n_all))
+    if col:
+        CENSUS_COL = {"tone_enabled = 1": 91060}
+        print("\n**決め方=列 の行(器具では当てられない。census の数)**")
+        add = 0
+        for r in col:
+            n = CENSUS_COL.get(r["key"])
+            print("   列: %s —— %s 層(census 2026-11-12)" % (r["key"], n if n is not None else "未測定"))
+            add += n or 0
+        print("   **重なりが0なら** %d + %d = **%d / %d = %.4f**" % (tot, add, tot + add, n_all, (tot + add) / n_all))
+        print("   **これは上界ではなく『重なり0の仮定の下の値』** —— 名前の19行との重なりは0層と確かめた(census)が、")
+        print("   **`調整`(mask_fill 2,383)など既に確定の行との重なりは未確認**。重なりが在ればこの数は下がる")
     print("**頁の数は行ごとの和なので、同じ頁を重ねて数えている**(上界)。作品単位は行ごとの最大。")
     print("**残る層: %d。** これは「絵の層」ではなく「この篩で落ちなかった層」である。" % (n_all - tot))
     return 0
