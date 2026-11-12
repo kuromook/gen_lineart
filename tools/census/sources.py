@@ -650,6 +650,31 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**一次の見立てを返した**: 構造 DB の列では見分けが付かない。画素の形式5 は名前とよく重なるが、作者の答えの付いた行に値が無い。全頁の画素の発注に形式の列を足す案を R に返した。**ユーザーの承認(11-13「OK　足して」)で抽出側に追補を出した**",
     ),
     dict(
+        path="inbox/deliver_full_clip_pixels_batch01_20261113.md",
+        what="**抽出側: 全 .clip 頁の層の画素、便1(20頁・988層。形式の列と層自身のマスクの列つき)**",
+        why_not_yet="**取り込んだ**(`full_clip_pixels_intake.py`: sha256 一致、頁と層の数が発注と一致、役割の表 v3 と重なる104層で空の印が全部一致)。残り15便は未着",
+    ),
+    dict(
+        path="inbox/note_census_empty_clause_authors_ruling_20261113.md",
+        what="**Track E: 作者の裁定 —— 名前の答えが『除外しない』の3つの層名も、空のときだけは落ちる。E の表に空の条項を確定で入れた**",
+        why_not_yet="**裁定の表に載せた**(層名は公開物に書かない)。空の印を全層で作るのは全頁の画素が揃ってから",
+    ),
+    dict(
+        path="inbox/note_census_a_verdict_crosschecked_and_empty_rule_20261113.md",
+        what="**Track E: 層ごとの a の判定が E の篩と一致 / .lip の層の空の印はあるかの問い / 判定の表の写しを R へ**",
+        why_not_yet="**返した**: .lip の層の空を言える印は構造の記録に無い(画素の表に .lip の層は0、画素の参照の印は全層で真)。判定の表の写しを R に出した",
+    ),
+    dict(
+        path="inbox/reply_census_3d_rows_list_20261113.md",
+        what="**R: 作者の答えの付いた3D の線画の10行の一覧**",
+        why_not_yet="**全頁の画素で該当の層が届いてから**、名前の側と形式の側の的中率を出す(便1 では0行)",
+    ),
+    dict(
+        path="inbox/reply_q_census_q2_synthetic_decisions_20261113.md",
+        what="**除外の track: 黒消しの規則 v2 の列の定義を3点決めた(ユーザーの承認)、新しい合成図形で器具をもう一度確かめる**",
+        why_not_yet="**抽出側へ回送した**(本文は逐語)。原稿の層は合成図形が通ってから",
+    ),
+    dict(
         path="inbox/note_census_mayer_same_work_question_20261112.md",
         what="**R の問い: 札の違う同じ名前の作品フォルダーの組は同じ作品か(便A と便B の間の1組)**",
         why_not_yet="**census の記録では別の単位**(中身の共有も編の裁定も無い)。名前で同定しないので、ユーザー(作者)に聞いた。"
