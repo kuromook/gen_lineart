@@ -178,9 +178,12 @@ def corpus(path=INVENTORY):
             n = CENSUS_COL.get(r["key"])
             print("   列: %s —— %s 層(census 2026-11-12)" % (r["key"], n if n is not None else "未測定"))
             add += n or 0
-        print("   **重なりが0なら** %d + %d = **%d / %d = %.4f**" % (tot, add, tot + add, n_all, (tot + add) / n_all))
-        print("   **これは上界ではなく『重なり0の仮定の下の値』** —— 名前の19行との重なりは0層と確かめた(census)が、")
-        print("   **`調整`(mask_fill 2,383)など既に確定の行との重なりは未確認**。重なりが在ればこの数は下がる")
+        print("   %d + %d = **%d / %d = %.4f**" % (tot, add, tot + add, n_all, (tot + add) / n_all))
+        print("   **重なりは測った値として0である**(census、2026-11-12、全437,425層) —— `tone_enabled`=1 の 91,060層は")
+        print("   **確定の名前・種別のどの行にも当たらず、`調整` との重なりも0**。2つ以上の行に当たる層も0。")
+        print("   **『重なり0の仮定の下の値』という但し書きは外した。** census の層ごとの判定 `a_verdict_20261112.csv` と")
+        print("   突き合わせた: template_excluded 196,291 / not_excluded 24,801 / undecided 216,333、")
+        print("   うち列で落ちた 91,060 を引くと **105,231 = この器具の名前と種別の数と一致**")
     print("**頁の数は行ごとの和なので、同じ頁を重ねて数えている**(上界)。作品単位は行ごとの最大。")
     print("**残る層: %d。** これは「絵の層」ではなく「この篩で落ちなかった層」である。" % (n_all - tot))
     return 0
