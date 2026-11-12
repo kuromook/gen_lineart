@@ -615,7 +615,8 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_census_exclude_axis_and_20row_split_20261110.md",
         what="**Track E: 除外は別の軸(2軸)/ 便A・便B を20行ずつに割る / 描画色はラベルの層に値が無く測れない**",
-        why_not_yet="**便A を E の割り方で5束にした**(`stage_hearing_round2_a_sheets.py`。A-2 は1頁42行の例外。再掲2頁は 11-09 の並びと一致)。作者に渡すかはユーザー",
+        why_not_yet="**便A を E の割り方で5束にした**(`stage_hearing_round2_a_sheets.py`。A-2 は1頁42行の例外。再掲2頁は 11-09 の並びと一致)。作者に渡すかはユーザー。"
+                    "**回収: A-1 / A-2 / A-3(11-12、7行)。A-4 をユーザーに送った**",
     ),
     dict(
         path="inbox/note_census_template_first_hold_hearing_20261110.md",

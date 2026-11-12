@@ -24,7 +24,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 ANSWERED = {"A-1": ("data/census_full/hearing_round2_a_bundleA-1_answered_20261111.xlsx",
                     "6b8778d46b4566243c8b70eb39ebb9bf52b49e1097aaaeea200dcb932b6bb891", "2026-11-11"),
             "A-2": ("data/census_full/hearing_round2_a_bundleA-2_answered_20261112.xlsx",
-                    "028fdab5ec97717c7c3e859c9101e50b2536dd22ffeb01385c7d8083caa12499", "2026-11-12")}
+                    "028fdab5ec97717c7c3e859c9101e50b2536dd22ffeb01385c7d8083caa12499", "2026-11-12"),
+            "A-3": ("data/census_full/hearing_round2_a_bundleA-3_answered_20261112.xlsx",
+                    "76aca5c747ec87bb1193b1d14289413c47b37a5bbf289bb7e1c1ac26025ba88a", "2026-11-12")}
 OUT = "data/census_full/hearing_round2_a_answers.csv"
 TABLE = "data/census_full/layer_role_table_20261110_v2.csv"
 
