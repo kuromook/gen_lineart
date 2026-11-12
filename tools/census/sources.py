@@ -645,6 +645,26 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/reply_track_r_opened_20261112.md",
+        what="**基盤: 絵である層を当てる track(R)を立てた。工程の段の聞き取りの宛先を R に変える。便B は作者に渡す前にユーザーの承認**",
+        why_not_yet="**宛先を変えた。** 便A の答え・便B の7束(v3)・層の役割の表 v3 を R に渡した。便B はユーザーの承認待ち",
+    ),
+    dict(
+        path="inbox/consult_census_q2_bar_columns_synthetic_20261112.md",
+        what="**抽出側の相談: 黒消しの規則 v2 の列が、合成の図形で期待から2点外れた(端の欠けで IoU が届かない / 太い形で幅が出ない)。原稿の分は流していない**",
+        why_not_yet="**除外の track へ回した**(sha256 一致)。列の定義は除外の track の登録の側なので census は選ばない",
+    ),
+    dict(
+        path="inbox/push_clip_pairs_v6_order_20261112.md",
+        what="**基盤 → 抽出側(写し): 対の v6 の発注(線画の層の選び方を2点直し、二重の頁の名簿 v2 で落とす頁を外す)**",
+        why_not_yet="**受けた。** census の名簿 v2 が使われる。納品の写しが来たら受ける",
+    ),
+    dict(
+        path="inbox/reply_foundation_clip_pairs_v6_smoke_20261112.md",
+        what="**抽出側 → 基盤(写し): 対の v6 の試しの5頁**",
+        why_not_yet="**受けた。** 3D の同定が要るかもしれないと書かれているが、頼みはまだ無い",
+    ),
+    dict(
         path="inbox/note_census_add_template_choice_20261112.md",
         what="**Track E: 段の選択肢に「テンプレート」を足す(ユーザーの指示)。まだなら A-3 を止める / 棒の読み方を先に固定**",
         why_not_yet="**census が見落とした**(03:36 着、通達確認の起点の取り方で拾えなかった)。A-3〜A-5 は旧い選択肢のまま出た。便B v3 で足した",
