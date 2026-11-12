@@ -125,7 +125,7 @@ def main():
     print("grid cells by reason (all pages):", dict(tot))
 
     tiles = list(csv.DictReader(open(d / "tiles.csv", encoding="utf-8")))
-    axes = [k for k in tiles[0] if k not in ("key", "tile", "side", "stroke_status")]
+    axes = [k for k in tiles[0] if k not in ("key", "tile", "side", "stroke_status", "px_status")]
     st = Counter((t["side"], t["stroke_status"]) for t in tiles)
     print("stroke axes status by side (non-ok tiles keep pixel axes, stroke axes NaN):", dict(st))
     ai = Counter(t["side"] for t in tiles if fnum(t["ink_ratio"]) >= 1.0)
