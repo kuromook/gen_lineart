@@ -1726,6 +1726,10 @@ work, and the stated expectation is that the pieces make each other easier.
   ordered**, since adding pages after reading the result is widening the exposure.
 
 - `../lineart-aesthetic-judge` (branch `aesthetic-judge`, **Track E**) --
+  **【2026-11-12 ユーザーの決定: 線画・下絵の類を E から外した。当面 E は決定論的な層の判別(a)を担う】**
+  (逐語「線画や下絵の類を track E から外した　当面Eは決定論的にレイヤーを判別を担うという考えだ」)。
+  c(線画)の新しい track は census が起案済み(`inbox/note_foundation_census_propose_track_c_lineart_20261112.md`、ユーザー「今は急いでない」)。
+  **工程の段の聞き取り(便A 97行・便B 99行)と名前の当て方の棒は c の材料** —— 棒の登録は持ち主が変わっても動かさない(規律10)。
   **active again from 2026-10-30** (the user's decision), after being
   **paused 2026-09-17, for a reason that matters more than the pause.** It set
   out to score "line-art-ness" against human judgement, so that places where GT
