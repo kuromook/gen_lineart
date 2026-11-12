@@ -647,7 +647,8 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_census_mayer_same_work_question_20261112.md",
         what="**R の問い: 札の違う同じ名前の作品フォルダーの組は同じ作品か(便A と便B の間の1組)**",
-        why_not_yet="**census の記録では別の単位**(中身の共有も編の裁定も無い)。名前で同定しないので、ユーザー(作者)に聞いた。答え待ち",
+        why_not_yet="**census の記録では別の単位**(中身の共有も編の裁定も無い)。名前で同定しないので、ユーザー(作者)に聞いた。"
+                    "**作者の答え(11-12): 札 c の方が完成形、ほか2つは除外** → 版の裁定の表に `Vc` で載せ、R に知らせた",
     ),
     dict(
         path="inbox/note_census_round2b_v4_approved_20261112.md",

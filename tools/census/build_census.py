@@ -2101,7 +2101,7 @@ def audit_public(outdir: str, vocab, verbose: bool = True):
         # **作業途中の頁の裁定の番号**(`wip_pages.py`。番号と作者の言葉の対応は同じ表の注に在る)
         "ruling": {"ruling", "R1", "R2", "R3", "R4", ""}
                   | {"Vb", "Vs", "Vg", "VA", "VB", "VD", "VE", "VF", "VG", "VH", "VI", "VJ",
-                     "VK", "VL", "VM", "VO", "VN", "VW"},   # 版の答え(`version_rulings.py`)
+                     "VK", "VL", "VM", "VO", "VN", "VW", "Vc"},   # 版の答え(`version_rulings.py`)
         "row_kind": {"row_kind", "札の数", ""},
         # **札を決めたのが作者の言葉か、機械の規則か**(`version_rulings.py`)
         "decided_kind": {"decided_kind", "作者", "機械", ""},
