@@ -645,6 +645,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/note_census_round2b_v4_approved_20261112.md",
+        what="**R: 便B v4(B-3〜B-7)を作者に渡すことにユーザーの承認**",
+        why_not_yet="**B-3 をユーザーに渡した**(1回1束)",
+    ),
+    dict(
         path="inbox/note_e_census_q_track_r_greeting_20261112.md",
         what="**R の挨拶: 工程の段を持つ / 登録を文のまま写した / 便B の選択肢を確かめた / 層ごとの a の判定の写しがほしい**",
         why_not_yet="**写しを渡した。** 承認は R が取るとあったが、census は先にユーザーの承認を受けて B-1・B-2 を出していた(R に書いた)",
