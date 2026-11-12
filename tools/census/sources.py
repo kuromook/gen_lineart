@@ -689,7 +689,8 @@ ARRIVED_NOT_INTEGRATED = [
         what="**基盤: 対の v5 が届いた。二重の頁の一覧は v5 で作ってよい(QC で外す頁を先に落とす)**",
         why_not_yet="**一覧を作った**(`duplicate_pages_v5.py`: 114組・257頁)。フォルダーのつながりで8行に畳んだ聞き取りの表を作った(`hearing_duplicate_folders_v5.py`)。"
                     "**ユーザーの承認(11-12「よい」)で作者に渡した。** 答えから採る頁の名簿を作り、基盤・D・抽出側に返した"
-                    "(`duplicate_folders_v5_answers.py`: 二重の組の頁のうち 採る 174 / 落とす 83。組の外の同じフォルダーの頁には触れていない)",
+                    "(`duplicate_folders_v5_answers.py`: 二重の組の頁のうち 採る 174 / 落とす 83)。"
+                    "**v2: ユーザーの決定(11-12「フォルダごとはずしていい」)で、同じフォルダーの組の外の23頁も落とした(落とす 83 → 106)。v1 は残した**",
     ),
     dict(
         path="inbox/deliver_tone_mask_pixels_ako6_20261112.md",

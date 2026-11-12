@@ -8,6 +8,8 @@
   その指示を名簿に別の理由の札で載せる**(答えの札と混ぜない。下の `basis` 列)
 - **名簿が覆うのは二重の組に入った頁だけ。** 同じフォルダーにある、二重でない頁には触れない(聞いていない)。その数を印字する
 - 落とすのは頁の単位。対 v5 の行(1頁に対が複数あることがある)の数も印字する
+- **v2(ユーザーの決定、2026-11-12 逐語「フォルダごとはずしていい」)**: 落とす頁のあるフォルダーは、二重の組に入っていない頁も
+  まとめて落とす。名簿に `basis` = ユーザーの決定 の札で足す。**v1(組の頁だけ)は消さずに残し、前後の数を両方印字する**(規律10)
 
     ./venv/bin/python tools/census/duplicate_folders_v5_answers.py
 """
@@ -24,7 +26,9 @@ from hearing_duplicate_folders_v5 import KEY_OUT, XLSX  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ANSWERED = ("data/census_full/hearing_duplicate_folders_v5_answered_20261112.xlsx",
             "b9a40cc6052bfb4bc798aed50b79f8e959606d72d3939e4ada8bed07154fb6ff", "2026-11-12")
-OUT = "data/census_full/duplicate_pages_v5_roster_20261112.csv"
+OUT_V1 = "data/census_full/duplicate_pages_v5_roster_20261112.csv"
+OUT = "data/census_full/duplicate_pages_v5_roster_v2_20261112.csv"
+FOLDER_RULE = "ユーザーの決定(2026-11-12「フォルダごとはずしていい」)・落とす頁のあるフォルダーの、二重の組に入っていない頁"
 PFX = "F:\\manuscripts\\"
 NOT_USE = "どれも途中ファイル つかわない"
 
@@ -94,11 +98,29 @@ def main() -> int:
     by = collections.Counter(p.rsplit(chr(92), 1)[0].replace(PFX, "") for p in outside)
     for f, n in sorted(by.items()):
         print(f"      {f}: {n}")
-    with open(os.path.join(ROOT, OUT), "w", encoding="utf-8", newline="") as fh:
+    write(OUT_V1, out)
+    n_qc = {}
+    for r in qc:
+        if r["pair_quality"] == "ok":
+            n_qc[r["source_path"]] = n_qc.get(r["source_path"], 0) + 1
+    for p in sorted(outside):
+        f = p.rsplit(chr(92), 1)[0]
+        row = folder_row.get(f, "")
+        out.append(dict(hearing_row=row, group="", page_path=p, folder=f, n_pairs_v5=n_qc[p], decision="落とす", basis=FOLDER_RULE,
+                        answer="", take_folder="", comment=""))
+    t2 = collections.Counter(o_["decision"] for o_ in out)
+    print(f"    **v1(組の頁だけ)**: 採る {tot['採る']} / 落とす {tot['落とす']}(頁 {sum(tot.values())})")
+    print(f"    **v2(フォルダーごと)**: 採る {t2['採る']} / 落とす {t2['落とす']}(頁 {len(out)})—— 足した {len(outside)}頁は全部「落とす」")
+    write(OUT, out)
+    return 0
+
+
+def write(path, out):
+    with open(os.path.join(ROOT, path), "w", encoding="utf-8", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(out[0]))
         w.writeheader()
-        w.writerows(sorted(out, key=lambda d: (d["hearing_row"], d["page_path"])))
-    print(f"    → `{OUT}`(非公開)")
+        w.writerows(sorted(out, key=lambda d: (str(d["hearing_row"]), d["page_path"])))
+    print(f"    → `{path}`(非公開)")
     return 0
 
 
