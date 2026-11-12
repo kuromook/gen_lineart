@@ -645,9 +645,14 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/note_census_mayer_same_work_question_20261112.md",
+        what="**R の問い: 札の違う同じ名前の作品フォルダーの組は同じ作品か(便A と便B の間の1組)**",
+        why_not_yet="**census の記録では別の単位**(中身の共有も編の裁定も無い)。名前で同定しないので、ユーザー(作者)に聞いた。答え待ち",
+    ),
+    dict(
         path="inbox/note_census_round2b_v4_approved_20261112.md",
         what="**R: 便B v4(B-3〜B-7)を作者に渡すことにユーザーの承認**",
-        why_not_yet="**B-3 をユーザーに渡した**(1回1束)",
+        why_not_yet="**B-3 をユーザーに渡し、取り込んで R に返した。B-4 を渡した**(1回1束)",
     ),
     dict(
         path="inbox/note_e_census_q_track_r_greeting_20261112.md",

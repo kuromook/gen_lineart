@@ -29,7 +29,9 @@ BUNDLES = [f"B-{i}" for i in range(1, 8)]
 ANSWERED = {"B-1": ("data/census_full/hearing_round2_b_bundleB-1_answered_20261112.xlsx",
                     "ce72c9097b0ec2257f76ef674bd64cbac2a56caadb6dc18ccf8639713a2016cc", "2026-11-12"),
             "B-2": ("data/census_full/hearing_round2_b_bundleB-2_answered_20261112.xlsx",
-                    "2ee33cecb337d1c32b7ab36fe88a0f90787c08de50caaf3923bd1c4f7572676c", "2026-11-12")}
+                    "2ee33cecb337d1c32b7ab36fe88a0f90787c08de50caaf3923bd1c4f7572676c", "2026-11-12"),
+            "B-3": ("data/census_full/hearing_round2_b_bundleB-3_answered_20261112.xlsx",
+                    "c98503e313fd385896fe3f6afa4aca566a4f43eec6f97f2c819762c8b6b97b60", "2026-11-12")}
 OUT = "data/census_full/hearing_round2_b_answers.csv"
 
 
