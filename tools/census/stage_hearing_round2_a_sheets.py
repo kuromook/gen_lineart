@@ -117,7 +117,7 @@ def main() -> int:
     return 0
 
 
-def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None, stages=STAGES, empty=None, machine=None):
+def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), path=XLSX, trial=None, stages=STAGES, empty=None, machine=None, extra_lines=()):
     """`empty` を渡すと「空」の列(画素の列から機械が付けた印)を足す。便B と軸2 だけ(E 11-11。便A は変えない)。
     `machine`({(page_path, layer_id文字列): 機械の答え})を渡すと、その行の段の欄に機械の答えを書いて閉じる(灰色・プルダウンなし)。
     作者は残りの行だけに答える(ユーザー 11-12「OKだ」、E 同意)"""
@@ -144,6 +144,8 @@ def write_xlsx(b, its, items, sub, per, label="便A", n_bundles=len(BUNDLES), pa
     if empty is not None:
         lines.append(("「空」の列は、画素を数えて機械が付けた印です(何も描かれていない層か、描いたものが自分のマスクで全部隠れている層に「空」。"
                       "11-11 に決めてもらった定義です)。空の層にも、いつもどおり段を選んでください。", f))
+    for t in extra_lines:
+        lines.append((t, bo))
     if machine:
         lines.append(("灰色の行は、機械が先に答えを入れた行です(何も描かれていない層 = 空 / 除外の表で確定した名前の層 = テンプレート)。"
                       "答えなくて構いません。違うと思ったら、コメントに書いてください。", bo))

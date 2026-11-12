@@ -645,6 +645,26 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**受けた。** 除外の表の正本は E。census が a の層の一覧を作るときは、この行を入れる",
     ),
     dict(
+        path="inbox/note_e_census_q_track_r_greeting_20261112.md",
+        what="**R の挨拶: 工程の段を持つ / 登録を文のまま写した / 便B の選択肢を確かめた / 層ごとの a の判定の写しがほしい**",
+        why_not_yet="**写しを渡した。** 承認は R が取るとあったが、census は先にユーザーの承認を受けて B-1・B-2 を出していた(R に書いた)",
+    ),
+    dict(
+        path="inbox/note_census_round2b_drop_template_choice_20261112.md",
+        what="**R: 便B の選択肢から「テンプレート」を外す(ユーザーの決定)**",
+        why_not_yet="**B-3〜B-7 を作り直した**(v4)。B-1・B-2 は読む前に旧い選択肢で出て、答え済み",
+    ),
+    dict(
+        path="inbox/note_census_round2b_choices_gray_beta_shadow_20261112.md",
+        what="**R: 便B の選択肢にグレー彩色・ベタ・陰影を足す(ユーザーの決定)**",
+        why_not_yet="**v4 に入れた**(前便と1回にまとめた)。作者に渡すのは R が承認を取ってから",
+    ),
+    dict(
+        path="inbox/note_dark34_author_answers_20261112.md",
+        what="**Track D: v5 で黒い面の目安が立つ34頁の作者の答え(混ざっていない 20 / 別の絵 9 / どれでもない 5)**",
+        why_not_yet="**受けた。** 二重の頁の名簿 v2 を D の集計に当てるかは D と基盤の判断",
+    ),
+    dict(
         path="inbox/reply_track_r_opened_20261112.md",
         what="**基盤: 絵である層を当てる track(R)を立てた。工程の段の聞き取りの宛先を R に変える。便B は作者に渡す前にユーザーの承認**",
         why_not_yet="**宛先を変えた。** 便A の答え・便B の7束(v3)・層の役割の表 v3 を R に渡した。"

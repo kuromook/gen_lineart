@@ -21,11 +21,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KEY = "data/census_full/hearing_round2_b_key_20261110_le20.csv"
 MACHINE = "data/census_full/hearing_round2_b_machine_answers_20261112.csv"
-XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110_le20_prefill.xlsx"
+XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110_le20_prefill.xlsx"     # v3: 選択肢に「テンプレート」(B-1・B-2 はこれで答えた)
+XLSX_R = "data/census_full/hearing_round2_b_bundle{b}_20261110_le20_prefill_r.xlsx"  # v4: R の選択肢(グレー彩色・ベタ・陰影を足し、テンプレートを外す)
+SHEET_VERSION = {"B-1": "v3", "B-2": "v3"}   # ここに無い束は v4(作者に渡した表の版。答える前に決まる)
 AXIS2 = "data/census_full/name_hearing_round2_answers_20261112.csv"
 BUNDLES = [f"B-{i}" for i in range(1, 8)]
 ANSWERED = {"B-1": ("data/census_full/hearing_round2_b_bundleB-1_answered_20261112.xlsx",
-                    "ce72c9097b0ec2257f76ef674bd64cbac2a56caadb6dc18ccf8639713a2016cc", "2026-11-12")}
+                    "ce72c9097b0ec2257f76ef674bd64cbac2a56caadb6dc18ccf8639713a2016cc", "2026-11-12"),
+            "B-2": ("data/census_full/hearing_round2_b_bundleB-2_answered_20261112.xlsx",
+                    "2ee33cecb337d1c32b7ab36fe88a0f90787c08de50caaf3923bd1c4f7572676c", "2026-11-12")}
 OUT = "data/census_full/hearing_round2_b_answers.csv"
 
 
@@ -50,7 +54,8 @@ def main() -> int:
             print(f"    **{b}: sha256 が違う** {got[:16]}")
             return 1
         a = list(load_workbook(os.path.join(ROOT, path))["層"].iter_rows(values_only=True))
-        o = list(load_workbook(os.path.join(ROOT, XLSX.format(b=b)))["層"].iter_rows(values_only=True))
+        ver = SHEET_VERSION.get(b, "v4")
+        o = list(load_workbook(os.path.join(ROOT, (XLSX if ver == "v3" else XLSX_R).format(b=b)))["層"].iter_rows(values_only=True))
         if len(a) != len(o) or any(x[:8] != y[:8] for x, y in zip(a, o)):
             print(f"    **{b}: 固定の列が作った表と違う**")
             return 1
@@ -67,8 +72,8 @@ def main() -> int:
             c[(src, stage)] += 1
             out.append(dict(bundle=b, item=k["item"], pos=k["pos"], page_path=k["page_path"], layer_id=k["layer_id"], name=k["name"],
                             stage=stage, answer_source=src, author_comment=r[9] or "", axis2_round2=ax2.get((k["name"], k["kind"]), ""),
-                            as_of=as_of))
-        print(f"    {b}: {len(a) - 1}行(sha256 {sha[:16]})→ " + " / ".join(f"{s}{'' if src == 'author' else '(' + src + ')'} {n}"
+                            sheet_version=ver, as_of=as_of))
+        print(f"    {b}: {len(a) - 1}行(表 {ver}、sha256 {sha[:16]})→ " + " / ".join(f"{s}{'' if src == 'author' else '(' + src + ')'} {n}"
                                                                          for (src, s), n in c.most_common()))
     both = [x for x in out if x["axis2_round2"]]
     if both:

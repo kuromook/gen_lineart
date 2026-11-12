@@ -32,6 +32,11 @@
     第2回の層名の聞き取りで「よい」の名前は閉じない(問いが軸2 で、段を含意しない。E)
   - **段の選択肢に「テンプレート(トンボ・裁ち落とし枠など、印刷のための層)」を足す**(ユーザーの指示「a 選択肢にテンプレートが必要」、E 11-12)
   - 出力は `_le20_prefill`。v2 の表は消さない。閉じた行の数と、作者が答える行の数を印字する
+- **v4 の表(2026-11-12、`ROUND2B_CHOICES=r`、Track R の頼み・ユーザーの決定)**: 行・頁・機械の12行は v3 のまま。段の選択肢だけを変える
+  - 「テンプレート」を外す(ユーザー「テンプレートのボタンは要らないと予想している」)
+  - 「グレー彩色」「ベタ」「陰影」を足す(ユーザー「…グレー彩色、ベタ、だとおもわれる」、文言は R が問いユーザーが選んだ)。
+    「段の線ではない」は「上のどれでもない」と書き添える。説明に「1つしか選べない」の1行
+  - 出力は `_le20_prefill_r`。**B-1・B-2 は v3 の表で答え済み**(選択肢が違う束として取り込みに印字する)。v3 の表は消さない
 
     ./venv/bin/python tools/census/stage_hearing_round2_b.py
 """
@@ -59,7 +64,11 @@ STRATA = [("芯", 4), ("広", 4), ("描画色", 2)]
 OUT = "data/census_full/hearing_round2_b_pages_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
 KEY_OUT = "data/census_full/hearing_round2_b_key_20261110" + ("_le20" if MAX_ROWS else "") + ".csv"
 PREFILL = os.environ.get("ROUND2B_PREFILL", "") == "1"
-XLSX = "data/census_full/hearing_round2_b_bundle{b}_20261110" + ("_le20" if MAX_ROWS else "") + ("_prefill" if PREFILL else "") + ".xlsx"
+CHOICES_R = os.environ.get("ROUND2B_CHOICES", "") == "r"
+XLSX = ("data/census_full/hearing_round2_b_bundle{b}_20261110" + ("_le20" if MAX_ROWS else "") + ("_prefill" if PREFILL else "")
+        + ("_r" if CHOICES_R else "") + ".xlsx")
+STAGES_R = ["あたり", "下絵", "清書(線画)", "グレー彩色", "ベタ", "陰影", "段の線ではない(上のどれでもない塗り・効果・資料など)", "分からない"]
+EXTRA_R = ("1つしか選べません。ベタの陰影のように2つに当たるときは、近い方を選び、コメントに書いてください。",)
 MACHINE_OUT = "data/census_full/hearing_round2_b_machine_answers_20261112.csv"
 TEMPLATE_NAMES = {"PICOトンボ", "断ち落とし枠（白）", "外枠"}   # E の表の 状態=確定 のテンプレートの名前(11-12)
 TEMPLATE_CHOICE = "テンプレート(トンボ・裁ち落とし枠など、印刷のための層)"
@@ -212,7 +221,7 @@ def main() -> int:
                 machine[k] = "空"
             elif r["name"] in TEMPLATE_NAMES:
                 machine[k] = "テンプレート"
-        stages = STAGES[:-1] + [TEMPLATE_CHOICE, STAGES[-1]]
+        stages = STAGES_R if CHOICES_R else STAGES[:-1] + [TEMPLATE_CHOICE, STAGES[-1]]
         c = collections.Counter(machine.values())
         print(f"    **機械の答えで閉じた行 {len(machine)}**(空 {c['空']} / テンプレート {c['テンプレート']})/ "
               f"**作者が答える行 {len(rows) - len(machine)}**(全 {len(rows)} 行)")
@@ -229,7 +238,7 @@ def main() -> int:
         over = "  **20行を超える(1頁で切れない)**" if len(sub) > LIMIT else ""
         print(f"    {b}: 項目 {', '.join(map(str, its))} → {len(sub)}行{over}")
         write_xlsx(b, its, items, sub, None, label="便B", n_bundles=len(names), path=XLSX, trial=(b == "B-1"),
-                   stages=stages, empty=None if PREFILL else empty, machine=machine)
+                   stages=stages, empty=None if PREFILL else empty, machine=machine, extra_lines=EXTRA_R if CHOICES_R else ())
     print(f"    計 {len(rows)}行 / {len(names)}束 → `{OUT}` / 鍵 `{KEY_OUT}` / 表 `{XLSX.format(b='B-1')}` ほか(非公開)")
     return 0
 
