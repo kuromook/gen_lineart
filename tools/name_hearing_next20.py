@@ -17,6 +17,13 @@ import csv, collections, hashlib, io, sys
 INV = "data/role_predictor/layer_name_inventory_20261110.csv"
 TSV = "config/picture_exclusion_draft_20261111.tsv"
 ASKED = "inbox/template_names_answers_20261111.csv"
+ASKED2 = "inbox/name_hearing_round2_answers_20261112.csv"
+# **列 `tone_enabled`=1 の 91,060層は確定(第2回)だが、棚卸しにこの列が無い。**
+# 名前「<線数>L <濃度>%」の行は**この列で覆われる見込み**として別に数える。
+# **名前を列の代わりには使わない**(全層の2×2で 的中0.9993 / 取りこぼし0.0220。規律13)
+import re
+TONE_PAT = re.compile(r"(?:^|\s)(\d+(?:\.\d+)?)\s*L\s+(\d+(?:\.\d+)?)\s*%")
+TONE_COL_LAYERS = 91060
 KIND_KEYS = {"用紙": {"paper"}, "(ノンブル)・(作品情報)": {"story_info"}, "セリフのテキスト層": {"text"}}
 
 
@@ -46,8 +53,11 @@ def main(n=20):
     total = sum(int(r["n_layers"]) for r in rows)
     print("母集団: %d 行 / **%d 層**\n" % (len(rows), total))
 
-    asked = {(r["layer_name"], r["v_layer_kind"]): r["author_answer"]
+    asked = {(r["layer_name"], r["v_layer_kind"]): "第1回 " + r["author_answer"]
              for r in csv.DictReader(io.open(ASKED, encoding="utf-8"))}
+    for r in csv.DictReader(io.open(ASKED2, encoding="utf-8")):
+        if r["layer_name"]:
+            asked[(r["layer_name"], r["v_layer_kind"])] = "第2回 " + r["answer"]
     on = rules()
 
     def hit_rule(r):
@@ -67,7 +77,10 @@ def main(n=20):
         if why:
             drop[why] += 1; drop_layers[why] += int(r["n_layers"]); continue
         if k in asked:
-            why = "20行で聞いた(答え: %s)" % asked[k][:16]
+            why = "聞いた(%s)" % asked[k][:24]
+            drop[why] += 1; drop_layers[why] += int(r["n_layers"]); continue
+        if TONE_PAT.search(r["layer_name"] or ""):
+            why = "**列 tone_enabled で覆われる見込み**(名前では落とさない)"
             drop[why] += 1; drop_layers[why] += int(r["n_layers"]); continue
         if r["v_layer_kind"] == "text":
             drop["text 種別(条例11。名前を画面に出さない)"] += 1
@@ -95,6 +108,10 @@ def main(n=20):
                  r["n_clip_pages"], r["n_lip_pages"], cum / (total - done)))
     print("\n   **次の%d行で届く残りの割合: %.4f**(残り %d 層のうち %d 層)"
           % (n, cum / (total - done), total - done, cum))
+
+    print("\n   **但し書き**: 『列 tone_enabled で覆われる見込み』の行は、**名前で落とすのではない**。")
+    print("   列の実体は %d 層で、名前の当たる層との2×2は 的中 0.9993 / **取りこぼし 0.0220**" % TONE_COL_LAYERS)
+    print("   —— **名前が当たるのに列が無効な層が61、列が有効なのに名前が当たらない層が2,001 在る**(census、全層)")
 
     print("\n== 残りの長い尻尾 ==")
     for lo, hi in ((1, 1), (2, 9), (10, 99), (100, 999), (1000, 10 ** 9)):
