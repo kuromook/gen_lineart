@@ -17463,3 +17463,8 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 ## 2026-11-13 ユーザーの決定: 34頁は黒い面では外さない
 - 選択肢(黒い面では外さない[推奨] / 何も外さない / 別の絵の9頁を外す)→「黒い面では外さない」。別の絵の9頁のうち QC が ok の1頁(d07)にだけ目視由来の外す印、残り8頁は既に line_fragment
 - `outbox/push_dark34_decision_20261113.md` を SCP、着弾確認。写し D・census。v6 に間に合えば入れる
+
+## 2026-11-13 ユーザー: housei と succor は作品ごとに抽出を変える
+- 逐語「housei にデータがないわけはないので、抽出の仕方はここだけ特別にカスタマイズする必要がある （そもそも同じやり方でとれるとはおもっていない）」「succor も他と比べてかなり原稿が汚いので特別に扱う必要はあるだろう」
+- v5 QC: housei ok 10 / line_fragment 2、succor ok 56 / sketch_black_paint 4 / line_fragment 2 / misaligned 1
+- `outbox/push_housei_succor_custom_extraction_20261113.md` を SCP、着弾確認。写し D・R・census。まず層の作りの表と専用の選び方の案(流すのはユーザーが案を見てから)、作品専用の規則は manifest に書く、v6 全体は止めない
