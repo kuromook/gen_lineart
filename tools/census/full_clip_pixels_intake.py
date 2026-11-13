@@ -34,6 +34,18 @@ BATCHES = {
         "a0a86c7d50f6e833888eb475d8422f6725d8e650b5f6231933d219b276eb8044",
         "full_clip_pixels_batch01_20261113/full_clip_pixels_batch01_pages_20261113.csv",
         "f1c9164b9bcf6caf88a7b2e329871071b3784699227769d93e1d84ed561e0d0c", "2026-11-13"),
+    2: ("full_clip_pixels_batch02_20261113/full_clip_pixels_batch02_layers_20261113.csv",
+        "6a65fb4fe5f8c44fafdaa8040ef9374ccb557876b255a933b68246eccb9de9af",
+        "full_clip_pixels_batch02_20261113/full_clip_pixels_batch02_pages_20261113.csv",
+        "76aba183e03fad935004e6c346ed1920bf246e31ef068bc22cf3044f7ad59e31", "2026-11-13"),
+}
+# 差し替え(抽出側が頁のエラーの頁を直した道具で流し直した行)。元の便のファイルは変えず、その頁の行だけを置き換える。
+# 置き換える前と後の数を、頁ごとに名前を付けて両方印字する(規律10)
+FIXES = {
+    2: [("full_clip_pixels_batch02_fix_rq_20261113/full_clip_pixels_batch02_fix_rq_20261113_layers.csv",
+         "b57c5205b4ebb6fc1e0f38f4d2ea4ffce464b100396e36a6bc20892560e9271c",
+         "full_clip_pixels_batch02_fix_rq_20261113/full_clip_pixels_batch02_fix_rq_20261113_pages.csv",
+         "30bf895db3ed6b838f10f2769a6af6c7fd398f36cc9d42ebdb1d903d5c2b55ef", "2026-11-13")],
 }
 
 
@@ -52,6 +64,7 @@ def main() -> int:
         order[int(r["batch"])][r["page_path"]] = int(r["n_layers"])
     con = db.connect()
     keys = set(con.execute("select page_path, layer_id from layers").fetchall())
+    imat = {(p, str(i)) for p, i in con.execute("select page_path, layer_id from layers where has_image_material").fetchall()}
     out, fields = [], None
     for b in sorted(order):
         if b not in BATCHES:
@@ -64,6 +77,27 @@ def main() -> int:
                 return 1
         pages = {r["page_path"]: r for r in csv.DictReader(open(os.path.join(ROOT, DIR, pp), encoding="utf-8"))}
         rows = list(csv.DictReader(open(os.path.join(ROOT, DIR, lp), encoding="utf-8")))
+        perr0 = sum(1 for p in pages.values() if p["error"])
+        for flp, flsha, fpp, fpsha, fas_of in FIXES.get(b, []):
+            for p, s in ((flp, flsha), (fpp, fpsha)):
+                if sha(os.path.join(ROOT, DIR, p)) != s:
+                    print(f"    **便{b} の差し替え: sha256 が違う** {p}")
+                    return 1
+            fpages = {r["page_path"]: r for r in csv.DictReader(open(os.path.join(ROOT, DIR, fpp), encoding="utf-8"))}
+            frows = list(csv.DictReader(open(os.path.join(ROOT, DIR, flp), encoding="utf-8")))
+            if set(r["page_path"] for r in frows) != set(fpages) or not set(fpages) <= set(pages):
+                print(f"    **便{b} の差し替え: 頁が便の中に無い**")
+                return 1
+            for pg in fpages:
+                bef = collections.Counter(r["render_status"] for r in rows if r["page_path"] == pg)
+                aft = collections.Counter(r["render_status"] for r in frows if r["page_path"] == pg)
+                print(f"        差し替え({fas_of}、頁のエラー「{pages[pg]['error'][:40]}」の頁 1): "
+                      f"前 " + " / ".join(f"{k} {n}" for k, n in bef.most_common()) +
+                      " → 後 " + " / ".join(f"{k} {n}" for k, n in aft.most_common()))
+                pages[pg] = fpages[pg]
+            rows = [r for r in rows if r["page_path"] not in fpages] + frows
+        if perr0:
+            print(f"        便{b} の頁のエラー: 差し替えの前 {perr0} → 後 {sum(1 for p in pages.values() if p['error'])}")
         if set(pages) != set(order[b]):
             print(f"    **便{b}: 頁の集合が発注と違う**(届いた {len(pages)} / 発注 {len(order[b])})")
             return 1
@@ -82,6 +116,7 @@ def main() -> int:
         for r in rows:
             r["empty_c"] = empty_c(r) if r["render_status"] != "描画できなかった" else ""
             r["batch"] = str(b)
+            r["has_image_material"] = "1" if (r["page_path"], r["layer_id"]) in imat else "0"
         ec = collections.Counter(r["empty_c"] or "(測れない)" for r in rows)
         print(f"    便{b}({as_of}): {len(pages)}頁 / {len(rows)}層。頁のエラー {perr}。発注と頁・層の数が一致、全層が構造 DB に在る")
         print("        render_status: " + " / ".join(f"{k} {n}" for k, n in rs.most_common()))
@@ -91,6 +126,9 @@ def main() -> int:
         f5 = collections.Counter(r["empty_c"] for r in rows if "5" in r["pixel_formats"].split(";"))
         print(f"        うち形式5 を含む層(形式5 は 10-31 から調査中): empty_c=1 {f5['1']} / 0 {f5['0']}"
               " —— empty_c は正本の規則のまま。形式5 の空を信じてよいかは調査中のまま")
+        im = collections.Counter(r["empty_c"] for r in rows if r["has_image_material"] == "1")
+        print(f"        うち画像素材の層(構造 DB の has_image_material): empty_c=1 {im['1']} / 0 {im['0']} / 測れない {im['']}"
+              " —— 抽出側の但し書き: 描画の塊が空でも元の画像を持つので、空と読まない。印は規則のまま、列 has_image_material で外せるようにした")
         fields = fields or list(rows[0])
         out.extend(rows)
     if not out:

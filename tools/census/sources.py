@@ -655,6 +655,11 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**取り込んだ**(`full_clip_pixels_intake.py`: sha256 一致、頁と層の数が発注と一致、役割の表 v3 と重なる104層で空の印が全部一致)。残り15便は未着",
     ),
     dict(
+        path="inbox/deliver_full_clip_pixels_batch02_20261113.md",
+        what="**抽出側: 全 .clip 頁の層の画素、便2(364頁・43,099層)。頁のエラー1頁(古い版の頁)は直した道具で流し直した差し替えが別に届いた**",
+        why_not_yet="**取り込んだ**(差し替えの前と後を印字。頁のエラー 1 → 0。役割の表 v3 と重なる層で空の印は全部一致)。画像素材の層は列で外せるようにした",
+    ),
+    dict(
         path="inbox/note_census_empty_clause_authors_ruling_20261113.md",
         what="**Track E: 作者の裁定 —— 名前の答えが『除外しない』の3つの層名も、空のときだけは落ちる。E の表に空の条項を確定で入れた**",
         why_not_yet="**裁定の表に載せた**(層名は公開物に書かない)。空の印を全層で作るのは全頁の画素が揃ってから",
