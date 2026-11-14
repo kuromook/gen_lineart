@@ -6,7 +6,9 @@
 - 頁の集合が発注の一覧(`outbox/full_clip_pixels_order_20261112.csv`)のその便と一致し、頁ごとの層の数が `n_layers` と一致すること。
   層の鍵 (`page_path`, `layer_id`) が構造 DB の `layers` に在ること。どれかが外れたら止める
 - `empty_c` は `stage_hearing_round2_b.empty_c` の正本の規則で作る(読めない層は "0" = 空ではない = 測れない)
-- **既知セル**: 役割の表 v3(別の走行で作った表)と重なる層で、`empty_c` が一致するかを印字する。不一致は数と鍵を出す
+- **既知セル**: 役割の表 v3(別の走行で作った表)と重なる層で、正本の規則の `empty_c` が一致するかを印字する。不一致は数と鍵を出す
+  (2026-11-14 に書き足し: 便1〜7 は列の値どうしで比べて不一致 0。便11〜16 で、描画できなかった層を列で空欄にした15層が
+  v3 の規則の "0" と字面で食い違った。両方とも描画できなかった層で、意味の不一致ではないので、規則の値どうしで比べる形に直した。前後を印字する)
 - 3D の線画の10行(Track R、作者の答えつき)は、全部の行が届くまで的中率を出さない。届いた行数だけを印字する
 - 出力は非公開の `data/census_full/full_clip_pixels_layers_merged.csv`(届いた便を全部つないで `batch` と `empty_c` を足したもの)
 
@@ -58,6 +60,42 @@ BATCHES = {
         "fd1e86f54c2fde7d0d4039c118a4fc6f1ceaea99c2a775bc5db74eecde3ebb7e",
         "full_clip_pixels_batch07_20261113/full_clip_pixels_batch07_pages_20261113.csv",
         "462a8f519244d39addb38efc9934abfaa1e2b30036532ede7c08a76e4303f890", "2026-11-13"),
+    8: ("full_clip_pixels_batch08_20261113/full_clip_pixels_batch08_layers_20261113.csv",
+        "cd5570d7d95754ea0ea65d4e5265a4277eb250d18bc3179a34663442a5ff0022",
+        "full_clip_pixels_batch08_20261113/full_clip_pixels_batch08_pages_20261113.csv",
+        "a96f042e7f34b1c45896fb99889a7093344292feeccd00aa76a790f4c83d2b4b", "2026-11-13"),
+    9: ("full_clip_pixels_batch09_20261113/full_clip_pixels_batch09_layers_20261113.csv",
+        "6f412dcb10b92998f3ebab61ee4d421c0a47ef4a2a1de9bd033f19f87cffcf20",
+        "full_clip_pixels_batch09_20261113/full_clip_pixels_batch09_pages_20261113.csv",
+        "9a41767f3f3f9844e429fa3ad90b8cb78eda2d977ca09b7851de2a4af4dcc5d0", "2026-11-13"),
+    10: ("full_clip_pixels_batch10_20261113/full_clip_pixels_batch10_layers_20261113.csv",
+        "047e464a846482f550cbb618badad305bdcfcdee1dad177dcd892b020ebb6531",
+        "full_clip_pixels_batch10_20261113/full_clip_pixels_batch10_pages_20261113.csv",
+        "ab99993a3d6f1fdac920a8eef31b098c748f597077e12f5e2fdf9c55797fbf77", "2026-11-13"),
+    11: ("full_clip_pixels_batch11_20261113/full_clip_pixels_batch11_layers_20261113.csv",
+        "ea6cd76b27ec7367b4521158da03f5967e8525b49e1e96c7bf126b792874b05e",
+        "full_clip_pixels_batch11_20261113/full_clip_pixels_batch11_pages_20261113.csv",
+        "9233c844a008095a08cb8e9b4542a4e72f20514f3b7c2d7dbfa8bf45daf7d497", "2026-11-13"),
+    12: ("full_clip_pixels_batch12_20261113/full_clip_pixels_batch12_layers_20261113.csv",
+        "0d1da1488c90e7f58aa5ea6bd823e261129f78269b92174a9c58a63f6e57d1ab",
+        "full_clip_pixels_batch12_20261113/full_clip_pixels_batch12_pages_20261113.csv",
+        "08e525501af9773dd1bddcdc46396d1cc03b06eed3f4be917c66038e599de15d", "2026-11-13"),
+    13: ("full_clip_pixels_batch13_20261113/full_clip_pixels_batch13_layers_20261113.csv",
+        "a241a95348173bce66985cd2b616bc9c6969bab2862547adca98e19c3af56c55",
+        "full_clip_pixels_batch13_20261113/full_clip_pixels_batch13_pages_20261113.csv",
+        "898fb466ebfc805dd0a86328d8a30f0f8e5201a0daa236663db2ad578793dd80", "2026-11-13"),
+    14: ("full_clip_pixels_batch14_20261113/full_clip_pixels_batch14_layers_20261113.csv",
+        "bde08b528b8983bd80c41d2ba41aa6682e31aa1a90124f5c7a24d34ac0c031de",
+        "full_clip_pixels_batch14_20261113/full_clip_pixels_batch14_pages_20261113.csv",
+        "c4a92cbdb4149d8b285ce50bb41d56832729b0523508a378ddeaf96408d2ec59", "2026-11-13"),
+    15: ("full_clip_pixels_batch15_20261113/full_clip_pixels_batch15_layers_20261113.csv",
+        "866eea1604647bb63d1978a3d83c2769ec407e168cef80e5f39fbf2c3b985f09",
+        "full_clip_pixels_batch15_20261113/full_clip_pixels_batch15_pages_20261113.csv",
+        "973d2f5963f6c4ccd25e2775eb0db750b11c2e8c2e3cd001b0b642bce5d39b6c", "2026-11-13"),
+    16: ("full_clip_pixels_batch16_20261113/full_clip_pixels_batch16_layers_20261113.csv",
+        "ad129bd2f07364fa022d07a4d43e2c43c1a1ee13609e9fc02d0f14cd25b525db",
+        "full_clip_pixels_batch16_20261113/full_clip_pixels_batch16_pages_20261113.csv",
+        "31fe240b143fea8e65bf359bdc7f7bccf09fd6a5f01dae1f453ca992956c9159", "2026-11-13"),
 }
 # 差し替え(抽出側が頁のエラーの頁を直した道具で流し直した行)。元の便のファイルは変えず、その頁の行だけを置き換える。
 # 置き換える前と後の数を、頁ごとに名前を付けて両方印字する(規律10)
@@ -157,9 +195,13 @@ def main() -> int:
     # 既知セル: 役割の表 v3 と重なる層
     v3 = {(r["page_path"], r["layer_id"]): empty_c(r) for r in csv.DictReader(open(os.path.join(ROOT, TABLE_V3), encoding="utf-8"))}
     both = [(r, v3[(r["page_path"], r["layer_id"])]) for r in out if (r["page_path"], r["layer_id"]) in v3]
-    diff = [(r["page_path"], r["layer_id"], r["empty_c"], v) for r, v in both if r["empty_c"] != v]
+    # 比べるのは正本の規則 empty_c() の値どうし(描画できなかった層は規則では "0" = 空ではない)。
+    # まとめた表の列では描画できなかった層を空欄(測れない)にしているので、その層の数は別に印字する
+    diff = [(r["page_path"], r["layer_id"], empty_c(r), v) for r, v in both if empty_c(r) != v]
+    nb = sum(1 for r, v in both if r["empty_c"] == "")
     print(f"    既知セル(役割の表 v3 と重なる層): {len(both)}層、empty_c の不一致 {len(diff)}"
           + ("" if both else "(重なりが無いので、この便では照合できていない)"))
+    print(f"        (うち、まとめた表で「測れない」の層 {nb}。規則の値ではどちらも 0 = 空ではない)")
     for d in diff[:10]:
         print(f"        不一致: layer_id {d[1]} 今回 {d[2]} / v3 {d[3]}")
     # 3D の10行

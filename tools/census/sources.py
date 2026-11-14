@@ -665,6 +665,36 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**取り込んだ**(5便とも sha256・頁・層の数が一致、頁のエラー 0。役割の表 v3 と重なる層で空の印は全部一致。画像素材の層の数は抽出側の数と一致)",
     ),
     dict(
+        path="inbox/note_full_clip_pixels_all_batches_20261113_v3.md",
+        what="**抽出側: 全 .clip 頁の層の画素、16便すべて(7,662頁・312,762層)。便8〜便16 を含む。最初の2版の知らせは抽出側の誤りで、第3版が正**",
+        why_not_yet="**取り込んだ**(16便とも sha256・頁・層の数が一致、頁のエラーは差し替えの1頁だけ。役割の表 v3 と重なる 53,354層で空の印は規則の値どうしで全部一致)。まとめた表を E と R に出した",
+    ),
+    dict(
+        path="inbox/note_full_clip_pixels_noref_layers_20261113.md",
+        what="**抽出側: 「画素の参照が無い」層は空ではない(新しい版の保存形式が描画の塊を保存しない層。文字・塗り・トーン・画像素材など)**",
+        why_not_yet="**取り込みでは描画できなかった層の空の印を空欄(測れない)にしている**ので、空として落ちない。E と R に念を押した",
+    ),
+    dict(
+        path="inbox/consult_census_q2_bar_columns_ic1b_20261113.md",
+        what="**抽出側: 黒消しの規則 v2 の合成図形 IC1b —— 浅い X だけ期待から外れた。原稿は流していない**",
+        why_not_yet="**Q に回り、Q が案 C と新しい図形を決め、さらに輪郭の列を足した**(どちらもユーザーの承認)。census が2通を抽出側へ回送した",
+    ),
+    dict(
+        path="inbox/reply_q_census_q2_ic1b_choose_c_ic1c_20261113.md",
+        what="**除外の track: 浅い交わりは案 C で。IC1b の出し直しと新しい図形 IC1c**",
+        why_not_yet="**抽出側へ回送した**(本文は逐語)",
+    ),
+    dict(
+        path="inbox/reply_q_census_q2_add_contour_columns_20261113.md",
+        what="**除外の track: 黒消しの主の判定を輪郭の列から取る(ユーザーの問いから)。合成図形 IC-R。原稿の層は1回だけ流す**",
+        why_not_yet="**抽出側へ回送した**(本文は逐語)",
+    ),
+    dict(
+        path="inbox/deliver_clip_pairs_v6_20261114.md",
+        what="**抽出側 → 基盤: 線画・下絵の対 v6(census の名簿 v2 の落とす頁を外した 1,742頁)。census は写し**",
+        why_not_yet="**census の作業なし。** 外した頁の数は名簿 v2 の「落とす」の数と一致することだけ確かめた",
+    ),
+    dict(
         path="inbox/note_census_empty_clause_authors_ruling_20261113.md",
         what="**Track E: 作者の裁定 —— 名前の答えが『除外しない』の3つの層名も、空のときだけは落ちる。E の表に空の条項を確定で入れた**",
         why_not_yet="**裁定の表に載せた**(層名は公開物に書かない)。空の印を全層で作るのは全頁の画素が揃ってから",
