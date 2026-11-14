@@ -59,7 +59,11 @@ def main(extra=None):
             if r.get("empty_c") in ("0", "1"):
                 emp[k] = r["empty_c"]
             if r.get("has_image_material") in ("1", "True", "true"):
-                imat[k] = (r.get("self_shown"), r.get("ancestors_shown"))
+                vis = (r.get("self_shown") == "1" and r.get("ancestors_shown") == "1")
+                e2 = r.get("empty_c")
+                imat[k] = ("見えない" if not vis else
+                           "出力に画素が0" if e2 == "1" else
+                           "出力に画素あり" if e2 == "0" else "測れない")
             why = []
             if r.get("has_image_material") in ("1", "True", "true"):
                 why.append("画像素材の層(空と読まない)")
@@ -194,16 +198,21 @@ def main(extra=None):
     print("   まだ落ちていない `.lip` の層 **%d** —— **画素が届いても測れない**(母数0)" % lip_und)
 
     if imat:
-        vis = [k for k, v in imat.items() if v == ("1", "1")]
         print("\n== (5b) 条項2: `image_material`(ラスタライズされていない取り込み画像) ==")
         print("   `.clip` の image_material **%d 層**(棚卸しの種別は 6,318層。差は `.lip` だけの 776層)" % len(imat))
-        print("   **仕上げで見えている層(自分=1 かつ 祖先=1): %d(%.4f)/ 見えていない層: %d(%.4f)**"
-              % (len(vis), len(vis) / len(imat), len(imat) - len(vis), 1 - len(vis) / len(imat)))
-        print("   **見えない層は資料の見込みが高い** —— 役割の表 v3 で祖先を引けた 763層では、祖先が `\"資料\"` の")
-        print("   フォルダーの層が大半(`\"資料\"/ヒロイン` 234 など)、名前は `資料化下絵` 596 が最多")
-        print("   **見えている層が、絵を落とす危険のある所である**(空=0 かつ見えている層が 821)")
-        print("   **撤回の条件(先に登録する。規律10)**: (ア) census の祖先の列が全 5,517層そろったら、")
-        print("   見えている層を祖先別に印字する (イ) 50枚の二択で作者に確かめる (ウ) 取り消すときは前後を両方印字する")
+        print("   **作者の指摘(2026-11-14、逐語)「必ずしも非表示と限らない　出力の範囲外で放置されてるものも多いはず」**")
+        print("   —— **『見えている』と『出力に写る』は別である。** 3つに分けて数える:")
+        st = collections.Counter(imat.values())
+        for k in ("見えない", "出力に画素が0", "出力に画素あり", "測れない"):
+            if st[k]:
+                print("   | %-14s | **%5d** | %.4f |" % (k, st[k], st[k] / len(imat)))
+        print("   **`出力に画素が0` は、層が表示なのに出力の範囲に画素が1つも無い層**(bbox も空欄が 265/267)")
+        print("   —— 作者の言う「出力の範囲外で放置」がこの形で出る。**資料の見込みが高い側に入る**")
+        print("   **危険があるのは `出力に画素あり` の %d 層だけ**(画素の中央値 262,144 = 512×512。最大 14,417,920)" % st["出力に画素あり"])
+        print("   祖先を引けた 763層では祖先が `\"資料\"` のフォルダーの層が大半、名前は `資料化下絵` 596 が最多")
+        print("   **撤回の条件(先に登録する。規律10)**: (ア) census の祖先の列が全 5,517層そろったら祖先別に印字する")
+        print("   (イ) **50枚の二択は `出力に画素あり` の %d 層から引く**(そこだけが危ない) (ウ) 取り消すときは前後を両方印字する"
+              % st["出力に画素あり"])
 
     print("\n== (6) 条項を当てた後の a の状態(全層) ==")
     e1set = set(x[0] for x in e1)
@@ -215,8 +224,7 @@ def main(extra=None):
             s2, r2 = "template_excluded", "条項:空(定義C)"
         elif k in imat:
             s2 = "template_excluded"
-            r2 = ("条項:image_material(見えている)" if imat[k] == ("1", "1")
-                  else "条項:image_material(見えていない)")
+            r2 = "条項:image_material(%s)" % imat[k]
         elif k in hold and e == "1":
             s2, r2 = ("not_excluded" if v == "not_excluded" else "undecided"), "空だが保留(%s)" % hold[k]
         else:
