@@ -695,6 +695,41 @@ ARRIVED_NOT_INTEGRATED = [
         why_not_yet="**census の作業なし。** 外した頁の数は名簿 v2 の「落とす」の数と一致することだけ確かめた",
     ),
     dict(
+        path="inbox/note_census_ask_merged_pixels_7bins_and_holdouts_20261114.md",
+        what="**Track E: 全頁の画素の途中の表を欲しい(器具の点検用)/ 最後の数は16便そろってから読むと先に宣言**",
+        why_not_yet="**16便そろった版を出したので、途中の版は出していない**",
+    ),
+    dict(
+        path="inbox/note_census_empty_clause_final_read_20261114.md",
+        what="**Track E: 全16便で空の条項を当てた最後の読み / 『除外しない』の層にも当たった行を書いてほしい / 層ごとの判定は census が作り直して配るのが筋**",
+        why_not_yet="**census が同じ規則で作り直した**(`a_verdict_v2.py`)。E の層ごとの判定と全行で状態・理由とも一致。『除外しない』の層に当たった行を書いた。R・Q に配った",
+    ),
+    dict(
+        path="inbox/note_census_q_unrasterized_image_material_20261114.md",
+        what="**Track E: 作者が境目を決めた(ラスタライズされていない取り込み画像は a、された後は Q)。属性の確認4件**",
+        why_not_yet="**構造の記録で答えた**(`image_material_structure.py`): 印は生のブロックの鍵と全層で重なる / 素材の小分けは使えない / ラスタライズの後の跡は記録では言えない",
+    ),
+    dict(
+        path="inbox/note_census_image_material_confirmed_and_ancestors_order_20261114.md",
+        what="**Track E: 画像素材を確定にした(作者の指示)。見えている層の祖先の列と、.lip の層の表示の印がほしい**",
+        why_not_yet="**表を作って E に出した**(構造 DB だけ)",
+    ),
+    dict(
+        path="inbox/note_census_image_material_three_states_20261114.md",
+        what="**Track E: 作者の指摘で画像素材を3つに分け直した。層自身の位置と大きさは記録にあるか**",
+        why_not_yet="**オフセットは在るが、画像の大きさは記録に無い**(生のブロックが解かれていない)。読むなら新しい発注になるので止めた",
+    ),
+    dict(
+        path="inbox/note_census_order_image_material_50_check_20261114.md",
+        what="**Track E: 画像素材の50枚の二択の画の発注(ユーザーの承認)**",
+        why_not_yet="**抽出側へ発注した**(50層 × 2枚)。census は画を開かないので、画面は E に作ってもらう",
+    ),
+    dict(
+        path="inbox/reply_census_q2_ic1b_ic1c_icr_20261114.md",
+        what="**抽出側: 黒消しの規則 v2 の合成図形 —— IC1b の出し直し・IC1c・IC-R とも期待のある図形は全部通った。次は原稿の層**",
+        why_not_yet="**表3本を Q へ回した**(本文は抽出側から Q に写し済み)。手順の直し2点は Q が判じる",
+    ),
+    dict(
         path="inbox/note_census_empty_clause_authors_ruling_20261113.md",
         what="**Track E: 作者の裁定 —— 名前の答えが『除外しない』の3つの層名も、空のときだけは落ちる。E の表に空の条項を確定で入れた**",
         why_not_yet="**裁定の表に載せた**(層名は公開物に書かない)。空の印を全層で作るのは全頁の画素が揃ってから",

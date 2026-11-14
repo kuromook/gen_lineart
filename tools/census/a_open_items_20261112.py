@@ -56,6 +56,9 @@ def load_e():
             if how == "名前":
                 excl_name.add((key, kind))
             elif how == "種別":
+                if key not in KIND_KEY:   # 11-12 より後に E が足した種別の行(例: image_material、11-14)。この器具は 11-12 の版なので当てない
+                    print(f"    (11-12 の器具が知らない種別の行を当てない: {key[:40]})")
+                    continue
                 excl_kind.add(KIND_KEY[key])
             elif how == "列" and key.startswith("tone_enabled"):
                 tone_col = True

@@ -181,6 +181,8 @@
 ./venv/bin/python tools/census/full_clip_pixels_order.py      # 全 .clip 頁の画素の発注の一覧(年代札で便を切る)
 ./venv/bin/python tools/census/full_clip_pixels_intake.py     # 全 .clip 頁の画素の便の取り込み(sha256・頁と層の数・空の印の既知セル)
 ./venv/bin/python tools/census/three_d_lineart_mark_check.py  # 3D 出力の線画の印: 名前の側と形式の側の的中率と取りこぼし(作者の答えの付いた層)
+./venv/bin/python tools/census/a_verdict_v2.py               # a の層ごとの判定 v2(E の規則を census が当て、E の判定と突き合わせる)
+./venv/bin/python tools/census/image_material_structure.py   # 画像素材の層の祖先・表示・生のブロックの鍵(構造 DB だけ)
 ROUND2B_PREFILL=1 ./venv/bin/python tools/census/stage_hearing_round2_b.py  # 便B v3: 空・確定のテンプレートの行を機械で閉じ、選択肢「テンプレート」を足す(非公開)
 ./venv/bin/python tools/census/stage_hearing_round2_b_answers.py # 便B の答えの取り込み(機械の行は札付き、軸2 の答えを別の列に。非公開)
 ./venv/bin/python tools/census/p_layer_rows.py           # Track P の 300頁の層の行(holdout8 と同じ64列。画素の列は抽出側の manifest から写す + マスクの画素の数 + 第1段のカラーかモノクロか。非公開)
