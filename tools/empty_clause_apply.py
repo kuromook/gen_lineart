@@ -185,6 +185,34 @@ def main(extra=None):
     lip_und = sum(1 for k, verdict, e, x in rows if verdict == "undecided" and x == "lip")
     print("   まだ落ちていない `.clip` の層で、空を測っていない層 **%d**(ここが動きうる)" % movable)
     print("   まだ落ちていない `.lip` の層 **%d** —— **画素が届いても測れない**(母数0)" % lip_und)
+
+    print("\n== (6) 条項を当てた後の a の状態(全層) ==")
+    e1set = set(x[0] for x in e1)
+    st = collections.Counter(); out = []
+    for k, v, e, x in rows:
+        if v == "template_excluded":
+            s2, r2 = "template_excluded", "名前・種別・列"
+        elif k in e1set:
+            s2, r2 = "template_excluded", "条項:空(定義C)"
+        elif k in hold and e == "1":
+            s2, r2 = ("not_excluded" if v == "not_excluded" else "undecided"), "空だが保留(%s)" % hold[k]
+        else:
+            s2, r2 = v, ""
+        st[(s2, r2)] += 1
+        out.append((k[0], k[1], s2, r2))
+    tot_x = sum(v for (a, _), v in st.items() if a == "template_excluded")
+    print("   | 状態 | 理由 | 層 |")
+    print("   |---|---|---:|")
+    for (a, r), v in sorted(st.items(), key=lambda z: -z[1]):
+        print("   | %s | %s | %d |" % (a, r if r else "—", v))
+    print("   **落とす 計 %d / %d = %.4f**" % (tot_x, n_all, tot_x / n_all))
+    if len(sys.argv) > 2:
+        p = sys.argv[2]
+        with io.open(p, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["page_path", "layer_id", "a_verdict_v2", "a_rule_v2"])
+            w.writerows(out)
+        print("   層ごとの判定を書いた: %s(%d 行。**`data/` の外に出さない**)" % (p, len(out)))
     return 0
 
 
