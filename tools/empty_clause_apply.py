@@ -19,6 +19,11 @@
     **調査中の層は分析対象外。外した単位は層×計測で、外した数を印字する**(作者の決定 2026-10-29)
   どちらも**空=1 でも落とさず、理由別に数を印字する**。
 
+**もう1つの条項(2026-11-14)**: **`image_material`(ラスタライズされていない取り込み画像)**。
+  作者「資料の多くはこの状態が多いと思われる」「aに入れてしまってあとから撤回でも十分」。
+  **仕上げで見えているか**で2つに分ける —— 見えない層は資料の見込みが高く、見えている層は絵の見込みが残る。
+  **撤回の条件を先に登録する**(規律10)。どちらも理由の名前を分けて印字するので、撤回は理由を外すだけで済む。
+
 **印字するもの**:
   (1) 母集団と、空が測ってある範囲(**範囲の外は数に入れない**)
   (2) **前**(名前・種別・列だけ)と **後**(空の条項を足した)—— 両方に名前を付ける
@@ -47,12 +52,14 @@ def main(extra=None):
         print("空の列(全頁): %s sha256 %s" % (extra, sha(extra)))
     print("名前とラベル: %s sha256 %s\n" % (ROLE, sha(ROLE)))
 
-    emp, hold = {}, {}
+    emp, hold, imat = {}, {}, {}
     if extra:
         for r in csv.DictReader(io.open(extra, encoding="utf-8")):
             k = (r["page_path"], r["layer_id"])
             if r.get("empty_c") in ("0", "1"):
                 emp[k] = r["empty_c"]
+            if r.get("has_image_material") in ("1", "True", "true"):
+                imat[k] = (r.get("self_shown"), r.get("ancestors_shown"))
             why = []
             if r.get("has_image_material") in ("1", "True", "true"):
                 why.append("画像素材の層(空と読まない)")
@@ -186,6 +193,18 @@ def main(extra=None):
     print("   まだ落ちていない `.clip` の層で、空を測っていない層 **%d**(ここが動きうる)" % movable)
     print("   まだ落ちていない `.lip` の層 **%d** —— **画素が届いても測れない**(母数0)" % lip_und)
 
+    if imat:
+        vis = [k for k, v in imat.items() if v == ("1", "1")]
+        print("\n== (5b) 条項2: `image_material`(ラスタライズされていない取り込み画像) ==")
+        print("   `.clip` の image_material **%d 層**(棚卸しの種別は 6,318層。差は `.lip` だけの 776層)" % len(imat))
+        print("   **仕上げで見えている層(自分=1 かつ 祖先=1): %d(%.4f)/ 見えていない層: %d(%.4f)**"
+              % (len(vis), len(vis) / len(imat), len(imat) - len(vis), 1 - len(vis) / len(imat)))
+        print("   **見えない層は資料の見込みが高い** —— 役割の表 v3 で祖先を引けた 763層では、祖先が `\"資料\"` の")
+        print("   フォルダーの層が大半(`\"資料\"/ヒロイン` 234 など)、名前は `資料化下絵` 596 が最多")
+        print("   **見えている層が、絵を落とす危険のある所である**(空=0 かつ見えている層が 821)")
+        print("   **撤回の条件(先に登録する。規律10)**: (ア) census の祖先の列が全 5,517層そろったら、")
+        print("   見えている層を祖先別に印字する (イ) 50枚の二択で作者に確かめる (ウ) 取り消すときは前後を両方印字する")
+
     print("\n== (6) 条項を当てた後の a の状態(全層) ==")
     e1set = set(x[0] for x in e1)
     st = collections.Counter(); out = []
@@ -194,6 +213,10 @@ def main(extra=None):
             s2, r2 = "template_excluded", "名前・種別・列"
         elif k in e1set:
             s2, r2 = "template_excluded", "条項:空(定義C)"
+        elif k in imat:
+            s2 = "template_excluded"
+            r2 = ("条項:image_material(見えている)" if imat[k] == ("1", "1")
+                  else "条項:image_material(見えていない)")
         elif k in hold and e == "1":
             s2, r2 = ("not_excluded" if v == "not_excluded" else "undecided"), "空だが保留(%s)" % hold[k]
         else:
