@@ -33,7 +33,9 @@ ANSWERED = {"B-1": ("data/census_full/hearing_round2_b_bundleB-1_answered_202611
             "B-3": ("data/census_full/hearing_round2_b_bundleB-3_answered_20261112.xlsx",
                     "c98503e313fd385896fe3f6afa4aca566a4f43eec6f97f2c819762c8b6b97b60", "2026-11-12"),
             "B-4": ("data/census_full/hearing_round2_b_bundleB-4_answered_20261113.xlsx",
-                    "704707b7613b1d07793ea5fe470084f5c5c86ded5577e027655766f8a4993271", "2026-11-13")}
+                    "704707b7613b1d07793ea5fe470084f5c5c86ded5577e027655766f8a4993271", "2026-11-13"),
+            "B-5": ("data/census_full/hearing_round2_b_bundleB-5_answered_20261114.xlsx",
+                    "3fd1af6bf35b54418dd061b3306219b90251cad5ed8ac0736c4a3730026f3113", "2026-11-14")}
 OUT = "data/census_full/hearing_round2_b_answers.csv"
 
 
