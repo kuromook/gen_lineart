@@ -13,6 +13,12 @@
   これらが落とせるのは空の場合だけだ」 —— **名前で『除外しない』と答えた行も、空のときだけは落ちる。**
   段のラベルが付いた層も保留しない(保留した場合の数は参考として印字する)。
 
+**全頁の画素の便から来る2つの保留**(census 2026-11-13、便1〜便7):
+  - **`has_image_material` = 1 の層は空と読まない** —— 描画の塊が空でも元の画像を持つ(抽出側の但し書き)
+  - **`pixel_formats` に形式5 を含む層は「調査中」**(2026-10-31 から。アルファが全面 255 と読まれる)——
+    **調査中の層は分析対象外。外した単位は層×計測で、外した数を印字する**(作者の決定 2026-10-29)
+  どちらも**空=1 でも落とさず、理由別に数を印字する**。
+
 **印字するもの**:
   (1) 母集団と、空が測ってある範囲(**範囲の外は数に入れない**)
   (2) **前**(名前・種別・列だけ)と **後**(空の条項を足した)—— 両方に名前を付ける
@@ -41,11 +47,19 @@ def main(extra=None):
         print("空の列(全頁): %s sha256 %s" % (extra, sha(extra)))
     print("名前とラベル: %s sha256 %s\n" % (ROLE, sha(ROLE)))
 
-    emp = {}
+    emp, hold = {}, {}
     if extra:
         for r in csv.DictReader(io.open(extra, encoding="utf-8")):
-            if r["empty_c"] in ("0", "1"):
-                emp[(r["page_path"], r["layer_id"])] = r["empty_c"]
+            k = (r["page_path"], r["layer_id"])
+            if r.get("empty_c") in ("0", "1"):
+                emp[k] = r["empty_c"]
+            why = []
+            if r.get("has_image_material") in ("1", "True", "true"):
+                why.append("画像素材の層(空と読まない)")
+            if "5" in [x.strip() for x in (r.get("pixel_formats") or "").split(";")]:
+                why.append("形式5 を含む(調査中。分析対象外)")
+            if why:
+                hold[k] = " / ".join(why)
 
     rows = []
     for r in csv.DictReader(io.open(V, encoding="utf-8")):
@@ -73,7 +87,20 @@ def main(extra=None):
     def stage(k):
         return nm[k]["author_stage"] if k in nm else ""
 
+    held_rows = [x for x in rows if x[2] == "1" and x[1] != "template_excluded" and x[0] in hold]
+    if extra:
+        print("== (1b) 空=1 でも落とさない層(**理由別に数える**。census の列) ==")
+        if held_rows:
+            cnt = collections.Counter(hold[x[0]] for x in held_rows)
+            for k, v in cnt.most_common():
+                print("   %-40s **%d 層**" % (k, v))
+            print("   ---- 計 **%d 層**を空から外す" % len(held_rows))
+        else:
+            print("   0 層(この入力には `has_image_material` / `pixel_formats` の印が無い)")
+        print()
+
     before = sum(1 for x in rows if x[1] == "template_excluded")
+    e1 = [x for x in e1 if x[0] not in hold]
     add_und = sum(1 for x in e1 if x[1] == "undecided")
     add_not = sum(1 for x in e1 if x[1] == "not_excluded")
     add_already = sum(1 for x in e1 if x[1] == "template_excluded")
