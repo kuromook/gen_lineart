@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_check50_answered_rule_withdrawn_3d_background_20261115.md",
+        what="**Track E: 画像素材の50枚の二択に作者の答え(資料 42 / 絵の一部 8)。棒どおり『出力に画素あり』の理由を外す。絵の一部の7層はカラーの3D背景。問い2件**",
+        why_not_yet="**a の判定 v3 を作って E に返した**(E の数と一致)。作者の言明を裁定の表に足した。3D の印は構造の記録に無いと答えた。第2弾はユーザーの承認を取り、E の一覧を待つ",
+    ),
+    dict(
+        path="inbox/note_census_check50_v2_screen_up_and_no_recount_20261115.md",
+        what="**Track E: 描き直した画で第2版の画面を立てた / 画素の数え直しの発注は要らないと判じた**",
+        why_not_yet="**受け取った**",
+    ),
+    dict(
         path="inbox/deliver_image_material_check50_images_redo_20261115.md",
         what="**抽出側: 画像素材の50枚を元の画像から描き直した(50行 × 3枚)。前の画は描画用のミップマップの古い切れ端だった**",
         why_not_yet="**census は画を開かずに E へ写した**(sha256 152本一致)。**全頁の画素の表も同じ切れ端を数えていた**ので、画像素材の層の画素の列に但し書きを足した(T129 の延長)。数え直しは新しい発注になるので出していない",
