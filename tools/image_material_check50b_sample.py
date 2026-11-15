@@ -27,6 +27,9 @@
   ただし**「どれでもない」と「分からない」の合計が10以上なら、この群は判定保留**
 - **過去の数は撤回しない** —— 取り消すのは規則で、数は版として残る
 
+**置き換え(2026-11-15)**: census が代表でないと知らせた3層(元の `pos` 41・42・44、どれも `測れない` の群)を
+並びから外した。**同じ群・同じ上限の中で、並びの次の層が入る**。ほかの47層は動かない。
+
 **印字するもの**: 落としたものを理由別に / 群ごとの母集団と枚数 / 上限で飛ばした層 / 作品単位の数 / 出力の sha256。
 """
 import csv
@@ -42,6 +45,13 @@ SEED = "20261115"
 N = 50
 PER_UNIT = 3
 GROUPS = (("出力に画素が0", 39), ("測れない", 11))
+# **登録どおりの置き換え**(2026-11-15)。census が「バイトが同じ写しの頁の、代表でない側」と知らせた層を
+# 並びから外すと、同じ群・同じ上限の中で**並びの次の層**が入る。並びは種で決まっているので再現できる。
+EXCLUDE = {
+    ("F:\\manuscripts\\2024b\\hamlabi\\works\\page0013.clip", "84"),   # 元 pos 41
+    ("F:\\manuscripts\\2024b\\hamlabi\\works\\page0001.clip", "67"),   # 元 pos 42
+    ("F:\\manuscripts\\2024b\\hamlabi\\works\\page0013.clip", "82"),   # 元 pos 44
+}
 
 
 def unit(page_path):
@@ -79,6 +89,9 @@ def main():
         for r in rows:
             if len(take) >= quota:
                 break
+            if (r["page_path"], r["layer_id"]) in EXCLUDE:
+                skipped["代表でない頁の層(census)"] += 1
+                continue
             u = unit(r["page_path"])
             if cnt[u] >= PER_UNIT:
                 skipped[g] += 1
