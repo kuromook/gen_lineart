@@ -10,6 +10,12 @@
 - コメント列も同じ扱い(22行目以降のコメントは未確認)
 - 固定の列(フォルダー名・頁数)が元の表と1セルでも違えば止める(取り違えの検出)
 
+**第2便(2026-11-15、作者の記入、逐語)**: 「４０まで入力」。
+**読み方(第1便と同じ)**: Excel の行番号と読む → **2〜40行目の 39 フォルダーが作者の答え**、41行目以降は未確認。
+- 11-10 に census が「次は 22〜41行目」と書いていたが、作者は 40 と書いた。**41行目は未確認のまま**(作者の言葉を取る)
+- **第1便から第2便で変わったセルを、行ごとに前と後の両方を印字する**(規律10。答えた範囲の中の変化も、未確認だった範囲の変化も)
+- 第1便の 22〜40行目の値(未確認)が、作者の確認でどれだけそのまま残ったかを数で印字する
+
     ./venv/bin/python tools/census/manga_illust_answers.py
 """
 import collections
@@ -20,11 +26,15 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ORIG = "data/census_full/hearing_work_folder_manga_or_illust_20261107.xlsx"
-ANSWERED = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto21_20261110.xlsx"
-ANSWERED_SHA = "e3db91321f89dcb83447b13eacd53c0096404b8dfb036f638f7da13fce118284"
-CONFIRMED_LAST_ROW = 21
-OUT = "data/census_full/work_folder_manga_or_illust_20261110.csv"
-AS_OF = "2026-11-10"
+PREV = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto21_20261110.xlsx"
+PREV_SHA = "e3db91321f89dcb83447b13eacd53c0096404b8dfb036f638f7da13fce118284"
+PREV_LAST_ROW = 21
+ANSWERED = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto40_20261115.xlsx"
+ANSWERED_SHA = "cf40273b1d8886e6278466d33d80425aa9e36bda32fe02c8b04c850b3df1a2ff"
+CONFIRMED_LAST_ROW = 40
+OUT = "data/census_full/work_folder_manga_or_illust_20261115.csv"
+AS_OF = "2026-11-15"
+PREV_AS_OF = "2026-11-10"
 
 
 def main() -> int:
@@ -32,11 +42,26 @@ def main() -> int:
     print("[作品フォルダーは漫画かイラストか(作者の答えの取り込み)]")
     path = os.path.join(ROOT, ANSWERED)
     sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
-    if sha != ANSWERED_SHA:
-        print(f"    **sha256 が違う** {sha[:16]} ≠ {ANSWERED_SHA[:16]}")
+    psha = hashlib.sha256(open(os.path.join(ROOT, PREV), "rb").read()).hexdigest()
+    if sha != ANSWERED_SHA or psha != PREV_SHA:
+        print(f"    **sha256 が違う** {sha[:16]} / 第1便 {psha[:16]}")
         return 1
     o = list(load_workbook(os.path.join(ROOT, ORIG))["作品フォルダー"].iter_rows(values_only=True))
     a = list(load_workbook(path)["作品フォルダー"].iter_rows(values_only=True))
+    pv = list(load_workbook(os.path.join(ROOT, PREV))["作品フォルダー"].iter_rows(values_only=True))
+    if len(pv) != len(a) or any(x[:6] != y[:6] for x, y in zip(pv, a)):
+        print("    **第1便と第2便で固定の列か行数が違う**")
+        return 1
+    print(f"    第1便({PREV_AS_OF}、2〜{PREV_LAST_ROW}行目が答え)→ 第2便({AS_OF}、2〜{CONFIRMED_LAST_ROW}行目が答え)で変わったセル(作品名は印字しない):")
+    for i, (x, y) in enumerate(zip(pv[1:], a[1:]), 2):
+        for j, lab in ((6, "答え"), (7, "コメント")):
+            if x[j] != y[j]:
+                where = "答えた範囲の中" if i <= PREV_LAST_ROW else "未確認だった範囲" if i <= CONFIRMED_LAST_ROW else "まだ未確認の範囲"
+                show = (lambda v: "(空)" if v is None else v) if j == 6 else (lambda v: "(空)" if v is None else f"{len(v)}字")
+                print(f"        {i}行目 {lab}({where}): {show(x[j])} → {show(y[j])}")
+    rng = range(PREV_LAST_ROW + 1, CONFIRMED_LAST_ROW + 1)
+    kept = sum(pv[i - 1][6] == a[i - 1][6] for i in rng)
+    print(f"    第1便の未確認の値({PREV_LAST_ROW + 1}〜{CONFIRMED_LAST_ROW}行目、{len(rng)}行)が作者の答えと同じだった行 {kept}/{len(rng)}")
     if len(o) != len(a):
         print(f"    **行数が違う** 元 {len(o)} / 答え {len(a)}")
         return 1
@@ -59,7 +84,7 @@ def main() -> int:
         c = cnt[st]
         print(f"    {st}: {sum(c.values())} フォルダー → " + " / ".join(f"{k} {v}" for k, v in c.most_common()))
     conf = [x for x in rows if x["status"] == "作者の答え"]
-    print(f"    作者の答えの 20 フォルダーの頁: カラーの層がある頁 {sum(x['n_colour_layer_pages'] for x in conf)} / "
+    print(f"    作者の答えの {len([x for x in rows if x['status'] == '作者の答え'])} フォルダーの頁: カラーの層がある頁 {sum(x['n_colour_layer_pages'] for x in conf)} / "
           f"Track P の頁 {sum(x['n_p_pages'] for x in conf)}")
     for k in ("漫画", "イラスト", "漫画とイラストが混ざる"):
         s = [x for x in conf if x["answer"] == k]
