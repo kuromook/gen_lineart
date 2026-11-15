@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_second50_list_and_v3_crosschecked_20261115.md",
+        what="**Track E: 画像素材の二択の第2弾の50層の一覧(見えている残りの340層から)/ v3 を独立に突き合わせて一致**",
+        why_not_yet="**代表でない頁の層 3つを返した**。E が置き換えた一覧を待って抽出側へ発注する(ユーザーの承認あり)",
+    ),
+    dict(
+        path="inbox/note_census_q_r_3d_background_not_deterministic_20261115.md",
+        what="**Track E: 作者の裁定 —— カラーの3D背景はモノクロの3D背景と同じ扱いで、決定論では判定できない / a が3Dの層を落としていないかの問い**",
+        why_not_yet="**裁定の表に載せ、返した**: 種別 3d の層は名前・種別・列の規則に当たっていない(空の条項で2層、どちらも表示されていない)",
+    ),
+    dict(
         path="inbox/note_census_check50_answered_rule_withdrawn_3d_background_20261115.md",
         what="**Track E: 画像素材の50枚の二択に作者の答え(資料 42 / 絵の一部 8)。棒どおり『出力に画素あり』の理由を外す。絵の一部の7層はカラーの3D背景。問い2件**",
         why_not_yet="**a の判定 v3 を作って E に返した**(E の数と一致)。作者の言明を裁定の表に足した。3D の印は構造の記録に無いと答えた。第2弾はユーザーの承認を取り、E の一覧を待つ",
