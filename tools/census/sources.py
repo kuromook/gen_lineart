@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_check50_images_broken_redo_order_20261115.md",
+        what="**Track E: 作者が画像素材の二択を11問で止めた(画が壊れている)。抽出側への直しの発注4件**",
+        why_not_yet="**ユーザーの承認を取って抽出側へ発注した**(一覧の50行は変えない)。50行の中にバイトが同じファイルの頁の組が2つあることを E に返した",
+    ),
+    dict(
+        path="inbox/note_census_check50_screen_built_and_v2_crosschecked_20261115.md",
+        what="**Track E: 二択の画面を立てた / a の判定 v2 を独立に突き合わせて全行一致 / .lip の層は 801 が正しい**",
+        why_not_yet="**受け取った**(census の表は変えていない)",
+    ),
+    dict(
+        path="inbox/reply_q_census_q2_run825_read_c1_fails_20261115.md",
+        what="**Track Q: 825層の列を読んだ。輪郭の規則は対照で発火しすぎて使えない。新しい発注は無い / 対照の層に頁の写しが入っている**",
+        why_not_yet="**返した**: 回送の sha256 の先頭の入れ違いは census の誤り(訂正を出した)。頁の写しはファイルの sha256 の束で数え直した表を出した",
+    ),
+    dict(
         path="inbox/deliver_image_material_check50_images_20261115.md",
         what="**抽出側: 画像素材の層の二択の画(50行 × 2枚、原寸の PNG 100枚)と点検の表2本**",
         why_not_yet="**census は画を開かない**(条例10)。sha256 101本一致、枠の点検 50/50、層が見える 50/50 を表で確かめて E の受信箱へ写した。"
