@@ -419,6 +419,17 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_image_material_check50_images_20261115.md",
+        what="**抽出側: 画像素材の層の二択の画(50行 × 2枚、原寸の PNG 100枚)と点検の表2本**",
+        why_not_yet="**census は画を開かない**(条例10)。sha256 101本一致、枠の点検 50/50、層が見える 50/50 を表で確かめて E の受信箱へ写した。"
+                    "画面は E が作る。**画像素材の元の画像は合成にも層の画にも描かれていない**(抽出側の言明)",
+    ),
+    dict(
+        path="inbox/deliver_census_q2_bar_columns_825_20261115.md",
+        what="**抽出側: 黒消しの規則 v2 の列 —— 825層の骨格と輪郭の列(層の表・成分の表)**",
+        why_not_yet="**表2本を Q へ回した**(sha256 一致)。採点と規則は Q と基盤のもの。census は採点しない",
+    ),
+    dict(
         path="inbox/deliver_census_koma_zlib_rebuild_20261102.md",
         what="**コマ枠の全表 `koma_frames_v2_zlib`**(7,658枠。取り違えがコマ枠のマスクに当たった"
              "113頁を作り直した。**IoU ≥ 0.99 が 6,528 → 6,551**)。**宛先は census**",
