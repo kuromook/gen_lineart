@@ -168,6 +168,7 @@
 ./venv/bin/python tools/census/template_candidates.py      # a(決定論の除外): テンプレートの層名の候補と、作者に固定してもらう20行の表(非公開)
 ./venv/bin/python tools/census/template_names_answers.py   # その答えの取り込みと、作者が「テンプレート」と答えた (層名, 種別) だけの除外の名前の表(非公開)
 ./venv/bin/python tools/census/grey_stats_bin1_order.py       # 階調の統計の便1(Track Q の登録 q1)の層の一覧(非公開、抽出側への発注)
+./venv/bin/python tools/census/q3_fresh_controls_order.py      # 黒消しの規則 v3(Track Q)の新しい対照の一覧(非公開。便1 の層とその写しを外す)
 ./venv/bin/python tools/census/tone_folder_layers.py          # トーンのフォルダーの中の層、1作品フォルダーぶん(構造 DB だけ、非公開)
 ./venv/bin/python tools/census/template_pages_step3_order.py  # 第3段(テンプレートの画素の署名)の頁の一覧と、キャンバスの集計(非公開)
 ./venv/bin/python tools/census/p_layer_kind_300.py          # P の300頁の全層の層の種別(非公開)
