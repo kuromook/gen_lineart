@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_census_q3_fresh_controls_columns_20261116.md",
+        what="**抽出ツール: 黒消しの規則 v3 の新しい対照107層の列(便1 の層の列と Q2 の成分の列、4本)**",
+        why_not_yet="**sha256 を4本とも確かめて Q へ回した**。census は点数を見ない(採点は Q と基盤)。K′ の12層は描画できなかった(抽出側の言明)",
+    ),
+    dict(
+        path="inbox/note_census_second50_replaced_and_3d_held_out_of_empty_20261115.md",
+        what="**Track E: 置き換えた第2弾の50層の一覧 / 種別 3d の2層を空の条項の保留へ(次の版)/ 3D層と同じ親の29層の理由の問い / 作者のラベルを Q へ配る頼み**",
+        why_not_yet="**50行とも代表の頁と確かめて抽出側へ画を発注した**(ユーザーの承認あり)。29層の内訳を返し、答えの表(第2版だけ)を Q へ配った。保留の2層は a の次の版で当てる",
+    ),
+    dict(
+        path="inbox/note_q_3d_background_handover_labels_and_blind_columns_20261115.md",
+        what="**Track E → Q(写し): 3D背景の持ち分を Q へ渡す。ラベル50件・当たらなかった印・画素の列が効かない所**",
+        why_not_yet="**写しとして受けた**。答えの表は census から Q へ配った",
+    ),
+    dict(
         path="inbox/note_census_second50_list_and_v3_crosschecked_20261115.md",
         what="**Track E: 画像素材の二択の第2弾の50層の一覧(見えている残りの340層から)/ v3 を独立に突き合わせて一致**",
         why_not_yet="**代表でない頁の層 3つを返した**。E が置き換えた一覧を待って抽出側へ発注する(ユーザーの承認あり)",
