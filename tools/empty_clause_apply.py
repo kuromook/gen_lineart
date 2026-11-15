@@ -199,7 +199,7 @@ def main(extra=None):
 
     if imat:
         print("\n== (5b) 条項2: `image_material`(ラスタライズされていない取り込み画像) ==")
-        print("   `.clip` の image_material **%d 層**(棚卸しの種別は 6,318層。差は `.lip` だけの 776層)" % len(imat))
+        print("   `.clip` の image_material **%d 層**(棚卸しの種別は 6,318層。差は `.lip` だけの 801層)" % len(imat))
         print("   **作者の指摘(2026-11-14、逐語)「必ずしも非表示と限らない　出力の範囲外で放置されてるものも多いはず」**")
         print("   —— **『見えている』と『出力に写る』は別である。** 3つに分けて数える:")
         st = collections.Counter(imat.values())
