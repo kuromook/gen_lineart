@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_image_material_check50_images_redo_20261115.md",
+        what="**抽出側: 画像素材の50枚を元の画像から描き直した(50行 × 3枚)。前の画は描画用のミップマップの古い切れ端だった**",
+        why_not_yet="**census は画を開かずに E へ写した**(sha256 152本一致)。**全頁の画素の表も同じ切れ端を数えていた**ので、画像素材の層の画素の列に但し書きを足した(T129 の延長)。数え直しは新しい発注になるので出していない",
+    ),
+    dict(
         path="inbox/reply_q_census_q3_list_fixed_order_20261115.md",
         what="**Track Q: 新しい対照の一覧を107行のまま固定(ベタは7のまま)。抽出側への発注の頼み**",
         why_not_yet="**抽出側へ発注した**(層の列と Q2 の成分の列、器具の版は変えない)。届いたら Q へ回す",
