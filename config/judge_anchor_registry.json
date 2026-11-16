@@ -1225,6 +1225,23 @@
             "asked_for": "census に鍵へ is_representative(0/1)と representative_page_path を足してもらう(または母集団 3,557 の代表でない層の一覧)。届いたら一度で不動点まで回した v4 を出す",
             "not_a_bar_move": "母集団 3,557 と棒は動かない(規律9-5)。動くのは配達の都合で選ぶ50層だけ",
             "delivered": "outbox/note_census_check50c_v3_and_ask_for_representative_column_20261117.md (md5 21f8238fb3c1a3153d3d622b734a632e)"
+          },
+          "sample_fixpoint_v4_20261117": {
+            "key": "image_material_hidden_groups_key_v3_20261117.csv(4,356行、sha256 47df8c80456512b2)。鍵 v2 の行と列はそのままで is_representative / representative_page_path / cluster_size を足したもの。代表は sha256 の束で最も古い札(作者の裁定)",
+            "how": "代表でない層を並びから飛ばした。1巡ずつの『同じ群・同じ上限の中で並びの次の層』を不動点まで回したものと同じで、種・群の割り当て・作品単位3層の上限は変えていない",
+            "swapped_from_v3": "1層(連鎖なし)。外 2018\\comics4\\mars_v2\\mars_manuscript\\page0010.clip 65 → 入 pos 26 2017\\mars\\mars_manuscript\\page0012.clip 284",
+            "checked_here": "鍵 v3 と突き合わせて 50層とも is_representative = 1(束の大きさ 1 が44・2 が6)。前の6巡で census が名指しした6層は鍵 v3 の印でも代表でない(assert)",
+            "population_unchanged": "3,557 のまま。代表でない層は母集団から除いたのではなく、選ぶときに飛ばした(規律9-5)。母集団のうち代表でない層は 352、飛ばした層は上限 519 / 代表でない 63",
+            "bar_unchanged": "0〜2 据え置き / 3以上 撤回(215,247 → 215,961 相当)/ どれでもない+分からない 10以上 判定保留",
+            "versions": {
+              "v1": "41b6ad4560930267",
+              "v2": "9b158da695ba1954",
+              "v3": "2ed52636c95c4649",
+              "v4": "bb3bdfd3aad798a2"
+            },
+            "year_labels": "v4 は 2017 29 / 2018 9 / 2019 12(母集団は 2017 が 83%。上限が標本を 2017 から引き離している)",
+            "unchanged_since_v2": "群 7/43・50層・作品単位 18・異なる頁 43・非表示の形(祖先40/両方9/層だけ1)",
+            "delivered": "outbox/note_census_check50c_v4_fixpoint_with_representative_column_20261117.md (md5 92f814b4e17b831c42aec9b8a396f464)"
           }
         },
         "open_for_the_author": "(1) **この検定の50枚を発注してよいか**(2) **聞き取りに『下絵』のボタンを足すか**",

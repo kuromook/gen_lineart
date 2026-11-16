@@ -28,6 +28,13 @@ census の鍵 `image_material_hidden_groups_key_20261116.csv` の `name_group` 1
 **母集団に入っていない**(census の一群の順で『下絵』が先に当たる)。**作者はこの形について裁定していない** ——
 裁定が出て落とす側に移るなら、**この50枚はその85層を覆っていない**と書く。
 
+**第4巡 = 不動点(2026-11-17)**: census が鍵 v3 に `is_representative` を足した
+(`image_material_hidden_groups_key_v3_20261117.csv`、4,356行、sha256 先頭 `47df8c80456512b2`。
+代表は sha256 の束で最も古い札 = 作者の裁定。代表でない層は 502)。**この列で、代表でない層を並びから
+飛ばす** —— 今まで1巡ずつやっていた『並びの次の層』を**不動点まで回したものと同じ**で、引き方は変えていない。
+**母集団は 3,557 のまま**(代表でない層を母集団から除いたのではなく、**配達の都合で選ぶ50層から飛ばした**。
+規律9-5。前の EXCLUDE の6層は、census の印でも代表でないことを assert で確かめる)。
+
 **置き換えは巡を重ねる(2026-11-17)**: 代表の印は census が持っているので、**入った層がまた代表でない**ことが起きる。
 そのときも当てる決まりは同じ一手(『同じ群・同じ上限の中で、並びの次の層』)で、**巡を重ねるのは
 その一手を不動点まで繰り返すことと同じ**。版は `v2`(第1巡)・`v3`(第2巡)…と残し、**前の版は撤回しない**。
@@ -48,9 +55,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
-SRC = HERE / "inbox/image_material_hidden_groups_key_20261116.csv"
-OUT = HERE / "data/role_predictor/shiryou_name_check50_v3_20261117.csv"
-PREV = HERE / "data/role_predictor/shiryou_name_check50_v2_20261117.csv"
+SRC = HERE / "inbox/image_material_hidden_groups_key_v3_20261117.csv"  # 行は 4,356 のまま。代表の列が増えただけ
+OUT = HERE / "data/role_predictor/shiryou_name_check50_v4_20261117.csv"
+PREV = HERE / "data/role_predictor/shiryou_name_check50_v3_20261117.csv"
 # **登録どおりの置き換え**(2026-11-16)。census が代表でないと知らせた4層を並びから外すと、
 # 同じ群・同じ上限の中で**並びの次の層**が入る。上限は食わせない(外した層は数えない)。
 EXCLUDE = {
@@ -62,6 +69,7 @@ EXCLUDE = {
     # v2 の置き換えで新しく入った層が、また代表でない頁だった(v1 の4層とは別の束。代表は 2017 の札の側)。
     # 同じ決まりをもう一度当てる。**巡を重ねても、やっているのは『並びの次の層』の一手だけ**。
     ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0008.clip", "74"),    # v2 pos 20
+    ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0010.clip", "65"),    # v3 pos 26
 }
 SEED = "20261117"
 PER_UNIT = 3
@@ -84,6 +92,13 @@ def main():
     for lab, n in GROUPS:
         print(f"   群 {lab}: 母集団 {len(pool[lab])} → 引く {n}")
     assert sum(len(v) for v in pool.values()) == 3557, sum(len(v) for v in pool.values())
+    nonrep = sum(1 for v in pool.values() for r in v if r["is_representative"] == "0")
+    print(f"   母集団 3,557 のうち代表でない層 {nonrep}(母集団からは外さない。選ぶときに飛ばす)")
+    # **前の6巡で census が名指しした層は、census の印でも代表でないこと**(印が前の知らせを再現するか)
+    mark = {(r["page_path"], r["layer_id"]): r["is_representative"] for v in pool.values() for r in v}
+    for key in EXCLUDE:
+        assert mark.get(key) == "0", (key, mark.get(key))
+    print(f"   前に名指しされた {len(EXCLUDE)}層は、census の印でも代表でない(一致)")
 
     picked, skipped = [], Counter()
     per_unit = Counter()
@@ -94,8 +109,8 @@ def main():
         for r in cand:
             if got >= want:
                 break
-            if (r["page_path"], r["layer_id"]) in EXCLUDE:
-                skipped[f"{lab}: 代表でない頁の層(census 11-16)"] += 1
+            if r["is_representative"] == "0":
+                skipped[f"{lab}: 代表でない頁の層(census の印。鍵 v3)"] += 1
                 continue
             u = r["split_unit"]
             if per_unit[u] >= PER_UNIT:
