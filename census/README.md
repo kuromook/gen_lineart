@@ -187,6 +187,7 @@
 ./venv/bin/python tools/census/a_verdict_v3.py               # a の層ごとの判定 v3(50枚の二択の棒で、画像素材の『出力に画素あり』の理由を外す。E の規則)
 ./venv/bin/python tools/census/a_verdict_v5.py                 # a の判定 v4(種別 3d の空を保留)・v5((イ) の棒で2つの理由を外す)。前後の数を全部印字(非公開)
 ./venv/bin/python tools/census/layer_visibility.py            # 層ごとの非表示の印(層自身・祖先・両方)。全層、抽出側の画素の表と突き合わせ(非公開)
+./venv/bin/python tools/census/a_verdict_v6.py                 # a の判定 v6(非表示を外し、名前か祖先の資料で落とす)・取り込み画像の層の名前の一群の鍵(非公開)
 ./venv/bin/python tools/census/image_material_structure.py   # 画像素材の層の祖先・表示・生のブロックの鍵(構造 DB だけ)
 ROUND2B_PREFILL=1 ./venv/bin/python tools/census/stage_hearing_round2_b.py  # 便B v3: 空・確定のテンプレートの行を機械で閉じ、選択肢「テンプレート」を足す(非公開)
 ./venv/bin/python tools/census/stage_hearing_round2_b_answers.py # 便B の答えの取り込み(機械の行は札付き、軸2 の答えを別の列に。非公開)

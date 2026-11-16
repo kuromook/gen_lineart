@@ -419,6 +419,26 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_validation_approved_need_key_of_3557_20261116.md",
+        what="**Track E: ユーザーの承認(検定の50枚・『下絵』のボタン)。3,557層の鍵の頼み**",
+        why_not_yet="**4,356層の一群の鍵を返した**(層の名前なし)。一覧は E が引く。届いたら代表を引き直して発注",
+    ),
+    dict(
+        path="inbox/note_census_hidden_reason_redecided_and_name_clause_20261116.md",
+        what="**Track E: 『見えない』を落とす理由から外し、名前か祖先の『資料』で落とす(3,557 / 戻す 799)。一群の列の頼み2件**",
+        why_not_yet="**a の判定 v6 を作って返した**(215,961 → 215,162、E と一致)。当て順で85層が動くことを返した",
+    ),
+    dict(
+        path="inbox/note_census_q_r_rulings_rough_to_r_and_cutout_mark_20261116.md",
+        what="**Track E: 作者の裁定 —— ラフ・下絵は絵で R へ / 切り出し・コラージュは落としたい対象、いまは印だけ**",
+        why_not_yet="**裁定の表に1行足した**",
+    ),
+    dict(
+        path="inbox/note_q_r_second50_labels_3d_ten_more_and_cutouts_20261116.md",
+        what="**Track E → Q・R(写し): 第2弾のラベル —— 3D背景10層・切り出し14層**",
+        why_not_yet="**写しとして受けた**。答えの表は census から Q へ配り済み",
+    ),
+    dict(
         path="inbox/note_census_second50_bar_read_rules_withdrawn_and_new_buttons_20261116.md",
         what="**Track E: 第2弾の50枚の棒を読んだ(絵の一部 15/50、群の中身は判定保留)。理由『出力に画素が0』『測れない』を撤回。次の便からボタン2つ**",
         why_not_yet="**a の判定 v4・v5 を作って E に返した**(216,303 → 216,301 → 215,961、E と一致)。答えの表を Q へ配った。『見えない』へ広げるかはユーザーに聞く",
