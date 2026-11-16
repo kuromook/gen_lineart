@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_q_census_q5_population_ack_and_prefill_sentinel_20261117.md",
+        what="**Track Q: Q5 の一覧を受けた(.lip 446 は外し、母集団は .clip 978)/ 先埋めの見張りは census の決めでよい**",
+        why_not_yet="**読んだ。器具はそのまま**。Q5 の画は抽出側が描いている途中(届いたら Q へ写す)",
+    ),
+    dict(
         path="inbox/note_q_census_kuro_keshi_prefill_in_hearing_tables_20261117.md",
         what="**Track Q: これから作る層の聞き取りの表で、黒消しの初期値を名前で先に埋める(欄は閉じない・見張りの行あり)**",
         why_not_yet="**受けた。手順を器具にした**(規則に当たる層 2,726)。次に作る表から入れる。最後の区切りの見張りの解釈を Q に確かめている",
@@ -486,7 +491,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_q_census_q3_trial17_approved_20261116.md",
         what="**Track Q: 黒消し v3 の17行の聞き取り(ユーザーの承認「1外す　2OK」)。表と画の発注の頼み**",
-        why_not_yet="**鍵と見せる表を作った**(`hearing_q3_trial17.py`)。抽出側は census の便より先に同じ並びで描き始めていた(17行一致)ので追認の便を送った。画の納品待ち",
+        why_not_yet="**鍵と見せる表を作った**(`hearing_q3_trial17.py`)。抽出側は census の便より先に同じ並びで描き始めていた(17行一致)ので追認の便を送った。画は納品されて Q に写した。**聞き取りは済んだ**(Q の要約 11-17: 17行のうち答えが残ったのは15行。Q は黒消しを区切った)。前の版の「画の納品待ち」は古い待ちのまま残っていた",
     ),
     dict(
         path="inbox/note_census_second50_ordered_received_and_sibling_negative_20261116.md",
