@@ -419,6 +419,26 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_image_material_check50b_images_20261116.md",
+        what="**抽出ツール: 画像素材の二択の第2弾の画(50行 × 3枚)と点検の表**",
+        why_not_yet="**sha256 を確かめ、画を開かずに E へ写した**。描き直すと『出力に画素が0』の群の 38/39 に画素がある(抽出側の言明)。棒は E が読む",
+    ),
+    dict(
+        path="inbox/note_q_census_q3_trial17_approved_20261116.md",
+        what="**Track Q: 黒消し v3 の17行の聞き取り(ユーザーの承認「1外す　2OK」)。表と画の発注の頼み**",
+        why_not_yet="**鍵と見せる表を作った**(`hearing_q3_trial17.py`)。抽出側は census の便より先に同じ並びで描き始めていた(17行一致)ので追認の便を送った。画の納品待ち",
+    ),
+    dict(
+        path="inbox/note_census_second50_ordered_received_and_sibling_negative_20261116.md",
+        what="**Track E: 第2弾の発注・v4 の数・ラベルの配布を受け取った / 3D層の隣の列は取りこぼし 7/7**",
+        why_not_yet="**受けた**。v4(種別 3d の2層を保留)は a の次の版で当てる",
+    ),
+    dict(
+        path="inbox/note_q_3d_sibling_column_is_a_dead_end_20261116.md",
+        what="**Track E → Q(写し): 3D層の隣の列は作者のカラー3D背景を見つけない**",
+        why_not_yet="**写しとして受けた**",
+    ),
+    dict(
         path="inbox/deliver_census_q3_fresh_controls_columns_20261116.md",
         what="**抽出ツール: 黒消しの規則 v3 の新しい対照107層の列(便1 の層の列と Q2 の成分の列、4本)**",
         why_not_yet="**sha256 を4本とも確かめて Q へ回した**。census は点数を見ない(採点は Q と基盤)。K′ の12層は描画できなかった(抽出側の言明)",
