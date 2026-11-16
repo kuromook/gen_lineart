@@ -185,6 +185,7 @@
 ./venv/bin/python tools/census/three_d_lineart_mark_check.py  # 3D 出力の線画の印: 名前の側と形式の側の的中率と取りこぼし(作者の答えの付いた層)
 ./venv/bin/python tools/census/a_verdict_v2.py               # a の層ごとの判定 v2(E の規則を census が当て、E の判定と突き合わせる)
 ./venv/bin/python tools/census/a_verdict_v3.py               # a の層ごとの判定 v3(50枚の二択の棒で、画像素材の『出力に画素あり』の理由を外す。E の規則)
+./venv/bin/python tools/census/a_verdict_v5.py                 # a の判定 v4(種別 3d の空を保留)・v5((イ) の棒で2つの理由を外す)。前後の数を全部印字(非公開)
 ./venv/bin/python tools/census/image_material_structure.py   # 画像素材の層の祖先・表示・生のブロックの鍵(構造 DB だけ)
 ROUND2B_PREFILL=1 ./venv/bin/python tools/census/stage_hearing_round2_b.py  # 便B v3: 空・確定のテンプレートの行を機械で閉じ、選択肢「テンプレート」を足す(非公開)
 ./venv/bin/python tools/census/stage_hearing_round2_b_answers.py # 便B の答えの取り込み(機械の行は札付き、軸2 の答えを別の列に。非公開)

@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_second50_bar_read_rules_withdrawn_and_new_buttons_20261116.md",
+        what="**Track E: 第2弾の50枚の棒を読んだ(絵の一部 15/50、群の中身は判定保留)。理由『出力に画素が0』『測れない』を撤回。次の便からボタン2つ**",
+        why_not_yet="**a の判定 v4・v5 を作って E に返した**(216,303 → 216,301 → 215,961、E と一致)。答えの表を Q へ配った。『見えない』へ広げるかはユーザーに聞く",
+    ),
+    dict(
+        path="inbox/deliver_q3_trial17_images_20261116.md",
+        what="**抽出ツール: 黒消し v3 の17行の画(34枚)と表4本**(ユーザーの直接の指示で先行)",
+        why_not_yet="**sha256 を確かめ、画を開かずに Q へ写した**。抽出側の対応表は census の鍵と17行一致",
+    ),
+    dict(
+        path="inbox/note_q_census_q3_trial17_run_started_by_user_20261116.md",
+        what="**Track Q: 抽出側の先行走行はユーザーの指示だった**",
+        why_not_yet="**受けた**。納品書の記載と食い違わない",
+    ),
+    dict(
         path="inbox/deliver_image_material_check50b_images_20261116.md",
         what="**抽出ツール: 画像素材の二択の第2弾の画(50行 × 3枚)と点検の表**",
         why_not_yet="**sha256 を確かめ、画を開かずに E へ写した**。描き直すと『出力に画素が0』の群の 38/39 に画素がある(抽出側の言明)。棒は E が読む",
