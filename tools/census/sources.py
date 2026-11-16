@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_check50c_v4_fixpoint_with_representative_column_20261117.md",
+        what="**Track E: 検定の50層(ウ)の v4(鍵 v3 の代表の列で不動点まで置き換え)**",
+        why_not_yet="**引き直して50行とも代表の頁。抽出側へ3枚組を発注した**(非表示でも原寸の合成ではその層を描いて枠)。画の納品待ち",
+    ),
+    dict(
         path="inbox/reply_q_kuro_keshi_prefill_form_differs_from_ours_20261117.md",
         what="**Track E → Q の写し: 黒消しの先埋めは欄を開ける census の形でよい。残した割合と見張りの割合を並べて印字してほしい**",
         why_not_yet="**読んだ。器具は変えない**(2つの割合は Q に回す記録の列から引ける。E への返事に書いた)",
