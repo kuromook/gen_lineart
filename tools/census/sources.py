@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_ruling_shiryou_folder_sketch_is_shiryou_20261116.md",
+        what="**Track E: 作者の裁定 —— 資料のフォルダーに入った下絵は資料。当て順を変えて v7 を頼む**",
+        why_not_yet="**a の判定 v7 を作って返した**(215,162 → 215,247、E と一致)。裁定の表に1行。鍵 v2 に祖先の資料の印を足した",
+    ),
+    dict(
+        path="inbox/note_census_name_rule_validated_on_50_labels_and_wu_list_20261117.md",
+        what="**Track E: 名前の規則を手元のラベルで検定(12/13)/ 検定の50層の一覧(ウ)の発注の頼み**",
+        why_not_yet="**代表でない頁の層4つを返した**。置き換えた一覧を待って抽出側へ発注する(ユーザーの承認あり)",
+    ),
+    dict(
         path="inbox/note_q_census_q4_route_image_material_images_20261116.md",
         what="**Track Q: 取り込んだ画像の層100層の層の画と、層・祖先の名前を回す頼み(3D背景を色の画像で分類できるかの試し。新しい発注ではない)**",
         why_not_yet="**層の画100枚(sha256 一致)と名前の表を Q へ写した**。壊れた第1版と頁の画は写していない",
