@@ -1212,6 +1212,19 @@
             },
             "key_version_used": "鍵 v1(image_material_hidden_groups_key_20261116.csv)。v2 は列が1つ増えただけで 4,356行は同じだが、引き方を動かさないため v1 のまま",
             "delivered": "outbox/note_census_check50c_replaced_nonrep_four_plus_one_20261117.md (md5 4faeace852f9a757497dbda3b1397ec1)"
+          },
+          "sample_replaced_round2_20261117": {
+            "census_notice": "reply_e_census_check50c_v2_one_more_nonrep_20261117.md(v2 の pos 20 が代表でない。v1 の4層とは別の束、代表は 2017 の札の側)",
+            "swapped": 1,
+            "no_cascade": "上限の連鎖はなし。49層は v2 のまま",
+            "out": "v2 pos 20 2018\\comics4\\mars_v2\\mars_manuscript\\page0008.clip 層 74",
+            "in": "pos 26 2018\\comics4\\mars_v2\\mars_manuscript\\page0010.clip 層 65(単位 2016\\china、年 2018、非表示 ancestor)",
+            "list": "shiryou_name_check50_v3_20261117.csv sha256 2ed52636c95c4649(v1 41b6ad45・v2 9b158da6 は残す)",
+            "unchanged": "群 7/43・50層・作品単位 18・異なる頁 43・年の札 2017 28/2018 10/2019 12・非表示の形(祖先40/両方9/層だけ1)は v2 と同じ",
+            "rounds_are_one_move": "巡を重ねても当てる決まりは同じ一手(『同じ群・同じ上限の中で並びの次の層』)で、不動点まで繰り返すことと、先に代表の印で外しておくことは同じ結果になる(並びは種で決まる)",
+            "asked_for": "census に鍵へ is_representative(0/1)と representative_page_path を足してもらう(または母集団 3,557 の代表でない層の一覧)。届いたら一度で不動点まで回した v4 を出す",
+            "not_a_bar_move": "母集団 3,557 と棒は動かない(規律9-5)。動くのは配達の都合で選ぶ50層だけ",
+            "delivered": "outbox/note_census_check50c_v3_and_ask_for_representative_column_20261117.md (md5 21f8238fb3c1a3153d3d622b734a632e)"
           }
         },
         "open_for_the_author": "(1) **この検定の50枚を発注してよいか**(2) **聞き取りに『下絵』のボタンを足すか**",

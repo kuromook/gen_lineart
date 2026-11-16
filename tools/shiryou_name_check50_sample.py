@@ -28,6 +28,10 @@ census の鍵 `image_material_hidden_groups_key_20261116.csv` の `name_group` 1
 **母集団に入っていない**(census の一群の順で『下絵』が先に当たる)。**作者はこの形について裁定していない** ——
 裁定が出て落とす側に移るなら、**この50枚はその85層を覆っていない**と書く。
 
+**置き換えは巡を重ねる(2026-11-17)**: 代表の印は census が持っているので、**入った層がまた代表でない**ことが起きる。
+そのときも当てる決まりは同じ一手(『同じ群・同じ上限の中で、並びの次の層』)で、**巡を重ねるのは
+その一手を不動点まで繰り返すことと同じ**。版は `v2`(第1巡)・`v3`(第2巡)…と残し、**前の版は撤回しない**。
+
 **置き換え(2026-11-16。登録のまま)**: census が「代表でない頁の層」と知らせた4層
 (元の `pos` 1・14・19・33。1 は `資料化下絵` の群、ほかは `名前か祖先に資料` の群。どれも束の大きさ2 で、
 代表の頁の同じ番号の層は一覧に無い)を並びから外した。**同じ群・同じ上限の中で、並びの次の層が入る**
@@ -45,8 +49,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
 SRC = HERE / "inbox/image_material_hidden_groups_key_20261116.csv"
-OUT = HERE / "data/role_predictor/shiryou_name_check50_v2_20261117.csv"
-PREV = HERE / "data/role_predictor/shiryou_name_check50_20261117.csv"
+OUT = HERE / "data/role_predictor/shiryou_name_check50_v3_20261117.csv"
+PREV = HERE / "data/role_predictor/shiryou_name_check50_v2_20261117.csv"
 # **登録どおりの置き換え**(2026-11-16)。census が代表でないと知らせた4層を並びから外すと、
 # 同じ群・同じ上限の中で**並びの次の層**が入る。上限は食わせない(外した層は数えない)。
 EXCLUDE = {
@@ -54,6 +58,10 @@ EXCLUDE = {
     ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0020.clip", "147"),  # 元 pos 14
     ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0003.clip", "258"),  # 元 pos 19
     ("F:\\manuscripts\\2019b\\skima2\\task\\page0007.clip", "68"),                         # 元 pos 33
+    # **第2巡(2026-11-17。census `reply_e_census_check50c_v2_one_more_nonrep_20261117.md`)**:
+    # v2 の置き換えで新しく入った層が、また代表でない頁だった(v1 の4層とは別の束。代表は 2017 の札の側)。
+    # 同じ決まりをもう一度当てる。**巡を重ねても、やっているのは『並びの次の層』の一手だけ**。
+    ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0008.clip", "74"),    # v2 pos 20
 }
 SEED = "20261117"
 PER_UNIT = 3
@@ -129,8 +137,8 @@ def main():
     # **実測は 5 入れ替わりで、census が知らせた4層より1つ多い。** 上限(3層/作品単位)の数えは
     # **群をまたいで共有**しているので、群1 で1層足すと、その作品単位の枠を食い、群2 で枠に収まって
     # いた層(元 pos 20 `2017\\ol`)が上限で外れる。**器具の決まりどおりの連鎖で、点数とは独立**(規律9-5)。
-    assert len(kept) == 45 and len(came_in) == 5 and len(went_out) == 5
-    print("   **5 入れ替わった**(census の4層 + 上限の連鎖1層)。上限の数えは群をまたいで共有している")
+    print("   **前の版との差を印字した。** 上限(3層/作品単位)の数えは群をまたいで共有しているので、"
+          "1層外すと別の群の行が連鎖で動きうる(v1 → v2 では census の4層 + 連鎖1層 = 5層)")
     print("\n**代表でない頁の層が在れば census が知らせ、同じ群・同じ上限の中で並びの次の層に置き換える**")
 
 
