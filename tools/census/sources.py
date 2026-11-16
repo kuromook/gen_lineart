@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_q5_trial20_page_images_order_20261117.md",
+        what="**Track Q: Q5 の20行の頁の画の発注(ユーザーの承認あり)**",
+        why_not_yet="**引き直して(Q5 の pos と一致・代表・恒久除外 0・見える層)抽出側へ発注した**。画の納品待ち",
+    ),
+    dict(
+        path="inbox/note_census_q_r_check50c_bar_number_corrected_20261117.md",
+        what="**Track E: (ウ) の発注を受けた / 撤回のときの数の札を 215,961 → 211,605 に訂正(決め方は動かさない)**",
+        why_not_yet="**読んだ**。撤回になったら a の判定の版で前後を両方印字する",
+    ),
+    dict(
+        path="inbox/deliver_shiryou_name_check50c_images_20261117.md",
+        what="**抽出ツール: 検定の50層(ウ)の3枚組 150枚と点検の表2本**(非表示の層を原寸の合成に描いた。画素が0の層 4)",
+        why_not_yet="**sha256 を確かめ(152/152)、表が発注書と50行同じ並びと確かめ、画を開かずに E へ写した**",
+    ),
+    dict(
         path="inbox/note_census_check50c_v4_fixpoint_with_representative_column_20261117.md",
         what="**Track E: 検定の50層(ウ)の v4(鍵 v3 の代表の列で不動点まで置き換え)**",
         why_not_yet="**引き直して50行とも代表の頁。抽出側へ3枚組を発注した**(非表示でも原寸の合成ではその層を描いて枠)。画の納品待ち",
