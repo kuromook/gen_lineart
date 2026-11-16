@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_kuro_keshi_prefill_in_hearing_tables_20261117.md",
+        what="**Track Q: これから作る層の聞き取りの表で、黒消しの初期値を名前で先に埋める(欄は閉じない・見張りの行あり)**",
+        why_not_yet="**受けた。手順を器具にした**(規則に当たる層 2,726)。次に作る表から入れる。最後の区切りの見張りの解釈を Q に確かめている",
+    ),
+    dict(
         path="inbox/note_q_census_q5_population_and_layer_images_order_20261116.md",
         what="**Track Q: 3D背景 Q5 の母集団の一覧と、全層の層だけの画の発注(ユーザーの承認あり)**",
         why_not_yet="**一覧を返し(1,424層、.clip 978 / .lip 446)、.clip 978層を抽出側に発注した**。画は納品待ち",

@@ -190,6 +190,7 @@
 ./venv/bin/python tools/census/a_verdict_v6.py                 # a の判定 v6(非表示を外し、名前か祖先の資料で落とす)・取り込み画像の層の名前の一群の鍵(非公開)
 ./venv/bin/python tools/census/a_verdict_v7.py                 # a の判定 v7(資料のフォルダーの下絵を落とす側へ。作者の裁定)・鍵 v2(非公開)
 ./venv/bin/python tools/census/q5_population.py               # 3D背景 Q5 の母集団の一覧(非公開)と層だけの画の発注書(Track Q の頼み)
+./venv/bin/python tools/census/kuro_keshi_prefill.py         # 黒消しの先埋めの規則に当たる層の数(聞き取りの表から hit()/plan() を呼ぶ。Track Q の頼み)
 ./venv/bin/python tools/census/image_material_structure.py   # 画像素材の層の祖先・表示・生のブロックの鍵(構造 DB だけ)
 ROUND2B_PREFILL=1 ./venv/bin/python tools/census/stage_hearing_round2_b.py  # 便B v3: 空・確定のテンプレートの行を機械で閉じ、選択肢「テンプレート」を足す(非公開)
 ./venv/bin/python tools/census/stage_hearing_round2_b_answers.py # 便B の答えの取り込み(機械の行は札付き、軸2 の答えを別の列に。非公開)
