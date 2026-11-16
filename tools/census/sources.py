@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_q5_population_and_layer_images_order_20261116.md",
+        what="**Track Q: 3D背景 Q5 の母集団の一覧と、全層の層だけの画の発注(ユーザーの承認あり)**",
+        why_not_yet="**一覧を返し(1,424層、.clip 978 / .lip 446)、.clip 978層を抽出側に発注した**。画は納品待ち",
+    ),
+    dict(
         path="inbox/note_census_ruling_shiryou_folder_sketch_is_shiryou_20261116.md",
         what="**Track E: 作者の裁定 —— 資料のフォルダーに入った下絵は資料。当て順を変えて v7 を頼む**",
         why_not_yet="**a の判定 v7 を作って返した**(215,162 → 215,247、E と一致)。裁定の表に1行。鍵 v2 に祖先の資料の印を足した",
