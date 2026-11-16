@@ -28,7 +28,14 @@ census の鍵 `image_material_hidden_groups_key_20261116.csv` の `name_group` 1
 **母集団に入っていない**(census の一群の順で『下絵』が先に当たる)。**作者はこの形について裁定していない** ——
 裁定が出て落とす側に移るなら、**この50枚はその85層を覆っていない**と書く。
 
-**印字するもの**: 母集団と落としたもの / 群ごと / 上限で飛ばした層 / 作品単位 / 年の札 / 出力の sha256。
+**置き換え(2026-11-16。登録のまま)**: census が「代表でない頁の層」と知らせた4層
+(元の `pos` 1・14・19・33。1 は `資料化下絵` の群、ほかは `名前か祖先に資料` の群。どれも束の大きさ2 で、
+代表の頁の同じ番号の層は一覧に無い)を並びから外した。**同じ群・同じ上限の中で、並びの次の層が入る**
+(並びは種で決まっているので再現できる)。**棒と母集団(3,557)は動かない** —— 配達の事情で、点数と独立(規律9-5)。
+出力は `shiryou_name_check50_v2_20261117.csv`(前の一覧 `41b6ad4560930267` は残す)。
+
+**印字するもの**: 母集団と落としたもの / 群ごと / 上限で飛ばした層 / 作品単位 / 年の札 / 出力の sha256 /
+**置き換えで入った層と、動かなかった46層**。
 """
 import csv
 import hashlib
@@ -38,7 +45,16 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
 SRC = HERE / "inbox/image_material_hidden_groups_key_20261116.csv"
-OUT = HERE / "data/role_predictor/shiryou_name_check50_20261117.csv"
+OUT = HERE / "data/role_predictor/shiryou_name_check50_v2_20261117.csv"
+PREV = HERE / "data/role_predictor/shiryou_name_check50_20261117.csv"
+# **登録どおりの置き換え**(2026-11-16)。census が代表でないと知らせた4層を並びから外すと、
+# 同じ群・同じ上限の中で**並びの次の層**が入る。上限は食わせない(外した層は数えない)。
+EXCLUDE = {
+    ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0005.clip", "47"),   # 元 pos 1
+    ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0020.clip", "147"),  # 元 pos 14
+    ("F:\\manuscripts\\2018\\comics4\\mars_v2\\mars_manuscript\\page0003.clip", "258"),  # 元 pos 19
+    ("F:\\manuscripts\\2019b\\skima2\\task\\page0007.clip", "68"),                         # 元 pos 33
+}
 SEED = "20261117"
 PER_UNIT = 3
 GROUPS = (("名前が資料化下絵", 7), ("名前か祖先に資料", 43))
@@ -70,6 +86,9 @@ def main():
         for r in cand:
             if got >= want:
                 break
+            if (r["page_path"], r["layer_id"]) in EXCLUDE:
+                skipped[f"{lab}: 代表でない頁の層(census 11-16)"] += 1
+                continue
             u = r["split_unit"]
             if per_unit[u] >= PER_UNIT:
                 skipped[f"{lab}: 上限({PER_UNIT}層/作品単位)"] += 1
@@ -94,6 +113,24 @@ def main():
     print("   年の札", dict(Counter(r["year_label"] for r in picked)),
           "(母集団は", dict(Counter(r["year_label"] for v in pool.values() for r in v)), ")")
     print("   非表示の形", dict(Counter(r["hidden_by"] for r in picked)))
+    prev = {(r["page_path"], r["layer_id"]): r["pos"]
+            for r in csv.DictReader(io.open(PREV, encoding="utf-8"))}
+    now = {(r["page_path"], r["layer_id"]) for r in picked}
+    kept = sorted(prev[k] for k in now & set(prev))
+    came_in = [r for r in picked if (r["page_path"], r["layer_id"]) not in prev]
+    went_out = sorted((v, k) for k, v in prev.items() if k not in now)
+    print(f"\n**置き換え**: 動かなかった層 {len(kept)} / 外れた層 {len(went_out)} / 入った層 {len(came_in)}")
+    for pos, (pg, lid) in went_out:
+        print(f"   外: 元 pos {pos} {pg} 層 {lid}")
+    for r in came_in:
+        pos = [i for i, x in enumerate(picked, 1) if x is r][0]
+        print(f"   入: pos {pos} [{r['name_group_label']}] {r['page_path']} 層 {r['layer_id']}"
+              f" / 作品単位 {r['split_unit']} / 年 {r['year_label']} / 非表示 {r['hidden_by']}")
+    # **実測は 5 入れ替わりで、census が知らせた4層より1つ多い。** 上限(3層/作品単位)の数えは
+    # **群をまたいで共有**しているので、群1 で1層足すと、その作品単位の枠を食い、群2 で枠に収まって
+    # いた層(元 pos 20 `2017\\ol`)が上限で外れる。**器具の決まりどおりの連鎖で、点数とは独立**(規律9-5)。
+    assert len(kept) == 45 and len(came_in) == 5 and len(went_out) == 5
+    print("   **5 入れ替わった**(census の4層 + 上限の連鎖1層)。上限の数えは群をまたいで共有している")
     print("\n**代表でない頁の層が在れば census が知らせ、同じ群・同じ上限の中で並びの次の層に置き換える**")
 
 
