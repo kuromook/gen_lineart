@@ -54,3 +54,11 @@
 
 ## 凍結の記録
 (下に `tools/r2_freeze_a4.py` の出力の要約を追記する。評価の前に commit する)
+
+- 2026-11-17 凍結(登録の commit の後、評価の行はまだ無い): 器具 `tools/r2_freeze_a4.py`、出力 `results/r2/freeze_log_20261117.txt`(追跡しない)
+  - **IC1 一致**: R1b の 81行で A4 = 75/81
+  - 学習 325行(便A 主 81 + R1b 学習 244)/ 作品フォルダー 27 / 段 あたり+下絵 55・清書 160・段ではない 110
+  - A4: n_estimators 50 / max_depth 1。A5(記録): 50 / 1。NC2: 50 / 1。**A0 の多数派 = 清書 / A2 の埋め = 段ではない**
+  - **凍らせたモデル `results/r2/a4_frozen_20261117.pkl` sha256 先頭 `340f6b473f70bb09`**(追跡しない)
+  - **学習の作品フォルダー(評価から外す27)**: 2014\ako4-6DL, 2016\avbu, 2016\pc, 2016\suc, 2017\copy, 2017\running, 2017\toho, 2018\color_comics4, 2019\reitaisai2, 2019\skima2, 2019\succor, 2019b\akogareFANBOX, 2019b\marisa, 2020\ichigo, 2021\akoirai2, 2021\bakugi4, 2021\boxing, 2022\bakugi6, 2022b\4th, 2023\ap, 2023b\hamlabi, 2024\housei, 2024\kana, 2024b\fitness, 2024b\twobody, 2024c\mayer, 2024c\q2
+  - **注意**: `2024\housei` が学習に入っている(便B の B-2)。**R2 の評価に housei の層は入れられない** —— housei は R2 では測れない
