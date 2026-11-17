@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_q7_trial20_page_images_order_20261117.md",
+        what="**Track Q: Q7 の20行の頁の画の発注(ユーザーの承認あり)**",
+        why_not_yet="**引き直して(Q5 の pos と一致・代表・恒久除外 0・見える層・Q5 の20行と重ならない)抽出側へ発注した**。画の納品待ち",
+    ),
+    dict(
+        path="inbox/note_q_census_portfolio_exclusion_and_q5_result_20261117.md",
+        what="**Track Q: ポートフォリオの頁を頁ごと除外したい(ユーザーの言葉)/ Q5 の結果(CLIP は名前に勝てない)**",
+        why_not_yet="**ポートフォリオの頁を数えた(1つの作品単位に8頁・148層、同じバイトの写しは外に無い、名前・道の語で外に当たる頁は無い)**。除外の形はユーザーに聞いている",
+    ),
+    dict(
+        path="inbox/note_census_q_r_check50c_bar_read_name_rule_stands_20261117.md",
+        what="**Track E: (ウ) の棒を読んだ —— 資料でない答え 0/50、名前の規則は据え置き(a は 215,247 = 0.4921 のまま)**",
+        why_not_yet="**読んだ。a の版は作り直さない**(据え置き)。画素が0の4行と「分からない」4行の一致は抽出側に伝えた",
+    ),
+    dict(
         path="inbox/deliver_q5_trial20_page_images_20261117.md",
         what="**抽出ツール: Q5 の20行の頁の画(CanvasPreview に問う層の赤い枠)と点検の表2本**",
         why_not_yet="**sha256 を確かめ(22/22)、表が Q の一覧と20行同じ並びと確かめ、画を開かずに Q へ写した**",
