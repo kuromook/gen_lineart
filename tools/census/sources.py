@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_effect_lines_inventory_20261117.md",
+        what="**Track Q: 次の区分は効果線(流線・集中線)。定規の印・名前・種別・時期・作者の答えの棚卸しの頼み**",
+        why_not_yet="**棚卸しを返した**(定規の印 4,466 層。種類は構造 DB に無く抽出側で読む必要 —— 発注はしていない。作者の答え 9層)",
+    ),
+    dict(
+        path="inbox/reply_q_census_3d_prefill_ack_20261117.md",
+        what="**Track Q: 3D背景の先埋めの形はそのままでよい**",
+        why_not_yet="**読んだ。器具はそのまま**",
+    ),
+    dict(
         path="inbox/note_q_census_3d_background_prefill_in_hearing_tables_20261117.md",
         what="**Track Q: これから作る層の聞き取りの表で、3D背景の初期値を名前と祖先で先に埋める(黒消しと同じ形)**",
         why_not_yet="**受けた。手順を器具にした**(当たる層 174、黒消しとの重なり 0)。次に作る表から入れる",
