@@ -419,6 +419,31 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_2017copy_same_work_question_20261117.md",
+        what="**Track R: R1 の負の対照が発火した評価の側の作品フォルダーは、学習の側の作品と同じか**",
+        why_not_yet="**答えた**: 記録では結び付かない(同じバイト 0 / 頁 ID 0 / 版の裁定で単独)→ 作者に聞いて **「別の作品」**(11-18)。裁定の表に入れた",
+    ),
+    dict(
+        path="inbox/note_q_census_q9_line_stats_order_20261117.md",
+        what="**Track Q: 効果線 Q9 の線の列(7,643層、LSD の線分・向き・集まり)の発注の頼み(ユーザーの承認あり)**",
+        why_not_yet="**一覧を確かめて抽出側へ発注した**(重複 0 / 恒久除外 0 / 棚卸しの 6,919行は全部 census の表に在る)。合成の図形 IC1 が先。納品待ち",
+    ),
+    dict(
+        path="inbox/note_foundation_r1_result_20261117.md",
+        what="**Track R: R1 の結果(C1・C2 とも届かない。予測列は出さない)の写し**",
+        why_not_yet="**読んだ。census の作業は上の問い合わせだけ**",
+    ),
+    dict(
+        path="inbox/note_q_e_kind_candidates_after_a_v7_20261117.md",
+        what="**Track Q → E: a v7 の後に残る層の種類(filter・gradation・3D)の写し**",
+        why_not_yet="**読んだ。判断は E。数の出し直しを頼まれたら census が出す**",
+    ),
+    dict(
+        path="inbox/note_q_r_bundle_b_complete_r1_runnable_20261117.md",
+        what="**Track Q → R: 便B がそろって R1 を走らせられるの写し**",
+        why_not_yet="**読んだ。census の作業は無い**",
+    ),
+    dict(
         path="inbox/note_q_census_effect_lines_inventory_20261117.md",
         what="**Track Q: 次の区分は効果線(流線・集中線)。定規の印・名前・種別・時期・作者の答えの棚卸しの頼み**",
         why_not_yet="**棚卸しを返した**(定規の印 4,466 層。作者の答え 9層)。**定規の種類はユーザーの承認(11-17)で抽出側へ発注した**(4,466層の一覧)。表の納品待ち",
