@@ -426,7 +426,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_q_census_portfolio_exclusion_and_q5_result_20261117.md",
         what="**Track Q: ポートフォリオの頁を頁ごと除外したい(ユーザーの言葉)/ Q5 の結果(CLIP は名前に勝てない)**",
-        why_not_yet="**ポートフォリオの頁を数えた(1つの作品単位に8頁・148層、同じバイトの写しは外に無い、名前・道の語で外に当たる頁は無い)**。除外の形はユーザーに聞いている",
+        why_not_yet="**ポートフォリオの頁を数えた(1つの作品単位に8頁・148層、同じバイトの写しは外に無い、名前・道の語で外に当たる頁は無い)**。**作者の答え「恒久除外の名簿に8頁を入れる」で名簿に入れた**(1 → 9頁)。a v7 の母集団は 437,425 → 437,277(前後とも 0.4921)、Q5 は 978 → 945。全 track に通達",
     ),
     dict(
         path="inbox/note_census_q_r_check50c_bar_read_name_rule_stands_20261117.md",
