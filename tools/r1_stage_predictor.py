@@ -18,6 +18,8 @@ ANS_A = "data/census/hearing_round2_a_answers.csv"
 ANS_B = "data/census/hearing_round2_b_answers.csv"
 ROLE = "data/census/layer_role_table_20261112_v3.csv"
 EXCL = "../lineart-census/data/census_full/author_exclusions.csv"
+# R1b 追補1: R1_AGATE に a_verdict の表を渡すと template_excluded を評価・学習から外す
+AGATE = os.environ.get("R1_AGATE")
 ORDER4 = ("あたり", "下絵", "清書", "段ではない")
 # R1b(config/prereg_stage_predictor_r1b_3class_20261117.md): R1_MERGE=1 で あたり・下絵 を1つにまとめる
 MERGE = os.environ.get("R1_MERGE") == "1"
@@ -242,7 +244,20 @@ def main():
     print("役割表 : %s sha256 %s" % (ROLE, sha(ROLE)))
     print("除外名簿: %s sha256 %s" % (EXCL, sha(EXCL)))
     rt, excl = load()
+    gate = set()
+    if AGATE:
+        print("a の門 : %s sha256 %s" % (AGATE, sha(AGATE)))
+        col = None
+        for r in csv.DictReader(io.open(AGATE, encoding="utf-8")):
+            col = col or next(c for c in r if c.startswith("a_verdict"))
+            if r[col] == "template_excluded":
+                gate.add((r["page_path"], r["layer_id"]))
+        print("a の門: template_excluded %d 層を評価・学習から外す(列 %s)" % (len(gate), col))
     allA = build_eval(rt, excl)
+    if gate:
+        g_ev = collections.Counter(r["stage"] for r in allA if r["key"] in gate)
+        print("   便A の97行で門に当たった行: %s" % dict(g_ev))
+        allA = [r for r in allA if r["key"] not in gate]
     if any(r["excl"] for r in allA):
         print("**評価に恒久除外の頁が在る: %d 行**" % sum(r["excl"] for r in allA))
     pops = {
@@ -253,6 +268,12 @@ def main():
     main_ev = pops["主(92行 − 2024\\mayer − 分からない = 86)"]
     eval_units = {r["unit"] for r in allA}
     train, drop, remap3d, composite, vers = build_train(rt, excl, eval_units)
+    if gate:
+        g_tr = [r for r in train if r["key"] in gate]
+        for r in g_tr:
+            drop["%s: a の門(template_excluded)" % r["src"]] += 1
+        train = [r for r in train if r["key"] not in gate]
+        vers = collections.Counter((r["src"], r["ver"]) for r in train)
 
     print("\n== 学習の行 ==")
     print("   残った行 %d。出所と版: %s" % (len(train), dict(vers)))
