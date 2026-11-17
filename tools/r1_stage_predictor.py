@@ -6,7 +6,7 @@
 腕 A0〜A5、IC1〜IC3、NC1〜NC3、C1〜C3 を登録のとおりに印字する。層名は印字しない。
 使い方: ./venv/bin/python tools/r1_stage_predictor.py
 """
-import csv, collections, hashlib, io, math, random, sys
+import csv, collections, hashlib, io, math, os, random, sys
 
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
@@ -18,7 +18,14 @@ ANS_A = "data/census/hearing_round2_a_answers.csv"
 ANS_B = "data/census/hearing_round2_b_answers.csv"
 ROLE = "data/census/layer_role_table_20261112_v3.csv"
 EXCL = "../lineart-census/data/census_full/author_exclusions.csv"
-ORDER = ("あたり", "下絵", "清書", "段ではない")
+ORDER4 = ("あたり", "下絵", "清書", "段ではない")
+# R1b(config/prereg_stage_predictor_r1b_3class_20261117.md): R1_MERGE=1 で あたり・下絵 を1つにまとめる
+MERGE = os.environ.get("R1_MERGE") == "1"
+ORDER = ("あたり+下絵", "清書", "段ではない") if MERGE else ORDER4
+
+
+def M(s):
+    return "あたり+下絵" if MERGE and s in ("あたり", "下絵") else s
 STAGE_A = {"あたり": "あたり", "下絵": "下絵", "清書(線画)": "清書",
            "段の線ではない(塗り・効果・資料など)": "段ではない",
            "テンプレート(トンボ・裁ち落とし枠など、印刷のための層)": "段ではない",
@@ -72,7 +79,7 @@ def build_eval(rt, excl):
     for r in a:
         k = (r["page_path"], r["layer_id"])
         t = rt[k]
-        st = STAGE_A[r["author_stage"]]
+        st = M(STAGE_A[r["author_stage"]])
         rows.append({"key": k, "t": t, "stage": st, "empty": r["empty"] == "1",
                      "mayer": "\\2024\\mayer\\" in r["page_path"], "excl": r["page_path"] in excl,
                      "unit": t["split_unit"], "src": "A"})
@@ -87,10 +94,10 @@ def build_train(rt, excl, eval_units):
         s = t["author_stage"]
         if not s:
             continue
-        if s not in ORDER:
+        if s not in ORDER4:
             drop["265層: 語彙の外(%s)" % s] += 1
             continue
-        st = s
+        st = M(s)
         if is3d_line(t["author_comment"]) and s == "清書":
             st = "段ではない"
             remap3d += 1
@@ -104,6 +111,7 @@ def build_train(rt, excl, eval_units):
             drop["便B: 機械の行"] += 1
             continue
         st = STAGE_B.get(r["stage"])
+        st = M(st) if st else st
         if st is None:
             print("**便B の写せない選択肢: %s —— 止める**" % r["stage"])
             sys.exit(1)
@@ -228,6 +236,7 @@ def per_stage(pred, ev):
 
 
 def main():
+    print("段の語彙: %s(R1_MERGE=%s)" % (" / ".join(ORDER), MERGE))
     print("答え A : %s sha256 %s" % (ANS_A, sha(ANS_A)))
     print("答え B : %s sha256 %s" % (ANS_B, sha(ANS_B)))
     print("役割表 : %s sha256 %s" % (ROLE, sha(ROLE)))
@@ -280,8 +289,8 @@ def main():
     def arms_pred(ev):
         p = {}
         p["A0 多数派"] = [maj] * len(ev)
-        p["A1 名前の当て方"] = [r["t"]["name_rule"] if r["t"]["name_rule"] != "なし" else "なし" for r in ev]
-        p["A2 名前+学習の多数派"] = [r["t"]["name_rule"] if r["t"]["name_rule"] != "なし" else fill for r in ev]
+        p["A1 名前の当て方"] = [M(r["t"]["name_rule"]) for r in ev]
+        p["A2 名前+学習の多数派"] = [M(r["t"]["name_rule"]) if r["t"]["name_rule"] != "なし" else fill for r in ev]
         a3 = []
         for r, a2 in zip(ev, p["A2 名前+学習の多数派"]):
             c = tab.get(a3key(r["t"]))
@@ -303,7 +312,7 @@ def main():
     # NC1: 作品フォルダーの中で段を並べ替える
     rng = random.Random(0)
     ysh = ytr.copy()
-    for u in set(groups):
+    for u in sorted(set(groups)):
         idx = [i for i, g in enumerate(groups) if g == u]
         vals = [ysh[i] for i in idx]
         rng.shuffle(vals)
