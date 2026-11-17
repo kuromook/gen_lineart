@@ -27,6 +27,7 @@ HERE = Path(__file__).resolve().parent.parent
 LIST = HERE / "data/role_predictor/shiryou_name_check50_v4_20261117.csv"
 IMGDIR = HERE / "data/role_predictor/shiryou_name_check50c_20261117"
 CHECK = IMGDIR.parent / "shiryou_name_check50c_check_20261117.csv"
+FRAME = IMGDIR.parent / "shiryou_name_check50c_frame_check_20261117.csv"
 OUT = IMGDIR / "questions_shiryou_name50c_20261117.json"
 CHOICES = HERE / "config/image_material_choices_20261116.json"
 
@@ -34,7 +35,8 @@ HIDDEN = ("この層は、CSP では非表示です(層そのものか、親の�
           "**CSP が保存した頁には写っていません** —— 赤い枠が、その層の在った場所です。")
 TONE = ("原寸の合成では、トーンは網点を描かずに黒を平らに塗っています"
         "(グラデーションと色調補正も塗っていません)。CSP が保存した頁にはこの限りがありません。")
-DIFF = "この行は、原寸の合成と CSP の頁で見た目の差がやや大きい行です。"
+FAINT = ("原寸の合成では、この層は**ほとんど見えていません**"
+         "(親フォルダーの不透明度やマスク、上の層に隠れているため)。**下の『この層だけ』の画で判じてください。**")
 VOID = ("この層は、描き直しても頁に1画素も出ません。"
         "層だけの画は白一色で、枠もありません。**そのまま出しています。**")
 
@@ -42,6 +44,8 @@ VOID = ("この層は、描き直しても頁に1画素も出ません。"
 def main():
     rows = list(csv.DictReader(io.open(LIST, encoding="utf-8")))
     chk = {r["pos"]: r for r in csv.DictReader(io.open(CHECK, encoding="utf-8"))}
+    frm = {r["pos"]: r for r in csv.DictReader(io.open(FRAME, encoding="utf-8"))}
+    assert len(frm) == 50
     assert len(rows) == 50 and len(chk) == 50, (len(rows), len(chk))
     assert [r["pos"] for r in rows] == [str(i) for i in range(1, 51)], "並びが登録と違う"
     assert all(r["hidden_by"] in ("self", "ancestor", "both") for r in rows), "非表示でない行がある"
@@ -54,8 +58,10 @@ def main():
         if c.get("image_fully_drawn") not in (None, "", "1"):
             partial.append(pos)
             note.append("**この層は、元の画像を全部読めていません**(抽出側の点検)。")
-        if c.get("diff_vs_preview_255") and float(c["diff_vs_preview_255"]) > 8:
-            note.append(DIFF)
+        # **`diff_vs_preview_255` はこの便では合成の確かさに使えない**(問う層は CSP の頁に写っていないため。
+        # census の但し書き)。代わりに、原寸の合成で問う層がほとんど見えていない行に札を付ける
+        if frm[pos]["asked_shown_frac"] and float(frm[pos]["asked_shown_frac"]) < 0.5:
+            note.append(FAINT)
             diffrows.append(pos)
         if c.get("layer_px_alpha_gt0") == "0":
             note.append(VOID)
@@ -99,7 +105,7 @@ def main():
     print("非表示の形", dict(collections.Counter(r["hidden_by"] for r in rows)))
     print("年の札", dict(collections.Counter(r["year_label"] for r in rows)))
     print("完全に描けていない行", partial or "0")
-    print("札(差がやや大きい)", len(diffrows), diffrows)
+    print("札(原寸の合成でほとんど見えていない)", len(diffrows), diffrows)
     print("描き直しても画素が0", voidrows or "0", "→ 外さずに出す(それ自体が答え)")
     print("異なる頁のパス", len(set(r["page_path"] for r in rows)))
     print("出力", OUT)

@@ -103,6 +103,16 @@ def main():
         if note:
             print(f"   {iid} [{last[iid].get('value')}] 「{note}」")
 
+    # **器具の点検(記述。棒ではない。答えを読んだ後に足した —— 棒は動かしていない)**
+    # 抽出側が「描き直しても頁に1画素も出ない」と報告した行と、作者の「分からない」が重なるか
+    chkp = HERE / "data/role_predictor/shiryou_name_check50c_check_20261117.csv"
+    void = {r["pos"] for r in csv.DictReader(io.open(chkp, encoding="utf-8"))
+            if r["layer_px_alpha_gt0"] == "0"}
+    unk = {str(int(i.split("_")[1])) for i, r in last.items() if r.get("value") in HELD}
+    print(f"\n**器具の点検(記述)**: 画素が0 の行 {sorted(void, key=int)} / "
+          f"作者が「どれでもない・分からない」と答えた行 {sorted(unk, key=int)}"
+          f" → 重なり {len(void & unk)}/{len(void)}")
+
     print("\n**この50層が覆っていないもの**: 作者の裁定で落とす側に移った85層"
           "(名前が『下絵 N』などで祖先に『資料』)は、**母集団 3,557 に入っていない** —— 別に確かめる")
 
