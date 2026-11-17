@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q5_trial20_page_images_20261117.md",
+        what="**抽出ツール: Q5 の20行の頁の画(CanvasPreview に問う層の赤い枠)と点検の表2本**",
+        why_not_yet="**sha256 を確かめ(22/22)、表が Q の一覧と20行同じ並びと確かめ、画を開かずに Q へ写した**",
+    ),
+    dict(
         path="inbox/note_q_census_q5_trial20_page_images_order_20261117.md",
         what="**Track Q: Q5 の20行の頁の画の発注(ユーザーの承認あり)**",
         why_not_yet="**引き直して(Q5 の pos と一致・代表・恒久除外 0・見える層)抽出側へ発注した**。画の納品待ち",
