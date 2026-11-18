@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_e_ask_for_suspect33_order_list_columns_20261119.md",
+        what="**Track E: 3D の疑い 33層の一覧の列(層の名前・祖先)を画面の文脈に使いたい**",
+        why_not_yet="**一覧を E へ写した**。答えの列の名が決まったら鍵の表を合わせる",
+    ),
+    dict(
         path="inbox/note_census_order_r_line_quality_and_line_count_columns_20261119.md",
         what="**Track R: 段のラベルの付いた層ほか 426層の、線の質と線の数の列の頼み(+ α の区間の追補)**",
         why_not_yet="**ユーザーの承認(11-19)で抽出側へ発注した**(426層、重なり 0・恒久除外 0)。納品待ち",
