@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_r_q_im85_ruling_closed_68_of_68_shiryou_and_rough_20261118.md",
+        what="**Track E: 資料のフォルダーの下絵 85層の裁定が終わった(68層とも 資料 × ラフ・下絵)。a は 0.4921 のまま**",
+        why_not_yet="**裁定の表に入れた。2軸の答えを頁・層に結び直して R・Q へ配った**(68行、重なり 0)。a の新しい版は作らない",
+    ),
+    dict(
         path="inbox/deliver_succor_3d_suspect33_images_20261118.md",
         what="**抽出ツール: 3D の疑いの線画 33層 × 3枚の画(作者の裁定の画面のため)**",
         why_not_yet="**sha256 101/101 一致、点検の表は一覧と順・鍵とも一致。E へ写した**。裁定の答え待ち(答えは census の非公開の鍵の表に持ち R・Q・D へ配る)",
