@@ -419,6 +419,31 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_order_r_line_quality_and_line_count_columns_20261119.md",
+        what="**Track R: 段のラベルの付いた層ほか 426層の、線の質と線の数の列の頼み(+ α の区間の追補)**",
+        why_not_yet="**ユーザーの承認(11-19)で抽出側へ発注した**(426層、重なり 0・恒久除外 0)。納品待ち",
+    ),
+    dict(
+        path="inbox/deliver_q9_junction_ic1_fail_20261118.md",
+        what="**抽出ツール: Q9 の追加の列 —— IC1 で2つ外れ、原稿の列は流していない**",
+        why_not_yet="**Q の直し(ひげを 10px 以下で切る・集中線の空けを 300 に)を抽出側へ回した**。やり直しの納品待ち",
+    ),
+    dict(
+        path="inbox/reply_q_census_q9_junction_ic1_fix_20261118.md",
+        what="**Track Q: IC1 の外れは Q の図形の指定の誤り。直しの指定**",
+        why_not_yet="**抽出側へ回した**",
+    ),
+    dict(
+        path="inbox/deliver_housei_succor_work_rule_20261118.md",
+        what="**抽出ツール → 基盤: 作品2つの作品専用の版の写し**",
+        why_not_yet="**読んだ。3D の疑いの印は 29層で、census の 33層のうち4層は保留した見開きの頁の層**(裁定は 33層のまま)",
+    ),
+    dict(
+        path="inbox/reply_all_wake_by_sendmessage_20261119.md",
+        what="**基盤: 通達を置いたら起きている相手に SendMessage で知らせる(ユーザーの決定)**",
+        why_not_yet="**読んだ。この便から使っている**",
+    ),
+    dict(
         path="inbox/note_census_r_q_im85_ruling_closed_68_of_68_shiryou_and_rough_20261118.md",
         what="**Track E: 資料のフォルダーの下絵 85層の裁定が終わった(68層とも 資料 × ラフ・下絵)。a は 0.4921 のまま**",
         why_not_yet="**裁定の表に入れた。2軸の答えを頁・層に結び直して R・Q へ配った**(68行、重なり 0)。a の新しい版は作らない",
