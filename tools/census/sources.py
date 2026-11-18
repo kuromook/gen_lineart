@@ -419,6 +419,31 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_shiryou_folder_sketch_im85_images_20261118.md",
+        what="**抽出ツール: 資料のフォルダーに入った下絵 68層 × 3枚の画(作者の求めの裁定画面のため)**",
+        why_not_yet="**sha256 206/206 一致、一覧と順・鍵とも一致。E へ写した**。裁定の画面と作者の答え待ち(答えが来たら a の落とす数の前後を印字)",
+    ),
+    dict(
+        path="inbox/deliver_ruler_kind_20261118.md",
+        what="**抽出ツール: 定規の種類の表(4,466層・2,539頁。種類・形の値・指されていない定規)**",
+        why_not_yet="**sha256 6/6 一致、一覧と順・鍵とも一致。Q へ写した**。棚卸しの ruler_value は種類ではなく頁の中の通し番号と分かった。指されていない定規のうち5は一覧の外のテキストの層",
+    ),
+    dict(
+        path="inbox/deliver_q9_line_stats_20261118.md",
+        what="**抽出ツール: 効果線 Q9 の線の列(7,643層)と合成の図形 IC1**",
+        why_not_yet="**sha256 4/4 一致。行の並びは違うが pos と鍵は全行一致。Q へ写した**。IC1 は6つとも期待どおり。採点は Q",
+    ),
+    dict(
+        path="inbox/reply_census_3d_by_ruling_20261118.md",
+        what="**基盤: 名前で引けない 3D は作者の裁定で決める(ユーザーの決定)。ある作品の 3D の疑いの 33層を裁定の表に**",
+        why_not_yet="**33層・16頁の一覧を引き直した(数は一致)。ユーザーの承認で 1便・3枚の組の画を抽出側へ発注した**。画と裁定の画面(E か R)と答え待ち",
+    ),
+    dict(
+        path="inbox/push_housei_succor_custom_run_order_20261118.md",
+        what="**基盤 → 抽出ツール: 作品2つの作品専用の版の発注の写し**",
+        why_not_yet="**読んだ。census の作業は上の 33層の裁定の表だけ**",
+    ),
+    dict(
         path="inbox/note_census_2017copy_same_work_question_20261117.md",
         what="**Track R: R1 の負の対照が発火した評価の側の作品フォルダーは、学習の側の作品と同じか**",
         why_not_yet="**答えた**: 記録では結び付かない(同じバイト 0 / 頁 ID 0 / 版の裁定で単独)→ 作者に聞いて **「別の作品」**(11-18)。裁定の表に入れた",
