@@ -19,8 +19,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
 LIST = HERE / "data/role_predictor/shiryou_folder_sketch_85_20261117.csv"
-ANS = [HERE / "data/role_predictor/im85_r1_answers_20261117.jsonl",
-       HERE / "data/role_predictor/im85_r2_answers_20261117.jsonl"]
+# 画面を立てたときの実際の名前(器具を書いた時の仮の名前から直した。**配達の都合で、答えと独立**)
+ANS = [HERE / "data/role_predictor/shiryou_folder_sketch_85_answers_r1_20261117.jsonl",
+       HERE / "data/role_predictor/shiryou_folder_sketch_85_answers_r2_20261117.jsonl"]
 CHECK = HERE / "data/role_predictor/shiryou_folder_sketch_im85_check_20261117.csv"
 
 A_NOW, A_TOTAL = 215247, 437425
