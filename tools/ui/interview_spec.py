@@ -33,15 +33,28 @@ def load_questions(path):
         errs.append("`initial_view` は fit(既定)か native")
     if not 1 <= len(spec["choices"]) <= 7:
         errs.append("選択肢は 1〜7 個(「どれでもない」「分からない」は自動で足す。数字キーは 9 まで)")
+    # **2つ目の軸**(任意。`choices2` + `question2`)。1つの層が2つの軸の両方に当たる便で使う
+    # (作者 2026-11-18)。**両方押すまで保存できない**のは画面の側
+    if spec.get("choices2"):
+        if not spec.get("question2"):
+            errs.append("`choices2` が在るなら `question2`(2つ目の軸の問いの1文)が要る")
+        if not 1 <= len(spec["choices2"]) <= 7:
+            errs.append("2つ目の軸の選択肢も 1〜7 個")
+        if spec.get("question2") and JARGON.search(spec["question2"]):
+            errs.append(f"`question2` に器具の用語らしい綴り: {spec['question2']!r}")
+    elif spec.get("question2"):
+        errs.append("`question2` が在るなら `choices2` が要る")
     seen = set()
-    for c in spec["choices"]:
+    for c in spec["choices"] + list(spec.get("choices2") or []):
         if c.get("value") in RESERVED or c.get("label") in ("どれでもない", "分からない", "わからない"):
             errs.append(f"選択肢 `{c.get('label')}` は自動で足すので書かない")
         if not c.get("value") or not c.get("label"):
             errs.append("選択肢に value と label が要る")
-        if c.get("value") in seen:
-            errs.append(f"選択肢の value が重なる: {c.get('value')}")
-        seen.add(c.get("value"))
+        # 軸ごとに別の列に入るので、2つの軸で同じ value が在ってもよい(軸の中で重なるのだけ見る)
+        ax = "2" if spec.get("choices2") and c in spec["choices2"] else "1"
+        if (ax, c.get("value")) in seen:
+            errs.append(f"軸{ax} の選択肢の value が重なる: {c.get('value')}")
+        seen.add((ax, c.get("value")))
         for field in ("label", "help"):
             if c.get(field) and JARGON.search(c[field]):
                 errs.append(f"選択肢の {field} に器具の用語らしい綴り: {c[field]!r}(作者の言葉で書く)")
@@ -57,6 +70,13 @@ def load_questions(path):
         ids.add(it.get("id"))
         if not it.get("images"):
             errs.append(f"items[{i}] に絵が無い")
+        for k in ("prefill", "prefill2"):
+            v = it.get(k)
+            pool = spec["choices"] if k == "prefill" else (spec.get("choices2") or [])
+            if v and v not in [c.get("value") for c in pool] + ["__none__", "__unknown__"]:
+                errs.append(f"items[{i}] の {k} が選択肢に無い: {v}")
+            if v and k == "prefill2":
+                errs.append(f"items[{i}]: **見た目の軸に初期値は置かない**(作者が押していない答えを置かない)")
         for im in it.get("images", []):
             if not im.get("src"):
                 errs.append(f"items[{i}] の絵に src が無い")

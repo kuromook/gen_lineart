@@ -26,7 +26,9 @@ main{flex:1;min-height:0;display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap;al
 .view{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;background:repeating-conic-gradient(#0000 0 25%,#8881 0 50%) 0 0/16px 16px}
 .view img{position:absolute;left:0;top:0;transform-origin:0 0;image-rendering:auto;user-select:none;-webkit-user-drag:none;max-width:none}
 footer{padding:8px 16px 12px;border-top:1px solid var(--line);background:var(--panel)}
-#choices{display:flex;flex-wrap:wrap;gap:8px}
+#choices,#choices2{display:flex;flex-wrap:wrap;gap:8px}
+#q2{margin:10px 0 4px;font-size:15px;font-weight:600}
+#q2:empty{display:none}
 .ch{min-height:44px;min-width:44px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer;text-align:left}
 .ch kbd{display:inline-block;min-width:1.4em;text-align:center;border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-right:6px;font-size:12px;color:var(--sub)}
 .ch small{display:block;color:var(--sub);font-size:12px}
@@ -51,12 +53,14 @@ button:disabled{opacity:.45;cursor:default}
 <header>
   <p id="q"></p>
   <div id="decides"></div>
-  <div id="meta"><span id="progress"></span><span id="zoomlbl"></span><span id="keys">数字=選ぶ / Enter=保存して次へ / ←=前へ / +・−・ホイール・ピンチ=拡大縮小 / 0=収める / Shift+1=等倍 / d=対象以外を薄く</span><span><button class="nav" id="fitbtn" style="min-height:32px">収める</button> <button class="nav" id="natbtn" style="min-height:32px">等倍</button></span></div>
+  <div id="meta"><span id="progress"></span><span id="zoomlbl"></span><span id="keys">数字=上の列を選ぶ / q w e r t y=下の列 / Enter=保存して次へ / ←=前へ / +・−・ホイール・ピンチ=拡大縮小 / 0=収める / Shift+1=等倍 / d=対象以外を薄く</span><span><button class="nav" id="fitbtn" style="min-height:32px">収める</button> <button class="nav" id="natbtn" style="min-height:32px">等倍</button></span></div>
   <div id="note"></div>
 </header>
 <main id="panes"></main>
 <footer>
   <div id="choices"></div>
+  <p id="q2"></p>
+  <div id="choices2"></div>
   <div id="row2">
     <textarea id="comment" rows="1" placeholder="一言(任意。どの答えにも添えられます)"></textarea>
     <button class="nav" id="prev">← 前へ</button>
@@ -69,7 +73,8 @@ button:disabled{opacity:.45;cursor:default}
 // ---- データ: 組み立て器がここを置き換える。器具の用語を画面に出さないのは問いの作り手の仕事 ----
 const DATA = /*__INTERVIEW_DATA__*/null;
 const MODE = /*__INTERVIEW_MODE__*/"server";   // "server" | "artifact"
-const UI_VERSION = "interview_core 2026-11-07b";  // E の4点(等倍で始める・位置と直前・0.999・題)を取り込み
+const UI_VERSION = "interview_core 2026-11-18";  // **2つ目の軸**(`choices2`)と、前の便の答えの引き継ぎ(`prefill`)を足した。
+// `choices2` の無い便は 2026-11-07b と同じに動く(足しただけで、今までの画面の形は変えていない)
 
 // 「どれでもない」「分からない」は外せない(指針 §2-1)
 const BUILTIN = [
@@ -77,6 +82,10 @@ const BUILTIN = [
   {value:"__unknown__", label:"分からない", help:"判断できない・保留", builtin:true},
 ];
 const CHOICES = DATA.choices.concat(BUILTIN).map((c,i)=>({...c, key: i<9 ? String(i+1) : null}));
+// **2つ目の軸**(任意。`choices2` が在るときだけ出す)。1つの層が2つの軸の両方に当たるから
+// (作者 2026-11-18 逐語「２つボタンを押せるようにすればいいのだ 下絵（のスクリーンショット）であり資料、とか
+// 線画（のスクリーンショット）であり切り出し、というふうに」)。**両方押さないと保存できない**
+const CHOICES2 = DATA.choices2 ? DATA.choices2.concat(BUILTIN).map((c,i)=>({...c, key: "qwertyuio"[i]||null})) : null;
 const SESSION = Math.random().toString(36).slice(2,10);
 const $ = id=>document.getElementById(id);
 
@@ -92,7 +101,7 @@ const store = MODE==="server" ? {
 };
 
 // ---- 状態 ----
-let idx=0, sel=null, answers={}, savedThisSession=0, dimOthers=false, busy=false;
+let idx=0, sel=null, sel2=null, answers={}, savedThisSession=0, dimOthers=false, busy=false;
 // 判定は文脈で動きうる(色の同時対比と同じ形)。**どの位置で・直前に何を見せたか**を行に残す
 let shownSeq=0, shownNow=null, shownPrev=null;
 const latest = rows => { const m={}; rows.sort((a,b)=>(a.ts<b.ts?-1:1)).forEach(r=>{m[r.item_id]=r;}); return m; };
@@ -169,21 +178,36 @@ function render(){
     img.src = im.src;
   });
   const prev=answers[it.id]; sel = prev ? prev.value : null; $("comment").value = prev ? (prev.comment||"") : "";
+  // **前の便であなたが押した答え**を初期値に置く(問いの側が `prefill` に書いたときだけ)。
+  // **変えられる**(閉じない)。何件変えたかは読む器具が印字する
+  if(sel===null && it.prefill) sel = it.prefill;
+  sel2 = prev ? (prev.value2||null) : (it.prefill2||null);
+  $("q2").textContent = CHOICES2 ? (DATA.question2||"") : "";
   renderChoices(); $("prev").disabled = idx===0;
-  $("status").className=""; $("status").textContent = prev ? `前の答え: ${prev.label}(${prev.ts.slice(0,16).replace("T"," ")})。選び直すと新しい行として足されます(前の行は消えません)` : "";
+  $("status").className=""; $("status").textContent = prev ? `前の答え: ${prev.label}${prev.label2?" / "+prev.label2:""}(${prev.ts.slice(0,16).replace("T"," ")})。選び直すと新しい行として足されます(前の行は消えません)` : "";
 }
 function renderChoices(){
-  const box=$("choices"); box.innerHTML="";
-  CHOICES.forEach(c=>{ const b=document.createElement("button"); b.className="ch"+(c.builtin?" builtin":"")+(sel===c.value?" on":"");
+  drawRow($("choices"), CHOICES, sel, v=>{sel=v;});
+  if(CHOICES2) drawRow($("choices2"), CHOICES2, sel2, v=>{sel2=v;});
+  // **2つ目の軸が在るときは、両方押すまで保存できない**(片方だけの行を作らない)
+  $("next").disabled = sel===null || (CHOICES2 && sel2===null) || busy;
+}
+function drawRow(box, list, cur, set){
+  box.innerHTML="";
+  list.forEach(c=>{ const b=document.createElement("button"); b.className="ch"+(c.builtin?" builtin":"")+(cur===c.value?" on":"");
     if(c.key){const k=document.createElement("kbd"); k.textContent=c.key; b.append(k);} b.append(c.label);
     if(c.help){const s=document.createElement("small"); s.textContent=c.help; b.append(s);}
-    b.onclick=()=>{sel=c.value; renderChoices();}; box.append(b); });
-  $("next").disabled = sel===null || busy;
+    b.onclick=()=>{set(c.value); renderChoices();}; box.append(b); });
 }
 async function saveNext(){
-  if(sel===null||busy) return; const it=DATA.items[idx], c=CHOICES.find(x=>x.value===sel);
+  if(sel===null||busy||(CHOICES2&&sel2===null)) return;
+  const it=DATA.items[idx], c=CHOICES.find(x=>x.value===sel);
+  const c2=CHOICES2 ? CHOICES2.find(x=>x.value===sel2) : null;
   const row={interview_id:DATA.interview_id, item_id:it.id, item_version:it.version||null,
-    images:it.images.map(i=>i.id||i.caption||""), value:c.value, label:c.label, comment:$("comment").value.trim(),
+    images:it.images.map(i=>i.id||i.caption||""), value:c.value, label:c.label,
+    value2:c2?c2.value:null, label2:c2?c2.label:null,
+    prefill:it.prefill||null, prefill_kept:it.prefill?(it.prefill===c.value):null,
+    comment:$("comment").value.trim(),
     pos:idx, n_items:DATA.items.length, prev_item_id:shownPrev, shown_seq:shownSeq,
     shown_scale:(panes[0]&&panes[0].w)?Math.round(fitScale(panes[0])*view.z*1000)/1000:null,
     ts:new Date().toISOString(), ui_version:UI_VERSION, session:SESSION, mode:MODE};
@@ -208,6 +232,7 @@ document.addEventListener("keydown",e=>{
   if(typing){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault(); saveNext();} if(e.key==="Escape") $("comment").blur(); return; }
   const c=CHOICES.find(x=>x.key===e.key);
   if(c){ sel=c.value; renderChoices(); return; }
+  if(CHOICES2){ const c2=CHOICES2.find(x=>x.key===e.key); if(c2){ sel2=c2.value; renderChoices(); return; } }
   if(e.key==="Enter"){ e.preventDefault(); saveNext(); }
   else if(e.key==="ArrowLeft"){ if(idx>0){idx--; view={z:1,cx:.5,cy:.5}; render();} }
   else if(e.key==="+"||e.key===";"){ const p=panes[0]; if(p){const r=p.view.getBoundingClientRect(); zoomAt(p,1.25,r.width/2,r.height/2);} }
