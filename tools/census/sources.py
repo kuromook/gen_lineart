@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_r_line_columns_20261119.md",
+        what="**抽出ツール: R の 426層(段のラベル 325・資料の下絵 68・3D の疑い 33)の線の質と線の数の列、合成の図形 12行**",
+        why_not_yet="**sha256 2/2 一致、鍵・組・並びとも一覧と全行一致。R は抽出側から直接写しを受けた**。測れなかった層 0。α > 0 が半分を超える31層は紙の形を測った値。線幅の枠の直しは pos 1 だけ。採点は R",
+    ),
+    dict(
+        path="outbox/reply_census_r_line_columns_arrived_20261119.md",
+        what="**census → R: 426層の列の点検は合格。α ≥ 8 の測り直しと線幅をそろえる測り直しが要るか R が決める**",
+        why_not_yet="流し直しは新しい発注なので、要るならユーザーの承認の後。R の答え待ち",
+    ),
+    dict(
         path="outbox/reply_census_q_q9_junction_routed_20261119.md",
         what="**census → Q: Q9 の分かれ目の列を写した。抽出側が足した三角取りの手を Q が判じる**",
         why_not_yet="ひげ切りだけの値は無い(要るなら旗を足して流し直し、発注はユーザーの承認の後)。Q の読み待ち",
