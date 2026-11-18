@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="outbox/reply_census_q_q9_junction_routed_20261119.md",
+        what="**census → Q: Q9 の分かれ目の列を写した。抽出側が足した三角取りの手を Q が判じる**",
+        why_not_yet="ひげ切りだけの値は無い(要るなら旗を足して流し直し、発注はユーザーの承認の後)。Q の読み待ち",
+    ),
+    dict(
+        path="inbox/deliver_q9_junction_20261119.md",
+        what="**抽出ツール: 効果線 Q9 の追加の列(芯の分かれ目・端点・塊、7,643層)と直した IC1**",
+        why_not_yet="**sha256 3/3 一致、pos と鍵は一覧と全行一致。Q へ写した**。測った 7,145 / 飛ばした 498(前回の線の列で描いた画素 0)。IC1 は判定のある6つとも合。抽出側が Q の指定に無い「芯の三角の角を取る」手を足した —— 入れてよいかは Q が判じる。採点は Q",
+    ),
+    dict(
         path="inbox/note_census_e_ask_for_suspect33_order_list_columns_20261119.md",
         what="**Track E: 3D の疑い 33層の一覧の列(層の名前・祖先)を画面の文脈に使いたい**",
         why_not_yet="**一覧を E へ写した**。答えの列の名が決まったら鍵の表を合わせる",
