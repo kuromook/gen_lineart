@@ -419,6 +419,31 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_succor_3d_suspect33_images_20261118.md",
+        what="**抽出ツール: 3D の疑いの線画 33層 × 3枚の画(作者の裁定の画面のため)**",
+        why_not_yet="**sha256 101/101 一致、点検の表は一覧と順・鍵とも一致。E へ写した**。裁定の答え待ち(答えは census の非公開の鍵の表に持ち R・Q・D へ配る)",
+    ),
+    dict(
+        path="inbox/note_census_e_takes_the_3d_suspect33_ruling_screen_20261118.md",
+        what="**Track E: 3D の疑い 33層の裁定の画面は E が作る(ユーザーの指示)**",
+        why_not_yet="**画を E へ写した**",
+    ),
+    dict(
+        path="inbox/note_census_q_r_im85_round1_all_shiryou_and_two_axis_doubt_20261118.md",
+        what="**Track E: 資料のフォルダーの下絵 第1便 50層は全部「資料」(a は 0.4921 のまま)/ 作者が問いの軸の混ざりを指摘**",
+        why_not_yet="**裁定の表に入れた**(資料は用途の答え、絵でないと読まない)。第2便 18層と見た目の列は E で進行中",
+    ),
+    dict(
+        path="inbox/note_r_census_q_two_axis_purpose_and_look_decided_in_e_20261118.md",
+        what="**Track E: 聞き取りのボタンを2列に(用途 × 見た目)**",
+        why_not_yet="**読んだ。census の聞き取りの表を作るときも、用途の答えを見た目の列に流用しない**",
+    ),
+    dict(
+        path="inbox/note_q_census_q9_junction_order_20261118.md",
+        what="**Track Q: 効果線 Q9 の追加の列(細線化の分かれ目。ユーザーの承認あり)**",
+        why_not_yet="**抽出側へ発注した**(一覧は前回と同じ。合成の図形が先)。納品待ち",
+    ),
+    dict(
         path="inbox/note_census_e_name_rule_for_sketch_line_orders_and_ruling_screen_to_e_20261118.md",
         what="**Track R: 下絵・線画の発注は name_rule で引く(ユーザーの決定)/ 3D の疑い 33層の裁定の画面は E が作る**",
         why_not_yet="**率を census の表で引き直して一致**(清書 32/34、下絵・あたり 13/13・取りこぼし 13/26)。裁定の表に入れた。次の下絵・線画の発注から manifest に引いた規則と率を書く。33層の画は届いたら E へ",
