@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_e_name_rule_for_sketch_line_orders_and_ruling_screen_to_e_20261118.md",
+        what="**Track R: 下絵・線画の発注は name_rule で引く(ユーザーの決定)/ 3D の疑い 33層の裁定の画面は E が作る**",
+        why_not_yet="**率を census の表で引き直して一致**(清書 32/34、下絵・あたり 13/13・取りこぼし 13/26)。裁定の表に入れた。次の下絵・線画の発注から manifest に引いた規則と率を書く。33層の画は届いたら E へ",
+    ),
+    dict(
         path="inbox/deliver_shiryou_folder_sketch_im85_images_20261118.md",
         what="**抽出ツール: 資料のフォルダーに入った下絵 68層 × 3枚の画(作者の求めの裁定画面のため)**",
         why_not_yet="**sha256 206/206 一致、一覧と順・鍵とも一致。E へ写した**。裁定の画面と作者の答え待ち(答えが来たら a の落とす数の前後を印字)",
