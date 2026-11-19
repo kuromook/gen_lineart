@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_r_q_suspect33_3d_ruling_answers_20261119.md",
+        what="**E: 3D の疑い 33層の作者の裁定 33/33(線の出どころ × 何を描いたか)**",
+        why_not_yet="**答えの鍵は33行とも一致。census が裁定の鍵を埋めて R・Q・D へ配った**(裁定の鍵の 11-19 版)。3D 由来 5(出した4・なぞった1)、人が描いた 20、判定保留 8。a は動かない",
+    ),
+    dict(
+        path="inbox/note_q_census_panel_frames_inventory_20261119.md",
+        what="**Q: コマの枠の材料は在るか(効果線の束をコマごとに分けるため)。Q9 の 7,643層のコマのフォルダーの内訳、またがる数の見込み**",
+        why_not_yet="census が既存の構造から調べて返す",
+    ),
+    dict(
         path="inbox/reply_q_census_q10_ic1_fix_20261119.md",
         what="**Q: Q10 の IC1 の直し(止める決まり 0.3、平行線3束の図形を足す)**",
         why_not_yet="**ユーザーに確かめたところ承認ではなく「束は分離して考える必要がある」との答え。直しの便は出さず、言葉を逐語で Q へ回し、抽出側には流さず待つよう伝えた**(reply_census_q_q10_user_bundles_separate / push_census_q10_hold)。Q の登録の見直し待ち",
