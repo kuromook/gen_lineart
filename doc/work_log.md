@@ -17497,3 +17497,9 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 - 逐語「通達を送った後に、相手セッションが起きているのがわかっているなら sendmessage で相手に通達を読むよう送るようにしたい　ここで該当する対象は 共通基盤、census、track E、trackR、trackQ と抽出である　このほかのgen_lineart トラックはいつも起きてるとは限らないので従来通り、通達確認をうつ」
 - `CLAUDE.md §4` に規則(ファイルが正本・ListAgents で毎回引く・1行・宛先の便だけ・写し/返事では送らない・承認を書かない)。行数は 170 → 169(3か所を詰めた)
 - 通達 `reply_all_wake_by_sendmessage_20261119.md` を census・E・R・Q へ cp、抽出へ SCP(`push_wake_by_sendmessage_20261119.md`)、5者を SendMessage で起こした(最初の試し)
+
+## 2026-11-19 Track S 新設 / Track R は閉じない(ユーザー)
+
+- 逐語「しばらくcensusの発足以後、発注しやすく整備が続いて来たが研究のトラックを起こしたい　何からやろうか」→ 基盤の提案(下絵→線画の差を対で測る)→「Rの仕事は情報が増えればまた機会があるはず　閉じずに置く　提案のトラックを新設しよう」
+- `git worktree add ../lineart-cleanup-delta -b cleanup-delta foundation`(`3fe1ab6` から)。引き継ぎ commit `326beaf`(未 push、track が push)。台帳・`worktree_policy.md` に行を足した
+- 通達 `reply_track_s_opened_20261119.md` を census・S・R(宛先)、D・E・Q(写し)へ。census・R を SendMessage で起こした
