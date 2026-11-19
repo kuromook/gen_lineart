@@ -7,3 +7,11 @@
 ## 2026-11-20 通達受領: S も常駐として起こされる側に
 
 - 基盤 `reply_all_wake_add_track_s_20261120.md`(ユーザー「しばらく常駐させるつもりなので直して」)。条例10 を直した: 起こす対象に S を加え、「常駐でなければユーザーが通達確認を打つ」を外した
+
+## 2026-11-20 段0: 対 v6 を組んで母集団を数えた(`experiments/s0_population_v6.py`)
+
+- `data/clip_pairs_v6` = D の `clip_pairs_v5`(v3+v4+v5)の実コピー + v6 差分 zip(sha256 一致、UTF-8 の印の無い名前0件)。zip の CSV 4本は `clip_pairs/` へ移した。この木に venv は無い(標準ライブラリだけなので `python3`)
+- **QC 表 v6 1,726 行を母集団の正本にした**。manifest は 1,746 行 —— 差の20行は `005_2016_ng/新しいフォルダー_n`(名簿 v2 で「落とす」、QC 表には無い)。manifest は画像の在りかを引くだけに使う。画像の欠けは0
+- 落とした頁(最初に当たった理由): 恒久除外 0 / `line_fragment` 216 / `sketch_black_paint` 65 / `sketch_misaligned_by_eye` 2 / `sketch_other_picture_by_eye` 1 / 計 284 → **残り `ok` 1,442 頁**(内容重複の代表 1,176、自動整列 1,328。落とさず列として持つ)。作品69本、ok が0の作品は `058_2023_bakugi1H1H4`・`066_2024_housei`(housei は作品専用の版が別にある)。作品ごとの表は `results/s0_population_v6.csv`
+- **線画の側が下絵かもしれない頁**: `ok` のうち17頁は線画の層名が `rough` 15・`sketch_00x-2` 2。役割の表 v3 に在る6頁は6頁とも `name_rule = 下絵`
+- 役割の表 v3 で `line_ids`/`sketch_ids` を引くと、(清書, 下絵)で全部引けるのは 492 頁。338 頁は頁ごと表に無い。条例5の選別には足りないので、census に v6 の対の全層の `name_rule` を依頼した(`reply_census_s_name_rule_for_v6_pairs_20261120.md`)。manifest の20行の件は基盤へ知らせた(写し census・D)。census と基盤を SendMessage で起こした
