@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_all_wake_add_track_s_20261120.md",
+        what="**基盤: SendMessage で起こす対象に Track S を加えた(ユーザー「しばらく常駐させるつもりなので直して」)**",
+        why_not_yet="**census の手順に入れた**: S 宛ての便を置いたら1行で起こす。名は tmux 名で照らす。受領の知らせは要らない",
+    ),
+    dict(
         path="inbox/note_census_order_r_film_layers_rgba_images_20261120.md",
         what="**R: 「膜の層」34層 + 対照8層の α を残した層の画と頁のプレビュー(42層・17頁)**",
         why_not_yet="**ユーザーに確かめて「発注してよい」。一覧の鍵は R の列 v2 と一致、恒久除外 0。抽出側へ発注し着弾を確かめた**(push_census_order_r_film_layers_rgba_20261120.md)。納品待ち",
