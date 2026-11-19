@@ -90,3 +90,6 @@
 - 膜の層 = R の段のラベル 325層のうち `n_drawn_a8 / n_drawn < 0.5`(R3 の後に見た記述の定義)。34層(あたり 10・下絵 17・清書 6・段ではない 1)。名前は rough・*_scan_*・pencil_* など。α 255 ほぼ 0、描いた画素の 51〜96% が α 1〜7。推測: 紙の下絵の取り込み(明るさ → 透明度)。作者・ユーザーが画で決める
 - 前の便(succor 33・im85)の層の画は RGB で α が落ちていたので、α を残した RGBA の層の画を頼んだ。42層(膜 34 + 対照 8)・17頁、一覧 sha256 先頭 `360c0aa10f8dd459`。`outbox/note_census_order_r_film_layers_rgba_images_20261120.md`
 - 届いたら R が α のグラフを作り、画と並べて artifact(使い捨て。確認後に削除)で見せる
+
+## 2026-11-20 通達: 起こす対象に Track S を加えた
+- 基盤 `reply_all_wake_add_track_s_20261120.md`。起こす対象 = 基盤・census・E・R・Q・S・抽出。S の名 `lineart-cleanup-delta-5d`(tmux `trackS`、名は ListAgents で毎回引く)
