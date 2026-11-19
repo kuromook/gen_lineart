@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q10_bundle_ic1_fail_20261119.md",
+        what="**抽出ツール: Q10 の束の列の IC1 —— 乱数の線が外れ(bundle_frac_4 0.678 > 0.6)、原稿の列は止めた**",
+        why_not_yet="**sha256 2/2 一致。表を Q へ写した**。種10通りで 0.576〜0.772。直し方(期待を変える / 止める決まりを足す)は Q が決める。決まったら IC1 を流し直す",
+    ),
+    dict(
+        path="outbox/reply_census_q_q10_ic1_fail_20261119.md",
+        what="**census → Q: Q10 の IC1 の外れを回した。直し方を Q が登録に書いて決める**",
+        why_not_yet="Q の答え待ち。直しの便はユーザーに一言確かめてから出す",
+    ),
+    dict(
         path="inbox/note_q_census_q10_bundle_order_20261119.md",
         what="**Q: 効果線 Q10 の「束」の列(平行・集中の束を最大4つ、7,643層、IC1 5つ)**",
         why_not_yet="**ユーザーに確かめて「発注してよい」。抽出側へ発注し着弾を確かめた**(push_census_order_q10_bundle_20261119.md)。納品待ち",
