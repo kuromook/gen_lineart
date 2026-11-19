@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_census_s_name_rule_for_v6_pairs_20261120.md",
+        what="**S: 対 v6 の線画・下絵の層すべてに name_rule を引いてほしい**",
+        why_not_yet="**census が器具 s_v6_pairs_name_rule.py で引いて S へ写した**(1,726頁・27,620層、落とした 0)。ok の 1,442頁で (清書, 下絵) が 492、線画の側が下絵 17 —— S の数と一致。率は便A の答えのもので v6 では測っていない",
+    ),
+    dict(
+        path="inbox/reply_foundation_s_v6_manifest_ng_leftover_20261120.md",
+        what="**S → 基盤(写し): 対 v6 の manifest に、名簿 v2 で落とした20頁が残っている**",
+        why_not_yet="記録だけ。census の器具は QC 表 v6 から引くので20頁は入らない。抽出側へ回すかは基盤の判断",
+    ),
+    dict(
         path="inbox/reply_all_wake_add_track_s_20261120.md",
         what="**基盤: SendMessage で起こす対象に Track S を加えた(ユーザー「しばらく常駐させるつもりなので直して」)**",
         why_not_yet="**census の手順に入れた**: S 宛ての便を置いたら1行で起こす。名は tmux 名で照らす。受領の知らせは要らない",
