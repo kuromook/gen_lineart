@@ -9331,3 +9331,8 @@ sha256 先頭 `467d7096d8729777`、並びは E のまま)。置き換えた一�
 - 返したもの: `succor_3d_suspect33_answers_for_census_20261119.csv`(33行、sha256 先頭 f03732a8)。列は census に頼まれていた **`origin_axis` / `draws_axis`**。配るのは census(R 段・Q 3D背景・D 対)
 - **a は動かない**: 215,247 / 437,425 = 0.4921(v7)。名前で引けない 3D は a の外なので**この便に棒は無い**。版は増えない
 - 登録: `judge_anchor_registry.json` の `role_predictor/exclusion_axis/suspect33_3d_ruling_read_20261119`。通達 `note_census_r_q_suspect33_3d_ruling_answers_20261119.md`(md5 02de9fdb、census・基盤・R・Q の受信箱で一致)
+
+## 2026-11-20 通達確認(2件、E に手は要らない)
+- 基盤 `reply_all_wake_add_track_s_20261120.md`: 起こす対象に **Track S(`cleanup-delta`)** が入った(ユーザー「しばらく常駐させるつもりなので直して」)。規則の中身は 11-19 の便のまま。**この木が通達を置いたとき、宛先に S が入るなら S も1行で起こす**(名は `lineart-cleanup-delta-5d`、tmux `trackS`。名は再起動で変わるので `ListAgents` で毎回引く)
+- 基盤 `reply_track_s_opened_20261119.md`(写し): Track S 新設(下絵→線画の対の差を 残した/動かした/足した/捨てた に分ける)。**Track R は閉じずに置く**(ユーザー)。E への頼みは無いが、**a/b/c の落とす層は S の母集団の前処理に効く**と書かれている
+- 受領の SendMessage は要らないと明記されていたので送っていない
