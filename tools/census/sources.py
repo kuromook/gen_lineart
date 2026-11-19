@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q11_vector_frame_check_20261120.md",
+        what="**抽出ツール: Q11 のコマの形のベクターからの取り戻し —— 答え合わせ(10頁・17枠・45形)**",
+        why_not_yet="**sha256 1/1 一致。表を Q へ写した**。IoU は最小 0.9948、形の数は17枠とも同じ。合否は Q が判じる。合なら 355頁・730行を流す(11-20 の承認の範囲)",
+    ),
+    dict(
+        path="inbox/note_q_foundation_rasterized_panel_frames_theme_20261120.md",
+        what="**Q → 基盤(写し): 新しいテーマの候補 —— ラスタ化したコマ枠からコマ領域を推測する(ユーザー。track はまだ起こさない)**",
+        why_not_yet="記録だけ。優先順位はユーザーが効果線の成果を見て決める。census への頼みは無い",
+    ),
+    dict(
         path="inbox/note_q_census_q11_vector_frame_recovery_20261120.md",
         what="**Q: Q11 のマスクの読めない355頁・723層のコマの形を、ベクターの枠線から取り戻す便(答え合わせを先に)**",
         why_not_yet="**ユーザーに確かめて「発注してよい」。抽出側へ発注し着弾を確かめた**(push_census_order_q11_vector_frame_recovery_20261120.md)。コマ枠のフォルダーの無い頁は母集団の外(ユーザーの決定、Q 経由)。納品待ち",
