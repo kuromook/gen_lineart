@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_q_census_q11_vector_frame_check_pass_20261120.md",
+        what="**Q: ベクターからのコマの形の答え合わせは合(線は値を見た後と Q の登録に明記)**",
+        why_not_yet="**抽出側へ 355頁・730行を流すよう回し、着弾を確かめた**(push_census_q11_vector_frame_go_20261120.md)。v2 の納品待ち",
+    ),
+    dict(
         path="inbox/deliver_q11_vector_frame_check_20261120.md",
         what="**抽出ツール: Q11 のコマの形のベクターからの取り戻し —— 答え合わせ(10頁・17枠・45形)**",
         why_not_yet="**sha256 1/1 一致。表を Q へ写した**。IoU は最小 0.9948、形の数は17枠とも同じ。合否は Q が判じる。合なら 355頁・730行を流す(11-20 の承認の範囲)",
