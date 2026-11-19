@@ -28,7 +28,7 @@ BD = ["w_med", "w_p10", "w_p90", "skel_len_full", "n_seg", "len_p50", "len_p90",
       "n_endpoint", "n_junction", "n_branch", "n_cc", "n_endpoint_raw", "n_junction_raw", "n_branch_raw", "n_spur_cut"]
 COUNTS = ["skel_len_full", "n_seg", "n_endpoint", "n_junction", "n_branch", "n_cc", "n_endpoint_raw",
           "n_junction_raw", "n_branch_raw", "n_spur_cut"]
-BANNED = ("name", "ancestor", "name_rule", "v_layer_kind", "ngram", "layer_name")
+BANNED = {"name", "ancestors", "name_rule", "v_layer_kind", "layer_name"}  # 名前の文字の列(完全一致)。祖先の表示・マスクの数は構造の列なので可
 
 
 def m3(s):
@@ -124,7 +124,7 @@ def main():
     print("   読む行: %d" % len(rows))
 
     names = pixel_names(suffix)
-    bad = [n for n in names if any(b in n.lower() for b in BANNED)]
+    bad = [n for n in names if n.split(":")[-1] in BANNED or n.startswith("ngram:")]
     print("\nNC4(禁止の列): P2 の列 %d 本のうち、名前・祖先・name_rule・v_layer_kind から来た列 %d 本 %s"
           % (len(names), len(bad), "→ 合格" if not bad else "→ **不合格** %s" % bad))
     if bad:
