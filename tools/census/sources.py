@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q11_per_panel_20261120.md",
+        what="**抽出ツール: 効果線 Q11 のコマごとの線の列(層 × コマ 9,114行、層 7,643行)と IC1**",
+        why_not_yet="**sha256 3/3 一致、鍵は一覧と全行一致。Q へ写した**。IC1 は5項目とも合。コマの形は抽出側の手元の版(10-26 の断面より後の直しを入れたもの)で、census の 11-19 の答えの数とは版が違う(どちらも撤回しない)。コマの形を使えた層 3,875。マスクの読めない355頁をベクターから取り戻すかは Q が決める。採点は Q",
+    ),
+    dict(
+        path="outbox/reply_census_q_q11_routed_20261120.md",
+        what="**census → Q: Q11 の列を写した。版の違いと、355頁の取り戻しの判断を知らせた**",
+        why_not_yet="Q の答え待ち。取り戻しの便はユーザーに確かめてから",
+    ),
+    dict(
         path="inbox/reply_track_s_opened_20261119.md",
         what="**基盤: Track S `cleanup-delta` を新設(下絵から線画への対の差。ユーザーの決定)。Track R は閉じずに置く**",
         why_not_yet="**census の宛先に S(`../lineart-cleanup-delta/inbox/`)を加えた**。S は層の素性・清書/下絵の選別・恒久除外・split_unit を census から取る。S への便は SendMessage でなく受信箱に置くだけ。S からの頼み待ち",
