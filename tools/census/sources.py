@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_order_r_film_layers_rgba_images_20261120.md",
+        what="**R: 「膜の層」34層 + 対照8層の α を残した層の画と頁のプレビュー(42層・17頁)**",
+        why_not_yet="**ユーザーに確かめて「発注してよい」。一覧の鍵は R の列 v2 と一致、恒久除外 0。抽出側へ発注し着弾を確かめた**(push_census_order_r_film_layers_rgba_20261120.md)。納品待ち",
+    ),
+    dict(
         path="inbox/reply_q_census_q11_vector_frame_check_pass_20261120.md",
         what="**Q: ベクターからのコマの形の答え合わせは合(線は値を見た後と Q の登録に明記)**",
         why_not_yet="**抽出側へ 355頁・730行を流すよう回し、着弾を確かめた**(push_census_q11_vector_frame_go_20261120.md)。v2 の納品待ち",
