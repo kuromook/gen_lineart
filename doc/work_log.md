@@ -93,3 +93,9 @@
 
 ## 2026-11-20 通達: 起こす対象に Track S を加えた
 - 基盤 `reply_all_wake_add_track_s_20261120.md`。起こす対象 = 基盤・census・E・R・Q・S・抽出。S の名 `lineart-cleanup-delta-5d`(tmux `trackS`、名は ListAgents で毎回引く)
+
+## 2026-11-20 膜の層の画が届き、見本帳を artifact で出した
+- 抽出側 `deliver_r_film_layers_rgba_20261120.md`(census 経由)。42層とも RGBA、画素の数は v2 と全部一致、sha256 85/85 一致。`data/census/r_film_rgba_20261120/` へ移した(追跡しない)
+- 器具 `tools/r3_film_view.py` + `tools/r3_film_view_template.html` → `results/r3/film_view/`(追跡しない)。非公開の artifact https://claude.ai/artifact/Cu9LdJ7AyJhvV28s8ASp9g(使い捨て。確認後に削除)
+- 数(記述): 膜 34層は α 255 が 0〜0.07、α 1〜7 が 0.55〜0.96。対照 8層は α ≥ 8 が 0.95〜1.0。膜の中に 清書 6(作者のコメント「キャラクター線画」の層を含む)・段ではない 1
+- Claude が見たのは膜の 07(下絵、名前 ichigo_scan_008)の縮小と切り出しだけ: 頁全体の鉛筆の下絵。α ≥ 8 の側にも紙の粒が残っている。紙の取り込みかは作者が決める

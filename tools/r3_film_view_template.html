@@ -1,0 +1,91 @@
+<title>膜の層の見本帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 見本帳: 1層 = 1枚のカード。上に要約と絞り込み、カードの中は 数 → α のグラフ → 画 の順 */
+:root{
+  --paper:#f6f6f3; --sheet:#ffffff; --ink:#22252b; --mute:#646a75; --rule:#d9dbe0;
+  --film:#c9731c; --film-bg:#fbeedd; --ctl:#3d5a9e; --ctl-bg:#e3e9f6; --graph:#4a5f9a;
+  --sans:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#16181c; --sheet:#1f2228; --ink:#e7e8ea; --mute:#a0a6b0; --rule:#343842;
+  --film:#f0a35a; --film-bg:#3a2a18; --ctl:#9bb3ee; --ctl-bg:#1f2a44; --graph:#9bb3ee; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#16181c; --sheet:#1f2228; --ink:#e7e8ea; --mute:#a0a6b0; --rule:#343842;
+  --film:#f0a35a; --film-bg:#3a2a18; --ctl:#9bb3ee; --ctl-bg:#1f2a44; --graph:#9bb3ee; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font:15px/1.6 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+main{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-size:1.6rem;margin:0;text-wrap:balance}
+.lead{max-width:68ch;color:var(--mute);margin:0}
+.lead b{color:var(--ink)}
+table.sum{border-collapse:collapse;font-size:.9rem}
+table.sum th,table.sum td{border-bottom:1px solid var(--rule);padding:4px 12px 4px 0;text-align:left;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.85rem;color:var(--mute)}
+.sw{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:6px;border:1px solid var(--rule)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--paper);padding-block:8px;z-index:5}
+.filters button{font:inherit;font-size:.85rem;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.filters button:focus-visible{outline:2px solid var(--ctl);outline-offset:2px}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card header{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.no{font:500 1.1rem var(--mono)}
+.pill{font-size:.8rem;padding:1px 10px;border-radius:999px}
+.pill.film{background:var(--film-bg);color:var(--film)}
+.pill.ctl{background:var(--ctl-bg);color:var(--ctl)}
+.pill.st{border:1px solid var(--rule)}
+.nm{font-family:var(--mono);font-size:.85rem;overflow-wrap:anywhere}
+.vis{font-size:.8rem;color:var(--mute);margin-left:auto}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0}
+.nums div{border-left:2px solid var(--rule);padding-left:8px}
+.nums dt{font-size:.75rem;color:var(--mute)}
+.nums dd{margin:0;font:500 1rem var(--mono);font-variant-numeric:tabular-nums}
+.cm{margin:0;font-size:.85rem;color:var(--mute)}
+figure{margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
+figcaption{font-size:.75rem;color:var(--mute)}
+.hist{width:100%;max-width:560px;height:auto}
+.hist .band{fill:var(--film-bg)} .hist .grid{stroke:var(--rule);stroke-width:1}
+.hist .ax{fill:var(--mute);font:10px var(--mono)} .hist .area{fill:var(--graph);opacity:.18;stroke:none}
+.hist .line{fill:none;stroke:var(--graph);stroke-width:1.4} .hist .cut{stroke:var(--film);stroke-width:1.2;stroke-dasharray:3 3}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start}
+.grid img{width:100%;height:auto;border:1px solid var(--rule);background:#fff}
+.grid img.px{image-rendering:pixelated;max-width:360px}
+</style>
+<main>
+  <h1>膜の層の見本帳</h1>
+  <p class="lead">R3 の後で見つけた「膜の層」(描いた画素のうち α ≥ 8 が半分未満の層)<b>{{NF}} 層</b>と、同じ作品から機械的に選んだ膜でない対照の層を、1層ずつ並べました。全部で {{N}} 層です。画は抽出側が α を残したまま描いた層の画素で、不透明度・マスクはかけていません。採点はしていません。紙の取り込みかどうかは作者が決めます。</p>
+  <table class="sum"><tbody>{{SUMM}}</tbody></table>
+  <div class="legend">
+    <span><i class="sw" style="background:#fff"></i>α 0</span>
+    <span><i class="sw" style="background:#ffd696"></i>α 1(薄い)</span>
+    <span><i class="sw" style="background:#f59a3c"></i>α 7</span>
+    <span><i class="sw" style="background:#96a0c8"></i>α 8</span>
+    <span><i class="sw" style="background:#0a0f1e"></i>α 255</span>
+    <span>α の地図の色。原寸の切り出しは α ≥ 8 が最も多い 360 px 四方です</span>
+  </div>
+  <div class="filters" role="toolbar" aria-label="絞り込み">
+    <button id="f-all" data-f="all" aria-pressed="true">全部</button>
+    <button id="f-film" data-f="膜" aria-pressed="false">膜</button>
+    <button id="f-ctl" data-f="対照" aria-pressed="false">対照</button>
+    <button id="s-a" data-s="あたり" aria-pressed="false">あたり</button>
+    <button id="s-s" data-s="下絵" aria-pressed="false">下絵</button>
+    <button id="s-c" data-s="清書" aria-pressed="false">清書</button>
+  </div>
+{{CARDS}}
+</main>
+<script>
+(function(){
+  var g="all", s=null, bs=document.querySelectorAll(".filters button");
+  function apply(){
+    bs.forEach(function(b){b.setAttribute("aria-pressed", String((b.dataset.f&&b.dataset.f===g)||(b.dataset.s&&b.dataset.s===s)))});
+    document.querySelectorAll(".card").forEach(function(c){
+      c.hidden = !((g==="all"||c.dataset.group===g)&&(!s||c.dataset.stage===s));
+    });
+  }
+  bs.forEach(function(b){b.addEventListener("click",function(){
+    if(b.dataset.f){g=b.dataset.f}else{s=(s===b.dataset.s)?null:b.dataset.s}
+    apply();
+  })});
+})();
+</script>
