@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q11_per_panel_v2_20261120.md",
+        what="**抽出ツール: Q11 のコマごとの線の列 v2(マスクの読めなかった355頁・723層をベクターからのコマの形で測り直し)**",
+        why_not_yet="**sha256 2/2 一致、鍵は一覧と全行一致、前の便から変わった行は 723(残りは同じ)。表を Q へ写した**。取り戻せなかった頁・層 0。コマの形を使えた層 3,875 → 4,598。ベクターからの形は面積が 0.04〜0.5% 大きい。採点は Q",
+    ),
+    dict(
+        path="inbox/reply_s_v6_manifest_leftover_is_unzip_decoding_20261120.md",
+        what="**基盤 → S(写し): v6 の manifest の余る20頁は、zip の展開で名前が化けたため。納品は正しい**",
+        why_not_yet="記録だけ。census の name_rule の表は QC 表 v6 から引いたので影響なし",
+    ),
+    dict(
         path="inbox/reply_census_s_name_rule_for_v6_pairs_20261120.md",
         what="**S: 対 v6 の線画・下絵の層すべてに name_rule を引いてほしい**",
         why_not_yet="**census が器具 s_v6_pairs_name_rule.py で引いて S へ写した**(1,726頁・27,620層、落とした 0)。ok の 1,442頁で (清書, 下絵) が 492、線画の側が下絵 17 —— S の数と一致。率は便A の答えのもので v6 では測っていない",
