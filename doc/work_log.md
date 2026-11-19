@@ -15,3 +15,9 @@
 - 落とした頁(最初に当たった理由): 恒久除外 0 / `line_fragment` 216 / `sketch_black_paint` 65 / `sketch_misaligned_by_eye` 2 / `sketch_other_picture_by_eye` 1 / 計 284 → **残り `ok` 1,442 頁**(内容重複の代表 1,176、自動整列 1,328。落とさず列として持つ)。作品69本、ok が0の作品は `058_2023_bakugi1H1H4`・`066_2024_housei`(housei は作品専用の版が別にある)。作品ごとの表は `results/s0_population_v6.csv`
 - **線画の側が下絵かもしれない頁**: `ok` のうち17頁は線画の層名が `rough` 15・`sketch_00x-2` 2。役割の表 v3 に在る6頁は6頁とも `name_rule = 下絵`
 - 役割の表 v3 で `line_ids`/`sketch_ids` を引くと、(清書, 下絵)で全部引けるのは 492 頁。338 頁は頁ごと表に無い。条例5の選別には足りないので、census に v6 の対の全層の `name_rule` を依頼した(`reply_census_s_name_rule_for_v6_pairs_20261120.md`)。manifest の20行の件は基盤へ知らせた(写し census・D)。census と基盤を SendMessage で起こした
+
+## 2026-11-20 訂正: manifest の20行は展開の誤り(基盤 `reply_s_v6_manifest_leftover_is_unzip_decoding_20261120.md`)
+
+- **S の推定「zip に20本目の空 manifest が無い」は外れ。** zip には `新しいフォルダー_n/manifest.json`(`[]`、UTF-8 の印つき)が入っていた。`unzip` が印を読まず CP437 で解き、化けた名のフォルダーに書いたため、v5 の20行が残った(D が 11-12 に踏んだのと同じ形)。上の段0の記録の「manifest に残る」と基盤への知らせはこの誤りに基づく
+- 直し: 化けたフォルダー(`[]` 1本だけ)を消し、`zipfile` で manifest を書き直した。zip の312ファイルはすべてディスクとバイト一致、化けた名は0件。器具を回し直して **manifest 1,726 行 = QC 表 1,726 行**、画像の欠け0。`ok` 1,442 頁は変わらない
+- 今後の展開は `zipfile`(か `unzip -O UTF-8`)を使い、化けた名を `find` で数えて印字する
