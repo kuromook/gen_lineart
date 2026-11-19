@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_census_game_session_name_20261120.md",
+        what="**基盤: ゲーム側のセッションの名(Remote Control。名は変わるので毎回引く)**",
+        why_not_yet="記録した。ゲーム側の最初の便に受信箱の path が書かれる。.20 → .34 の SCP は未確認 —— 便が来なければユーザーに知らせる",
+    ),
+    dict(
         path="inbox/reply_census_external_game_project_20261120.md",
         what="**基盤: 外部のゲーム制作プロジェクトと census の往復を開く(ユーザー)。研究と混ぜない5点**",
         why_not_yet="**census の手順に入れた**: game_* の便名で分け、研究の台帳・母集団・列に入れない。画像を渡すのも抽出側への発注も毎回ユーザーの承認。恒久除外はゲーム向けにも効かせる。ゲーム側の最初の便待ち",
