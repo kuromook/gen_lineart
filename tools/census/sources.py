@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_track_s_opened_20261119.md",
+        what="**基盤: Track S `cleanup-delta` を新設(下絵から線画への対の差。ユーザーの決定)。Track R は閉じずに置く**",
+        why_not_yet="**census の宛先に S(`../lineart-cleanup-delta/inbox/`)を加えた**。S は層の素性・清書/下絵の選別・恒久除外・split_unit を census から取る。S への便は SendMessage でなく受信箱に置くだけ。S からの頼み待ち",
+    ),
+    dict(
         path="inbox/note_q_census_q11_per_panel_order_20261119.md",
         what="**Q: 効果線 Q11 の「コマごとの線」の列(層 × コマ、7,643層、IC1 合成の頁)。Q10 の束の便は使わない**",
         why_not_yet="**ユーザーに確かめて「発注してよい」。抽出側へ発注し着弾を確かめた**(push_census_order_q11_per_panel_20261119.md)。納品待ち",
