@@ -426,7 +426,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_q_census_panel_frames_inventory_20261119.md",
         what="**Q: コマの枠の材料は在るか(効果線の束をコマごとに分けるため)。Q9 の 7,643層のコマのフォルダーの内訳、またがる数の見込み**",
-        why_not_yet="census が既存の構造から調べて返す",
+        why_not_yet="**census が構造 DB の koma_frames と祖先から調べて返した**(reply_census_q_panel_frames_inventory_20261119.md)。コマのフォルダーの中・形1つ 1,432 / 外 3,834。またがる数は範囲の在る 1,019層だけの見込み。全層には新しい画素の列が要る(発注はユーザーの承認の後)",
     ),
     dict(
         path="inbox/reply_q_census_q10_ic1_fix_20261119.md",
