@@ -28,7 +28,7 @@
 7. **原稿由来の納品物は `data/` 配下。`.gitignore` 済み、絶対にコミットしない。** 原稿の画素を含む画像と重みは許可表に在るものだけ追跡。**許可表に Claude は自分で足さない。重みを公開する前にユーザーの承認**(自分の枝の push も)
 8. **抽出側への発注は SCP**(`sh1@192.168.1.5:C:/Users/sh1/code/extract_line_and_sketch/inbox/`)、`dir` で着弾確認、控え `outbox/push_<topic>_<日付>.md`。**原稿の情報の発注は census 経由**。恒久除外の頁は入れない(census の `author_exclusions.csv` を門に。ポートフォリオ8頁を含む)
 9. GPU は月〜木の連続バッチが標準枠、先に smoke test、`nvidia-smi`。**push はこの木が自分でやる**
-10. **起こす**: 常駐(基盤・census・E・R・Q・抽出)へ便を置いたら `ListAgents` で引いて `SendMessage` 1行(`../lineart/CLAUDE.md §4`)。この木は常駐でなければ、ユーザーが「通達確認」を打つ
+10. **起こす**: 常駐(基盤・census・E・R・Q・S・抽出)へ便を置いたら `ListAgents` で引いて `SendMessage` 1行(`../lineart/CLAUDE.md §4`)。**この木(S)も常駐で、起こされる側に入る**(ユーザー 2026-11-20)。起こされたら `inbox/` を前回の確認時刻から見る
 
 **引用してはいけない数**: lesson 10 の 0/15・14/15 を**この木の対の値として**(タイル15枚の盲検で別の母集団)/ D の「約半分」を**変更の量として**(ずれと変更を分ける前の数)。
 
