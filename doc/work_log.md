@@ -17513,3 +17513,8 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 ## 2026-11-20 Track S を常駐に(ユーザー)
 
 - 逐語「しばらく常駐させるつもりなので直して」→ `CLAUDE.md §4` の起こす対象に S を足した。通達 `reply_all_wake_add_track_s_20261120.md`(抽出へは `push_wake_add_track_s_20261120.md`)。S には自分の条例10 を直すよう頼んだ(S の木は S のもの)
+
+## 2026-11-20 05:40 通達確認(S の SendMessage)
+
+- S: v6 の manifest が 1,746行で QC 表 1,726 より20多い(ng/新しいフォルダー_n)と知らせ。**基盤が zip を `zipfile` で確かめた: 空の manifest(`[]`、UTF-8 の印つき)は入っている。S の展開が CP437 で解いて化けた名のフォルダーに書いた**(zip の非 ASCII 名はこの1本だけ)。抽出側へは回さず、S に直しを返した(`reply_s_v6_manifest_leftover_is_unzip_decoding_20261120.md`、写し census・D)。空の manifest は実数 21本(納品書は19本)、害なし
+- S → census: v6 の対の全層に `name_rule` を引く頼み(1,442頁中 線画が清書で引けるのは817頁、表に無い頁 338、線画の層が `name_rule = 下絵` 6頁)
