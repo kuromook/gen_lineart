@@ -16,6 +16,11 @@
 - **第1便から第2便で変わったセルを、行ごとに前と後の両方を印字する**(規律10。答えた範囲の中の変化も、未確認だった範囲の変化も)
 - 第1便の 22〜40行目の値(未確認)が、作者の確認でどれだけそのまま残ったかを数で印字する
 
+**第3便(2026-11-20、ユーザーの記入、逐語)**: 「41-60行を入力」。
+**読み方(第1・2便と同じ)**: Excel の行番号 → **2〜60行目の 59 フォルダーが作者の答え**、61行目以降は未確認。
+ファイル名は第1便のまま(`answered_upto21`)で届いた —— 中身で読む。census の控えは `answered_upto60_20261120.xlsx`。
+- 比べる相手(前の便)は第2便。変わったセルを前と後の両方で印字する(規律10)
+
     ./venv/bin/python tools/census/manga_illust_answers.py
 """
 import collections
@@ -26,15 +31,15 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ORIG = "data/census_full/hearing_work_folder_manga_or_illust_20261107.xlsx"
-PREV = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto21_20261110.xlsx"
-PREV_SHA = "e3db91321f89dcb83447b13eacd53c0096404b8dfb036f638f7da13fce118284"
-PREV_LAST_ROW = 21
-ANSWERED = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto40_20261115.xlsx"
-ANSWERED_SHA = "cf40273b1d8886e6278466d33d80425aa9e36bda32fe02c8b04c850b3df1a2ff"
-CONFIRMED_LAST_ROW = 40
-OUT = "data/census_full/work_folder_manga_or_illust_20261115.csv"
-AS_OF = "2026-11-15"
-PREV_AS_OF = "2026-11-10"
+PREV = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto40_20261115.xlsx"
+PREV_SHA = "cf40273b1d8886e6278466d33d80425aa9e36bda32fe02c8b04c850b3df1a2ff"
+PREV_LAST_ROW = 40
+ANSWERED = "data/census_full/hearing_work_folder_manga_or_illust_answered_upto60_20261120.xlsx"
+ANSWERED_SHA = "eaddbb70d87d5d80f255e068ddd8570506d11703feb3bf8e9717e55e1552da10"
+CONFIRMED_LAST_ROW = 60
+OUT = "data/census_full/work_folder_manga_or_illust_20261120.csv"
+AS_OF = "2026-11-20"
+PREV_AS_OF = "2026-11-15"
 
 
 def main() -> int:
@@ -50,9 +55,9 @@ def main() -> int:
     a = list(load_workbook(path)["作品フォルダー"].iter_rows(values_only=True))
     pv = list(load_workbook(os.path.join(ROOT, PREV))["作品フォルダー"].iter_rows(values_only=True))
     if len(pv) != len(a) or any(x[:6] != y[:6] for x, y in zip(pv, a)):
-        print("    **第1便と第2便で固定の列か行数が違う**")
+        print("    **前の便と今の便で固定の列か行数が違う**")
         return 1
-    print(f"    第1便({PREV_AS_OF}、2〜{PREV_LAST_ROW}行目が答え)→ 第2便({AS_OF}、2〜{CONFIRMED_LAST_ROW}行目が答え)で変わったセル(作品名は印字しない):")
+    print(f"    前の便({PREV_AS_OF}、2〜{PREV_LAST_ROW}行目が答え)→ 今の便({AS_OF}、2〜{CONFIRMED_LAST_ROW}行目が答え)で変わったセル(作品名は印字しない):")
     for i, (x, y) in enumerate(zip(pv[1:], a[1:]), 2):
         for j, lab in ((6, "答え"), (7, "コメント")):
             if x[j] != y[j]:
@@ -61,7 +66,7 @@ def main() -> int:
                 print(f"        {i}行目 {lab}({where}): {show(x[j])} → {show(y[j])}")
     rng = range(PREV_LAST_ROW + 1, CONFIRMED_LAST_ROW + 1)
     kept = sum(pv[i - 1][6] == a[i - 1][6] for i in rng)
-    print(f"    第1便の未確認の値({PREV_LAST_ROW + 1}〜{CONFIRMED_LAST_ROW}行目、{len(rng)}行)が作者の答えと同じだった行 {kept}/{len(rng)}")
+    print(f"    前の便の未確認の値({PREV_LAST_ROW + 1}〜{CONFIRMED_LAST_ROW}行目、{len(rng)}行)が作者の答えと同じだった行 {kept}/{len(rng)}")
     if len(o) != len(a):
         print(f"    **行数が違う** 元 {len(o)} / 答え {len(a)}")
         return 1
