@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_census_comicstudio_structure_stage1_trial_20261120.md",
+        what="**抽出側: ComicStudio の構造の第1段の試し 25頁(頁の画布・層の名簿・層の種類。重なり順・入れ子・表示ほかは不明)**",
+        why_not_yet="点検した(sha256 4/4、25頁とも在庫に当たる、縦横比 25/25)。全頁へ進めと返した。不明の列の答え合わせの相手はユーザーが考え中。母集団には入れない",
+    ),
+    dict(
         path="inbox/note_census_r_q_d_suspect33_population_wording_and_ancestor_miss_20261120.md",
         what="**E: 3D の疑い 33層の鍵の便の母集団の一文が誤り(祖先で選んだ組ではない)/ 祖先のフォルダー名は何を描いたかを当てない(1/8)**",
         why_not_yet="**直した**: 鍵の便の一文を「名前が線画で 3D の疑いが付いた33層」に戻し、前の文面を残して R・Q・D・基盤・E に配り直した。鍵の数字は変わらない。祖先のフォルダー名を何を描いたかの代用列にしない(規律13)",
