@@ -7,6 +7,8 @@
 門(条例4・8)は上から順に当て、最初に当たった理由で数える:
   1. 恒久除外(census `author_exclusions.csv`)
   2. pair_quality != ok(理由は pair_quality の値そのもの)
+  3. 名前の規則の厳しい門(ユーザー 2026-11-20「厳しいを選択」): 線画の側の層の name_rule が全部「清書」、
+     下絵の側の層が全部「下絵」。表は census `s_v6_pairs_page_name_rule_20261120.csv`(理由は 線画側/下絵側 の組)
 重複(`is_primary`)と自動の位置判定(`aligned`)は落とさずに列として印字する(使い方は登録で決める)。
 世代・作品はプールしない: 作品フォルダー(`work_id`、年を含む)ごとに1行。
 """
@@ -20,12 +22,15 @@ ROOT = Path(__file__).resolve().parents[1]
 QC = ROOT / "data/clip_pairs_v6/clip_pairs/clip_pairs_qc_v6.csv"
 PAIRS = ROOT / "data/clip_pairs_v6/clip_pairs"
 EXCL = ROOT.parent / "lineart-census/data/census_full/author_exclusions.csv"
+NAME_RULE = ROOT / "inbox/s_v6_pairs_page_name_rule_20261120.csv"
 OUT = ROOT / "results/s0_population_v6.csv"
 
 
 def main():
     qc = list(csv.DictReader(open(QC, encoding="utf-8")))
     excl = {r["page_path"] for r in csv.DictReader(open(EXCL, encoding="utf-8"))}
+    nr = {r["page_path"]: r for r in csv.DictReader(open(NAME_RULE, encoding="utf-8"))}
+    assert set(nr) == {r["source_path"] for r in qc}, "name_rule の表と QC 表の頁が一致しない"
 
     # manifest と QC 表の突き合わせ
     man_lines = set()
@@ -47,13 +52,16 @@ def main():
             dropped["恒久除外(author_exclusions)"] += 1
         elif r["pair_quality"] != "ok":
             dropped[f"pair_quality={r['pair_quality']}"] += 1
+        elif not (nr[r["source_path"]]["line_rules"] == "清書" and nr[r["source_path"]]["sketch_rules"] == "下絵"):
+            x = nr[r["source_path"]]
+            dropped[f"name_rule 線画={x['line_rules'] or '(空)'} / 下絵={x['sketch_rules'] or '(空)'}"] += 1
         else:
             kept.append(r)
     print("\n落とした頁(最初に当たった理由):")
     for k, v in sorted(dropped.items(), key=lambda x: -x[1]):
         print(f"  {k:45s} {v:5d}")
     print(f"  {'計':45s} {sum(dropped.values()):5d}")
-    print(f"残り(pair_quality=ok、恒久除外の外): {len(kept)}")
+    print(f"残り(恒久除外の外・ok・厳しい門): {len(kept)}")
     print(f"  うち is_primary=True(内容重複の代表): {sum(r['is_primary'] == 'True' for r in kept)}")
     print(f"  うち aligned=True(自動の位置判定): {sum(r['aligned'] == 'True' for r in kept)}")
 
@@ -67,9 +75,9 @@ def main():
     OUT.parent.mkdir(exist_ok=True)
     with open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["work_id", "qc_rows", "ok", "ok_primary", "ok_aligned"])
-        print(f"\n作品フォルダーごと({len(allw)} 作品。ok が 0 の作品も出す)")
-        print(f"  {'work_id':32s} {'QC':>4s} {'ok':>4s} {'代表':>4s} {'自動整列':>6s}")
+        w.writerow(["work_id", "qc_rows", "kept", "kept_primary", "kept_aligned"])
+        print(f"\n作品フォルダーごと({len(allw)} 作品。残りが 0 の作品も出す)")
+        print(f"  {'work_id':32s} {'QC':>4s} {'残り':>4s} {'代表':>4s} {'自動整列':>6s}")
         for wid in sorted(allw):
             c = rows[wid]
             w.writerow([wid, allw[wid], c["ok"], c["primary"], c["aligned"]])
