@@ -1,7 +1,7 @@
 """Track S 登録 S1(doc/work_log.md 2026-11-20「登録 S1」)の器具。
 
 対(厳しい門)の線画の骨格を 残/動/足、下絵の骨格の 捨 に分ける。腕A(位置合わせなし)・腕B(頁全体の平行移動)、
-位置合わせは S1a(残の割合の全探索)。帰無値 N1(512px 区画ごとの移動 = ずれの上界)・N2(同じ作品の別頁の下絵 = 偶然の床)、対照 C1(線画 対 線画)。
+位置合わせは S1a(残の割合の全探索)。塗り(線幅 > 15px)は S1b で4分類から外す。帰無値 N1(512px 区画ごとの移動 = ずれの上界)・N2(同じ作品の別頁の下絵 = 偶然の床)、対照 C1(線画 対 線画)。
 
 使い方: ../lineart/venv/bin/python experiments/s1_cleanup_delta.py --work 016_2017_running --pages 4 --out results/s1_smoke --crops
 """
@@ -28,6 +28,8 @@ MAXSHIFT = 64            # 腕B の打ち切り
 TILE = 512               # N1 の区画
 N1_STEP = 4              # N1 の移動の刻み(実装の細目)
 HOLD_MARGIN = 0.10       # 判定保留: 残B < 残N2 + 0.10
+FILL_W = 15              # S1b: 線幅がこれを超える線画の墨は「塗り」
+FILL_PAD = 3             # S1b: 塗りに掛かる骨格を外す余白
 
 
 def population():
@@ -56,6 +58,14 @@ def binarize(path):
     if len(small):
         b[np.isin(lab, small)] = 0
     return b.astype(bool), int(t), int(len(small))
+
+
+def fill_mask(line_b):
+    """S1b: 線幅 > FILL_W の線画の墨(芯 = 内側の距離 > FILL_W/2 を半径 8 で膨らませ、墨と重ねる)。"""
+    inner = cv2.distanceTransform(line_b.astype(np.uint8), cv2.DIST_L2, 5)
+    core = (inner > FILL_W / 2).astype(np.uint8)
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17))
+    return (cv2.dilate(core, k) > 0) & line_b
 
 
 def shift(b, dx, dy):
@@ -148,23 +158,26 @@ def n1_blockwise(dS, ly, lx, shape):
     return d_new
 
 
-def render_crop(r, line_b, sk_raw_b, B, out_dir, tag):
+def render_crop(r, line_b, line_sk, F, B, out_dir, tag, at=None):
     """原寸 1024 の切り出し: 下絵(合わせ後)| 線画 | 重ね(残=黒 動=青 足=赤 捨=橙)。"""
     h, w = line_b.shape
     C = 1024
-    # 線画の骨格が最も多い窓
-    ii = cv2.integral(line_b.astype(np.uint8))
+    # 塗りでない線画の骨格が最も多い窓(S1b)
+    ii = cv2.integral(line_sk.astype(np.uint8))
     best, by, bx = -1, 0, 0
     for y in range(0, max(h - C, 1), 256):
         for x in range(0, max(w - C, 1), 256):
             s = ii[y + C, x + C] - ii[y, x + C] - ii[y + C, x] + ii[y, x]
             if s > best:
                 best, by, bx = s, y, x
+    if at:
+        bx, by = at
     win = (slice(by, by + C), slice(bx, bx + C))
     skA = np.where(B["sk_b"][win], 140, 255).astype(np.uint8)
     lnA = np.where(line_b[win], 0, 255).astype(np.uint8)
     ov = np.full((C, C, 3), 255, np.uint8)
     ov[B["sk_b"][win]] = (215, 215, 215)
+    ov[F[win]] = (200, 160, 230)                      # 塗り = 薄い紫(4分類の外)
     k, m, a = classify(B["d_line"])
     sel = (B["ly"] >= by) & (B["ly"] < by + C) & (B["lx"] >= bx) & (B["lx"] < bx + C)
     dL = dist_to_ink(line_b)
@@ -178,7 +191,7 @@ def render_crop(r, line_b, sk_raw_b, B, out_dir, tag):
     panel = np.concatenate([cv2.cvtColor(skA, cv2.COLOR_GRAY2BGR), cv2.cvtColor(lnA, cv2.COLOR_GRAY2BGR), ov], 1)
     bar = np.full((40, panel.shape[1], 3), 255, np.uint8)
     txt = (f"{r['work_id']} {r['page']} x{bx} y{by} 1:1 | sketch(aligned) | line | "
-           f"overlay: keep=black moved=blue added=red dropped=orange  r1={R1} r2={R2}")
+           f"overlay: keep=black moved=blue added=red dropped=orange fill=purple(excluded)  r1={R1} r2={R2} fill>{FILL_W}px")
     cv2.putText(bar, txt.encode("ascii", "replace").decode(), (8, 27), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
     out = out_dir / f"s1_smoke_crop_{tag}.png"
     cv2.imwrite(str(out), np.concatenate([bar, panel], 0))
@@ -191,6 +204,7 @@ def main():
     ap.add_argument("--pages", type=int, default=0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--crops", action="store_true")
+    ap.add_argument("--crop-at", action="append", default=[], help="頁:x,y で窓を指定(例 running.clip:4608,4864)")
     a = ap.parse_args()
     out_dir = ROOT / a.out
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -205,7 +219,12 @@ def main():
         Sb, tS, spS = binarize(find(r, "sketch"))
         if Lb.shape != Sb.shape:
             print(f"  落とす(大きさが違う): {r['page']}"); continue
-        Lsk, Ssk = skeletonize(Lb), skeletonize(Sb)
+        Lsk_all, Ssk = skeletonize(Lb), skeletonize(Sb)
+        F = fill_mask(Lb)
+        Fpad = cv2.dilate(F.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * FILL_PAD + 1,) * 2)) > 0
+        Lsk = Lsk_all & ~Fpad
+        fill_ink = F.sum() / max(Lb.sum(), 1)
+        fill_skel = 1 - Lsk.sum() / max(Lsk_all.sum(), 1)
         A = arm(Lb, Lsk, Sb, Ssk, align=False)
         B = arm(Lb, Lsk, Sb, Ssk, align=True)
         kB, mB, aB = shares(B["d_line"])
@@ -225,6 +244,7 @@ def main():
         hold = (kB < kN2 + HOLD_MARGIN) if n2 else True
         row = dict(work_id=r["work_id"], page=r["page"], h=Lb.shape[0], w=Lb.shape[1],
                    otsu_line=tL, otsu_sketch=tS, specks_line=spL, specks_sketch=spS,
+                   fill_ink_share=round(float(fill_ink), 4), fill_skel_excluded=round(float(fill_skel), 4),
                    line_skel_px=int(Lsk.sum()), sketch_skel_px=int(Ssk.sum()),
                    A_keep=round(shares(A["d_line"])[0], 4), A_moved=round(shares(A["d_line"])[1], 4),
                    A_added=round(shares(A["d_line"])[2], 4), A_dropped=round(A["dropped"], 4),
@@ -238,9 +258,10 @@ def main():
         rows.append(row)
         print(f"  {r['page']:22s} B 残{kB:.3f} 動{mB:.3f} 足{aB:.3f} 捨{B['dropped']:.3f} | A 残{row['A_keep']:.3f} "
               f"| shift({B['dx']},{B['dy']}) resp{B['resp']:.2f} | N1 Δ残{kN1-kB:+.3f} | N2 残{kN2:.3f} "
-              f"| C1 shift({C['dx']},{C['dy']}) 残{kC:.3f} 足{aC:.3f} | 保留{hold}")
-        if a.crops and i < 2:
-            p, xy = render_crop(r, Lb, Sb, B, out_dir, f"{r['work_id']}_{Path(r['page']).stem}")
+              f"| 塗り 墨{fill_ink:.3f} 骨格外し{fill_skel:.3f} | C1 shift({C['dx']},{C['dy']}) 残{kC:.3f} 足{aC:.3f} | 保留{hold}")
+        at = {c.split(":")[0]: tuple(int(v) for v in c.split(":")[1].split(",")) for c in a.crop_at}
+        if a.crops and (i < 2 or r["page"] in at):
+            p, xy = render_crop(r, Lb, Lsk, F, B, out_dir, f"{r['work_id']}_{Path(r['page']).stem}", at.get(r["page"]))
             print(f"    切り出し {p.relative_to(ROOT)} at {xy}")
     with open(out_dir / "s1_pages.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
