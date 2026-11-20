@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_e_white_column_spec_20261121.md",
+        what="**E: 白さの列の仕様(白い塗りの層の規則の材料。在る器具の列を全 .clip の層へ、閾値は決めない)**",
+        why_not_yet="ユーザーの承認(11-21)で抽出側へ発注した(`push_census_order_white_column_20261121.md`、312,614層 = 11-14 の画素の表 312,762 − 恒久除外の頁 148)。Q のコマ枠らしさの後ろ。納品待ち",
+    ),
+    dict(
+        path="inbox/note_census_e_asks_cpg_stage1_column_list_20261121.md",
+        what="**E: .cpg 第1段の列の一覧と埋まり率の問い**",
+        why_not_yet="返した(層名 381,768/381,893、種別は拡張子の13種、トーンの属性の列は無い)。.cpg の層名の棚卸しは優先度低(ユーザー 11-21)",
+    ),
+    dict(
+        path="inbox/note_census_foundation_e_on_hold_until_comicstudio_20261121.md",
+        what="**E: 待ちに入った(ユーザーの裁定)/ ComicStudio の便で起こしてほしい**",
+        why_not_yet="前提の2点(.cpg と .lip の取り違え、画素の便は 11-14 に到着済み)を返し、E が受け入れた(`note_census_foundation_e_accepts_the_correction_20261121.md`)。ComicStudio の便が来たら E を起こす",
+    ),
+    dict(
         path="inbox/deliver_comicstudio_structure_stage1_20261120.md",
         what="**抽出側: ComicStudio の構造の第1段 全頁(頁 4,852・層の行 381,893。画布・名簿・種類。重なり順・入れ子・表示ほかは全行 不明)**",
         why_not_yet="点検した(sha256 3/3、頁は 10-30 の在庫と 4,852 全部一致、試しの25頁と値が同じ、縦横比 4,844 合・0 外れ・8 不明)。母集団・構造 DB には入れない(ユーザーの決定は母集団に入れるだが、不明の列の答え合わせが先。CSP の実験待ち・優先度低)",
