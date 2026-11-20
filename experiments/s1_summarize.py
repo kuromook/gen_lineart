@@ -12,7 +12,8 @@ OUT = ROOT / "results/s1_full_by_work.csv"
 
 
 def med(rows, k):
-    v = [float(r[k]) for r in rows]
+    v = [float(r[k]) for r in rows if r[k] not in ("nan", "")]
+    v = [x for x in v if x == x]
     return round(st.median(v), 3) if v else float("nan")
 
 
