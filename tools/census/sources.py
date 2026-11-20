@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_comicstudio_structure_stage1_20261120.md",
+        what="**抽出側: ComicStudio の構造の第1段 全頁(頁 4,852・層の行 381,893。画布・名簿・種類。重なり順・入れ子・表示ほかは全行 不明)**",
+        why_not_yet="点検した(sha256 3/3、頁は 10-30 の在庫と 4,852 全部一致、試しの25頁と値が同じ、縦横比 4,844 合・0 外れ・8 不明)。母集団・構造 DB には入れない(ユーザーの決定は母集団に入れるだが、不明の列の答え合わせが先。CSP の実験待ち・優先度低)",
+    ),
+    dict(
         path="inbox/reply_q_census_frame_likeness_ic1_fix_20261120.md",
         what="**Q: 枠らしさの IC1 の直し —— 閉じる処理は一辺 15 を主(一辺 7 も残す)、陽性の対照は辺を線で引く、94頁のまま**",
         why_not_yet="抽出側へ回した。IC1 を数え直して合なら原稿へ(ComicStudio の後)。納品待ち",
