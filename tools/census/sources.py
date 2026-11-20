@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_q_census_frame_likeness_ic1_fix_20261120.md",
+        what="**Q: 枠らしさの IC1 の直し —— 閉じる処理は一辺 15 を主(一辺 7 も残す)、陽性の対照は辺を線で引く、94頁のまま**",
+        why_not_yet="抽出側へ回した。IC1 を数え直して合なら原稿へ(ComicStudio の後)。納品待ち",
+    ),
+    dict(
         path="inbox/reply_census_q_frame_likeness_ic1_20261120.md",
         what="**抽出側: 枠らしさの IC1(合成の頁 4つ)—— 3 合・1 外れ(閉じる処理の大きさ)**",
         why_not_yet="Q へ回した。閉じる処理の大きさと陽性の対照の描き方は Q が決める。陽性の対照は選んだ100頁のうち行の残る94頁(census の便の書き方の誤りを記録)。原稿は未走",
