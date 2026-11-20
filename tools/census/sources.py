@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/reply_census_q_frame_likeness_ic1_20261120.md",
+        what="**抽出側: 枠らしさの IC1(合成の頁 4つ)—— 3 合・1 外れ(閉じる処理の大きさ)**",
+        why_not_yet="Q へ回した。閉じる処理の大きさと陽性の対照の描き方は Q が決める。陽性の対照は選んだ100頁のうち行の残る94頁(census の便の書き方の誤りを記録)。原稿は未走",
+    ),
+    dict(
+        path="inbox/reply_q_census_frame_likeness_order_check_20261120.md",
+        what="**Q: 枠らしさの発注の写しを確かめた(数一致、このままでよい)**",
+        why_not_yet="受けた。raster 層が0の頁 453 と、mask_fill・画像素材を外したことは Q の弱みとして Q が記録",
+    ),
+    dict(
         path="inbox/note_q_census_frame_likeness_order_20261120.md",
         what="**Q: コマ枠フォルダーの無い頁の層ごとの枠らしさの画素の列(発注1)**",
         why_not_yet="**抽出側に発注した**(ユーザー承認)。主 28,139層・4,531頁(raster、描いた画素あり)+ 陽性の対照 100頁・189層。IC1 を先に。納品待ち",
