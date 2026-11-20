@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_r_q_d_suspect33_population_wording_and_ancestor_miss_20261120.md",
+        what="**E: 3D の疑い 33層の鍵の便の母集団の一文が誤り(祖先で選んだ組ではない)/ 祖先のフォルダー名は何を描いたかを当てない(1/8)**",
+        why_not_yet="**直した**: 鍵の便の一文を「名前が線画で 3D の疑いが付いた33層」に戻し、前の文面を残して R・Q・D・基盤・E に配り直した。鍵の数字は変わらない。祖先のフォルダー名を何を描いたかの代用列にしない(規律13)",
+    ),
+    dict(
         path="inbox/note_census_r4_film_rule_adopt_20261120.md",
         what="**R: R4 の決まり F(名前なし かつ 膜 → あたり+下絵)を census の流れに入れる(ユーザーの決定)**",
         why_not_yet="**入れた**: `name_rule_film` v1 を全層 312,762 に当てた(F が言う層 6,560、確かめた母集団の中 2,733)。的中は census が引き直して 18/20・下限 0.683、取りこぼしは測っていない。下絵の発注は v1 で引く",
