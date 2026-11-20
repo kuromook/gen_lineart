@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_r4_film_rule_adopt_20261120.md",
+        what="**R: R4 の決まり F(名前なし かつ 膜 → あたり+下絵)を census の流れに入れる(ユーザーの決定)**",
+        why_not_yet="**入れた**: `name_rule_film` v1 を全層 312,762 に当てた(F が言う層 6,560、確かめた母集団の中 2,733)。的中は census が引き直して 18/20・下限 0.683、取りこぼしは測っていない。下絵の発注は v1 で引く",
+    ),
+    dict(
+        path="inbox/note_q_r4_film_effect_colour_layers_20261120.md",
+        what="**R → Q の写し: 薄いエフェクト・彩色の層が膜に混ざる件は Q へ(ユーザー)**",
+        why_not_yet="写しとして受けた。census の手当ては v1 の添え書き(外れの向き)だけ。Q から列の頼みが来たら別に",
+    ),
+    dict(
         path="inbox/deliver_r4_film_nashi_images_20261120.md",
         what="**抽出側: R4 の聞き取り 30層 × 3枚(画は原稿の画素を含む)**",
         why_not_yet="**R へ回した**(sha256 92/92、鍵は発注の一覧と一致)。白い層 3つは層の画が真っ白。census の列には入れない。作者に渡す前のユーザーの承認は R から",
