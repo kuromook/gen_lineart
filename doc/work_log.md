@@ -112,3 +112,6 @@
 ## 2026-11-20 R4 を登録し、census に数え上げ・標本・聞き取りの表を頼んだ(ユーザー「進めてOK」)
 - 登録 `config/prereg_r4_film_rule_nashi_20261120.md`(`80f2bd0`): name_rule なし かつ 膜(`n_px_a_ge26/n_px_a_gt0 < 0.5`)→ あたり+下絵。学習27作品の外から 膜20 + 対照10、組を伏せて作者に段を聞く。C1 ≥ 16/20、C2 差 ≥ 0.30 かつ Fisher p < 0.05
 - 発注 `outbox/note_census_order_r4_film_nashi_sample_and_hearing_20261120.md`。作者に渡す前にユーザーの承認
+
+## 2026-11-20 通達: succor の見開き3頁(ユーザーの決定)
+- 基盤 `reply_all_succor_spread_pairs_decision_20261120.md`。v6 の3対はそのまま、新しい組は見開きが標準。R は対(下絵/線画のペア)を使っていないので今は影響なし。使う時は登録に版を書く
