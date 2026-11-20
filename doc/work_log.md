@@ -135,3 +135,6 @@
 - 返事 `reply_census_r_name_rule_film_v1_adopted_20261120.md`。census が鍵 × 答えから引き直し、R の数と一致(18/20、下限 0.683、差 0.650、p 0.0018)
 - 全 312,762層: あたり+下絵(膜) 6,560 = 確かめた母集団の中 2,733 / 外 3,827(学習の単位・template_excluded・empty_c・恒久除外)。外には的中を言えない
 - 下絵の発注 = name_rule_film ∈ {下絵, あたり+下絵(膜)}、manifest に `sketch_selection = name_rule_film:v1`。表 `data/census/layer_name_rule_film_v1_20261120.csv`(sha 先頭を R で確かめた)
+
+## 2026-11-20 膜の層の見本帳 artifact を削除
+- ユーザー「消してOK」。削除を確認(ユーザーも手動で削除)。元の画は results/r3/film_view/(追跡しない)に残る
