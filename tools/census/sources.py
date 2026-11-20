@@ -421,7 +421,7 @@ ARRIVED_NOT_INTEGRATED = [
     dict(
         path="inbox/note_q_census_rasterized_frames_inventory_20261120.md",
         what="**Q: ラスタ化したコマ枠の頁の棚卸し(既存の記録で。新しい列の発注ではない)**",
-        why_not_yet="census が記録で答える(時期×作品の表・名前の候補・両方ある頁・形 0 の訳)",
+        why_not_yet="**記録で答えた**: フォルダー在る 2,674 / 無い 4,984頁(.clip、恒久除外の後)。無い頁の「コマ N」型の名 225層・217頁(候補で正解ではない)。両方在ると言える記録は無い。形 0 の 224頁 = 断面に無い 177 + 除いた名の行だけ 47",
     ),
     dict(
         path="inbox/note_census_order_r4_film_nashi_sample_and_hearing_20261120.md",
