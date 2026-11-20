@@ -1444,6 +1444,20 @@
         ],
         "a_unmoved": "215247 / 437425 = 0.4921(v7)。名前で引けない 3D は a の外なので、この便に棒は無い。版は増えない",
         "returned_to": "census(note_census_r_q_suspect33_3d_ruling_answers_20261119.md + succor_3d_suspect33_answers_for_census_20261119.csv、列 origin_axis / draws_axis)。配るのは census"
+      },
+      "suspect33_ancestor_folder_is_not_a_proxy_20261120": {
+        "date": "2026-11-20",
+        "what": "3D の疑い33層の答えと census の一覧の `ancestors` を突き合わせた(E の実測。解釈はしない)",
+        "population": "succor の `線画` 33層。直接の親は \"BG\" 系 20 / item 8 / back 系 5",
+        "measured": [
+          "item の下の8層のうち、作者が「小物・道具」と答えたのは 1層(1/8)。6層は背景、1層はどれでもない",
+          "3D 由来と答えられた5層の親は item 2・\"BG\" 系 3 —— 祖先で 3D は引けない",
+          "判定保留8層の親は item 2・\"BG\" 系 2・back 系 4 で寄っていない"
+        ],
+        "claim": "祖先のフォルダー名を「何を描いたか」の代用列にしない(規律13。代用するなら的中率と取りこぼしを印字する。ここでは 1/8)",
+        "cannot_claim": "この 1/8 を率として他の作品・他のフォルダー名に延ばせない。言えるのは『当たらない例が在る』",
+        "also": "census の鍵の便の母集団の一文「祖先に背景系のフォルダーを持つ33層」は選び方と違う(名前 `線画` + §2.2 の 3D の疑い)。直してもらうよう通達した(規律9-5)",
+        "a_unmoved": "215247 / 437425 = 0.4921(v7)。この便も棒ではない"
       }
     },
     "a_empty_rows_measured": {
