@@ -419,6 +419,21 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_rasterized_frames_inventory_20261120.md",
+        what="**Q: ラスタ化したコマ枠の頁の棚卸し(既存の記録で。新しい列の発注ではない)**",
+        why_not_yet="census が記録で答える(時期×作品の表・名前の候補・両方ある頁・形 0 の訳)",
+    ),
+    dict(
+        path="inbox/note_census_order_r4_film_nashi_sample_and_hearing_20261120.md",
+        what="**R: R4 —— name_rule なしの層の膜/膜でないの数え上げと30層の標本・聞き取りの表**",
+        why_not_yet="**数えて引いた**(門の後 22,111層 = 膜 2,733 / 膜でない 19,378、標本 20+10、種 0)。同じ作品の単位の門はユーザーが足した。30層の画は抽出側に発注(ユーザー承認)、納品待ち。作者に渡す前のユーザーの承認は R から",
+    ),
+    dict(
+        path="inbox/reply_all_succor_spread_pairs_decision_20261120.md",
+        what="**基盤: 見開き3頁の新しい対(見開きの組を標準に、v6 は書き換えない。ユーザー)**",
+        why_not_yet="census の列には入れない(対の版は使う track が登録で決める)。抽出側の納品の本文は写しとして受けた",
+    ),
+    dict(
         path="inbox/reply_census_game_session_name_20261120.md",
         what="**基盤: ゲーム側のセッションの名(Remote Control。名は変わるので毎回引く)**",
         why_not_yet="記録した。ゲーム側の最初の便に受信箱の path が書かれる。.20 → .34 の SCP は未確認 —— 便が来なければユーザーに知らせる",
