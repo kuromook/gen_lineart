@@ -130,3 +130,8 @@
 - ユーザー「悪くなさそうだし今censusのフローに入れてもいいと思う」→ 通達 `note_census_r4_film_rule_adopt_20261120.md`(census、写し 基盤・Q)。列の名・版は census が決める。取りこぼし未測定・外れの向きを添えた
 - ユーザー「エフェクト・彩色の層はまだ研究していないと思うので、こちらはQにお願いしたい」(薄いエフェクト 吐息・飛沫、彩色を薄くする層が膜に混ざる見立て。イラストに多く漫画に少ない)→ 依頼 `note_q_r4_film_effect_colour_layers_20261120.md`(Q、写し 基盤・census)
 - 3者に SendMessage 1行
+
+## 2026-11-20 14:30 census: F を `name_rule_film` v1 として採用
+- 返事 `reply_census_r_name_rule_film_v1_adopted_20261120.md`。census が鍵 × 答えから引き直し、R の数と一致(18/20、下限 0.683、差 0.650、p 0.0018)
+- 全 312,762層: あたり+下絵(膜) 6,560 = 確かめた母集団の中 2,733 / 外 3,827(学習の単位・template_excluded・empty_c・恒久除外)。外には的中を言えない
+- 下絵の発注 = name_rule_film ∈ {下絵, あたり+下絵(膜)}、manifest に `sketch_selection = name_rule_film:v1`。表 `data/census/layer_name_rule_film_v1_20261120.csv`(sha 先頭を R で確かめた)
