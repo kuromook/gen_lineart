@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_q_census_manga_illust_pages_20261122.md",
+        what="**Q: Q12 の和の頁ごとに漫画かイラストかの表の値(当てた単位つき)**",
+        why_not_yet="返した(既存の表の引き直し)。和 387頁、作品フォルダーの完全一致 370、表に無い 17 は全頁モノクロで聞かなかったフォルダー。作者の答えがイラスト 51 → 残り 336",
+    ),
+    dict(
         path="inbox/note_q_census_finished_pages_list_20261122.md",
         what="**Q: コマ枠フォルダーの無い頁ごとの名前の段の層の数(完成原稿の頁を引くため)**",
         why_not_yet="返した(census の器具で引いただけ)。4,531頁のうち清書の層が在る頁 331。Q の確かめは 8/10(外れた2頁はカラーイラスト)",
