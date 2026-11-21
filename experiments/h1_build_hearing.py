@@ -16,7 +16,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
-from s1_cleanup_delta import P, QC, binarize, find, shift  # noqa: E402
+from s1_cleanup_delta import binarize, find, population, shift  # noqa: E402
 
 OUT = ROOT / "data/h1_sketch_stage_20261120"
 SEED = 20261120
@@ -46,12 +46,18 @@ def pick_round_robin(rows, n, rng):
 
 
 def main():
-    qc = {(r["work_id"], r["page"]): r for r in csv.DictReader(open(QC, encoding="utf-8"))}
+    # 11-21 修正: (work_id, page) は一意でない(QC 表で 91 鍵・214 行が重なる)。旧版は dict の最後の行を引き、
+    # h04・h18 で S1 の行と別の頁(母集団の外)の絵を出した。S1 の行は population() を (slug, page) で並べた順なので、
+    # 同じ並びで行ごとに対応させ、頁名の一致を確かめる
+    pop = population()
     rows = []
     for f in sorted(glob.glob(str(ROOT / "results/s1_full/*/s1_pages.csv"))):
-        rows += list(csv.DictReader(open(f, encoding="utf-8")))
-    for r in rows:
-        r["_qc"] = qc[(r["work_id"], r["page"])]
+        S = list(csv.DictReader(open(f, encoding="utf-8")))
+        Pw = sorted([r for r in pop if r["work_id"] == Path(f).parent.name], key=lambda r: (r["slug"], r["page"]))
+        assert [r["page"] for r in Pw] == [r["page"] for r in S], f
+        for s, q in zip(S, Pw):
+            s["_qc"] = q
+        rows += S
     prim = [r for r in rows if r["_qc"]["is_primary"] == "True"]
     held = [r for r in prim if r["hold"] == "True" and r["N2_keep"] not in ("nan", "")]
     used = [r for r in prim if r["hold"] != "True"]
