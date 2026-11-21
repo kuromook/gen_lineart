@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_s_h1_sketch_layers_not_in_pairs_20261121.md",
+        what="**S: 対 v6 の下絵の側に入らなかった下絵名の層(H1 の作者の答えから)・層の少ない頁の問い**",
+        why_not_yet="返した(census の器具で突き合わせただけ)。v6 の下絵は頁に1層だけ選ぶ規則。492頁で外れた下絵名の層 1,623 = フォルダー 713 / 画素なし 177 / 選ばれた層より多い 13 / 選ばれた層以下 720。層が4以下の頁は 0(S の数え方を問い返した)",
+    ),
+    dict(
+        path="inbox/receipt_census_white_column_20261121.md",
+        what="**抽出側: 白さの列の受領(器具 6f9102b、IC1 の既知3層は一致。Q の枠らしさの原稿の後に自動で始まる)**",
+        why_not_yet="納品待ち(Q の枠らしさの原稿が残り約20時間の推定、その後ろ)",
+    ),
+    dict(
         path="inbox/note_census_e_white_column_spec_20261121.md",
         what="**E: 白さの列の仕様(白い塗りの層の規則の材料。在る器具の列を全 .clip の層へ、閾値は決めない)**",
         why_not_yet="ユーザーの承認(11-21)で抽出側へ発注した(`push_census_order_white_column_20261121.md`、312,614層 = 11-14 の画素の表 312,762 − 恒久除外の頁 148)。Q のコマ枠らしさの後ろ。納品待ち",
