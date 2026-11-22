@@ -418,6 +418,12 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/e_white_name_inventory_v2_20261123.csv",
+         what="白い層の名前の棚卸し v2: 母集団の側の6列(全層 85,999、うち a v7 が既に落とした 12,151)",
+         why_not_yet="E の名前の聞き取りの材料。聞き取りはまだ"),
+    dict(path="data/census_full/base_mask_clipped_layers_20261123.csv",
+         what="作者が名を挙げた背景のベースの3名前の層 4,263 に、クリッピングで乗っている層の数(3D は名前か種別で引いた下限)",
+         why_not_yet="作者が「消していいの一語で処理すると矛盾が起きる、文脈を整理する」と言ったので、名前の裁定は確定として当てていない。E が問いを組み直す"),
     dict(path="data/census_full/e_white_name_inventory_20261123.csv",
          what="白さ >= 0.99 の raster の層 12,119 から a(v7)が落とした 7,240 と名前 white の 1 を引いた 4,878層の、名前ごとの棚卸し(異なる名前 135、上位20で 92.7%)",
          why_not_yet="E の頼みへの答え。E が多い名前から20行の名前の聞き取りを組む。まだ作者の答えは無い"),
