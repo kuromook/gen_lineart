@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/q13b_popout_art_layers_20261123.csv",
+         what="Q13b の画の便(537枚、4,811層。sha 539本一致・鍵一致・描けなかった 0。外と中の清書の和は Q13 の画と全頁で一致)",
+         why_not_yet="Q に回した。Q が合成の直しに使う。census の列には入れない"),
     dict(path="data/census_full/a_clipping_base_20261123.csv",
          what="a v7 の母集団 437,425層の、クリッピングの土台の札(土台 12,760層、乗る層 35,909、うち a が既に落とした土台 4,710)",
          why_not_yet="E の頼み。a を使う側が土台を合成から消さないための札。E がまだ a の表に入れていない"),
