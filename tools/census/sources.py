@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_white_column_b05_b16_20261122.md",
+        what="**抽出側: 白さの列 第5〜16便(116,481層)。全 312,614層がそろった**",
+        why_not_yet="sha 13/13・一覧と全行一致・両方で描けた 147,038層の描いた画素は 11-14 と全部一致・既知の3層 3/3 を census が確かめ、E へ回した。census の表への統合はまだ",
+    ),
+    dict(
         path="inbox/reply_q_census_q13_two_decisions_20261122.md",
         what="**Q: Q13 の2つの決め(189頁のまま・2023b 以降は外したまま。ユーザーの決定)**",
         why_not_yet="ユーザーの承認(11-22)で抽出側へ発注した(頁 189・層の一覧 4,861)。納品待ち",
