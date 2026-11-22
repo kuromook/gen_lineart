@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q12_trial20_images_20261122.md",
+        what="**抽出側: Q12 の試しの 20頁の画(頁 20 + 層 197、描けなかった 0)**",
+        why_not_yet="sha 218/218・一覧と過不足なし・非表示の印は census の列と一致を確かめ、Q の data へ回した(census は画を開かない)。頁の画はトーン・グラデーションで CSP と違う",
+    ),
+    dict(
         path="inbox/note_census_e_white_b01_b04_checked_two_decisions_20261122.md",
         what="**E: 白さの列 第1〜4便を独立に数え直し全部一致 / 読む前に2つ決めて登録(空は読み直さない・規則は raster の層だけ)**",
         why_not_yet="知らせ(census への頼みは無い)。抽出側への頼みも無い(列はそのまま)。E は 16便そろってから分布を読む",
