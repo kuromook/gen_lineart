@@ -223,11 +223,63 @@ def corpus(path=INVENTORY):
     return 0
 
 
+CLIP_BASE = "data/census/a_clipping_base_20261123.csv"
+VERDICT = "inbox/a_verdict_v3_20261115.csv"
+
+
+def clipping_base_report(base_path=CLIP_BASE, verdict_path=VERDICT):
+    """**この器具は a の判定を1層も動かさない。印字だけ。**
+
+    規律: **a は「その層の画素が絵かどうかの札」で、「合成からその層を消す」ではない**
+    (作者 2026-11-23「単に『消していい』という言葉だけで処理すると矛盾がおきる」)。
+    クリッピングの土台を合成から消すと、**その上に乗っている層が原稿から消える**。
+    だから落とした層のうち土台が何層で、その上に何層乗っているかを**毎回印字する**(規律9)。
+    """
+    if not (os.path.exists(base_path) and os.path.exists(verdict_path)):
+        print("\n(クリッピングの土台の表が無いので、この節は出さない: %s)" % base_path)
+        return 0
+    print("\n" + "=" * 68)
+    print("== クリッピングの土台(a の判定を「削除」に読み替えないための節) ==")
+    print("土台の表:", base_path, "sha256", sha(base_path))
+    print("判定の表:", verdict_path, "sha256", sha(verdict_path), "**版の名前を書く: v3**")
+    V = {}
+    with open(verdict_path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            V[(r["page_path"], r["layer_id"])] = r.get("a_verdict_v3", "")
+    n_base = 0
+    agg = collections.defaultdict(lambda: [0, 0, 0])  # 土台 / 乗る層 / うち3Dと分かる
+    with open(base_path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r["a_is_clipping_base"] != "1":
+                continue
+            n_base += 1
+            v = V.get((r["page_path"], r["layer_id"]), "(判定の表に無い)")
+            a = agg[v]
+            a[0] += 1
+            a[1] += int(r["n_clipped_layers"] or 0)
+            a[2] += int(r["n_clipped_3d"] or 0)
+    print("\n土台: %d 層" % n_base)
+    print("| a v3 の判定 | 土台 | 乗る層 | うち 3D と名前で分かる |")
+    print("|---|---:|---:|---:|")
+    for v, a in sorted(agg.items(), key=lambda x: -x[1][0]):
+        print("| %s | %d | %d | %d |" % (v or "(空)", a[0], a[1], a[2]))
+    ex = agg.get("template_excluded", [0, 0, 0])
+    print("\n**a が既に『絵でない』の札を付けた土台: %d 層。その上に乗っている層: %d 層"
+          "(3D と名前で分かるのは %d)**" % (ex[0], ex[1], ex[2]))
+    print("**この %d 層は、a を『合成から消す』に読み替えたときに原稿から消える層の上界である。**" % ex[1])
+    print("**a の点数は動かない**(札は札のまま)。**乗っている層のうち a が残す層が何層かは、まだ測っていない**")
+    print("  —— census に数えてもらう。測るまで『被害は小さい』とも『大きい』とも言わない(判定保留)")
+    return 0
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a and a[0] == "corpus":
         sys.exit(corpus(*a[1:]))
+    if a and a[0] == "clipbase":
+        sys.exit(clipping_base_report(*a[1:]))
     rc = main(*(a or []))
     if rc == 0:
         corpus()
+        clipping_base_report()
     sys.exit(rc)
