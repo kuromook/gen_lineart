@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/white_hearing/answers_latest_20261123.csv",
+         what="白い層の例外の聞き取りの答え(20問・24行): 除外してよい 8 / 別の区分 4 / 分からない 6 / どれでもない 2",
+         why_not_yet="作者が「確信が持てない」「UI では判断しきれなかった」と言ったので暫定。根拠に使う前に聞き直すか作者の裁定を取る"),
     dict(path="data/census_full/white_exception_hearing_images_check_20261123.csv",
          what="白い層の例外の聞き取りの画の便(20層 x 4枚、sha 81本一致、鍵 20行一致)。聞き取りの画面を LAN に開いた",
          why_not_yet="作者の答えがまだ無い。答えが揃ったら行の数を突き合わせて E に返す"),
