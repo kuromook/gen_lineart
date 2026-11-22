@@ -419,6 +419,16 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/deliver_q13_synthetic_frames_20261122.md",
+        what="**抽出側: Q13 の点検の材料(189頁のうち 182頁。IC1 外れ 7頁は頂点が読めないコマ枠のフォルダー)**",
+        why_not_yet="sha 526/526・一覧と全行一致・多角形の数が DB と頁ごとに一致を census が確かめ、Q の data へ回した(census は画を開かない)",
+    ),
+    dict(
+        path="inbox/note_census_e_white_hearing_list_20261122.md",
+        what="**E: 白い層の例外の聞き取りの一覧(20層・16頁)**",
+        why_not_yet="census が白さの列と照合(全一致・恒久除外 0)。ユーザーの承認(11-22)で抽出側へ画の発注(4枚組)。納品待ち",
+    ),
+    dict(
         path="inbox/note_census_e_white_known_cell_measured_20261122.md",
         what="**E: 白さの既知のセル(名前の印の層)を 0.90 で 96% 取り戻す。それでも規則は当てない(反証の条件は発火したまま)**",
         why_not_yet="知らせ(census への頼みは無い)。聞き取りの材料はユーザーの返事待ち",
