@@ -9,7 +9,9 @@
 - **自身が `clip_raw = 1` の層は土台にしない**(切られる側)。その数を印字する
 - 名前の棚卸し v2 の **率(白い層 ÷ 全層)≥ 0.5 の上位20のうちの行**について、名前 × 種別ごとの土台の数を印字する(E の §4)。層名は表と印字に出る(非公開)
 
-出力 `data/census_full/a_clipping_base_20261123.csv`(437,425行: page_path, layer_id, a_is_clipping_base, n_clipped_direct, n_clipped_layers, n_clipped_folders, n_clipped_3d)と
+**v2(11-23 E の頼み)**: 土台ごとに、乗っている層(フォルダーでない層)の a v7 の判定を数える3列 `n_clipped_excluded` / `n_clipped_not_excluded` / `n_clipped_undecided`(と a の母集団の外 `n_clipped_outside_a`)を足す。v1 の表は消さない
+
+出力 `data/census_full/a_clipping_base_v2_20261123.csv`(437,425行: page_path, layer_id, a_is_clipping_base, n_clipped_direct, n_clipped_layers, n_clipped_folders, n_clipped_3d)と
 `data/census_full/a_clipping_base_by_name_20261123.csv`(棚卸しの上位20の名前 × 種別)。非公開。
 """
 import collections
@@ -24,8 +26,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 D = os.path.join(ROOT, "data", "census_full")
 AV7 = os.path.join(D, "a_verdict_v7_20261116.csv")
 INV = os.path.join(D, "e_white_name_inventory_v2_20261123.csv")
-OUT = os.path.join(D, "a_clipping_base_20261123.csv")
-OUT_N = os.path.join(D, "a_clipping_base_by_name_20261123.csv")
+OUT = os.path.join(D, "a_clipping_base_v2_20261123.csv")
+OUT_N = os.path.join(D, "a_clipping_base_by_name_v2_20261123.csv")
 
 
 def main() -> int:
@@ -55,10 +57,13 @@ def main() -> int:
                 out += desc(k)
         return out
 
-    res = {}
+    st = {}
+    for r in csv.DictReader(open(AV7, encoding="utf-8")):
+        st[(r["page_path"], int(r["layer_id"]))] = r["a_verdict_v7"]
+    res, vc = {}, {}
     for k, r in L.items():
         if r[5] == 1:
-            res[k] = (0, 0, 0, 0, 0); continue
+            res[k] = (0, 0, 0, 0, 0); vc[k] = collections.Counter(); continue
         sib = kids[(r[0], r[2])]
         cl = []
         for s in sib[pos[k] + 1:]:
@@ -71,6 +76,7 @@ def main() -> int:
             if s[6]:
                 allc += desc(s)
         lay = [s for s in allc if not s[6]]
+        vc[k] = collections.Counter(st.get((s[0], s[1]), "outside") for s in lay)
         res[k] = (int(bool(cl)), len(cl), len(lay), sum(1 for s in allc if s[6]),
                   sum(1 for s in lay if s[8] == "3d" or s[7].startswith("rendering_")))
     a = [(r["page_path"], int(r["layer_id"])) for r in csv.DictReader(open(AV7, encoding="utf-8"))]
@@ -81,15 +87,20 @@ def main() -> int:
     for k in a:
         x = res.get(k, ("", "", "", "", ""))
         out.append(dict(page_path=k[0], layer_id=k[1], a_is_clipping_base=x[0], n_clipped_direct=x[1],
-                        n_clipped_layers=x[2], n_clipped_folders=x[3], n_clipped_3d=x[4]))
+                        n_clipped_layers=x[2], n_clipped_folders=x[3], n_clipped_3d=x[4],
+                        n_clipped_excluded=vc[k]["template_excluded"], n_clipped_not_excluded=vc[k]["not_excluded"],
+                        n_clipped_undecided=vc[k]["undecided"], n_clipped_outside_a=vc[k]["outside"]))
     base = [o for o in out if o["a_is_clipping_base"] == 1]
     print(f"自身がクリッピングの層(土台にしない) {n_self:,} / **土台 {len(base):,} 層**(乗っている層の計 {sum(o['n_clipped_layers'] for o in base):,}、"
           f"うち 3D と名前か種別で分かる {sum(o['n_clipped_3d'] for o in base):,})")
-    st = {}
-    for r in csv.DictReader(open(AV7, encoding="utf-8")):
-        st[(r["page_path"], int(r["layer_id"]))] = r["a_verdict_v7"]
     cnt = collections.Counter(st[(o["page_path"], int(o["layer_id"]))] for o in base)
     print("  土台の a v7: " + " / ".join(f"{k} {v:,}" for k, v in cnt.most_common()))
+    print("  土台の判定 × 乗る層の判定(層、v7):")
+    for v in ("template_excluded", "not_excluded", "undecided"):
+        bb = [o for o in base if st[(o["page_path"], int(o["layer_id"]))] == v]
+        print(f"    土台 {v} {len(bb):,}: 乗る層 {sum(o['n_clipped_layers'] for o in bb):,} = 落とした {sum(o['n_clipped_excluded'] for o in bb):,}"
+              f" / 除外しない {sum(o['n_clipped_not_excluded'] for o in bb):,} / 未決 {sum(o['n_clipped_undecided'] for o in bb):,}"
+              f" / a の外 {sum(o['n_clipped_outside_a'] for o in bb):,}(除外しないが1つ以上乗る土台 {sum(1 for o in bb if o['n_clipped_not_excluded']):,})")
     with open(OUT, "w", encoding="utf-8", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(out[0])); wr.writeheader(); wr.writerows(out)
     inv = list(csv.DictReader(open(INV, encoding="utf-8")))[:20]
