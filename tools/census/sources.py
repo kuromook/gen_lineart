@@ -419,6 +419,11 @@ LOCAL_CSV = [
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
     dict(
+        path="inbox/note_census_e_white_known_cell_measured_20261122.md",
+        what="**E: 白さの既知のセル(名前の印の層)を 0.90 で 96% 取り戻す。それでも規則は当てない(反証の条件は発火したまま)**",
+        why_not_yet="知らせ(census への頼みは無い)。聞き取りの材料はユーザーの返事待ち",
+    ),
+    dict(
         path="inbox/note_census_e_white_column_all16_read_falsification_fired_20261122.md",
         what="**E: 白さの列 全16便を読み、登録の反証の条件が発火(規則を当てない・閾値を決めない)/ 頼み: 名前の印の列**",
         why_not_yet="名前の印は census の器具で引いて返した(印 2,549)。聞き取りの材料(10層)は E が発注せず、census がユーザーに聞く",
