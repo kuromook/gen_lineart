@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/q17/q17_new_pages_images_check_20261123.csv",
+         what="Q17 の画の便(頁の合成 20 + 層 20、描けなかった 0)。sha 41 OK・発注の一覧と鍵が一致。Track Q の data へ写した。頁の合成はトーン・グラデーションを平らに塗るか塗らない(抽出側の但し書き)",
+         why_not_yet="使うのは Track Q(作者の判定の材料)。census の表には入れない"),
     dict(path="inbox/note_census_e_v8_confirmed_and_rounding_correction_20261123.md",
          what="E が a の判定 v8 と曝露を独自に数え直し census と一致(除外 219,645 / 437,425 = 0.5021。E の 0.5022 は丸めの訂正)。名前の裁定で移った 4,398層のうち v7 で理由の在った 9層(調査中として外していた 7・見えない素材 2)を E が名指しした",
          why_not_yet="知らせだけで頼みは無い。調査中だった 7層を名前の裁定から戻すかはユーザーに伝えて返事待ち"),
