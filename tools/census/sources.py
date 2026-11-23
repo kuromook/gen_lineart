@@ -418,6 +418,12 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/a_verdict_v8_20261123.csv",
+         what="a の判定 v8: ベースマスクの裁定を当てた(215,247 -> 219,645 / 437,425、動いた 4,398)。E の数と一致",
+         why_not_yet="E が a の正本として使う。census の公開の表には a を載せていない"),
+    dict(path="data/census_full/a_clipping_base_v3_v8_20261123.csv",
+         what="土台の札 v3(v8 の判定): a が落とした土台 7,249 の上の 22,844層は、落とした 14,176 / 除外しない 17 / 未決 8,651",
+         why_not_yet="E の頼み。E の篩が印字に使う。a の点数は動かない"),
     dict(path="data/census_full/is_base_mask_20261123.csv",
          what="ベースマスク(それ自体に絵を持たない層)の列。作者が選んだ5つの名前のちょうど一致でフォルダーでない層、5,148層。クリッピングの土台の札とは別の列",
          why_not_yet="作者の裁定から作った。E が a の脚に使うかを決める。census の公開の表にはまだ入れていない"),

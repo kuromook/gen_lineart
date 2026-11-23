@@ -24,10 +24,11 @@ import db  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 D = os.path.join(ROOT, "data", "census_full")
-AV7 = os.path.join(D, "a_verdict_v7_20261116.csv")
+VER = "v8" if "--v8" in sys.argv else "v7"  # v3 の表(11-23): `--v8` で a v8 の判定を引く。v2 の表は v7 のまま残す
+AV7 = os.path.join(D, "a_verdict_v8_20261123.csv" if VER == "v8" else "a_verdict_v7_20261116.csv")
 INV = os.path.join(D, "e_white_name_inventory_v2_20261123.csv")
-OUT = os.path.join(D, "a_clipping_base_v2_20261123.csv")
-OUT_N = os.path.join(D, "a_clipping_base_by_name_v2_20261123.csv")
+OUT = os.path.join(D, "a_clipping_base_v3_v8_20261123.csv" if VER == "v8" else "a_clipping_base_v2_20261123.csv")
+OUT_N = os.path.join(D, "a_clipping_base_by_name_v3_v8_20261123.csv" if VER == "v8" else "a_clipping_base_by_name_v2_20261123.csv")
 
 
 def main() -> int:
@@ -59,7 +60,7 @@ def main() -> int:
 
     st = {}
     for r in csv.DictReader(open(AV7, encoding="utf-8")):
-        st[(r["page_path"], int(r["layer_id"]))] = r["a_verdict_v7"]
+        st[(r["page_path"], int(r["layer_id"]))] = r[f"a_verdict_{VER}"]
     res, vc = {}, {}
     for k, r in L.items():
         if r[5] == 1:
@@ -81,7 +82,7 @@ def main() -> int:
                   sum(1 for s in lay if s[8] == "3d" or s[7].startswith("rendering_")))
     a = [(r["page_path"], int(r["layer_id"])) for r in csv.DictReader(open(AV7, encoding="utf-8"))]
     miss = [k for k in a if k not in res]
-    print(f"a v7 の母集団 {len(a):,} / DB に無い {len(miss)} / DB に在って a に無い {len(set(res) - set(a)):,}(外した)")
+    print(f"a {VER} の母集団 {len(a):,} / DB に無い {len(miss)} / DB に在って a に無い {len(set(res) - set(a)):,}(外した)")
     n_self = sum(1 for k in a if k in L and L[k][5] == 1)
     out = []
     for k in a:
@@ -94,8 +95,8 @@ def main() -> int:
     print(f"自身がクリッピングの層(土台にしない) {n_self:,} / **土台 {len(base):,} 層**(乗っている層の計 {sum(o['n_clipped_layers'] for o in base):,}、"
           f"うち 3D と名前か種別で分かる {sum(o['n_clipped_3d'] for o in base):,})")
     cnt = collections.Counter(st[(o["page_path"], int(o["layer_id"]))] for o in base)
-    print("  土台の a v7: " + " / ".join(f"{k} {v:,}" for k, v in cnt.most_common()))
-    print("  土台の判定 × 乗る層の判定(層、v7):")
+    print(f"  土台の a {VER}: " + " / ".join(f"{k} {v:,}" for k, v in cnt.most_common()))
+    print(f"  土台の判定 × 乗る層の判定(層、{VER}):")
     for v in ("template_excluded", "not_excluded", "undecided"):
         bb = [o for o in base if st[(o["page_path"], int(o["layer_id"]))] == v]
         print(f"    土台 {v} {len(bb):,}: 乗る層 {sum(o['n_clipped_layers'] for o in bb):,} = 落とした {sum(o['n_clipped_excluded'] for o in bb):,}"
