@@ -18,6 +18,16 @@ TSV = "config/picture_exclusion_draft_20261111.tsv"
 DEFAULT_TABLE = "data/role_predictor/layer_role_table_20261110_v2.csv"
 STAGES = ("あたり", "下絵", "清書", "段ではない")
 
+# **規律13 の点検の例外は、作者の裁定だけが作れる。** 器具が自分で緩めてはいけない。
+# 1件ごとに (頁, 層) と逐語を書き、**発火したかどうかに関わらず毎回印字する**
+# —— 黙って緩む点検は、点検が無いより悪い(「名前は点検ではない」)。
+AUTHOR_RULED_EXCEPTIONS = {
+    ("F:\\manuscripts\\2016\\suc\\subbcubussBK\\page0008.clip", "186"): (
+        "2026-11-23 / census の問いへの答え: **「この層にも当てる」**"
+        "(選択肢の説明: 前の『清書』は誤り。この層もベースマスク)。"
+        "**前の段のラベル『清書』は役割の表に残す。消さない・書き換えない**(規律10)"),
+}
+
 
 def sha(p):
     h = hashlib.sha256()
@@ -84,6 +94,7 @@ def main(table=DEFAULT_TABLE):
 
     dropped = collections.Counter()
     dropped_labelled = collections.defaultdict(collections.Counter)
+    ruled_exempt = collections.defaultdict(collections.Counter)
     multi = 0
     kept = []
     for row in rows:
@@ -98,6 +109,8 @@ def main(table=DEFAULT_TABLE):
         st = row.get("author_stage", "")
         if st:
             dropped_labelled[key][st] += 1
+            if (row["page_path"], row["layer_id"]) in AUTHOR_RULED_EXCEPTIONS:
+                ruled_exempt[key][st] += 1
 
     print("\n== 落とした層(理由別。規律9) ==")
     print("| 理由 | 落とした層 | うち作者のラベル在り | その段 |")
@@ -112,7 +125,9 @@ def main(table=DEFAULT_TABLE):
         tot += dropped[key]
         for s in ("あたり", "下絵", "清書"):
             if lab.get(s):
-                bad.append((key, s, lab[s]))
+                n_ex = ruled_exempt[key].get(s, 0)
+                if lab[s] - n_ex > 0:
+                    bad.append((key, s, lab[s] - n_ex, n_ex))
     print("| 計 | %d | %d | |" % (tot, sum(sum(v.values()) for v in dropped_labelled.values())))
     if multi:
         print("2つ以上の理由に当たった層: %d(上の表では最初の理由に数えた)" % multi)
@@ -122,12 +137,19 @@ def main(table=DEFAULT_TABLE):
     print("   残った層の作者のラベル:", dict(lab_kept))
 
     print("\n== 規律13 の点検 ==")
+    print("作者の裁定による例外: **%d 件**(器具は自分で例外を作らない)" % len(AUTHOR_RULED_EXCEPTIONS))
+    for (pp, lid), words in sorted(AUTHOR_RULED_EXCEPTIONS.items()):
+        print("   %s 層 %s —— %s" % (pp, lid, words))
+    n_fired = sum(sum(v.values()) for v in ruled_exempt.values())
+    print("   **この走行で例外に当たって落ちた層: %d**"
+          "(例外が無ければ点検は発火していた)" % n_fired)
     if bad:
         print("**反証**: 作者が段と答えた層を落としている。篩を止めること:")
-        for key, s, n in bad:
-            print("   %s —— %s を %d 層" % (key, s, n))
+        for key, s, n, n_ex in bad:
+            print("   %s —— %s を %d 層(裁定の例外 %d を除いた数)" % (key, s, n, n_ex))
         return 1
-    print("落とした層に「あたり・下絵・清書」のラベルは **0層**。")
+    print("落とした層に「あたり・下絵・清書」のラベルは、**裁定の例外 %d 層を除いて 0層**。"
+          % n_fired)
     print("(ラベルが在るのは %d 層で、全部「段ではない」。**ラベルの無い層については何も示していない**)"
           % sum(sum(v.values()) for v in dropped_labelled.values()))
     return 0
@@ -218,6 +240,16 @@ def corpus(path=INVENTORY):
         print("   **見えている取り込み画像の層 1,161 は、もう1層も落ちていない。残る理由は『見えない』4,356 だけ**")
         print("   **作者の裁定(2026-11-13、逐語)「下絵　線画hair  blackも名前だけでは落とせない非決定論側だ")
         print("   これらが落とせるのは空の場合だけだ」** —— 『除外しない』の行の 5,622層も、空のときだけ落ちる")
+        print("   **【2026-11-23 ベースマスクの裁定を当てた。v8】** 作者が5つの名前を『どの頁でもベースマスク")
+        print("   (それ自体に絵を持たない)』と答えた(census の問い)。名前の脚は **105,231 → 110,379(+5,148)**。")
+        print("   **ただし 750 層は既に別の脚で落ちていたので純増は 4,398** ——")
+        print("   (手元の v3 で脚まで数えると **条項:空(定義C) 750 / 条項:image_material(見えない) 2**。")
+        print("   **列 `tone_enabled` と重なった層は 0**。v7 は 750 で、差の2層は版の差)")
+        print("   **v7 215,247 = 0.4921 → v8 219,645 / 437,425 = 0.5022**(前後とも残す。過去の版は撤回しない)。")
+        print("   手元の v3 で数えると既に落ちていたのは 752 で純増 4,396(**版の差2層**)。")
+        print("   `.lip` の 308層は画素が無く、**名前だけが根拠**(画素の裏付けは無い)。")
+        print("   `bg base` raster 2,537層は第2回で『だめ』と答えられた層だが、**それは (b)『合成から消す』への答え** ——")
+        print("   **a の札は (a)『その層自身の画素が絵か』で、作者が 11-23 に (a) として裁定した。第2回の行は消さない**")
     print("**頁の数は行ごとの和なので、同じ頁を重ねて数えている**(上界)。作品単位は行ごとの最大。")
     print("**残る層: %d。** これは「絵の層」ではなく「この篩で落ちなかった層」である。" % (n_all - tot))
     return 0
