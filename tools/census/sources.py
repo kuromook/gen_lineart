@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/note_q_census_q28_mixed_candidates_images_order_20261124.md",
+         what="Track Q の Q28(コマ枠と線画が一体の層の見分け)の画の発注依頼。2頁・層 3・恒久除外 0・sha 一致・複製の組は札の最も早い頁。ユーザー承認の上で抽出側へ発注済み。Q は census の枠らしさの列(黒の割合・連結成分の数)を候補に使い、作者の分類の再現は未確認(規律13、Q が確かめて返す)",
+         why_not_yet="画の便が未着"),
     dict(path="inbox/note_q_census_panel_extraction_use_r5_20261124.md",
          what="ユーザーの指示(Track Q 経由、11-24): コマを抽出するときは Track Q の当て方 R5 を使う。範囲は名前の候補の枠の層がちょうど1枚の頁だけ。枠と線画が一体の層・書き込みの混ざる層は使えない(見分けは未)",
          why_not_yet="ユーザーの決定「記録だけ」: Q22 の区画は Q に置いたまま列にしない。要る track が出たら列にする"),
