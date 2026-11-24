@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/reply_census_q28_result_rule_not_usable_20261124.md",
+         what="Track Q の Q28 の結果: 枠らしさの列の黒の割合と連結成分の数は、枠と線画が一体の層の見分けに使えない(作者の聞き取りで候補の的中 0、候補でない 18層の取りこぼし 0)。作者の答え: 名前の候補の1層は枠ではなくナレーション枠、別の1頁は枠の層が2枚重なる(枠の上に枠)",
+         why_not_yet="列・印は作らない(規律13、Q の頼み)。作者の答え2件は名前の候補の当て違いの記録として置く"),
     dict(path="data/census_full/q28/q28_mixed_candidates_images_check_20261124.csv",
          what="Q28 の画の便(頁の合成 2 + 層 3、描けなかった 0、恒久除外 0)。sha 6 OK・発注の一覧と鍵が一致。Track Q の data へ写した",
          why_not_yet="使うのは Track Q。census の表には入れない"),
