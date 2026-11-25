@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/note_q_census_q29_draw20_images_order_20261125.md",
+         what="Track Q の Q29 の作者の20行の画の発注依頼。40行・頁 20・恒久除外 0・sha 一致。うち 3頁はファイルの複製の遅い方(早い方は入っていない)。ユーザー承認の上で抽出側へ発注済み。census が数えた: Q11 の層の表 7,643層のうち複製の遅い方の頁の上の層 1,157(Q に伝えた)",
+         why_not_yet="画の便が未着"),
     dict(path="data/census_full/q29/q29_r5_per_panel_layers_20261125.csv",
          what="Q29 の列の便(コマごとの線の列を R5 の区画で、161層を全部測った・測れなかった 0)。合成の既知セル 5項目とも合。sha 3 OK・層が発注の一覧と同じ順。Track Q の data へ写した",
          why_not_yet="使うのは Track Q。Q11 の列(コマ枠の列で測った)と混ぜずに置く(コマの形の出所が違う)"),
