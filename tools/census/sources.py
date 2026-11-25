@@ -418,6 +418,12 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/q30/q30_kakimoji_population_20261125.csv",
+         what="Q30 の母集団の一覧(Track Q の頼み。tools/census/q30_kakimoji_population.py、構造 DB と既存の表をつないだだけ)。(a) 名前に描き文字の語 9,084層: 空の印(定義C、全 .clip の画素の便)1 = 337 / 0 = 3,898 / 印を付けられない 4,849(.lip 3,075・.clip のフォルダー 1,774)、フォルダー 3,762・テキスト 4・恒久除外 8・答えが在る 23。(b) 名前に effect で推測の列が 0・1 の 2,318層: 空 0、答えが在る 21。Track Q の data へ写した",
+         why_not_yet="使うのは Track Q。空の印は定義C の値で、a の理由(最初の1つだけ)では読まない。形式5 の空は調査中"),
+    dict(path="inbox/note_q_census_q30_kakimoji_population_20261125.md",
+         what="Track Q の Q30 の頼み: 描き文字の母集団の一覧(名前・祖先・種別・空の印・推測の列・恒久除外・答えの有無・写しの組)。新しい画素の列ではない",
+         why_not_yet="上の表で返した"),
     dict(path="data/census_full/kakimoji_author_answers_20261125.csv",
          what="作者が層について描き文字と答えた行の一覧(Track Q の頼み。tools/census/kakimoji_author_answers.py、既に在る作者の答え6か所 534行を集めただけ)。描き文字と答えた 29層(名前の群: 描き文字の名前 18・effect 9・線画 1・その他 1)/ フキダシか描き文字の1つのボタン 3 / 描き文字の語でない文字 4 / 名前は描き文字で答えは別 6。畳んだ 4・落とした 機械の初期値 12・テキストの層 0・線画に直接と一言に在る層 0。Track Q の data へ写した",
          why_not_yet="列にしない(寄せて引いた聞き取りの行で母集団の割合ではない)。名前で引ける887層は正解の数ではなく名前の下限の材料。使うのは Track Q の次の登録"),
