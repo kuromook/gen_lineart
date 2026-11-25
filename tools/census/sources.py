@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/note_q_census_q30_draw20_images_order_20261125.md",
+         what="Track Q の Q30 の作者の20行の画の発注依頼。40行・頁 20・層 20 はすべて Q30 の一覧の中(推測 0 の effect 15・名前に描き文字 5、どれも空でないラスタ)・恒久除外 0・写しの遅い方 0・答えの在る層 0・sha 一致。ユーザー承認の上で抽出側へ発注済み",
+         why_not_yet="画の便が未着"),
     dict(path="data/census_full/q30/q30_kakimoji_population_20261125.csv",
          what="Q30 の母集団の一覧(Track Q の頼み。tools/census/q30_kakimoji_population.py、構造 DB と既存の表をつないだだけ)。(a) 名前に描き文字の語 9,084層: 空の印(定義C、全 .clip の画素の便)1 = 337 / 0 = 3,898 / 印を付けられない 4,849(.lip 3,075・.clip のフォルダー 1,774)、フォルダー 3,762・テキスト 4・恒久除外 8・答えが在る 23。(b) 名前に effect で推測の列が 0・1 の 2,318層: 空 0、答えが在る 21。Track Q の data へ写した",
          why_not_yet="使うのは Track Q。空の印は定義C の値で、a の理由(最初の1つだけ)では読まない。形式5 の空は調査中"),
