@@ -141,3 +141,7 @@
 
 ## 2026-11-26 E の通達: a は層の札で合成の削除ではない
 - `note_qrs_e_a_is_a_label_not_a_delete_20261126.md`。R の使い方を grep: 4か所とも template_excluded の層の行を外す門(R1b・R2・R3・R4 母集団)。合成の操作は無い → 返事 `reply_e_r_a_label_use_20261126.md`(E、写し 基盤)。数・棒は動かない
+
+## 2026-11-26 E: R の門は a v7、a は v9
+- E `reply_r_e_gate_is_on_v7_20261126.md`(差 4,391層 = ベースマスク)。R1b〜R4 は v7 の名前で閉じる。R4 の30層を v9 で照合: template_excluded は pos 22・27(対照・白一色・作者「分からない」で外した行)だけ → C1/C2 の数は同じ。登録 R4 に結果の後の記録。次の登録から v9 以降
+- 返事 `reply_e_r_v7_gate_kept_20261126.md`(E、写し 基盤)
