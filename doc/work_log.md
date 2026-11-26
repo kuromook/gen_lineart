@@ -193,3 +193,9 @@
 
 - ユーザー(逐語):「censusに、492頁のうち区画が付く頁の数を数えてもらう」
 - `outbox/note_census_s_count_r5_panels_on_s_pages_20261126.md` → census(写し 基盤・Q `lineart-layer-exclusion`)。区画が在る頁と無い理由別、作品ごと・代表だけも、鍵は `source_path`。新しい列は作らない。census を起こした
+
+## 2026-11-26 census の返事: R5 の区画が在るのは 38頁だけ、437頁はコマ枠のフォルダーが在る
+
+- `inbox/reply_census_s_r5_panels_on_s_pages_20261126.md`(器具 census `tools/census/s_r5_panels_count.py`、列は作っていない)
+- 492頁(代表 471): **区画が在る 38 / 38**(hyoui_color 25・fitness 13 の2作品だけ)/ コマ枠のフォルダーが在る(R5 の対象外)437 / 418 / 枠らしさの表に無い(モザイクの名前のフォルダーだけ)9 / 8 / 候補0枚 3 / 2 / 候補2枚以上 1 / 1 / 2023b 以降 0 / Q 未着手 4 / 4
+- 読み: R5 は「フォルダーの無い頁」の当て方なので、S の母集団(2021 以前が大半)にはほぼ当たらない。**コマの形は大半がコマ枠のフォルダーから取れる**(Q11 の `dataset_koma` の道)。S の頁に付けるかは S2 で決め、ユーザーの承認の後に census へ
