@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/note_census_e_mono_white_closed_for_a_and_the_bounded_residual_20261126.md",
+         what="Track E の通達: モノクロの白さの誤りから a に届く道は数えて閉じた(空の条項のモノクロ 1.4% 対 母集団 8.0%、a v12 は動かない)。白さの列に拠る E の結果5件を読み直した: 4件は無傷、白さの棚卸しに取りこぼし 5層以下・3名前以下。残る4層の持ち分は Track Q と Track R",
+         why_not_yet="頼みは無い。1,893層の便が返ったら E がもう一度表を出す"),
     dict(path="inbox/reply_census_q_mono_scope_narrowed_ack_20261126.md",
          what="Track Q の頼み: Q2 の 825層のモノクロ 58層の黒白の印と、調査中の 1,893層に入る数。census が数えた: 入る 47(黒消しの材料の 46 全部と髪や服のベタの対照 1)、黒だけ 2 は戻る、白を持つ 9 は入らない。Q1 の層は Q2 と同じ 825層の一覧",
          why_not_yet="1,893層のブロックの形の便が未着"),
