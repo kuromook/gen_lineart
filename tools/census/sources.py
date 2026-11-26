@@ -418,6 +418,15 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/a_verdict_v10_20261126.csv",
+         what="a の判定 v10(作者の裁定 11-26: 下地の番号の層は 3D 素材の LT 変換が作るベースマスク)。tools/census/a_verdict_v10.py。名前がちょうど下地の番号の 161層を落とす側へ: v9 219,638 → v10 219,799 / 437,425(0.50212 → 0.50248)、Track E の数と一致。曝露 7,249 / 22,844 → 7,250 / 22,845。同じ器具でベースマスクの列 v2(5,148 → 5,309)",
+         why_not_yet="札であって合成の削除ではない。a v11 は E が立てる"),
+    dict(path="data/census_full/is_base_mask_v3_20261126.csv",
+         what="ベースマスクの列 v3(作者の答え 11-26、census の問い: コピーの名前の2層も同じ扱いでよい)。v2 5,309 → v3 5,311。番号の無い名前の1層は作者「わからない　一応直接見ておく」で入れていない",
+         why_not_yet="a v11 は E が立てる。残る1層は作者の答え待ち"),
+    dict(path="inbox/note_census_e_a_v10_shitaji_applied_two_corrections_20261126.md",
+         what="Track E の通達: a v10 を立てた(219,799 / 437,425 = 0.50248)、訂正2件(161層は全部 .clip ではない・合成の害は 0 ではなく1層)、残る3つの名前を作者に聞いてほしい",
+         why_not_yet="census で v10 を作って一致、作者に聞いた(上の2行)"),
     dict(path="data/census_full/shitaji_rinkaku_layers_20261126.csv",
          what="作者の裁定 11-26(下地の番号の層は 3D 素材の LT 変換が作るベースマスク)を受けた名前の総なめ(Track E の頼み、tools/census/e_shitaji_name_sweep.py、構造 DB の引き直し)。下地 164層(E の白さの棚卸しの 161 + 3: コピーの名前2・番号の無い名前1)、フォルダー 0。2014 の .lip の3層はクリッピングの土台で乗る層が計 5。輪郭線 292層(同じ親に下地を持つ 268)は a を動かさない数で R・Q へ。Track E の data へ写した",
          why_not_yet="ベースマスクの列の v2 は名前の集合を E が決めてから(v1 と版を分け、前後を印字する)"),
