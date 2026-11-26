@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/reply_census_e_cloud_copy_groups_correction_20261126.md",
+         what="Track E の訂正: 雲の3層を1つの絵と書いたのは言い過ぎ。2層は同じファイル、3層目は別のファイルで同じ絵かは分からない。版の聞き取りにまとめる案に同意",
+         why_not_yet="版の聞き取りはユーザーの承認を取ってから"),
     dict(path="inbox/note_census_e_mono5_rerun_read_and_the_frame_is_138_names_20261126.md",
          what="Track E の確認: 5層の流し直しを独自に数えて全部白(予告どおり)。白さの棚卸しの枠は 4,878 / 135名前 → 4,883 / 138名前、表の作り直しは頼まない。census が写しの組で答えた: 雲の3頁のうち2つは同じファイル(写し)、1つは別のファイルで版かは分からない(作者に問う領分)",
          why_not_yet="版の聞き取りはユーザーの承認を取ってからまとめて"),
