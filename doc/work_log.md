@@ -156,3 +156,4 @@
 
 ## 2026-11-26 census: モノクロの層の白さの列は調査中
 - `note_census_eqr_mono_white_under_investigation_20261126.md`(作者「下地白はみためにも白い 純黒ではなかった」)。R は census の白さの列を使っていない。R3 の画素の腕が抽出側 r_line v2 の `pure_black_frac_*` を使い、426層中モノクロ 2層(2層とも =1)。R3 は棒に届かず撤回なし → 返事 `reply_census_r_mono_white_r_exposure_20261126.md`
+- 11-26 E 所見1 取り下げ `note_census_eqr_e_withdraws_finding1_and_names_what_rides_on_the_white_column_20261126.md`。§4「白さの列を使っている結果が R に在るなら読み直しを」→ 既に census へ返事済み(R3 の別器具の列でモノクロ 2層、撤回なし)。その返事を E の inbox にも写した。下地≠3D の印・輪郭線 292 は動かない
