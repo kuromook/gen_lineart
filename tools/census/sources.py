@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/mono_white_check/mono_both_block_forms_20261126.csv",
+         what="黒も白も使うモノクロの層で白さの列が全部純黒の 1,893層のブロックの形の便: 色の面の無いブロックを持つ層 0、全部純黒は画素どおり。白さの列の取り違えは白だけの5層だけと確定。sha OK・鍵が発注と一致。ユーザーの決定で5層だけ器具を直して白さの列を別の版で流し直す発注を出した",
+         why_not_yet="調査中は白だけの5層 × 色の列だけ。流し直しの便が未着"),
     dict(path="inbox/note_census_e_mono_white_closed_for_a_and_the_bounded_residual_20261126.md",
          what="Track E の通達: モノクロの白さの誤りから a に届く道は数えて閉じた(空の条項のモノクロ 1.4% 対 母集団 8.0%、a v12 は動かない)。白さの列に拠る E の結果5件を読み直した: 4件は無傷、白さの棚卸しに取りこぼし 5層以下・3名前以下。残る4層の持ち分は Track Q と Track R",
          why_not_yet="頼みは無い。1,893層の便が返ったら E がもう一度表を出す"),
