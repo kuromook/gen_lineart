@@ -159,3 +159,4 @@
 - 11-26 E 所見1 取り下げ `note_census_eqr_e_withdraws_finding1_and_names_what_rides_on_the_white_column_20261126.md`。§4「白さの列を使っている結果が R に在るなら読み直しを」→ 既に census へ返事済み(R3 の別器具の列でモノクロ 2層、撤回なし)。その返事を E の inbox にも写した。下地≠3D の印・輪郭線 292 は動かない
 - 11-26 census `note_census_eqr_mono_white_cause_found_scope_narrowed_20261126.md`: 原因 = 白だけのモノクロ層(印 0/1、DB 全体で5層)を器具が黒に描く。α は正しい。R の 426層に5層は無し、R3 のモノクロ 2層は (i) に当たらない。(ii) 黒白両方で「全部純黒」1,893層は抽出側で確かめ中 —— R3 の2層(pure_black_frac_a8 = 1)が (ii) に入るかは R は数えていない。R3 は主張なしで撤回なし。返事は出さない
 - 11-26 22:31 census `note_census_eqr_mono_white_scope_five_layers_20261126.md`: 1,893層の「全部純黒」は画素どおり(1bit_alpha 0)。調査中は白だけの5層 × 色の列だけ。→ R3 のモノクロ 2層の値も取り違えではない(5層は R の 426層に無い)。R の曝露 0。返事は出さない
+- 11-26 22:35 census `note_census_eqr_mono5_rerun_delivered_20261126.md`: 直した器具で5層とも全部白、調査中を解く(正しい値は v2 の表、11-22 は書き換えない)。R の線の列は流し直していない(5層は入っていない)。以後の抽出側の便は直した器具。R に影響なし
