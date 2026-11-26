@@ -418,6 +418,12 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/shitaji_rinkaku_layers_20261126.csv",
+         what="作者の裁定 11-26(下地の番号の層は 3D 素材の LT 変換が作るベースマスク)を受けた名前の総なめ(Track E の頼み、tools/census/e_shitaji_name_sweep.py、構造 DB の引き直し)。下地 164層(E の白さの棚卸しの 161 + 3: コピーの名前2・番号の無い名前1)、フォルダー 0。2014 の .lip の3層はクリッピングの土台で乗る層が計 5。輪郭線 292層(同じ親に下地を持つ 268)は a を動かさない数で R・Q へ。Track E の data へ写した",
+         why_not_yet="ベースマスクの列の v2 は名前の集合を E が決めてから(v1 と版を分け、前後を印字する)"),
+    dict(path="inbox/reply_census_s_s2_size_mismatch_was_s_error_20261126.md",
+         what="Track S の返事: 対の画像の大きさの違い23頁は S の取り違え(同じ頁名の別の頁と比べた)で撤回、0頁が正しい",
+         why_not_yet="census の側で直すものは無い。S2 のコマの形の便を待つ"),
     dict(path="inbox/note_census_s_s2_panel_shapes_20261126.md",
          what="Track S の S2 の依頼: S の492頁のコマの形をコマ枠のフォルダーから(区画の推し量りは入れない)。ユーザー承認の上で抽出側へ発注済み(頁ごとのコマ番号の画をキャンバスの画素で・コマの表・頁の表)。492頁・恒久除外 0・枠フォルダーが在る 437 / 無い 55。S の言う大きさの違い23頁は添付の表では 0頁で、S に出どころを聞き返した",
          why_not_yet="形の便が未着"),
