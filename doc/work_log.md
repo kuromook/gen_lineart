@@ -138,3 +138,6 @@
 
 ## 2026-11-20 膜の層の見本帳 artifact を削除
 - ユーザー「消してOK」。削除を確認(ユーザーも手動で削除)。元の画は results/r3/film_view/(追跡しない)に残る
+
+## 2026-11-26 E の通達: a は層の札で合成の削除ではない
+- `note_qrs_e_a_is_a_label_not_a_delete_20261126.md`。R の使い方を grep: 4か所とも template_excluded の層の行を外す門(R1b・R2・R3・R4 母集団)。合成の操作は無い → 返事 `reply_e_r_a_label_use_20261126.md`(E、写し 基盤)。数・棒は動かない
