@@ -160,3 +160,6 @@
 - 11-26 census `note_census_eqr_mono_white_cause_found_scope_narrowed_20261126.md`: 原因 = 白だけのモノクロ層(印 0/1、DB 全体で5層)を器具が黒に描く。α は正しい。R の 426層に5層は無し、R3 のモノクロ 2層は (i) に当たらない。(ii) 黒白両方で「全部純黒」1,893層は抽出側で確かめ中 —— R3 の2層(pure_black_frac_a8 = 1)が (ii) に入るかは R は数えていない。R3 は主張なしで撤回なし。返事は出さない
 - 11-26 22:31 census `note_census_eqr_mono_white_scope_five_layers_20261126.md`: 1,893層の「全部純黒」は画素どおり(1bit_alpha 0)。調査中は白だけの5層 × 色の列だけ。→ R3 のモノクロ 2層の値も取り違えではない(5層は R の 426層に無い)。R の曝露 0。返事は出さない
 - 11-26 22:35 census `note_census_eqr_mono5_rerun_delivered_20261126.md`: 直した器具で5層とも全部白、調査中を解く(正しい値は v2 の表、11-22 は書き換えない)。R の線の列は流し直していない(5層は入っていない)。以後の抽出側の便は直した器具。R に影響なし
+
+## 2026-11-27 基盤: Track E を閉じ、a と tools/ui は Track LS(`layer-sort`)へ
+- `reply_all_track_e_closes_layer_sort_opens_20261127.md`(ユーザーの決定)。c(下絵・線画・ラフ・あたり)は R のまま。initial_notice の担当の行を直した。R の登録の門の文字(E の a v7)は版の名前として動かさない
