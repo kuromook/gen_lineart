@@ -17583,3 +17583,4 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 - **基盤が `lineart-layer-sort` を開いた**: `foundation` の 7828c63 から、E の一覧の45ファイルだけ写し、`data/role_predictor`・`data/census` をハードリンク。引き継ぎ書・work_log を書いて `73d95a3`(未 push、track が push)。呼び名は **Track LS**
 - `CLAUDE.md §4` の起こす宛先 E → LS、`worktree_policy.md` と台帳に行を足した。全 track・抽出へ宛先の変更 `outbox/reply_all_track_e_closes_layer_sort_opens_20261127.md`(SCP 着弾 21:32、起こした: census・Q・R・S・抽出・E)
 - **E の push 済み**(ユーザーの承認「push」、E が実行): `origin/aesthetic-judge` 66d6072 → ba08a8b、手元との差 0、許可表の器具 0、新しく公開された画像・重み 0。引き継ぎ1〜4 完了、宛先の変更も受領。E の木は座ったまま(LS が詰まったら聞ける)
+- **LS 起動**(ユーザー、11-27 夜): tmux `ls`、セッション名 `lineart-layer-sort`(ユーザーが `/rename`)。`ListAgents` で見える。初回の通達確認で受信5本(E の引き継ぎ便を含む)を読了、Q・S の「a は使っていない」で開いていた項目3を閉じた。起こす宛先 LS はこの名で引く
