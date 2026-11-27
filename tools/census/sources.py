@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/reply_census_q_bar_segment_count_decisions_20261127.md",
+         what="Track Q 経由のユーザーの決定(11-27): 本数の外れ値は今は規則にせず Q31 の腕として登録、重い成分は飛ばさず Q31 は全部出す、主は輪郭の列で骨格の計算は省かない。抽出側に回した(Q31 の発注は変わらない)",
+         why_not_yet="Q31 の列の便が未着"),
     dict(path="data/census_full/q31/bar_segment_count_distribution_layers_20261127.csv",
          what="抽出側の相談の表: 細線化の本数の度数分布(名前で引いた黒消しの材料 651層と Q31 の途中 2,115層)。ユーザーの考え(本数の外れ値なら黒消しでない)を規則にするかの相談。sha OK。規則は Track Q とユーザーが決めるので Q に回し、Q31 は発注どおり全部出すよう抽出側に返した",
          why_not_yet="規則の決定は Q。名前の黒消しは作者の分類ではない(的中率を隣に置く必要)"),
