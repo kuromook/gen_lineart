@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/note_q_census_q31_draw20_images_order_20261127.md",
+         what="Track Q の Q31 の作者の20行の画の発注依頼。40行・20層とも Q31 の一覧の中で黒消しの列を測れた層・恒久除外 0・写しの遅い方 0・答えや裁定の在る層 0・sha 一致。表の列名と先頭の印を census がそろえて送った。ユーザー承認の上で抽出側へ発注済み",
+         why_not_yet="画の便が未着"),
     dict(path="data/census_full/q31/q31_author_rulings_v2_20261127.csv",
          what="作者の裁定の表 v2(作者の訂正 11-27「よくみたら１６あった、訂正」): 打ち切りの頁の1つの黒消しは 16本で構造 DB の層の数と一致、前の版の 14本と差 2 は取り消し。前の版は書き換えない。Track Q の data へ写した",
          why_not_yet="分類の登録は Track Q"),
