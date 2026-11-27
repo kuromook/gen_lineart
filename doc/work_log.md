@@ -9787,3 +9787,11 @@ sha256 先頭 `467d7096d8729777`、並びは E のまま)。置き換えた一�
   何が上がるかは数えて便に書いた: origin は `66d6072`、手元は **117 commit 先**。足す追跡ファイルは **43件(.py 38 / .json 3 / .tsv 1 / .md 1)、画像・重みは0件**。
   **重み3件(169.7MB)は既に origin に在り許可表にも明示で載っている**(この push で新しく公開される重みは無い)。
   `check_public_artifacts.py` 終了コード 0。**ユーザーの承認が来たら E が push する**
+- **push した**(2026-11-27、**ユーザーの承認「push」**)。`origin/aesthetic-judge` `66d6072` → **`251d3e7`**(117 commit)。
+  門の前後: `tools/check_public_artifacts.py` 終了コード 0 / 作業木は clean / push 後 `origin..手元` は **0 commit**。
+  **新しく公開された画像・重みは0件**(足した追跡ファイル43件は .py 38 / .json 3 / .tsv 1 / .md 1。
+  重み3件は押す前から origin に在り、許可表に明示で載っている行)
+- 基盤の閉じる通達 `inbox/reply_all_track_e_closes_layer_sort_opens_20261127.md` を受領。**宛先の変更は LS(`layer-sort`)**。
+  a・`tools/ui/`・ComicStudio は LS へ。**c(下絵・線画・ラフ・あたりの判定)は R のままで E にも LS にも出さない**(混濁の元)。
+  Q・S の「a は札であって削除ではない」への返事も **LS へ**。起こす宛先から E は外れる。
+  **この木に残るのは線画らしさの審判(絵1枚の単位)だけ。閉じるのであって撤回ではない**
