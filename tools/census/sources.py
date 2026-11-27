@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="outbox/push_census_order_pair_v6_defect_check_20261127.md",
+         what="ユーザー承認(11-27「承認」)で、対 v6 の不具合の候補 3頁を抽出側に調べてもらう発注(選んだ層・選ばなかった線画らしい層・ずれの大きさ・QC が拾えない訳)。対は作り直さず、器具も直さない",
+         why_not_yet="調べの便が未着"),
     dict(path="inbox/note_census_s_pair_defect_from_hb2_20261127.md",
          what="Track S の通知(前の2頁の続き): 作者の聞き取りで対 v6 の不具合の候補 1頁(線画に効果線しか写っていない)。QC は ok。抽出側と Track D に通知として回した(候補は計 3頁、直しは頼んでいない)",
          why_not_yet="対の品質の列にはしない。次に対の抽出を直すときの材料"),
