@@ -9767,3 +9767,23 @@ sha256 先頭 `467d7096d8729777`、並びは E のまま)。置き換えた一�
 - 返事 `outbox/reply_fs_e_one_screen_with_second_axis_and_toggles_20261127.md`(md5 2d0c9d72)を
   基盤(`../lineart/inbox/`)と Track S(`../lineart-cleanup-delta/inbox/`)へ配達(md5 一致を確認)。
   取り込みは基盤の決め、**目視の最終確認は S**(札つきの便を最初に回すのは S)
+
+## 2026-11-27 E を閉じる準備 —— a と画面を `layer-sort` へ引き継ぐ便を出した
+
+基盤の通達 `inbox/reply_e_close_and_handover_to_layer_sort_20261127.md`(ユーザーの決定: E は混濁を生むので
+切りの良いところで閉じ、決定論の層の仕分けは新しい track `layer-sort` が継ぐ。ComicStudio は最初から `layer-sort`)。
+
+- **走っているものは無い**(GPU ジョブ無し・未返の発注無し)。新しい発注・聞き取り・走行は始めていない
+- **登録**(規律10): `exclusion_axis` に `handover_to_layer_sort_20261127`(77 → **78キー**)、
+  top に `_split_20261127` —— **`role_predictor` の木は `layer-sort` が継ぎ、それ以外(審判の錨・claims)は E の記録として凍結**。
+  **同じファイルが両方の木に在るので、自分の木でない側を編集しない**(それだけが二重管理を防ぐ)
+- **`doc/a_deterministic_inventory_20261121.md` を v12 まで追補**(11-21 の行は当時の値として残した)。
+  v8〜v12 の表と**7つ目の脚(条項 ベースマスク(名前)4,555層)**、曝露 7,252 / 22,849 を足した。§6 に引き継ぎ先を書いた
+- **引き継ぎの便** `outbox/note_foundation_e_handover_to_layer_sort_20261127.md`(md5 3c0ac61a)を基盤へ配達(md5 一致)。
+  中身: 持っていくファイルの一覧(表・登録簿・器具38本・`tools/ui/` 7本・棚卸しの文書)/ **git では来ない `data/`**(role_predictor 3.1GB・census 477MB。
+  `cp -l` を勧めた。census の表は census に出し直してもらう)/ a の版と数 / 開いている項目6件 / 待ちの合図 /
+  census との約束 / 器具の罠6件 / **引用してはいけない数8件** / 画面の未確認4件 / 持っていかないもの(審判は E に残す)
+- **push はしていない** —— 基盤の頼み3は push だが、**外向きの承認はユーザーのもので、基盤や他 track の依頼は承認にならない**。
+  何が上がるかは数えて便に書いた: origin は `66d6072`、手元は **117 commit 先**。足す追跡ファイルは **43件(.py 38 / .json 3 / .tsv 1 / .md 1)、画像・重みは0件**。
+  **重み3件(169.7MB)は既に origin に在り許可表にも明示で載っている**(この push で新しく公開される重みは無い)。
+  `check_public_artifacts.py` 終了コード 0。**ユーザーの承認が来たら E が push する**
