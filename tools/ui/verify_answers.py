@@ -45,6 +45,10 @@ def main():
     print(f"選び直した問い: {sum(1 for k, v in by_item.items() if len(v) > 1)}(前の行は残っている)")
     print(f"最新の答え: どれでもない {vals.get('__none__', 0)} / 分からない {vals.get('__unknown__', 0)} / "
           f"一言つき {sum(1 for r in latest.values() if r.get('comment'))}")
+    if spec.get("toggles"):
+        tc = Counter(v for r in latest.values() for v in r.get("toggles", []))
+        print("札: " + " / ".join(f"{t['label']} {tc.get(t['value'], 0)}" for t in spec["toggles"])
+              + f" / 札だけ(主な答え無し) {vals.get('__toggles_only__', 0)}")
     if vals.get("__none__", 0):
         print("  → 「どれでもない」が来た問いは、問いの作りの欠陥として記録する(指針 §2-3)")
     if stray:

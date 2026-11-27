@@ -16,7 +16,8 @@ STRATA = [("2015〜2016", ("2015", "2016")), ("2017", ("2017",)), ("2018", ("201
           ("2021〜2024", ("2021", "2022", "2022b", "2023", "2023b", "2024", "2024b", "2024c"))]
 
 
-def main():
+def main(out=OUT, seed=SEED, also_skip=(), make_spec=None, version="s4_t1_c050"):
+    OUT = Path(out)
     S1 = s1_rows()
     q_by_line = {q["line"]: q for q, _ in S1.values()}
     s1_by_line = {q["line"]: s for q, s in S1.values()}
@@ -24,14 +25,15 @@ def main():
     skip_lines = {next(q["line"] for q, s in S1.values() if q["work_id"] == r["work_id"] and q["page"] == r["page"] and s["B_keep"] == r["B_keep"]) for r in h1}
     skip_lines |= {r["line"] for r in csv.DictReader(open(ROOT / "data/h1b_reask_20261126/selection.csv", encoding="utf-8"))}
     asked = set()
-    for d in ("h2_panel_sketch_20261127", "h3_panel_sketch_20261127", "h4_composition_20261128"):
+    for d in ("h2_panel_sketch_20261127", "h3_panel_sketch_20261127", "h4_composition_20261128") + tuple(also_skip):
         asked |= {(r["line"], r["koma_id"]) for r in csv.DictReader(open(ROOT / "data" / d / "selection.csv", encoding="utf-8"))}
     K = []
     for f in sorted(glob.glob(str(ROOT / "results/s4_full/*/s2_panels.csv"))):
         K += list(csv.DictReader(open(f, encoding="utf-8")))
     K = [k for k in K if k["kind"] == "下絵の在るコマ" and k["hold"] != "True" and k["work_id"] not in SKIP_WORKS
          and q_by_line[k["line"]]["is_primary"] == "True" and k["line"] not in skip_lines and (k["line"], k["koma_id"]) not in asked]
-    rng = random.Random(SEED)
+    print(f"除いたコマ(H2〜H4 と {list(also_skip)}): {len(asked)}")
+    rng = random.Random(seed)
     sel = []
     for name, ys in STRATA:
         pool = [k for k in K if k["work_id"].split("_")[1] in ys]
@@ -82,12 +84,12 @@ def main():
                 im[~m] = (im[~m] * 0.25 + 255 * 0.75).astype(np.uint8)
                 cv2.imwrite(str(OUT / "pages" / f"{iid}_{nm}.jpg"), im, [cv2.IMWRITE_JPEG_QUALITY, 92])
             w.writerow([iid, name, k["work_id"], k["line"], k["koma_id"], k["keep"], k["moved"], k["added"], k["dropped"], k["C"]])
-            items.append({"id": iid, "version": "s4_t1_c050", "images": [
+            items.append({"id": iid, "version": version, "images": [
                 {"src": f"pages/{iid}_sketch.jpg", "caption": "下絵(このコマの所)"},
                 {"src": f"pages/{iid}_line.jpg", "caption": "線画(このコマの所)"},
                 {"src": f"pages/{iid}_colored.jpg", "caption": "色分け: 黒=残した 青=動かした 赤=足した 橙=捨てた(下絵の線)", "target": True}]})
             print(f"  {iid} {name:10s} {k['work_id']} {Path(k['line']).stem} koma{k['koma_id']} 残{k['keep']} 動{k['moved']} 足{k['added']}")
-    spec = {"interview_id": "s_hb_why_changed_20261128", "page_title": "線を変えた理由 HB",
+    spec = make_spec(items) if make_spec else {"interview_id": "s_hb_why_changed_20261128", "page_title": "線を変えた理由 HB",
             "question": "このコマで、線画が下絵から変わった所(青=動かした・赤=足した)の主な理由はどれですか?", "unit": "コマ",
             "decides": "下絵から線画で線を動かした・足した理由を、作者の言葉で種類に分けるのに使います",
             "choices": [{"value": "refine", "label": "清書で形を整えた", "help": "下絵の線を、線画で正確に確定した"},

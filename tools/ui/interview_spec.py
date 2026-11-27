@@ -45,6 +45,20 @@ def load_questions(path):
         for field in ("label", "help"):
             if c.get(field) and JARGON.search(c[field]):
                 errs.append(f"選択肢の {field} に器具の用語らしい綴り: {c[field]!r}(作者の言葉で書く)")
+    # 札(任意): 主な答えと組み合わせて付ける(Track S 2026-11-27)。キーは数字・画面の操作キーと被らない1文字
+    tvals = set()
+    for t in spec.get("toggles", []):
+        if not t.get("value") or not t.get("label"):
+            errs.append("札に value と label が要る")
+        if t.get("value") in seen or t.get("value") in tvals or t.get("value") in RESERVED | {"__toggles_only__"}:
+            errs.append(f"札の value が選択肢・他の札・予約語と重なる: {t.get('value')}")
+        tvals.add(t.get("value"))
+        k = t.get("key")
+        if k is not None and (len(k) != 1 or k.isdigit() or k in "d0+-;!"):
+            errs.append(f"札のキー `{k}` は数字・d・0・+・-・;・! 以外の1文字")
+        for field in ("label", "help"):
+            if t.get(field) and JARGON.search(t[field]):
+                errs.append(f"札の {field} に器具の用語らしい綴り: {t[field]!r}")
     for field in ("question", "decides"):
         if JARGON.search(spec[field]):
             errs.append(f"`{field}` に器具の用語らしい綴り: {spec[field]!r}")

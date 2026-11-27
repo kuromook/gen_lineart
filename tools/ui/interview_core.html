@@ -32,6 +32,11 @@ footer{padding:8px 16px 12px;border-top:1px solid var(--line);background:var(--p
 .ch small{display:block;color:var(--sub);font-size:12px}
 .ch.on{background:var(--sel);border-color:var(--accent)}
 .ch.builtin{border-style:dashed}
+#toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#toggles:empty{display:none}
+.tg{border-style:dotted}
+.tg.on{background:var(--sel);border-color:var(--accent);border-style:solid}
+.tg .box{display:inline-block;width:1em;margin-right:4px}
 #row2{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
 #comment{flex:1 1 260px;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
 button.nav{min-height:44px;padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
@@ -57,6 +62,7 @@ button:disabled{opacity:.45;cursor:default}
 <main id="panes"></main>
 <footer>
   <div id="choices"></div>
+  <div id="toggles"></div>
   <div id="row2">
     <textarea id="comment" rows="1" placeholder="一言(任意。どの答えにも添えられます)"></textarea>
     <button class="nav" id="prev">← 前へ</button>
@@ -69,7 +75,7 @@ button:disabled{opacity:.45;cursor:default}
 // ---- データ: 組み立て器がここを置き換える。器具の用語を画面に出さないのは問いの作り手の仕事 ----
 const DATA = /*__INTERVIEW_DATA__*/null;
 const MODE = /*__INTERVIEW_MODE__*/"server";   // "server" | "artifact"
-const UI_VERSION = "interview_core 2026-11-07b";  // E の4点(等倍で始める・位置と直前・0.999・題)を取り込み
+const UI_VERSION = "interview_core 2026-11-27t";  // E の4点(等倍で始める・位置と直前・0.999・題)+ 任意の札(toggles、Track S 2026-11-27)
 
 // 「どれでもない」「分からない」は外せない(指針 §2-1)
 const BUILTIN = [
@@ -77,6 +83,8 @@ const BUILTIN = [
   {value:"__unknown__", label:"分からない", help:"判断できない・保留", builtin:true},
 ];
 const CHOICES = DATA.choices.concat(BUILTIN).map((c,i)=>({...c, key: i<9 ? String(i+1) : null}));
+// 札(任意): 主な答えと組み合わせて付ける。札だけでも保存できる(値は __toggles_only__)
+const TOGGLES = DATA.toggles || [];
 const SESSION = Math.random().toString(36).slice(2,10);
 const $ = id=>document.getElementById(id);
 
@@ -92,6 +100,7 @@ const store = MODE==="server" ? {
 };
 
 // ---- 状態 ----
+let tog=new Set();
 let idx=0, sel=null, answers={}, savedThisSession=0, dimOthers=false, busy=false;
 // 判定は文脈で動きうる(色の同時対比と同じ形)。**どの位置で・直前に何を見せたか**を行に残す
 let shownSeq=0, shownNow=null, shownPrev=null;
@@ -168,7 +177,7 @@ function render(){
       apply();};
     img.src = im.src;
   });
-  const prev=answers[it.id]; sel = prev ? prev.value : null; $("comment").value = prev ? (prev.comment||"") : "";
+  const prev=answers[it.id]; sel = prev && prev.value!=="__toggles_only__" ? prev.value : null; tog = new Set(prev && prev.toggles ? prev.toggles : []); $("comment").value = prev ? (prev.comment||"") : "";
   renderChoices(); $("prev").disabled = idx===0;
   $("status").className=""; $("status").textContent = prev ? `前の答え: ${prev.label}(${prev.ts.slice(0,16).replace("T"," ")})。選び直すと新しい行として足されます(前の行は消えません)` : "";
 }
@@ -178,15 +187,24 @@ function renderChoices(){
     if(c.key){const k=document.createElement("kbd"); k.textContent=c.key; b.append(k);} b.append(c.label);
     if(c.help){const s=document.createElement("small"); s.textContent=c.help; b.append(s);}
     b.onclick=()=>{sel=c.value; renderChoices();}; box.append(b); });
-  $("next").disabled = sel===null || busy;
+  const tb=$("toggles"); tb.innerHTML="";
+  TOGGLES.forEach(t=>{ const b=document.createElement("button"); b.className="ch tg"+(tog.has(t.value)?" on":"");
+    const x=document.createElement("span"); x.className="box"; x.textContent=tog.has(t.value)?"☑":"☐"; b.append(x);
+    if(t.key){const k=document.createElement("kbd"); k.textContent=t.key; b.append(k);} b.append(t.label);
+    if(t.help){const s=document.createElement("small"); s.textContent=t.help; b.append(s);}
+    b.onclick=()=>{flip(t.value);}; tb.append(b); });
+  $("next").disabled = !canSave() || busy;
 }
+function flip(v){ tog.has(v)?tog.delete(v):tog.add(v); renderChoices(); }
+function canSave(){ return sel!==null || tog.size>0; }
 async function saveNext(){
-  if(sel===null||busy) return; const it=DATA.items[idx], c=CHOICES.find(x=>x.value===sel);
+  if(!canSave()||busy) return; const it=DATA.items[idx], c=sel!==null ? CHOICES.find(x=>x.value===sel) : {value:"__toggles_only__", label:"札だけ"};
   const row={interview_id:DATA.interview_id, item_id:it.id, item_version:it.version||null,
     images:it.images.map(i=>i.id||i.caption||""), value:c.value, label:c.label, comment:$("comment").value.trim(),
     pos:idx, n_items:DATA.items.length, prev_item_id:shownPrev, shown_seq:shownSeq,
     shown_scale:(panes[0]&&panes[0].w)?Math.round(fitScale(panes[0])*view.z*1000)/1000:null,
     ts:new Date().toISOString(), ui_version:UI_VERSION, session:SESSION, mode:MODE};
+  if(TOGGLES.length) row.toggles = TOGGLES.map(t=>t.value).filter(v=>tog.has(v));
   busy=true; renderChoices(); $("status").textContent="保存中…";
   try{ await store.append(row); answers[it.id]=row; savedThisSession++; }
   catch(e){ busy=false; renderChoices(); $("status").className="err"; $("status").textContent=e.message+" —— 答えはまだ保存されていません。もう一度 Enter を押してください"; return; }
@@ -208,6 +226,8 @@ document.addEventListener("keydown",e=>{
   if(typing){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault(); saveNext();} if(e.key==="Escape") $("comment").blur(); return; }
   const c=CHOICES.find(x=>x.key===e.key);
   if(c){ sel=c.value; renderChoices(); return; }
+  const t=TOGGLES.find(x=>x.key && x.key===e.key);
+  if(t){ flip(t.value); return; }
   if(e.key==="Enter"){ e.preventDefault(); saveNext(); }
   else if(e.key==="ArrowLeft"){ if(idx>0){idx--; view={z:1,cx:.5,cy:.5}; render();} }
   else if(e.key==="+"||e.key===";"){ const p=panes[0]; if(p){const r=p.view.getBoundingClientRect(); zoomAt(p,1.25,r.width/2,r.height/2);} }
