@@ -17574,3 +17574,8 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 - 帯の確認: R が門を v7 に据え置いた(結果を見た後に門を動かさない)のは規律どおり。指摘なし
 - **E が1つの版にまとめた**(`reply_fs_e_one_screen_with_second_axis_and_toggles_20261127.md`、`aesthetic-judge` の f488794): `interview_core 2026-11-27` = 2つ目の軸(`choices2`)+ `prefill` + 札。札のキーは `z x c v b n m`(当たってよい列の側で点検、札は7つまで。S の `m` はそのまま通る)/ **札だけの保存は2つ目の軸が無い便だけ**(軸1も軸2も空の行を作らない)。ついでに `verify_answers.py` に `prefill` と `value2` の印字・キーの案内・README を直した。煙試験は見本の図形だけ、実物の目視は S に
   - **基盤に取り込んだ**: `git checkout aesthetic-judge -- tools/ui/`(4ファイル、foundation 比 +148/−16。`-` の行は全部書き換えの旧い側で、foundation だけの行は消えていない)。py_compile 合・許可表の点検 0
+
+### 2026-11-27 ユーザー: Track E を閉じ、決定論の仕分けの track `layer-sort` を新設
+- 逐語: 「aetithetic-judge (track E) は現在、決定論的なレイヤ判定に使っているが、トラックを違ったテーマのもとで開いていたこともあり、やはり時折混濁を生むようだ　（さきほど、トラックSがラフ絵の判定をEに出そうとしていた）　Eそのものは切りの良いところで閉じて、決定論的分類判定用トラックを新たに建てるようにしたい　おそらくもうすぐcomic studio ファイルの抽出結果が届き始める　今は落ち着いているがまた忙しくなる」
+- 選択肢から: 名前 **`layer-sort`**(推し)/ 画面の部品 `tools/ui/` は **新しい track が持つ**(基盤の推し「基盤が持つ」は採られなかった)/ 閉じるのは **ComicStudio の前**(推し)
+- 手順: E に引き継ぎの便(持っていくファイルの一覧・a の版と数・開いている項目・罠・引用禁止の数)と自分の枝の push を頼んだ(`outbox/reply_e_close_and_handover_to_layer_sort_20261127.md`、起こした)→ 着いたら基盤が `foundation` から `lineart-layer-sort` を作り、一覧のファイルだけ E の枝から写し、引き継ぎ書を書き、CLAUDE.md §4 の起こす宛先と各 track の宛先を変える。線画らしさの審判は E の木に残す(閉じる、撤回ではない)
