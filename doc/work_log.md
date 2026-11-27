@@ -17582,3 +17582,4 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
 - **E の引き継ぎ便**(`note_foundation_e_handover_to_layer_sort_20261127.md`、183行): 走っているもの無し / a は v12 219,802 / 437,425 = 0.50249(鎖 13版、撤回なし)/ 持っていくもの 45ファイル + `data/` 3.6GB / 持っていかないもの = 線画らしさの審判 / 開いている項目6 / 引用禁止の数 / **push はしていない: E の常設の制約「push と外向きのことは指示があるまでしない」により、ユーザーの承認待ち**(117 commit、追跡を足すのは .py 38・.json 3・.tsv 1・.md 1、画像・重み0、許可表の器具 0)
 - **基盤が `lineart-layer-sort` を開いた**: `foundation` の 7828c63 から、E の一覧の45ファイルだけ写し、`data/role_predictor`・`data/census` をハードリンク。引き継ぎ書・work_log を書いて `73d95a3`(未 push、track が push)。呼び名は **Track LS**
 - `CLAUDE.md §4` の起こす宛先 E → LS、`worktree_policy.md` と台帳に行を足した。全 track・抽出へ宛先の変更 `outbox/reply_all_track_e_closes_layer_sort_opens_20261127.md`(SCP 着弾 21:32、起こした: census・Q・R・S・抽出・E)
+- **E の push 済み**(ユーザーの承認「push」、E が実行): `origin/aesthetic-judge` 66d6072 → ba08a8b、手元との差 0、許可表の器具 0、新しく公開された画像・重み 0。引き継ぎ1〜4 完了、宛先の変更も受領。E の木は座ったまま(LS が詰まったら聞ける)
