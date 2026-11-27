@@ -54,8 +54,8 @@ def load_questions(path):
             errs.append(f"札の value が選択肢・他の札・予約語と重なる: {t.get('value')}")
         tvals.add(t.get("value"))
         k = t.get("key")
-        if k is not None and (len(k) != 1 or k.isdigit() or k in "d0+-;!"):
-            errs.append(f"札のキー `{k}` は数字・d・0・+・-・;・! 以外の1文字")
+        if k is not None and (len(k) != 1 or k.isdigit() or k in "d0+-;!qwertyuio"):  # q〜o は E の2つ目の軸(choices2)のキー
+            errs.append(f"札のキー `{k}` は数字・d・0・+・-・;・!・q〜o(E の2つ目の軸)以外の1文字")
         for field in ("label", "help"):
             if t.get(field) and JARGON.search(t[field]):
                 errs.append(f"札の {field} に器具の用語らしい綴り: {t[field]!r}")
