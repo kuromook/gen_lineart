@@ -34,6 +34,11 @@ footer{padding:8px 16px 12px;border-top:1px solid var(--line);background:var(--p
 .ch small{display:block;color:var(--sub);font-size:12px}
 .ch.on{background:var(--sel);border-color:var(--accent)}
 .ch.builtin{border-style:dashed}
+#toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#toggles:empty{display:none}
+.tg{border-style:dotted}
+.tg.on{background:var(--sel);border-color:var(--accent);border-style:solid}
+.tg .box{display:inline-block;width:1em;margin-right:4px}
 #row2{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
 #comment{flex:1 1 260px;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
 button.nav{min-height:44px;padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
@@ -61,6 +66,7 @@ button:disabled{opacity:.45;cursor:default}
   <div id="choices"></div>
   <p id="q2"></p>
   <div id="choices2"></div>
+  <div id="toggles"></div>
   <div id="row2">
     <textarea id="comment" rows="1" placeholder="一言(任意。どの答えにも添えられます)"></textarea>
     <button class="nav" id="prev">← 前へ</button>
@@ -73,8 +79,9 @@ button:disabled{opacity:.45;cursor:default}
 // ---- データ: 組み立て器がここを置き換える。器具の用語を画面に出さないのは問いの作り手の仕事 ----
 const DATA = /*__INTERVIEW_DATA__*/null;
 const MODE = /*__INTERVIEW_MODE__*/"server";   // "server" | "artifact"
-const UI_VERSION = "interview_core 2026-11-18";  // **2つ目の軸**(`choices2`)と、前の便の答えの引き継ぎ(`prefill`)を足した。
-// `choices2` の無い便は 2026-11-07b と同じに動く(足しただけで、今までの画面の形は変えていない)
+const UI_VERSION = "interview_core 2026-11-27";  // **2つ目の軸**(`choices2`)+ 前の便の答えの引き継ぎ(`prefill`、E 2026-11-18)
+// + **任意の札**(`toggles`、Track S 2026-11-27)を1つの版にまとめた。
+// `choices2` も `toggles` も無い便は 2026-11-07b と同じに動く(足しただけで、今までの画面の形は変えていない)
 
 // 「どれでもない」「分からない」は外せない(指針 §2-1)
 const BUILTIN = [
@@ -86,6 +93,10 @@ const CHOICES = DATA.choices.concat(BUILTIN).map((c,i)=>({...c, key: i<9 ? Strin
 // (作者 2026-11-18 逐語「２つボタンを押せるようにすればいいのだ 下絵（のスクリーンショット）であり資料、とか
 // 線画（のスクリーンショット）であり切り出し、というふうに」)。**両方押さないと保存できない**
 const CHOICES2 = DATA.choices2 ? DATA.choices2.concat(BUILTIN).map((c,i)=>({...c, key: "qwertyuio"[i]||null})) : null;
+// **札**(任意。主な答えと組み合わせて付ける。Track S 2026-11-27「位置を移動した」を理由と別に数えるため)。
+// キーは問いの側が書く —— 当たってよいのは `z x c v b n m` だけ(数字=軸1 / `q w e r t y u i o`=軸2 /
+// `d 0 + - ; !`=画面の操作)。**点検は `interview_spec.py` が当たる列の側で見る**(禁じる列を数えると軸が増えるたび取りこぼす)
+const TOGGLES = DATA.toggles || [];
 const SESSION = Math.random().toString(36).slice(2,10);
 const $ = id=>document.getElementById(id);
 
@@ -101,7 +112,7 @@ const store = MODE==="server" ? {
 };
 
 // ---- 状態 ----
-let idx=0, sel=null, sel2=null, answers={}, savedThisSession=0, dimOthers=false, busy=false;
+let idx=0, sel=null, sel2=null, tog=new Set(), answers={}, savedThisSession=0, dimOthers=false, busy=false;
 // 判定は文脈で動きうる(色の同時対比と同じ形)。**どの位置で・直前に何を見せたか**を行に残す
 let shownSeq=0, shownNow=null, shownPrev=null;
 const latest = rows => { const m={}; rows.sort((a,b)=>(a.ts<b.ts?-1:1)).forEach(r=>{m[r.item_id]=r;}); return m; };
@@ -177,10 +188,14 @@ function render(){
       apply();};
     img.src = im.src;
   });
-  const prev=answers[it.id]; sel = prev ? prev.value : null; $("comment").value = prev ? (prev.comment||"") : "";
+  const prev=answers[it.id];
+  sel = prev && prev.value!=="__toggles_only__" ? prev.value : null;
+  tog = new Set(prev && prev.toggles ? prev.toggles : []);
+  $("comment").value = prev ? (prev.comment||"") : "";
   // **前の便であなたが押した答え**を初期値に置く(問いの側が `prefill` に書いたときだけ)。
-  // **変えられる**(閉じない)。何件変えたかは読む器具が印字する
-  if(sel===null && it.prefill) sel = it.prefill;
+  // **変えられる**(閉じない)。何件変えたかは読む器具が印字する(`verify_answers.py`)。
+  // **前の行が在るときは置かない** —— 札だけで保存した行の上に、作者が押していない答えを置かないため(E 2026-11-27)
+  if(sel===null && !prev && it.prefill) sel = it.prefill;
   sel2 = prev ? (prev.value2||null) : (it.prefill2||null);
   $("q2").textContent = CHOICES2 ? (DATA.question2||"") : "";
   renderChoices(); $("prev").disabled = idx===0;
@@ -189,9 +204,23 @@ function render(){
 function renderChoices(){
   drawRow($("choices"), CHOICES, sel, v=>{sel=v;});
   if(CHOICES2) drawRow($("choices2"), CHOICES2, sel2, v=>{sel2=v;});
-  // **2つ目の軸が在るときは、両方押すまで保存できない**(片方だけの行を作らない)
-  $("next").disabled = sel===null || (CHOICES2 && sel2===null) || busy;
+  drawToggles();
+  $("next").disabled = !canSave() || busy;
 }
+function drawToggles(){
+  const tb=$("toggles"); tb.innerHTML="";
+  TOGGLES.forEach(t=>{ const b=document.createElement("button"); b.className="ch tg"+(tog.has(t.value)?" on":"");
+    const x=document.createElement("span"); x.className="box"; x.textContent=tog.has(t.value)?"\u2611":"\u2610"; b.append(x);
+    if(t.key){const k=document.createElement("kbd"); k.textContent=t.key; b.append(k);} b.append(t.label);
+    if(t.help){const s=document.createElement("small"); s.textContent=t.help; b.append(s);}
+    b.onclick=()=>{flip(t.value);}; tb.append(b); });
+}
+function flip(v){ tog.has(v)?tog.delete(v):tog.add(v); renderChoices(); }
+// **保存できる条件**(2つ目の軸と札が同じ便に在るときの振る舞い。E が決めた 2026-11-27):
+// ・主な答えを押したら —— 2つ目の軸が在る便では**2つ目も押すまで保存できない**(11-18 の決めのまま)
+// ・**札だけでの保存は、2つ目の軸が無い便だけ**(`__toggles_only__`、Track S 2026-11-27)。
+//   2つの軸が在る便で札だけの行を許すと「軸1も軸2も空」の行ができ、**どちらが未回答かを行から読めない**
+function canSave(){ return sel!==null ? !(CHOICES2 && sel2===null) : (!CHOICES2 && tog.size>0); }
 function drawRow(box, list, cur, set){
   box.innerHTML="";
   list.forEach(c=>{ const b=document.createElement("button"); b.className="ch"+(c.builtin?" builtin":"")+(cur===c.value?" on":"");
@@ -200,17 +229,19 @@ function drawRow(box, list, cur, set){
     b.onclick=()=>{set(c.value); renderChoices();}; box.append(b); });
 }
 async function saveNext(){
-  if(sel===null||busy||(CHOICES2&&sel2===null)) return;
-  const it=DATA.items[idx], c=CHOICES.find(x=>x.value===sel);
+  if(!canSave()||busy) return;
+  const it=DATA.items[idx];
+  const c = sel!==null ? CHOICES.find(x=>x.value===sel) : {value:"__toggles_only__", label:"札だけ"};
   const c2=CHOICES2 ? CHOICES2.find(x=>x.value===sel2) : null;
   const row={interview_id:DATA.interview_id, item_id:it.id, item_version:it.version||null,
     images:it.images.map(i=>i.id||i.caption||""), value:c.value, label:c.label,
     value2:c2?c2.value:null, label2:c2?c2.label:null,
-    prefill:it.prefill||null, prefill_kept:it.prefill?(it.prefill===c.value):null,
+    prefill:it.prefill||null, prefill_kept:(it.prefill&&sel!==null)?(it.prefill===c.value):null,
     comment:$("comment").value.trim(),
     pos:idx, n_items:DATA.items.length, prev_item_id:shownPrev, shown_seq:shownSeq,
     shown_scale:(panes[0]&&panes[0].w)?Math.round(fitScale(panes[0])*view.z*1000)/1000:null,
     ts:new Date().toISOString(), ui_version:UI_VERSION, session:SESSION, mode:MODE};
+  if(TOGGLES.length) row.toggles = TOGGLES.map(t=>t.value).filter(v=>tog.has(v));
   busy=true; renderChoices(); $("status").textContent="保存中…";
   try{ await store.append(row); answers[it.id]=row; savedThisSession++; }
   catch(e){ busy=false; renderChoices(); $("status").className="err"; $("status").textContent=e.message+" —— 答えはまだ保存されていません。もう一度 Enter を押してください"; return; }
@@ -233,6 +264,8 @@ document.addEventListener("keydown",e=>{
   const c=CHOICES.find(x=>x.key===e.key);
   if(c){ sel=c.value; renderChoices(); return; }
   if(CHOICES2){ const c2=CHOICES2.find(x=>x.key===e.key); if(c2){ sel2=c2.value; renderChoices(); return; } }
+  const t=TOGGLES.find(x=>x.key && x.key===e.key);
+  if(t){ flip(t.value); return; }
   if(e.key==="Enter"){ e.preventDefault(); saveNext(); }
   else if(e.key==="ArrowLeft"){ if(idx>0){idx--; view={z:1,cx:.5,cy:.5}; render();} }
   else if(e.key==="+"||e.key===";"){ const p=panes[0]; if(p){const r=p.view.getBoundingClientRect(); zoomAt(p,1.25,r.width/2,r.height/2);} }
@@ -244,6 +277,11 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("keydown",e=>{ if(e.key==="!" && document.activeElement!==$("comment")) setNative(); });
 $("next").onclick=saveNext; $("fitbtn").onclick=setFit; $("natbtn").onclick=setNative; $("prev").onclick=()=>{ if(idx>0){idx--; view={z:1,cx:.5,cy:.5}; render();} };
 window.addEventListener("resize",apply);
+// **在る列のキーだけ案内する**(2つ目の軸も札も無い便で `q w e r t y` を案内していたのを直した。E 2026-11-27)
+$("keys").textContent = [CHOICES2?"数字=上の列を選ぶ":"数字=選ぶ"]
+  .concat(CHOICES2?["q w e r t y=下の列"]:[])
+  .concat(TOGGLES.some(t=>t.key)?[TOGGLES.filter(t=>t.key).map(t=>t.key).join(" ")+"=札(重ねて付けられる)"]:[])
+  .concat(["Enter=保存して次へ","←=前へ","+・−・ホイール・ピンチ=拡大縮小","0=収める","Shift+1=等倍","d=対象以外を薄く"]).join(" / ");
 
 (async()=>{
   render(); $("status").textContent="前の答えを読み込み中…";

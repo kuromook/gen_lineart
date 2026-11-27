@@ -45,6 +45,25 @@ def main():
     print(f"選び直した問い: {sum(1 for k, v in by_item.items() if len(v) > 1)}(前の行は残っている)")
     print(f"最新の答え: どれでもない {vals.get('__none__', 0)} / 分からない {vals.get('__unknown__', 0)} / "
           f"一言つき {sum(1 for r in latest.values() if r.get('comment'))}")
+    # **2つ目の軸**(E 2026-11-18)。軸ごとに別の欄なので別の行で印字する
+    if spec.get("choices2"):
+        lab2 = {c["value"]: c["label"] for c in spec["choices2"]}
+        lab2.update({"__none__": "どれでもない", "__unknown__": "分からない"})
+        v2 = Counter(r.get("value2") for r in latest.values())
+        print("2つ目の軸: " + " / ".join(f"{lab2.get(k, k)} {n}" for k, n in v2.most_common() if k is not None)
+              + f" / 空 {v2.get(None, 0)}")
+    # **初期値(`prefill`)を置いた問いは、そのまま何件・変えた何件を印字する**
+    # (画面の 11-18 の註は「読む器具が印字する」と書いていたが、器具に無かった。E 2026-11-27 に足した)
+    pf = [r for r in latest.values() if r.get("prefill")]
+    if pf:
+        kept = sum(1 for r in pf if r.get("prefill_kept") is True)
+        changed = sum(1 for r in pf if r.get("prefill_kept") is False)
+        print(f"初期値を置いた問い: {len(pf)} / そのまま {kept} / 変えた {changed} / 主な答え無し {len(pf) - kept - changed}")
+    # 札(Track S 2026-11-27)。札だけで保存した行は主な答えが `__toggles_only__`
+    if spec.get("toggles"):
+        tc = Counter(v for r in latest.values() for v in r.get("toggles", []))
+        print("札: " + " / ".join(f"{t['label']} {tc.get(t['value'], 0)}" for t in spec["toggles"])
+              + f" / 札だけ(主な答え無し) {vals.get('__toggles_only__', 0)}")
     if vals.get("__none__", 0):
         print("  → 「どれでもない」が来た問いは、問いの作りの欠陥として記録する(指針 §2-3)")
     if stray:

@@ -11,6 +11,10 @@ from pathlib import Path
 
 CORE = Path(__file__).resolve().parent / "interview_core.html"
 RESERVED = {"__none__", "__unknown__"}
+TOGGLES_ONLY = "__toggles_only__"  # 札だけで保存した行の value(Track S 2026-11-27)
+# **札のキーは当たってよい列の側で見る。** 数字=軸1 / `q w e r t y u i o`=軸2(E 2026-11-18)/
+# `d 0 + - ; !` と Enter・矢印=画面の操作。禁じる列を数えるやり方は、軸が増えるたび取りこぼす(E 2026-11-27)
+TOGGLE_KEYS = "zxcvbnm"
 # 器具の用語らしい綴り(英字の snake_case / 列名)。画面には作者の言葉を出す(指針 §1-3)
 JARGON = re.compile(r"[a-z]+_[a-z_]+|\b(stratum|v_layer_kind|layer_id|alpha|bbox)\b")
 
@@ -50,6 +54,8 @@ def load_questions(path):
             errs.append(f"選択肢 `{c.get('label')}` は自動で足すので書かない")
         if not c.get("value") or not c.get("label"):
             errs.append("選択肢に value と label が要る")
+        if c.get("value") == TOGGLES_ONLY:
+            errs.append(f"選択肢の value に `{TOGGLES_ONLY}` は使えない(札だけの保存の予約語)")
         # 軸ごとに別の列に入るので、2つの軸で同じ value が在ってもよい(軸の中で重なるのだけ見る)
         ax = "2" if spec.get("choices2") and c in spec["choices2"] else "1"
         if (ax, c.get("value")) in seen:
@@ -58,6 +64,27 @@ def load_questions(path):
         for field in ("label", "help"):
             if c.get(field) and JARGON.search(c[field]):
                 errs.append(f"選択肢の {field} に器具の用語らしい綴り: {c[field]!r}(作者の言葉で書く)")
+    # 札(任意): 主な答えと**組み合わせて**付ける(Track S 2026-11-27)。行の `toggles` 欄に value の列が入る
+    choice_values = {c.get("value") for c in spec["choices"] + list(spec.get("choices2") or [])}
+    tvals = set()
+    for t in spec.get("toggles", []):
+        if not t.get("value") or not t.get("label"):
+            errs.append("札に value と label が要る")
+        if t.get("value") in choice_values or t.get("value") in tvals or t.get("value") in RESERVED | {TOGGLES_ONLY}:
+            errs.append(f"札の value が選択肢・他の札・予約語と重なる: {t.get('value')}")
+        tvals.add(t.get("value"))
+        k = t.get("key")
+        if k is not None and (len(k) != 1 or k not in TOGGLE_KEYS):
+            errs.append(f"札のキー `{k}` は `{' '.join(TOGGLE_KEYS)}` のどれか1文字"
+                        f"(数字は1つ目の軸・q w e r t y u i o は2つ目の軸・d 0 + - ; ! は画面の操作)")
+        for field in ("label", "help"):
+            if t.get(field) and JARGON.search(t[field]):
+                errs.append(f"札の {field} に器具の用語らしい綴り: {t[field]!r}")
+        # **2つの軸が在る便では札だけでは保存できない**(画面の決め。E 2026-11-27)。
+        # 画面が許さないことを札の説明で約束させない
+        if spec.get("choices2") and "札だけ" in (t.get("help") or ""):
+            errs.append("2つ目の軸が在る便では**札だけでは保存できない**ので、札の説明に「札だけ」と書けない"
+                        f"(札 {t.get('value')})")
     for field in ("question", "decides"):
         if JARGON.search(spec[field]):
             errs.append(f"`{field}` に器具の用語らしい綴り: {spec[field]!r}")
