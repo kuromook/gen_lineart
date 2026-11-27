@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="inbox/reply_all_track_e_closes_layer_sort_opens_20261127.md",
+         what="基盤の通達(ユーザーの決定 11-27): Track E を閉じ、決定論の層の仕分け a と版の鎖・聞き取りの画面の部品・ComicStudio の結果は新しい track LS へ。E の木には線画らしさの審判だけが残る。a は v12 のまま LS が引き継ぐ",
+         why_not_yet="census の宛先を変えた(a の話は LS へ)"),
     dict(path="outbox/push_census_order_pair_v6_defect_check_20261127.md",
          what="ユーザー承認(11-27「承認」)で、対 v6 の不具合の候補 3頁を抽出側に調べてもらう発注(選んだ層・選ばなかった線画らしい層・ずれの大きさ・QC が拾えない訳)。対は作り直さず、器具も直さない",
          why_not_yet="調べの便が未着"),
