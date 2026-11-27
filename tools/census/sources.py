@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/q31/bar_segment_count_distribution_layers_20261127.csv",
+         what="抽出側の相談の表: 細線化の本数の度数分布(名前で引いた黒消しの材料 651層と Q31 の途中 2,115層)。ユーザーの考え(本数の外れ値なら黒消しでない)を規則にするかの相談。sha OK。規則は Track Q とユーザーが決めるので Q に回し、Q31 は発注どおり全部出すよう抽出側に返した",
+         why_not_yet="規則の決定は Q。名前の黒消しは作者の分類ではない(的中率を隣に置く必要)"),
     dict(path="inbox/reply_census_e_cloud_copy_groups_correction_20261126.md",
          what="Track E の訂正: 雲の3層を1つの絵と書いたのは言い過ぎ。2層は同じファイル、3層目は別のファイルで同じ絵かは分からない。版の聞き取りにまとめる案に同意",
          why_not_yet="版の聞き取りはユーザーの承認を取ってから"),
