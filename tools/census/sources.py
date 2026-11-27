@@ -418,6 +418,12 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/q31/q31_effect_bar_layers_20261127.csv",
+         what="Q31 の列の便(名前 effect の 2,294層): 黒消しの列 描いた 2,278・打ち切り 16層(4頁)、灰の統計 2,294 全部、合成の既知セル合格。鍵と順が発注と一致、sha 7 OK。器具の版は打ち切りと速くした直しを足したもの(値は同じと抽出側が確かめた)。Track Q の data へ写した",
+         why_not_yet="使うのは Track Q"),
+    dict(path="data/census_full/q31/q31_author_rulings_20261127.csv",
+         what="作者の裁定(11-27、抽出側経由): 計算が終わらなかった4頁の effect 16層 —— 2頁の 12層は効果線でも黒消しでもなく動きを表す線(黒消しは修正用のフォルダーの中に形の名前で1本1層)、2頁の 4層は墨を散らせたような効果。ユーザーの言葉: effect の層を黒消し・描き文字・効果線・動きの線・その他に分けたい、Track Q の仕事",
+         why_not_yet="分類の登録は Track Q。census は答えを記録しただけ"),
     dict(path="inbox/note_census_s_pair_defects_from_h4_20261128.md",
          what="Track S の通知(ユーザーの指示: ペア抽出はまだ改善の余地があるはず、知らせる): 作者の聞き取りで対 v6 の不具合の候補 2頁(線画が黒いかたまり / 下絵と線画が半コマほどずれる)。2頁とも QC は ok・aligned。抽出側と Track D に通知として回した(直しは頼んでいない)",
          why_not_yet="対の品質の列にはしない(2件、QC の列で拾えるか不明)。次に対の抽出を直すときの材料"),
