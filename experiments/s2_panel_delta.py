@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 from s1_cleanup_delta import (FILL_PAD, HOLD_MARGIN, R1, R2, arm, binarize, classify, dist_to_ink,  # noqa: E402
                               fill_mask, find, n1_blockwise, population, shift)
+from s3_binarize import binarize_sketch  # noqa: E402
 
 SHAPES = ROOT / "data/census/s2_panel_shapes_20261126"
 PANELS = ROOT / "data/census/s2_panel_shapes_panels_20261126.csv"
@@ -29,6 +30,7 @@ NO_SKETCH = 0.10   # K/L < これ = 下絵の無いコマ(登録 S2)
 FEW_LINE = 200     # L < これ = 線の少ないコマ
 GROUND = 0.80      # area ≥ 頁のこれ = 地(S2a)
 SMALL = 0.02       # area_in_image < 頁のこれ = 落とす
+C_THETA = 0.50     # S4: C < これ = 下絵の無いコマ
 
 
 def s1_rows():
@@ -60,6 +62,8 @@ def main():
     ap.add_argument("--only", action="append", default=[], help="頁名(page)で絞る")
     ap.add_argument("--out", required=True)
     ap.add_argument("--crops", action="store_true")
+    ap.add_argument("--sketch-arm", default="T0", help="S3/S4: 下絵の二値化 T0/T1/T2")
+    ap.add_argument("--split", default="KL", choices=["KL", "C"], help="S4: 区分の量 KL(K/L<0.10)/ C(R2 以内の割合<0.50)")
     a = ap.parse_args()
     out_dir = ROOT / a.out
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -81,7 +85,9 @@ def main():
             drops[f"形なし: {pg['reason']}"] = drops.get(f"形なし: {pg['reason']}", 0) + 1; continue
         lab = cv2.imread(str(SHAPES / Path(pg["out_file"]).name), cv2.IMREAD_UNCHANGED)
         Lb, _, _ = binarize(find(r, "line"))
-        Sb, _, _ = binarize(find(r, "sketch"))
+        Sb = binarize_sketch(find(r, "sketch"), a.sketch_arm)
+        S0 = binarize(find(r, "sketch"))[0] if a.sketch_arm != "T0" else Sb
+        faint = float((Sb & ~S0).sum() / max(Sb.sum(), 1))  # 腕で新しく拾った墨の割合
         if lab is None or lab.shape != Lb.shape or Sb.shape != Lb.shape:
             drops["画の大きさが違う"] = drops.get("画の大きさが違う", 0) + 1; continue
         s1 = S1[sp][1]
@@ -103,7 +109,7 @@ def main():
         n2 = None
         for j in range(1, len(work)):
             o = work[(work.index(r) + j) % len(work)]
-            Ob, _, _ = binarize(find(o, "sketch"))
+            Ob = binarize_sketch(find(o, "sketch"), a.sketch_arm)
             if Ob.shape == Lb.shape:
                 n2 = (o["line"], arm(Lb, Lsk, Ob, skeletonize(Ob), align=True)); break
         # コマ同士の境からの距離(隣のコマの下絵が効く範囲)
@@ -134,18 +140,20 @@ def main():
             dsel = Lab_s == kid
             drp = float((d_drop[dsel] > R2).mean()) if dsel.any() else float("nan")
             c1 = part(dC1, sel)[1]
-            kind = "線の少ないコマ" if L < FEW_LINE else ("下絵の無いコマ" if K / L < NO_SKETCH else "下絵の在るコマ")
+            C = (1 - ad) if L else float("nan")
+            absent = (K / L < NO_SKETCH) if a.split == "KL" else (C < C_THETA)
+            kind = "線の少ないコマ" if L < FEW_LINE else ("下絵の無いコマ" if absent else "下絵の在るコマ")
             hold = (k < kN2 + HOLD_MARGIN) if (n2 and kind == "下絵の在るコマ") else (kind == "下絵の在るコマ")
             krow.append(dict(work_id=r["work_id"], line=r["line"], koma_id=kid, koma_source=info["koma_source"],
                              area=info["area"], area_in_image=info["area_in_image"], L=L, K=K,
-                             K_over_L=round(K / L, 4) if L else float("nan"), kind=kind,
+                             K_over_L=round(K / L, 4) if L else float("nan"), C=round(C, 4), kind=kind,
                              keep=round(k, 4), moved=round(m, 4), added=round(ad, 4), dropped=round(drp, 4),
                              N1_delta_keep=round(kN1 - k, 4), N2_keep=round(kN2, 4), hold=hold,
                              near_edge_share=round(float((dEdge[ly[sel], lx[sel]] <= R2).mean()), 4) if L else float("nan"),
                              C1_keep=round(c1, 4)))
         n, k, m, ad = part(d_line, outside)
         _, kp, mp, ap_ = part(d_line, np.ones(len(ly), bool))
-        prow.append(dict(work_id=r["work_id"], line=r["line"], n_koma=pg["n_koma"], ground=n_ground, small_dropped=n_small,
+        prow.append(dict(work_id=r["work_id"], line=r["line"], faint_share=round(faint, 4), n_koma=pg["n_koma"], ground=n_ground, small_dropped=n_small,
                          overlap_px=pg["overlap_px"], outside_L=n, outside_keep=round(k, 4), outside_added=round(ad, 4),
                          page_keep=round(kp, 4), page_added=round(ap_, 4), s1_B_keep=s1["B_keep"], s1_B_added=s1["B_added"],
                          N2_line=n2[0] if n2 else ""))
