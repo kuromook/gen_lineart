@@ -17572,3 +17572,5 @@ census の報告(返信 §2-2): **納品の木に歩行器が2つ在って門が
   - Q: Q28(枠の混ざりの規則は使えない、規律13)/ Q29(線の統計 AF3 が名前 `effect` より誤りが少ない、C1)/ Q30 描き文字の推測 / Q31 effect 2,294層の黒消しの列(本数の外れ値はユーザーの決定3つ)/ Q32 の画。推測の列 `effect_line_guess_af3`・`kakimoji_guess` を census に依頼。コマは R5 で一区切り、残りは棚上げ(ユーザー 11-25)
   - S: S2 = 492頁のコマの形(437頁・コマ 2,211)。R5 の区画が付く頁は 38
 - 帯の確認: R が門を v7 に据え置いた(結果を見た後に門を動かさない)のは規律どおり。指摘なし
+- **E が1つの版にまとめた**(`reply_fs_e_one_screen_with_second_axis_and_toggles_20261127.md`、`aesthetic-judge` の f488794): `interview_core 2026-11-27` = 2つ目の軸(`choices2`)+ `prefill` + 札。札のキーは `z x c v b n m`(当たってよい列の側で点検、札は7つまで。S の `m` はそのまま通る)/ **札だけの保存は2つ目の軸が無い便だけ**(軸1も軸2も空の行を作らない)。ついでに `verify_answers.py` に `prefill` と `value2` の印字・キーの案内・README を直した。煙試験は見本の図形だけ、実物の目視は S に
+  - **基盤に取り込んだ**: `git checkout aesthetic-judge -- tools/ui/`(4ファイル、foundation 比 +148/−16。`-` の行は全部書き換えの旧い側で、foundation だけの行は消えていない)。py_compile 合・許可表の点検 0
