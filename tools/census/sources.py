@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path="data/census_full/q31/q31_author_rulings_v2_20261127.csv",
+         what="作者の裁定の表 v2(作者の訂正 11-27「よくみたら１６あった、訂正」): 打ち切りの頁の1つの黒消しは 16本で構造 DB の層の数と一致、前の版の 14本と差 2 は取り消し。前の版は書き換えない。Track Q の data へ写した",
+         why_not_yet="分類の登録は Track Q"),
     dict(path="data/census_full/q31/q31_effect_bar_layers_20261127.csv",
          what="Q31 の列の便(名前 effect の 2,294層): 黒消しの列 描いた 2,278・打ち切り 16層(4頁)、灰の統計 2,294 全部、合成の既知セル合格。鍵と順が発注と一致、sha 7 OK。器具の版は打ち切りと速くした直しを足したもの(値は同じと抽出側が確かめた)。Track Q の data へ写した",
          why_not_yet="使うのは Track Q"),
