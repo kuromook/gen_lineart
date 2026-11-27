@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 from s2_panel_delta import s1_rows  # noqa: E402
 
-FULL = ROOT / "results/s2_full"
-OUT = ROOT / "results/s2_full_by_work.csv"
+FULL = ROOT / (sys.argv[1] if len(sys.argv) > 1 else "results/s2_full")
+OUT = ROOT / (sys.argv[2] if len(sys.argv) > 2 else "results/s2_full_by_work.csv")
 H1_NOTES = ["h02", "h03", "h04b", "h05", "h08", "h11", "h16", "h20"]
 
 
@@ -45,7 +45,8 @@ def main():
                         N1_delta=med(k["N1_delta_keep"] for k in use), near_edge=med(k["near_edge_share"] for k in use),
                         s1_pages_used=len(s1use), s1_keep=med(s["B_keep"] for s in s1use), s1_added=med(s["B_added"] for s in s1use),
                         ground=sum(int(p["ground"]) for p in Pg), small=sum(int(p["small_dropped"]) for p in Pg),
-                        C1_fail=sum(float(k["C1_keep"]) < 0.999 for k in K), drops=drops))
+                        C1_fail=sum(float(k["C1_keep"]) < 0.999 for k in K),
+                        faint=med(p.get("faint_share", "nan") for p in Pg), drops=drops))
     with open(OUT, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0].keys())); w.writeheader(); w.writerows(out)
     kinds = {}
@@ -58,7 +59,7 @@ def main():
         print(f"{o['work_id']:26s} {o['pages']:3d} {o['panels']:3d} {o['present']:3d} {o['absent']:3d} {o['few_line']:2d} | "
               f"{o['absent_share_n']:.2f}/{o['absent_share_L']:.2f} | {o['held']:3d} {o['used']:3d} | {o['keep']:.2f} {o['moved']:.2f} "
               f"{o['added']:.2f} {o['dropped']:.2f} | {o['s1_pages_used']:3d} {o['s1_keep']:.2f} {o['s1_added']:.2f} | "
-              f"{o['N1_delta']:+.2f} {o['near_edge']:.2f}   {o['drops']}")
+              f"{o['N1_delta']:+.2f} {o['near_edge']:.2f} 薄{o['faint']:.2f}  {o['drops']}")
     # H1/H1b の一言の頁
     sel = {r["item_id"]: r for r in csv.DictReader(open(ROOT / "data/h1_sketch_stage_20261120/selection.csv", encoding="utf-8"))}
     sel.update({r["item_id"]: r for r in csv.DictReader(open(ROOT / "data/h1b_reask_20261126/selection.csv", encoding="utf-8"))})
