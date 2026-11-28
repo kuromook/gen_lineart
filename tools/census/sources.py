@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path='inbox/note_census_r2a_images_approved_20261128.md',
+         what='Track R: 便R2a の20層の画の発注にユーザーの承認(R の問いに「OK」)。census の問いにも「発注する」。20層 × 3枚、前の聞き取りと同じ描き方。抽出側へ発注済み',
+         why_not_yet='画の便が未着'),
     dict(path='data/census_full/r2a_stage_hearing_table_20261128.csv',
          what='Track R の便R2a の試しの20層(名前の当て方で 清書 8 / 下絵 6 / なし 6、種 0)。母集団 312,762 から門(恒久除外・a v12・空・学習の作品と同じ単位)の後 85,867。除く鍵のうち前の聞き取りの30層の 28 は門の後に残り、母集団から除いた。2 は a v12 で外れる',
          why_not_yet='聞き取り用の表で列ではない。R の data/census へ写した。画の発注はユーザーの承認待ち'),
