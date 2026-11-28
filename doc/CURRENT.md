@@ -2082,7 +2082,7 @@ on branch `controlnet-realpairs` (not present in this working tree).
 
 ## Lessons
 
-**The cross-hatch cause, and fifteen lessons that apply project-wide** (lessons 3-4 added
+**The cross-hatch cause, and sixteen lessons that apply project-wide** (lessons 3-4 added
 2026-09-06 from `../lineart-controlnet-sdxl-fidelity`, lesson 5 on 2026-09-10
 from both tracks, lesson 6 on 2026-09-11; see the notices in `inbox/`). The cause was not on the
 training side: six hypotheses (data pool, LoRA rank, epochs, an x0-vs-GT
@@ -2469,6 +2469,34 @@ overpower it moved gt_bsds_f1 0.1411 -> 0.2337 with no retraining.
     the pair shows what it is: a mechanism arrives already feeling measured,
     and the only defence is to register it as a prediction -- which is what made
     L's version visible as a miss instead of invisible as an assumption.
+16. **The rough is a guide for the line art, not a correspondence to it.
+    Every number that links rough and line art by pixel distance is a number
+    computed on the assumption that a correspondence exists.** Added
+    2026-11-28 on the user's decision (「書いて　これは根本的に重要な情報だ」),
+    from Track S (`cleanup-delta`, report `doc/report_cleanup_delta_20261128.md`
+    on its branch, pushed `5cbc1a4`). The user's framing, verbatim:
+    「この問題はgen_lineart 線画生成の根幹に近いものだ　下絵から線画への直接変換はなし得なかったように、下絵は線画生成のガイドで単純な対応ではない」. What S measured in the
+    same direction (each value inside its own instrument version and
+    population): in HB/HB2 (author, 20 panels each, drawn from the top quarter
+    by moved+added) 「下絵はあたり程度で、形は線画で決めた」 on **14 of 40**; in
+    HD (author, 20 line fragments, 3 per band of distance d to the rough's
+    ink) even at d 0-2 px only **1 of 3** was 「なぞった」, and at 10 px and
+    beyond all but one panel border were 「元の線が無い」 -- **so the kept/moved
+    boundary cannot be drawn by d** (author: 「この判定はかなり難しそうだ」);
+    adding the upper bound for local misalignment (N1) leaves most of 'moved'
+    standing. **Two readings follow, recorded as this file's (Claude's)
+    reading and adopted by the user's decision, not as a measurement:**
+    (a) S1-S4's kept/moved/added/dropped and Track D's 'about half the
+    rough's ink has no lineart within 8 px' are **conditional on an assumed
+    correspondence** -- read them as such, do not cite them as the amount the
+    author changed; (b) generation should treat the rough as **a guide
+    (position, composition), not a source to copy** -- the same direction as
+    lesson 10 (the rough's ink minus some has a ceiling of zero), lesson 8 and
+    the record that no trained model has beaten the preprocessor. **Nothing is
+    retracted**: S1-S4 and D's numbers stand as built; S6 (re-running on the
+    author's boundary) is not run (user, 11-28). **The author's answers are
+    labels and the readings above are hypotheses to test (規律6)** -- what the
+    guide carries, and how much, is not measured yet.
 
 ## Every f1 On Record, And What Can Still Be Read
 
