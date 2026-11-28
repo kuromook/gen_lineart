@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path='data/census_full/r2a_stage_hearing_table_v2_20261128.csv',
+         what='便R2a の引き直し(Track R の登録 追補3): フォルダーの層を外す門を足し、フォルダーだった9層を同じ層の中で種 0 で引き直した20行',
+         why_not_yet='聞き取りの表。母集団 85,867 → 46,962(folder 印が真 38,905 を外した)。残す 11 / 引き直し 9。新しい9層の画は未発注(ユーザーの承認待ち)。R4 の30層と 膜 6,560層の folder 印が真は 0'),
     dict(path='data/census_full/r2a_images/r2a_stage_images_check_20261128.csv',
          what='R2a の聞き取りの画 20層 × 3枚(60枚、sha 62本一致)と抽出の点検の表2本。Track R へ写した',
          why_not_yet='聞き取りの画。答えは R が受けて返す。問う層 20 のうち構造 DB の folder 印が真の層 9(抽出が空・描けないとした 5 を含む)。母集団 85,867 層のうち folder 印が真 38,905。外すかは R の登録が決める'),
