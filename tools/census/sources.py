@@ -418,6 +418,15 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path='data/census_full/cs_v3/comicstudio_v3_layers_PRIVATE_20261128.csv',
+         what='抽出側の ComicStudio の新しい読み方の全頁(2026-11-28、ユーザーの直接の指示、宛先 LS・写し census): 頁 4,852・層 216,622、層の木(重なり順・入れ子・表示)と .cra の画素の数。sha 3/3 一致。版 4 の 887頁の木の読みは答え合わせ無し',
+         why_not_yet='母集団・構造 DB には入れない(第1段と同じく不明の残りがあり、入れるかはユーザーの判断)。層名の棚卸しを LS の依頼で作った'),
+    dict(path='data/census_full/cs_v3/comicstudio_v3_vs_august_20261128.csv',
+         what='抽出側: 8月の ComicStudio の抽出 3,126層と新しい読み方の比べ。格子が違っていた 25層、継ぎ目比 3 以上は 22層から 17層へ、名簿に無い層 13。sha 1/1 一致',
+         why_not_yet='宛先は LS。8月の抽出を作り直すかはユーザーの承認が要る'),
+    dict(path='data/census_full/cs_v3/cpg_v3_name_inventory_PRIVATE_20261128.csv',
+         what='ComicStudio v3 の層名の棚卸し(Track LS の依頼、非公開): 行 = 拡張子 × 層名 1,329、恒久除外 0、テキストの層は1行に畳んだ。作品単位は構造 DB から引けない作品フォルダー 96 をフォルダー名で数えたので上界',
+         why_not_yet='LS の data/census へ写した。何を落とすかは LS と作者が決める'),
     dict(path='data/census_full/q33d/q33_kc_ruling_images_check_20261128.csv',
          what='Q33 の作者の裁定 28層の画(抽出側、2026-11-28): 頁の合成 28 + 層 28 = 56枚、描けなかった 0、恒久除外 0、非表示 0。sha 57/57・鍵 56/56 一致',
          why_not_yet='聞き取り用の画で列ではない。Track Q の data/census へ写した。作者へ渡す承認は Q が取る'),
