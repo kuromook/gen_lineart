@@ -1112,7 +1112,7 @@ work, and the stated expectation is that the pieces make each other easier.
     L and M, not by H** (the user: it is already visible there); H contributes
     its panel-crop observation as an *observation with provenance*, owed in the
     form of native 1:1 crops and a count with a denominator.
-- `../lineart-fill-region` (branch `fill-region`, **Track L**) -- **active,
+- `../lineart-fill-region` (branch `fill-region`, **Track L**) -- **restarting 2026-11-28 on the user's decision** (「ベタ問題は黒消しとの混濁がある程度解消されると見ているという意味では手を付ける理由はありそうだ」; waiting since 11-10 on the exclusion of non-picture layers, now Track Q's b). **Only part of the wait is resolved**: `成人修正` (0 of L's units) is settled by name for the new generation; the `effect`-named 黒消し L's units carry is Q31-Q33, in progress; 描き文字 is Q30's guessed column. New measurement needs a new registration (L39 stays closed). Restart note `inbox/note_foundation_l_restart_20261128.md`, handoff restart section `10e2836` (foundation wrote it, nobody seated; not pushed). Originally **active,
   opened 2026-10-23 by user approval**, worktree of this repo, briefing
   committed at `7d9f080`. Catching the fill as an **area**, in a clean tree, on
   the user's judgement that Track J went toward muddle and stopped, and that
