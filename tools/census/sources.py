@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path='outbox/r2a2_stage_images_order_20261128.csv',
+         what='便R2a の引き直し9層の画の発注(3枚ずつ、便R2a と同じ描き方)。ユーザーの承認 2026-11-28',
+         why_not_yet='発注した。納品待ち。届いたら sha を確かめて Track R に写す'),
     dict(path='data/census_full/r2a_stage_hearing_table_v2_20261128.csv',
          what='便R2a の引き直し(Track R の登録 追補3): フォルダーの層を外す門を足し、フォルダーだった9層を同じ層の中で種 0 で引き直した20行',
          why_not_yet='聞き取りの表。母集団 85,867 → 46,962(folder 印が真 38,905 を外した)。残す 11 / 引き直し 9。新しい9層の画は未発注(ユーザーの承認待ち)。R4 の30層と 膜 6,560層の folder 印が真は 0'),
