@@ -163,3 +163,7 @@
 
 ## 2026-11-27 基盤: Track E を閉じ、a と tools/ui は Track LS(`layer-sort`)へ
 - `reply_all_track_e_closes_layer_sort_opens_20261127.md`(ユーザーの決定)。c(下絵・線画・ラフ・あたり)は R のまま。initial_notice の担当の行を直した。R の登録の門の文字(E の a v7)は版の名前として動かさない
+
+## 2026-11-28 基盤: R2 の評価のラベルを R の聞き取りで集める(ユーザーの決定)
+- `reply_r_r2_labels_by_own_hearing_20261128.md`「RはR2に通達を送り、あらためて聞き取りをたてる」
+- R2 登録に追補1(採点の前): 便R4(既存の30層の答え、§出所の文に当たる。名前なしの便)を評価に入れる / 門 主 a v12・v7 並べる・学習の split_unit も外す / 便R2a 20行 = name_rule 清書 8・下絵 6・なし 6(各作品 2まで、種 0、census が引く)/ 画面と写し方は R4 と同じ
