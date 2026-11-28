@@ -418,6 +418,9 @@ LOCAL_CSV = [
 # **材料は在るが誰も入れていない**。`needs` の欄は前者を指すので、
 # **後者をそこに混ぜると「頼んである」と読まれる。** 別の列に出す。
 ARRIVED_NOT_INTEGRATED = [
+    dict(path='inbox/reply_census_l_q33_kc_ruling_labels_20261128.md',
+         what='Track Q: Q33 が閉じた。名前 effect で当て方の当たる層 28 の作者の札(黒消し 27 / その他 1、作品フォルダー 4)。札の表は Q の木の data。写しの組の遅い方 15層は聞いておらず、最も早い頁の札に従うのが Q の扱い',
+         why_not_yet='作者の札で推測の列の頼みではない。census が列に載せるときは写しからの15層を書き分ける。当て方の 35/35 は群に寄せて引いた行なので割合として引用しない'),
     dict(path='inbox/note_census_r2a_images_approved_20261128.md',
          what='Track R: 便R2a の20層の画の発注にユーザーの承認(R の問いに「OK」)。census の問いにも「発注する」。20層 × 3枚、前の聞き取りと同じ描き方。抽出側へ発注済み',
          why_not_yet='画の便が未着'),
