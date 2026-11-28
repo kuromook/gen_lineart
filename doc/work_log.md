@@ -172,3 +172,4 @@
 - 11-28 ユーザー「OK」→ 便R2a 20層の画の発注を census に連絡 `note_census_r2a_images_approved_20261128.md`
 - 11-28 夕 census `reply_r_r2a_stage_images_20261128.md`: 画 20×3 届く(sha 62/62)。**標本の9層がフォルダー**(母集団の 38,905 / 85,867)。学習 325行は全部 raster → R2 追補3: folder の門を足す、非フォルダー11層は残し、フォルダー9層は同じ層で引き直し。依頼 `note_census_order_r2a_replace_folders_20261128.md`(R4 30層と name_rule_film の膜 6,560層のフォルダーの数も頼んだ)。新しい9層の画はユーザーの承認待ち
 - 11-28 17:42 census 引き直し `reply_r_r2a_replace_folders_20261128.md`: 母集団 46,962、残す11・新9(下絵3・なし6)、R4 と膜 6,560 にフォルダー 0。新9層の画はユーザーの承認待ち
+- 11-28 ユーザー「ok」→ 新9層の画の発注を census に連絡 `note_census_r2a2_images_approved_20261128.md`
